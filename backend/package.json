@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix"
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

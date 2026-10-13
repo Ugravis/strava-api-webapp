@@ -25,11 +25,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter backend lint
-      - run: pnpm --filter backend typecheck
-      - run: pnpm --filter backend test
-      - run: pnpm --filter backend test:e2e
-      - run: pnpm --filter backend build
+      - run: pnpm check:backend
 
   frontend:
     name: Frontend
@@ -42,9 +38,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter frontend lint
-      - run: pnpm --filter frontend typecheck
-      - run: pnpm --filter frontend build
+      - run: pnpm check:frontend
 
   shared:
     name: Shared
@@ -57,4 +51,4 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @strava-webapp/shared typecheck
+      - run: pnpm check:shared

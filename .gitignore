@@ -21,3 +21,7 @@ pnpm-debug.log*
 
 # Docker local overrides
 docker-compose.override.yml
+
+# Others
+notes.md
+notes/

@@ -1,0 +1,14 @@
+{
+  "name": "strava-api-webapp",
+  "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev:backend": "pnpm --filter backend start:dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
+}

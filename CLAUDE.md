@@ -12,6 +12,7 @@ Plateforme web gamifiée (puis app Play Store / App Store) connectée à Strava.
 - N'ajoute pas de mention Claude (que ce soit dans les commits, les PR). 
 - TS strict. 
 - Pour la V0, utilisation de https://ui.shadcn.com/. 
-- Frontend codé en respectant les principes de design SOLID + responsive. 
+- Frontend codé en respectant les principes de design SOLID + squelettes de chargement + responsive. 
 - Mobile first. 
 - Tout ce qui n'est pas de l'interface utilisateur doit être évidement écrit en professionnel. 
+- Je m'occupe de valider les PR. 

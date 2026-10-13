@@ -1,27 +1,30 @@
 ## Description
 
-<!-- What does this PR change, and why? -->
+<!-- Quoi et pourquoi, en quelques lignes. -->
 
-## Related issue
+## Type de changement
+
+- [ ] `feat` — nouvelle fonctionnalité
+- [ ] `fix` — correction de bug
+- [ ] `refactor` — changement sans impact fonctionnel
+- [ ] `docs` — documentation uniquement
+- [ ] `chore` / `ci` — outillage, configuration, CI/CD
+- [ ] `test` — ajout/modification de tests
+
+## Issue(s) liée(s)
 
 Closes #
 
-## Type of change
+## Plan de test
 
-- [ ] feat: new feature
-- [ ] fix: bug fix
-- [ ] refactor / chore / docs / ci
-- [ ] BREAKING CHANGE
+- [ ] `composer run check-all` passe (backend)
+- [ ] `npm run check-all` passe (frontend)
+- [ ] Testé manuellement en local (`docker compose up -d`)
 
-## Checklist
+## Captures / démo (si pertinent)
 
-- [ ] The branch follows Gitflow (`feature/*` or `fix/*` into `develop`, `release/*` or `hotfix/*` into `main`)
-- [ ] Commits follow Conventional Commits
-- [ ] Lint, type-check and tests pass locally
-- [ ] Tests added or updated where relevant
-- [ ] Documentation updated where relevant
-- [ ] UI changes are mobile first and responsive (screenshots attached)
+<!-- Captures d'écran, GIF, lien vers une démo... -->
 
-## Screenshots
+## Notes pour la review
 
-<!-- Required for UI changes, on mobile and desktop. -->
+<!-- Points d'attention particuliers, décisions à valider, dette technique assumée. -->

@@ -40,12 +40,18 @@ pnpm dev:frontend
 
 ## Scripts
 
-| Command          | Description                    |
-| ---------------- | ------------------------------ |
-| `pnpm lint`      | Lint all packages              |
-| `pnpm typecheck` | Type-check all packages        |
-| `pnpm test`      | Run unit tests                 |
-| `pnpm build`     | Build all packages             |
+| Command               | Description                                              |
+| --------------------- | -------------------------------------------------------- |
+| `pnpm check-all`      | Run every CI check on all packages, sequentially         |
+| `pnpm check:backend`  | Backend: lint, type-check, unit tests, e2e tests, build  |
+| `pnpm check:frontend` | Frontend: lint, type-check, build                        |
+| `pnpm check:shared`   | Shared package: type-check                               |
+| `pnpm lint`           | Lint all packages                                        |
+| `pnpm typecheck`      | Type-check all packages                                  |
+| `pnpm test`           | Run unit tests                                           |
+| `pnpm build`          | Build all packages                                       |
+
+The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.
 
 ## Workflow
 

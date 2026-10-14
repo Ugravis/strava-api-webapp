@@ -41,7 +41,8 @@ pnpm dev:frontend
 ```
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
-drops every table and replays the migrations; it refuses to run when `NODE_ENV=production`.
+drops every table, replays the migrations and empties the object storage (uploaded avatars); it
+refuses to run when `NODE_ENV=production`.
 To manage migrations manually:
 
 ```bash

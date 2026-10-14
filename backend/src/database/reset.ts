@@ -1,8 +1,11 @@
 import 'reflect-metadata';
+import storageConfig from '../config/storage.config';
+import { S3StorageService } from '../storage/s3-storage.service';
 import dataSource from './data-source';
 
 /**
- * Development only: drops every table and type, then replays the migrations.
+ * Development only: drops every table and type, replays the migrations and
+ * empties the object storage (uploaded avatars).
  * Usage: `pnpm db:reset` from the repository root.
  */
 async function reset(): Promise<void> {
@@ -19,10 +22,16 @@ async function reset(): Promise<void> {
     console.log(`Resetting database "${database}" on ${host}…`);
     await dataSource.dropDatabase();
     const migrations = await dataSource.runMigrations();
-    console.log(`Done: ${migrations.length} migration(s) applied.`);
+    console.log(`Database ready: ${migrations.length} migration(s) applied.`);
   } finally {
     await dataSource.destroy();
   }
+
+  const config = storageConfig();
+  const deleted = await new S3StorageService(config).deleteAll();
+  console.log(
+    `Storage emptied: ${deleted} object(s) deleted from "${config.bucket}".`,
+  );
 }
 
 reset().catch((error: unknown) => {

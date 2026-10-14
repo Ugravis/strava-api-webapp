@@ -1,8 +1,11 @@
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  ListObjectsV2Command,
+  NoSuchBucket,
   NoSuchKey,
   NotFound,
   PutObjectCommand,
@@ -106,5 +109,51 @@ export class S3StorageService extends StorageService implements OnModuleInit {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
+  }
+
+  async deleteAll(prefix = ''): Promise<number> {
+    let deleted = 0;
+    let continuationToken: string | undefined;
+    do {
+      const page = await this.listPage(prefix, continuationToken);
+      if (!page) {
+        return deleted;
+      }
+      const keys = (page.Contents ?? []).flatMap((object) =>
+        object.Key ? [{ Key: object.Key }] : [],
+      );
+      if (keys.length > 0) {
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: keys, Quiet: true },
+          }),
+        );
+        deleted += keys.length;
+      }
+      continuationToken = page.NextContinuationToken;
+    } while (continuationToken);
+    return deleted;
+  }
+
+  /** Returns null when the bucket does not exist yet: there is nothing to list. */
+  private async listPage(
+    prefix: string,
+    continuationToken: string | undefined,
+  ) {
+    try {
+      return await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof NoSuchBucket) {
+        return null;
+      }
+      throw error;
+    }
   }
 }

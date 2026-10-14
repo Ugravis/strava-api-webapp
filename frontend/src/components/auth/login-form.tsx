@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { CheckboxField } from "@/components/forms/checkbox-field";
 import { FormError } from "@/components/forms/form-error";
 import { FormField } from "@/components/forms/form-field";
 import { PasswordInput } from "@/components/forms/password-input";
@@ -38,7 +39,7 @@ export function LoginForm() {
   const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", rememberMe: true },
   });
 
   async function onSubmit(values: LoginValues) {
@@ -90,6 +91,7 @@ export function LoginForm() {
         >
           {(field) => <PasswordInput {...field} autoComplete="current-password" />}
         </FormField>
+        <CheckboxField control={form.control} name="rememberMe" label={t("fields.rememberMe")} />
         <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
           {t("auth.login.submit")}
         </Button>

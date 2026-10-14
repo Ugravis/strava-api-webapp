@@ -2,7 +2,8 @@ import { apiRequest } from "@/lib/api/client";
 import type { User } from "@/lib/api/types";
 
 export interface UpdateProfileInput {
-  displayName: string;
+  /** null clears the display name. */
+  displayName: string | null;
   username: string;
 }
 

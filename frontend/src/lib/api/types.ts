@@ -2,7 +2,8 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  displayName: string;
+  /** Optional: use `publicNameOf` to display a user. */
+  displayName: string | null;
   avatarUrl: string | null;
   hasPassword: boolean;
   createdAt: string;
@@ -10,7 +11,6 @@ export interface User {
 
 export interface PendingGoogleSignup {
   email: string;
-  displayName: string;
   suggestedUsername: string;
 }
 

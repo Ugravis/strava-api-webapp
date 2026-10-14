@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { AcceptTermsField } from "@/components/forms/accept-terms-field";
 import { FormError } from "@/components/forms/form-error";
 import { FormField } from "@/components/forms/form-field";
 import { PasswordInput } from "@/components/forms/password-input";
@@ -25,7 +26,7 @@ export function RegisterForm() {
   const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { email: "", displayName: "", username: "", password: "" },
+    defaultValues: { email: "", username: "", password: "", acceptTerms: false },
   });
 
   async function onSubmit(values: RegisterValues) {
@@ -57,16 +58,6 @@ export function RegisterForm() {
             />
           )}
         </FormField>
-        <FormField
-          control={form.control}
-          name="displayName"
-          label={t("displayName")}
-          description={t("displayNameDescription")}
-        >
-          {(field) => (
-            <Input {...field} autoComplete="name" placeholder={t("displayNamePlaceholder")} />
-          )}
-        </FormField>
         <UsernameField
           control={form.control}
           setError={form.setError}
@@ -75,6 +66,7 @@ export function RegisterForm() {
         <FormField control={form.control} name="password" label={t("password")}>
           {(field) => <PasswordInput {...field} autoComplete="new-password" />}
         </FormField>
+        <AcceptTermsField control={form.control} />
         <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
           {tRegister("submit")}
         </Button>

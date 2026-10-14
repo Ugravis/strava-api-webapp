@@ -11,27 +11,30 @@ import {
 } from "react-hook-form";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 
-export type FormControlProps<T extends FieldValues> = ControllerRenderProps<T, FieldPath<T>> & {
+export type FormControlProps<
+  T extends FieldValues,
+  N extends FieldPath<T> = FieldPath<T>,
+> = ControllerRenderProps<T, N> & {
   id: string;
   "aria-invalid": boolean;
 };
 
-interface FormFieldProps<T extends FieldValues> {
+interface FormFieldProps<T extends FieldValues, N extends FieldPath<T>> {
   control: Control<T>;
-  name: FieldPath<T>;
+  name: N;
   label: ReactNode;
   description?: ReactNode;
-  children: (props: FormControlProps<T>) => ReactNode;
+  children: (props: FormControlProps<T, N>) => ReactNode;
 }
 
 /** Binds a form control to react-hook-form and renders its label, hint and error. */
-export function FormField<T extends FieldValues>({
+export function FormField<T extends FieldValues, N extends FieldPath<T>>({
   control,
   name,
   label,
   description,
   children,
-}: FormFieldProps<T>) {
+}: FormFieldProps<T, N>) {
   const t = useTranslations("validation");
   const id = useId();
 

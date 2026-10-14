@@ -16,6 +16,7 @@ import {
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { routes } from "@/config/routes";
 import type { User } from "@/lib/api/types";
+import { publicNameOf } from "@/lib/user";
 import { useLogout } from "./use-logout";
 
 function UserSummary({ user }: { user: User }) {
@@ -23,7 +24,7 @@ function UserSummary({ user }: { user: User }) {
     <>
       <UserAvatar user={user} className="size-8 rounded-lg after:rounded-lg" fallbackClassName="rounded-lg" />
       <div className="grid flex-1 text-left text-sm leading-tight">
-        <span className="truncate font-medium">{user.displayName}</span>
+        <span className="truncate font-medium">{publicNameOf(user)}</span>
         <span className="truncate text-xs text-muted-foreground">@{user.username}</span>
       </div>
     </>

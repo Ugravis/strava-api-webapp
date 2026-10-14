@@ -61,7 +61,11 @@ pnpm --filter backend migration:revert
   Google Cloud console, create an OAuth client of type "Web application" with the authorized
   redirect URI `http://localhost:3000/api/auth/google/callback`. A Google account whose email
   matches an existing account is linked to it; a new one is asked to choose a username.
+- Sign-up only asks for an email, a username, a password and the acceptance of the terms of use
+  (recorded in `users.terms_accepted_at`); the display name is optional and set from the profile.
 - Sessions are stored in the database and identified by an httpOnly, `SameSite=Lax` cookie.
+  With "Stay signed in", the cookie lasts 30 days and is extended while used; otherwise it ends
+  with the browser and the session expires after 24 hours of inactivity.
   The browser only talks to the frontend origin, which proxies `/api` to the backend.
 
 ## Scripts

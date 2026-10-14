@@ -1,9 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { avatarColorOf, initialsOf } from "@/lib/avatar";
+import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
 
 interface UserAvatarProps {
-  user: { displayName: string; username: string; avatarUrl: string | null };
+  user: { displayName: string | null; username: string; avatarUrl: string | null };
   className?: string;
   fallbackClassName?: string;
 }
@@ -22,7 +23,7 @@ export function UserAvatar({ user, className, fallbackClassName }: UserAvatarPro
           fallbackClassName,
         )}
       >
-        {initialsOf(user.displayName)}
+        {initialsOf(publicNameOf(user))}
       </AvatarFallback>
     </Avatar>
   );

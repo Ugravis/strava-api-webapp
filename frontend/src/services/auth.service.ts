@@ -4,16 +4,19 @@ import type { PendingGoogleSignup, User, UsernameAvailability } from "@/lib/api/
 export interface LoginInput {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
-export interface RegisterInput extends LoginInput {
+export interface RegisterInput {
+  email: string;
+  password: string;
   username: string;
-  displayName: string;
+  acceptTerms: boolean;
 }
 
 export interface GoogleSignupInput {
   username: string;
-  displayName: string;
+  acceptTerms: boolean;
 }
 
 export const GOOGLE_SIGN_IN_URL = "/api/auth/google";

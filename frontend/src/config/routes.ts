@@ -4,6 +4,7 @@ export const routes = {
   register: "/register",
   googleSignup: "/register/google",
   forgotPassword: "/forgot-password",
+  terms: "/terms",
   profile: "/profile",
   settings: "/settings",
   sessionExpired: "/session-expired",

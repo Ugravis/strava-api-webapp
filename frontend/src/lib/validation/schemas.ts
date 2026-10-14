@@ -25,22 +25,28 @@ export const usernameSchema = z
   .max(USERNAME_MAX_LENGTH, "usernameLength")
   .regex(USERNAME_PATTERN, "usernamePattern");
 
-export const displayNameSchema = z
-  .string()
-  .trim()
-  .min(1, "displayNameRequired")
-  .max(50, "displayNameMax");
+/** Optional: an empty value clears the display name, the username is then shown. */
+export const displayNameSchema = z.string().trim().max(50, "displayNameMax");
+
+export const acceptTermsSchema = z.boolean().refine((accepted) => accepted, "termsRequired");
 
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "required"),
+  rememberMe: z.boolean(),
 });
 
+/** The display name is not asked at sign-up: it can be set later from the profile. */
 export const registerSchema = z.object({
   email: emailSchema,
-  displayName: displayNameSchema,
   username: usernameSchema,
   password: passwordSchema,
+  acceptTerms: acceptTermsSchema,
+});
+
+export const googleSignupSchema = z.object({
+  username: usernameSchema,
+  acceptTerms: acceptTermsSchema,
 });
 
 export const profileSchema = z.object({
@@ -68,6 +74,7 @@ export function newPasswordSchema(requireCurrentPassword: boolean) {
 
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;
+export type GoogleSignupValues = z.infer<typeof googleSignupSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 export type NewPasswordValues = z.infer<ReturnType<typeof newPasswordSchema>>;

@@ -26,14 +26,17 @@ export function ProfileSettings() {
   const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { displayName: user.displayName, username: user.username },
+    defaultValues: { displayName: user.displayName ?? "", username: user.username },
   });
 
   async function onSubmit(values: ProfileValues) {
     setErrorCode(null);
     try {
-      const updated = await accountService.updateProfile(values);
-      form.reset({ displayName: updated.displayName, username: updated.username });
+      const updated = await accountService.updateProfile({
+        username: values.username,
+        displayName: values.displayName || null,
+      });
+      form.reset({ displayName: updated.displayName ?? "", username: updated.username });
       toast.success(t("settings.profile.updated"));
       router.refresh();
     } catch (error) {
@@ -49,8 +52,15 @@ export function ProfileSettings() {
       <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <FieldGroup>
           <FormError code={errorCode} />
-          <FormField control={form.control} name="displayName" label={t("fields.displayName")}>
-            {(field) => <Input {...field} autoComplete="name" />}
+          <FormField
+            control={form.control}
+            name="displayName"
+            label={t("fields.displayName")}
+            description={t("fields.displayNameDescription")}
+          >
+            {(field) => (
+              <Input {...field} autoComplete="name" placeholder={user.username} maxLength={50} />
+            )}
           </FormField>
           <UsernameField
             control={form.control}

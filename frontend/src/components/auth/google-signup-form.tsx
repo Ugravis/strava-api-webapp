@@ -6,17 +6,16 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { AcceptTermsField } from "@/components/forms/accept-terms-field";
 import { FormError } from "@/components/forms/form-error";
-import { FormField } from "@/components/forms/form-field";
 import { UsernameField } from "@/components/forms/username-field";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_AUTHENTICATED_ROUTE, routes } from "@/config/routes";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
 import type { PendingGoogleSignup } from "@/lib/api/types";
-import { profileSchema, type ProfileValues } from "@/lib/validation/schemas";
+import { googleSignupSchema, type GoogleSignupValues } from "@/lib/validation/schemas";
 import { authService } from "@/services/auth.service";
 import { AuthCard } from "./auth-card";
 import { applyUsernameError } from "./username-errors";
@@ -70,16 +69,15 @@ export function GoogleSignupForm() {
 }
 
 function CompletionForm({ pending }: { pending: PendingGoogleSignup }) {
-  const t = useTranslations("fields");
   const tSignup = useTranslations("auth.googleSignup");
   const router = useRouter();
   const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
-  const form = useForm<ProfileValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: { displayName: pending.displayName, username: pending.suggestedUsername },
+  const form = useForm<GoogleSignupValues>({
+    resolver: zodResolver(googleSignupSchema),
+    defaultValues: { username: pending.suggestedUsername, acceptTerms: false },
   });
 
-  async function onSubmit(values: ProfileValues) {
+  async function onSubmit(values: GoogleSignupValues) {
     setErrorCode(null);
     try {
       await authService.completeGoogleSignup(values);
@@ -97,19 +95,12 @@ function CompletionForm({ pending }: { pending: PendingGoogleSignup }) {
     <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
         <FormError code={errorCode} />
-        <FormField
-          control={form.control}
-          name="displayName"
-          label={t("displayName")}
-          description={t("displayNameDescription")}
-        >
-          {(field) => <Input {...field} autoComplete="name" />}
-        </FormField>
         <UsernameField
           control={form.control}
           setError={form.setError}
           clearErrors={form.clearErrors}
         />
+        <AcceptTermsField control={form.control} />
         <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
           {tSignup("submit")}
         </Button>

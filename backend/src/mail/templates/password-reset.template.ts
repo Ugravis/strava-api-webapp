@@ -1,12 +1,12 @@
 import { renderActionEmail, type RenderedEmail } from './layout';
 
 export function passwordResetTemplate(
-  displayName: string,
+  name: string,
   url: string,
 ): RenderedEmail {
   return renderActionEmail({
     subject: 'Réinitialise ton mot de passe',
-    greeting: `Bonjour ${displayName},`,
+    greeting: `Bonjour ${name},`,
     paragraphs: [
       'Tu as demandé à réinitialiser ton mot de passe. Clique sur le bouton ci-dessous pour en choisir un nouveau.',
     ],

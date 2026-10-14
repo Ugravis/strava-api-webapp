@@ -6,7 +6,8 @@ import { passwordResetTemplate } from './templates/password-reset.template';
 
 interface Recipient {
   email: string;
-  displayName: string;
+  username: string;
+  displayName: string | null;
 }
 
 @Injectable()
@@ -29,7 +30,7 @@ export class MailService {
   sendPasswordReset(recipient: Recipient, url: string): Promise<void> {
     return this.send(
       recipient,
-      passwordResetTemplate(recipient.displayName, url),
+      passwordResetTemplate(recipient.displayName ?? recipient.username, url),
     );
   }
 

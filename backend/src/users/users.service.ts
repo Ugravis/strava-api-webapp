@@ -14,7 +14,8 @@ import {
 export interface CreateUserInput {
   email: string;
   username: string;
-  displayName: string;
+  displayName?: string | null;
+  termsAcceptedAt?: Date | null;
   passwordHash?: string | null;
   externalAvatarUrl?: string | null;
 }
@@ -77,7 +78,8 @@ export class UsersService {
     const user = this.users.create({
       email: normalizeEmail(input.email),
       username: input.username,
-      displayName: input.displayName,
+      displayName: input.displayName ?? null,
+      termsAcceptedAt: input.termsAcceptedAt ?? null,
       passwordHash: input.passwordHash ?? null,
       externalAvatarUrl: input.externalAvatarUrl ?? null,
       avatarKey: null,
@@ -87,7 +89,7 @@ export class UsersService {
 
   async updateProfile(
     user: User,
-    changes: { displayName?: string; username?: string },
+    changes: { displayName?: string | null; username?: string },
   ): Promise<User> {
     if (changes.username !== undefined && changes.username !== user.username) {
       await this.assertUsernameAvailable(changes.username, user.id);

@@ -1,9 +1,9 @@
-import { DisplayNameField, UsernameField } from '../../users/dto/user-fields';
+import { AcceptTermsField, UsernameField } from '../../users/dto/user-fields';
 
 export class CompleteGoogleSignupDto {
   @UsernameField()
   username!: string;
 
-  @DisplayNameField()
-  displayName!: string;
+  @AcceptTermsField()
+  acceptTerms!: boolean;
 }

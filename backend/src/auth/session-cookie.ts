@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CookieOptions, Request, Response } from 'express';
 import authConfig, { type AuthConfig } from '../config/auth.config';
+import type { CreatedSession } from './sessions/sessions.service';
 
 export const SESSION_COOKIE = 'session';
 
@@ -13,10 +14,11 @@ export class SessionCookie {
     return cookies[SESSION_COOKIE] ?? null;
   }
 
-  write(response: Response, token: string, expiresAt: Date): void {
-    response.cookie(SESSION_COOKIE, token, {
+  /** A non-persistent session gets a browser-session cookie (no expiry date). */
+  write(response: Response, session: CreatedSession): void {
+    response.cookie(SESSION_COOKIE, session.token, {
       ...this.options(),
-      expires: expiresAt,
+      expires: session.persistent ? session.expiresAt : undefined,
     });
   }
 

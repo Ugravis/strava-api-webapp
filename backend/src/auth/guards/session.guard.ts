@@ -4,6 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Response } from 'express';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import type { AuthenticatedRequest } from '../auth-request';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -38,7 +39,16 @@ export class SessionGuard implements CanActivate {
       );
     }
 
-    request.auth = validated;
+    const { session, user, renewed } = validated;
+    // The cookie expiry follows the extended session, so activity keeps users signed in.
+    if (renewed && session.persistent && token) {
+      this.sessionCookie.write(context.switchToHttp().getResponse<Response>(), {
+        token,
+        expiresAt: session.expiresAt,
+        persistent: true,
+      });
+    }
+    request.auth = { session, user };
     return true;
   }
 }

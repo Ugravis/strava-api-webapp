@@ -14,6 +14,7 @@ const config: AuthConfig = {
   cookieSecret: 'secret',
   secureCookies: false,
   sessionTtlDays: 30,
+  browserSessionTtlHours: 24,
   passwordResetTtlMinutes: 60,
 };
 
@@ -21,6 +22,7 @@ const metadata = { userAgent: 'jest', ipAddress: '127.0.0.1' };
 const createdSession = {
   token: 'session-token',
   expiresAt: new Date('2030-01-01'),
+  persistent: true,
 };
 
 function buildUser(overrides: Partial<User> = {}): User {
@@ -32,6 +34,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     displayName: 'Jean',
     avatarKey: null,
     externalAvatarUrl: null,
+    termsAcceptedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -85,7 +88,7 @@ describe('AuthService', () => {
       email: 'jean@example.com',
       password: 'a-strong-password',
       username: 'jean',
-      displayName: 'Jean',
+      acceptTerms: true,
     };
 
     it('creates the user with a hashed password, opens a session and sends no email', async () => {
@@ -104,8 +107,19 @@ describe('AuthService', () => {
         passwordHasher.verify(dto.password, passwordHash ?? ''),
       ).resolves.toBe(true);
       expect(result.session).toBe(createdSession);
-      expect(sessions.create).toHaveBeenCalledWith('user-id', metadata);
+      expect(sessions.create).toHaveBeenCalledWith('user-id', metadata, true);
       expect(tokens.issue).not.toHaveBeenCalled();
+    });
+
+    it('records the acceptance of the terms and asks no display name', async () => {
+      users.findByEmail.mockResolvedValue(null);
+      users.create.mockResolvedValue(buildUser());
+
+      await service.register(dto, metadata);
+
+      const input = users.create.mock.calls[0][0];
+      expect(input.termsAcceptedAt).toBeInstanceOf(Date);
+      expect(input.displayName).toBeUndefined();
     });
 
     it('rejects an email that is already registered', async () => {
@@ -132,6 +146,36 @@ describe('AuthService', () => {
 
       expect(result).toEqual({ user, session: createdSession });
     });
+
+    it.each([
+      [true, true],
+      [false, false],
+      [undefined, false],
+    ])(
+      'opens a persistent session only when "stay signed in" is checked (%s)',
+      async (rememberMe, persistent) => {
+        users.findByEmail.mockResolvedValue(
+          buildUser({
+            passwordHash: await passwordHasher.hash('a-strong-password'),
+          }),
+        );
+
+        await service.login(
+          {
+            email: 'jean@example.com',
+            password: 'a-strong-password',
+            rememberMe,
+          },
+          metadata,
+        );
+
+        expect(sessions.create).toHaveBeenCalledWith(
+          'user-id',
+          metadata,
+          persistent,
+        );
+      },
+    );
 
     it('rejects a wrong password', async () => {
       users.findByEmail.mockResolvedValue(

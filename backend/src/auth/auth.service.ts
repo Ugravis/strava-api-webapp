@@ -53,10 +53,13 @@ export class AuthService {
     const user = await this.users.create({
       email: dto.email,
       username: dto.username,
-      displayName: dto.displayName,
       passwordHash: await this.passwordHasher.hash(dto.password),
+      termsAcceptedAt: new Date(),
     });
-    return { user, session: await this.sessions.create(user.id, metadata) };
+    return {
+      user,
+      session: await this.sessions.create(user.id, metadata, true),
+    };
   }
 
   async login(dto: LoginDto, metadata: SessionMetadata): Promise<AuthResult> {
@@ -68,15 +71,25 @@ export class AuthService {
     if (!(await this.passwordHasher.verify(dto.password, user.passwordHash))) {
       throw this.invalidCredentials();
     }
-    return { user, session: await this.sessions.create(user.id, metadata) };
+    return {
+      user,
+      session: await this.sessions.create(
+        user.id,
+        metadata,
+        dto.rememberMe ?? false,
+      ),
+    };
   }
 
-  /** Starts a session for an already authenticated identity (e.g. OAuth). */
+  /** Starts a persistent session for an already authenticated identity (e.g. OAuth). */
   async startSession(
     user: User,
     metadata: SessionMetadata,
   ): Promise<AuthResult> {
-    return { user, session: await this.sessions.create(user.id, metadata) };
+    return {
+      user,
+      session: await this.sessions.create(user.id, metadata, true),
+    };
   }
 
   logout(sessionToken: string): Promise<void> {

@@ -50,7 +50,7 @@ export class AuthController {
       dto,
       requestMetadata(request),
     );
-    this.sessionCookie.write(response, session.token, session.expiresAt);
+    this.sessionCookie.write(response, session);
     return toUserResponse(user);
   }
 
@@ -67,7 +67,7 @@ export class AuthController {
       dto,
       requestMetadata(request),
     );
-    this.sessionCookie.write(response, session.token, session.expiresAt);
+    this.sessionCookie.write(response, session);
     return toUserResponse(user);
   }
 

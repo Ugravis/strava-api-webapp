@@ -29,6 +29,13 @@ export class Session {
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt!: Date;
 
+  /**
+   * True for "stay signed in": persistent cookie and long lifetime. False: the
+   * cookie ends with the browser and the session expires after a short idle time.
+   */
+  @Column({ type: 'boolean', default: true })
+  persistent!: boolean;
+
   @Column({ name: 'last_seen_at', type: 'timestamptz' })
   lastSeenAt!: Date;
 

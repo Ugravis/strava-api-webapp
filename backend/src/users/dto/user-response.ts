@@ -4,7 +4,7 @@ export interface UserResponse {
   id: string;
   email: string;
   username: string;
-  displayName: string;
+  displayName: string | null;
   avatarUrl: string | null;
   hasPassword: boolean;
   createdAt: string;

@@ -1,6 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
-import { IsString, Length, Matches } from 'class-validator';
-import { NormalizeIdentifier, Trim } from '../../common/transformers';
+import { Equals, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { NormalizeIdentifier, TrimToNull } from '../../common/transformers';
 import {
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
@@ -25,11 +25,19 @@ export const UsernameField = (): PropertyDecorator =>
     }),
   );
 
-export const DisplayNameField = (): PropertyDecorator =>
+/** Optional: null (or an empty string) clears the display name. */
+export const OptionalDisplayNameField = (): PropertyDecorator =>
   applyDecorators(
-    Trim(),
+    TrimToNull(),
+    IsOptional(),
     IsString(),
     Length(DISPLAY_NAME_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH),
+  );
+
+/** Explicit consent to the terms of use, required at sign-up. */
+export const AcceptTermsField = (): PropertyDecorator =>
+  applyDecorators(
+    Equals(true, { message: 'the terms of use must be accepted' }),
   );
 
 export const PasswordField = (): PropertyDecorator =>

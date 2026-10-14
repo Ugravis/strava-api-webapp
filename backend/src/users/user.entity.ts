@@ -28,8 +28,14 @@ export class User {
   @Column({ type: 'varchar', length: 20, unique: true })
   username!: string;
 
-  @Column({ name: 'display_name', type: 'varchar', length: 50 })
-  displayName!: string;
+  /** Optional public name; the username is shown when it is not set. */
+  @Column({
+    name: 'display_name',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  displayName!: string | null;
 
   /** Storage key of the uploaded avatar. */
   @Column({ name: 'avatar_key', type: 'varchar', length: 255, nullable: true })
@@ -38,6 +44,10 @@ export class User {
   /** Avatar provided by an OAuth provider, used when no avatar was uploaded. */
   @Column({ name: 'external_avatar_url', type: 'text', nullable: true })
   externalAvatarUrl!: string | null;
+
+  /** When the terms of use were accepted, kept as proof of consent. */
+  @Column({ name: 'terms_accepted_at', type: 'timestamptz', nullable: true })
+  termsAcceptedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

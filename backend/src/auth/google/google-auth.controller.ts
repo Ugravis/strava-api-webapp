@@ -35,7 +35,6 @@ interface AuthorizationState {
 
 export interface PendingSignupResponse {
   email: string;
-  displayName: string;
   suggestedUsername: string;
 }
 
@@ -109,7 +108,7 @@ export class GoogleAuthController {
         return this.redirectToFrontend(response, '/register/google');
       }
       const { session } = outcome.result;
-      this.sessionCookie.write(response, session.token, session.expiresAt);
+      this.sessionCookie.write(response, session);
       return this.redirectToFrontend(response, '/profile');
     } catch (error) {
       this.logger.warn(
@@ -124,7 +123,6 @@ export class GoogleAuthController {
     const pending = this.requirePendingSignup(request);
     return {
       email: pending.email,
-      displayName: pending.name ?? '',
       suggestedUsername: await this.googleAuth.suggestUsername(pending),
     };
   }
@@ -143,7 +141,7 @@ export class GoogleAuthController {
       requestMetadata(request),
     );
     pendingSignupCookie.clear(response, this.config.secureCookies);
-    this.sessionCookie.write(response, session.token, session.expiresAt);
+    this.sessionCookie.write(response, session);
     return toUserResponse(user);
   }
 

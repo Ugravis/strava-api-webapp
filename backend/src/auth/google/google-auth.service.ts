@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { isUniqueViolation } from '../../common/database-errors';
+import { DISPLAY_NAME_MAX_LENGTH } from '../../users/dto/validation.constants';
 import { normalizeEmail, UsersService } from '../../users/users.service';
 import { AuthService, type AuthResult } from '../auth.service';
 import type { CompleteGoogleSignupDto } from '../dto/complete-google-signup.dto';
@@ -92,8 +93,11 @@ export class GoogleAuthService {
     const user = await this.users.create({
       email: pending.email,
       username: dto.username,
-      displayName: dto.displayName,
+      // Taken from Google without asking: it can be changed later from the profile.
+      displayName:
+        pending.name?.trim().slice(0, DISPLAY_NAME_MAX_LENGTH) || null,
       externalAvatarUrl: pending.picture,
+      termsAcceptedAt: new Date(),
     });
     try {
       await this.oauthAccounts.link(user.id, PROVIDER, pending.subject);

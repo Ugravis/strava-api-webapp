@@ -106,10 +106,10 @@ describe('GoogleAuthService', () => {
       {
         subject: 'google-sub',
         email: 'jean@gmail.com',
-        name: 'Jean',
+        name: '  Jean Dupont  ',
         picture: null,
       },
-      { username: 'jean', displayName: 'Jean' },
+      { username: 'jean', acceptTerms: true },
       metadata,
     );
 
@@ -117,6 +117,8 @@ describe('GoogleAuthService', () => {
       expect.objectContaining({
         email: 'jean@gmail.com',
         username: 'jean',
+        displayName: 'Jean Dupont',
+        termsAcceptedAt: expect.any(Date) as Date,
       }),
     );
     expect(oauthAccounts.link).toHaveBeenCalledWith(

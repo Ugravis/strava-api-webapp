@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { isUniqueViolation } from '../../common/database-errors';
-import { UsersService } from '../../users/users.service';
+import { normalizeEmail, UsersService } from '../../users/users.service';
 import { AuthService, type AuthResult } from '../auth.service';
 import type { CompleteGoogleSignupDto } from '../dto/complete-google-signup.dto';
 import type { SessionMetadata } from '../sessions/sessions.service';
@@ -76,7 +76,7 @@ export class GoogleAuthService {
       kind: 'signup-required',
       pending: {
         subject: profile.subject,
-        email: profile.email,
+        email: normalizeEmail(profile.email),
         name: profile.name,
         picture: profile.picture,
       },

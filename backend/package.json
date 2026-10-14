@@ -25,7 +25,8 @@
     "migration:generate": "pnpm typeorm migration:generate",
     "migration:create": "typeorm-ts-node-commonjs migration:create",
     "migration:run": "pnpm typeorm migration:run",
-    "migration:revert": "pnpm typeorm migration:revert"
+    "migration:revert": "pnpm typeorm migration:revert",
+    "db:reset": "node --env-file-if-exists=../.env -r ts-node/register src/database/reset.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1151.0",

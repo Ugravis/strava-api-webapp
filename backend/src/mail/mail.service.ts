@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createTransport, type Transporter } from 'nodemailer';
 import mailConfig, { type MailConfig } from '../config/mail.config';
-import { emailVerificationTemplate } from './templates/email-verification.template';
 import type { RenderedEmail } from './templates/layout';
 import { passwordResetTemplate } from './templates/password-reset.template';
 
@@ -25,13 +24,6 @@ export class MailService {
           ? { user: config.user, pass: config.password }
           : undefined,
     });
-  }
-
-  sendEmailVerification(recipient: Recipient, url: string): Promise<void> {
-    return this.send(
-      recipient,
-      emailVerificationTemplate(recipient.displayName, url),
-    );
   }
 
   sendPasswordReset(recipient: Recipient, url: string): Promise<void> {

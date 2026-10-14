@@ -40,7 +40,9 @@ pnpm dev:backend
 pnpm dev:frontend
 ```
 
-Database migrations run automatically when the backend starts. To manage them manually:
+Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
+drops every table and replays the migrations; it refuses to run when `NODE_ENV=production`.
+To manage migrations manually:
 
 ```bash
 pnpm --filter backend migration:generate src/database/migrations/<Name>
@@ -50,8 +52,10 @@ pnpm --filter backend migration:revert
 
 ## Authentication
 
-- Email and password, with email verification and password reset links sent by email.
-- Google sign-in, enabled when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. In the
+- Email and password, with password reset links sent by email. Email address verification is
+  not implemented yet.
+- Google sign-in, working once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set (the button is
+  always shown, and explains that Google is unavailable otherwise). In the
   Google Cloud console, create an OAuth client of type "Web application" with the authorized
   redirect URI `http://localhost:3000/api/auth/google/callback`. A Google account whose email
   matches an existing account is linked to it; a new one is asked to choose a username.

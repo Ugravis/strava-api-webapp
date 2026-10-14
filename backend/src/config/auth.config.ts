@@ -5,7 +5,6 @@ export interface AuthConfig {
   cookieSecret: string;
   secureCookies: boolean;
   sessionTtlDays: number;
-  emailVerificationTtlHours: number;
   passwordResetTtlMinutes: number;
 }
 
@@ -14,6 +13,5 @@ export default registerAs('auth', (): AuthConfig => ({
   cookieSecret: process.env.COOKIE_SECRET ?? 'development-cookie-secret',
   secureCookies: process.env.NODE_ENV === 'production',
   sessionTtlDays: 30,
-  emailVerificationTtlHours: 24,
   passwordResetTtlMinutes: 60,
 }));

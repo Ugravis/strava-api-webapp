@@ -5,7 +5,6 @@ import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
-import { EmailVerificationBanner } from "./email-verification-banner";
 
 /** Cookie written by the shadcn sidebar to remember its collapsed state. */
 const SIDEBAR_STATE_COOKIE = "sidebar_state";
@@ -21,7 +20,6 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <AppSidebar user={user} />
         <SidebarInset>
           <AppHeader />
-          {!user.emailVerified && <EmailVerificationBanner />}
           <div className="flex flex-1 flex-col p-4 md:p-6">{children}</div>
         </SidebarInset>
       </SidebarProvider>

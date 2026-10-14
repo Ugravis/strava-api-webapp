@@ -23,7 +23,6 @@ export interface AuthResult {
   session: CreatedSession;
 }
 
-const HOUR_MS = 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
 
 @Injectable()
@@ -57,7 +56,6 @@ export class AuthService {
       displayName: dto.displayName,
       passwordHash: await this.passwordHasher.hash(dto.password),
     });
-    await this.sendEmailVerification(user);
     return { user, session: await this.sessions.create(user.id, metadata) };
   }
 
@@ -83,32 +81,6 @@ export class AuthService {
 
   logout(sessionToken: string): Promise<void> {
     return this.sessions.revoke(sessionToken);
-  }
-
-  async sendEmailVerification(user: User): Promise<void> {
-    if (user.emailVerifiedAt) {
-      return;
-    }
-    const token = await this.tokens.issue(
-      user.id,
-      UserTokenPurpose.EmailVerification,
-      this.config.emailVerificationTtlHours * HOUR_MS,
-    );
-    await this.mail.sendEmailVerification(
-      user,
-      this.frontendLink('/verify-email', token),
-    );
-  }
-
-  async verifyEmail(token: string): Promise<void> {
-    const userId = await this.tokens.consume(
-      token,
-      UserTokenPurpose.EmailVerification,
-    );
-    if (!userId) {
-      throw this.invalidToken();
-    }
-    await this.users.markEmailVerified(userId);
   }
 
   /** Always resolves, whether the account exists or not, to prevent email enumeration. */
@@ -140,8 +112,6 @@ export class AuthService {
       userId,
       await this.passwordHasher.hash(password),
     );
-    // Receiving the reset email proves ownership of the address.
-    await this.users.markEmailVerified(userId);
     await this.sessions.revokeAllForUser(userId);
   }
 

@@ -3,7 +3,6 @@ import type { User } from '../user.entity';
 export interface UserResponse {
   id: string;
   email: string;
-  emailVerified: boolean;
   username: string;
   displayName: string;
   avatarUrl: string | null;
@@ -22,7 +21,6 @@ export function toUserResponse(user: User): UserResponse {
   return {
     id: user.id,
     email: user.email,
-    emailVerified: user.emailVerifiedAt !== null,
     username: user.username,
     displayName: user.displayName,
     avatarUrl: avatarUrlFor(user),

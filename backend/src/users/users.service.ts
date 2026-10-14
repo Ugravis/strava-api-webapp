@@ -16,7 +16,6 @@ export interface CreateUserInput {
   username: string;
   displayName: string;
   passwordHash?: string | null;
-  emailVerifiedAt?: Date | null;
   externalAvatarUrl?: string | null;
 }
 
@@ -80,7 +79,6 @@ export class UsersService {
       username: input.username,
       displayName: input.displayName,
       passwordHash: input.passwordHash ?? null,
-      emailVerifiedAt: input.emailVerifiedAt ?? null,
       externalAvatarUrl: input.externalAvatarUrl ?? null,
       avatarKey: null,
     });
@@ -103,10 +101,6 @@ export class UsersService {
 
   async setPasswordHash(userId: string, passwordHash: string): Promise<void> {
     await this.users.update({ id: userId }, { passwordHash });
-  }
-
-  async markEmailVerified(userId: string): Promise<void> {
-    await this.users.update({ id: userId }, { emailVerifiedAt: new Date() });
   }
 
   async setAvatarKey(userId: string, avatarKey: string | null): Promise<void> {

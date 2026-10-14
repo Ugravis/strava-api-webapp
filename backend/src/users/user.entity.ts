@@ -15,9 +15,6 @@ export class User {
   @Column({ type: 'varchar', length: 320, unique: true })
   email!: string;
 
-  @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
-  emailVerifiedAt!: Date | null;
-
   /** Null for accounts created through an OAuth provider only. */
   @Column({
     name: 'password_hash',

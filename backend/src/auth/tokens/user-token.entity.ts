@@ -10,7 +10,6 @@ import {
 import { User } from '../../users/user.entity';
 
 export enum UserTokenPurpose {
-  EmailVerification = 'email_verification',
   PasswordReset = 'password_reset',
 }
 

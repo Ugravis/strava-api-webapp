@@ -7,7 +7,6 @@ import type { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { PasswordHasher } from './password-hasher.service';
 import type { SessionsService } from './sessions/sessions.service';
-import { UserTokenPurpose } from './tokens/user-token.entity';
 import type { UserTokensService } from './tokens/user-tokens.service';
 
 const config: AuthConfig = {
@@ -15,7 +14,6 @@ const config: AuthConfig = {
   cookieSecret: 'secret',
   secureCookies: false,
   sessionTtlDays: 30,
-  emailVerificationTtlHours: 24,
   passwordResetTtlMinutes: 60,
 };
 
@@ -29,7 +27,6 @@ function buildUser(overrides: Partial<User> = {}): User {
   return {
     id: 'user-id',
     email: 'jean@example.com',
-    emailVerifiedAt: null,
     passwordHash: null,
     username: 'jean',
     displayName: 'Jean',
@@ -44,22 +41,13 @@ function buildUser(overrides: Partial<User> = {}): User {
 describe('AuthService', () => {
   const passwordHasher = new PasswordHasher();
   let users: jest.Mocked<
-    Pick<
-      UsersService,
-      | 'findByEmail'
-      | 'create'
-      | 'markEmailVerified'
-      | 'setPasswordHash'
-      | 'delete'
-    >
+    Pick<UsersService, 'findByEmail' | 'create' | 'setPasswordHash' | 'delete'>
   >;
   let sessions: jest.Mocked<
     Pick<SessionsService, 'create' | 'revoke' | 'revokeAllForUser'>
   >;
   let tokens: jest.Mocked<Pick<UserTokensService, 'issue' | 'consume'>>;
-  let mail: jest.Mocked<
-    Pick<MailService, 'sendEmailVerification' | 'sendPasswordReset'>
-  >;
+  let mail: jest.Mocked<Pick<MailService, 'sendPasswordReset'>>;
   let avatars: jest.Mocked<Pick<AvatarsService, 'deleteQuietly'>>;
   let service: AuthService;
 
@@ -67,7 +55,6 @@ describe('AuthService', () => {
     users = {
       findByEmail: jest.fn(),
       create: jest.fn(),
-      markEmailVerified: jest.fn(),
       setPasswordHash: jest.fn(),
       delete: jest.fn(),
     };
@@ -80,7 +67,7 @@ describe('AuthService', () => {
       issue: jest.fn().mockResolvedValue('email-token'),
       consume: jest.fn(),
     };
-    mail = { sendEmailVerification: jest.fn(), sendPasswordReset: jest.fn() };
+    mail = { sendPasswordReset: jest.fn() };
     avatars = { deleteQuietly: jest.fn() };
     service = new AuthService(
       users as unknown as UsersService,
@@ -101,7 +88,7 @@ describe('AuthService', () => {
       displayName: 'Jean',
     };
 
-    it('creates the user with a hashed password, opens a session and sends a verification email', async () => {
+    it('creates the user with a hashed password, opens a session and sends no email', async () => {
       users.findByEmail.mockResolvedValue(null);
       users.create.mockImplementation((input) =>
         Promise.resolve(
@@ -118,15 +105,7 @@ describe('AuthService', () => {
       ).resolves.toBe(true);
       expect(result.session).toBe(createdSession);
       expect(sessions.create).toHaveBeenCalledWith('user-id', metadata);
-      expect(tokens.issue).toHaveBeenCalledWith(
-        'user-id',
-        UserTokenPurpose.EmailVerification,
-        24 * 60 * 60 * 1000,
-      );
-      expect(mail.sendEmailVerification).toHaveBeenCalledWith(
-        result.user,
-        'http://localhost:3000/verify-email?token=email-token',
-      );
+      expect(tokens.issue).not.toHaveBeenCalled();
     });
 
     it('rejects an email that is already registered', async () => {
@@ -193,37 +172,6 @@ describe('AuthService', () => {
     });
   });
 
-  describe('email verification', () => {
-    it('does not send an email to an already verified user', async () => {
-      await service.sendEmailVerification(
-        buildUser({ emailVerifiedAt: new Date() }),
-      );
-
-      expect(tokens.issue).not.toHaveBeenCalled();
-      expect(mail.sendEmailVerification).not.toHaveBeenCalled();
-    });
-
-    it('marks the email as verified with a valid token', async () => {
-      tokens.consume.mockResolvedValue('user-id');
-
-      await service.verifyEmail('token');
-
-      expect(tokens.consume).toHaveBeenCalledWith(
-        'token',
-        UserTokenPurpose.EmailVerification,
-      );
-      expect(users.markEmailVerified).toHaveBeenCalledWith('user-id');
-    });
-
-    it('rejects an invalid token', async () => {
-      tokens.consume.mockResolvedValue(null);
-
-      await expect(service.verifyEmail('token')).rejects.toMatchObject({
-        response: { code: 'INVALID_TOKEN' },
-      });
-    });
-  });
-
   describe('password reset', () => {
     it('silently ignores an unknown email', async () => {
       users.findByEmail.mockResolvedValue(null);
@@ -246,7 +194,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('updates the password, verifies the email and revokes every session', async () => {
+    it('updates the password and revokes every session', async () => {
       tokens.consume.mockResolvedValue('user-id');
 
       await service.resetPassword('token', 'a-new-password');
@@ -255,8 +203,16 @@ describe('AuthService', () => {
       await expect(
         passwordHasher.verify('a-new-password', passwordHash),
       ).resolves.toBe(true);
-      expect(users.markEmailVerified).toHaveBeenCalledWith('user-id');
       expect(sessions.revokeAllForUser).toHaveBeenCalledWith('user-id');
+    });
+
+    it('rejects an invalid reset token', async () => {
+      tokens.consume.mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword('token', 'a-new-password'),
+      ).rejects.toMatchObject({ response: { code: 'INVALID_TOKEN' } });
+      expect(users.setPasswordHash).not.toHaveBeenCalled();
     });
   });
 

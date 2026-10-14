@@ -32,11 +32,6 @@ export const authService = {
       `/users/username-availability?username=${encodeURIComponent(username)}`,
     ),
 
-  verifyEmail: (token: string) =>
-    apiRequest("/auth/email/verify", { method: "POST", body: { json: { token } } }),
-
-  resendEmailVerification: () => apiRequest("/auth/email/resend", { method: "POST" }),
-
   requestPasswordReset: (email: string) =>
     apiRequest("/auth/password/forgot", { method: "POST", body: { json: { email } } }),
 

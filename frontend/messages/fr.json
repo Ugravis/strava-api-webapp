@@ -119,18 +119,7 @@
       "success": "Ton mot de passe a été changé. Tu peux maintenant te connecter.",
       "missingToken": "Ce lien est incomplet. Utilise le lien reçu par email."
     },
-    "verifyEmail": {
-      "title": "Confirmation de l'email",
-      "pending": "Confirmation en cours…",
-      "success": "Ton adresse email est confirmée. Merci !",
-      "continue": "Continuer"
-    },
     "sessionExpired": "Ta session a expiré. Connecte-toi à nouveau."
-  },
-  "emailBanner": {
-    "message": "Confirme ton adresse email grâce au lien que nous t'avons envoyé.",
-    "resend": "Renvoyer l'email",
-    "sent": "Email de confirmation envoyé."
   },
   "profile": {
     "title": "Profil",

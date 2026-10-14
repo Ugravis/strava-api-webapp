@@ -13,7 +13,7 @@ const profile: GoogleProfile = {
   picture: 'https://lh3.googleusercontent.com/a/photo',
 };
 const metadata = {};
-const user = { id: 'user-id', emailVerifiedAt: null } as User;
+const user = { id: 'user-id' } as User;
 const authResult = { user, session: { token: 'token', expiresAt: new Date() } };
 
 describe('GoogleAuthService', () => {
@@ -22,7 +22,6 @@ describe('GoogleAuthService', () => {
       UsersService,
       | 'findById'
       | 'findByEmail'
-      | 'markEmailVerified'
       | 'setExternalAvatarIfMissing'
       | 'create'
       | 'delete'
@@ -38,7 +37,6 @@ describe('GoogleAuthService', () => {
     users = {
       findById: jest.fn(),
       findByEmail: jest.fn(),
-      markEmailVerified: jest.fn(),
       setExternalAvatarIfMissing: jest.fn(),
       create: jest.fn(),
       delete: jest.fn(),
@@ -75,7 +73,6 @@ describe('GoogleAuthService', () => {
       'google',
       'google-sub',
     );
-    expect(users.markEmailVerified).toHaveBeenCalledWith('user-id');
   });
 
   it('requires a sign-up step for a new Google identity', async () => {
@@ -102,7 +99,7 @@ describe('GoogleAuthService', () => {
     expect(users.findByEmail).not.toHaveBeenCalled();
   });
 
-  it('creates a verified account when the sign-up is completed', async () => {
+  it('creates the account when the sign-up is completed', async () => {
     users.create.mockResolvedValue(user);
 
     await service.completeSignup(
@@ -120,7 +117,6 @@ describe('GoogleAuthService', () => {
       expect.objectContaining({
         email: 'jean@gmail.com',
         username: 'jean',
-        emailVerifiedAt: expect.any(Date) as Date,
       }),
     );
     expect(oauthAccounts.link).toHaveBeenCalledWith(

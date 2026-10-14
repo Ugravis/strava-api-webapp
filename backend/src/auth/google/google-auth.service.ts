@@ -59,9 +59,6 @@ export class GoogleAuthService {
     const existingUser = await this.users.findByEmail(profile.email);
     if (existingUser) {
       await this.oauthAccounts.link(existingUser.id, PROVIDER, profile.subject);
-      if (!existingUser.emailVerifiedAt) {
-        await this.users.markEmailVerified(existingUser.id);
-      }
       await this.users.setExternalAvatarIfMissing(
         existingUser,
         profile.picture,
@@ -96,7 +93,6 @@ export class GoogleAuthService {
       email: pending.email,
       username: dto.username,
       displayName: dto.displayName,
-      emailVerifiedAt: new Date(),
       externalAvatarUrl: pending.picture,
     });
     try {

@@ -17,7 +17,7 @@ import { Public } from './decorators/public.decorator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { ResetPasswordDto, TokenDto } from './dto/token.dto';
+import { ResetPasswordDto } from './dto/token.dto';
 import { GoogleOAuthService } from './google/google-oauth.service';
 import { requestMetadata } from './request-metadata';
 import { SessionCookie } from './session-cookie';
@@ -89,21 +89,6 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: User): UserResponse {
     return toUserResponse(user);
-  }
-
-  @Public()
-  @SensitiveThrottle()
-  @Post('email/verify')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  verifyEmail(@Body() dto: TokenDto): Promise<void> {
-    return this.auth.verifyEmail(dto.token);
-  }
-
-  @SensitiveThrottle()
-  @Post('email/resend')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  resendVerification(@CurrentUser() user: User): Promise<void> {
-    return this.auth.sendEmailVerification(user);
   }
 
   @Public()

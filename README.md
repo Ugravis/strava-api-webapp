@@ -27,16 +27,36 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
 - API health check: http://localhost:4000/api/health
+- Mailpit (outgoing emails): http://localhost:8025
+- RustFS console (S3-compatible storage): http://localhost:9001, credentials `rustfsadmin` / `rustfsadmin`
 
-Without Docker (a PostGIS instance must be reachable with the `.env` settings):
+Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be reachable with the `.env` settings):
 
 ```bash
 pnpm install
 pnpm dev:backend
 pnpm dev:frontend
 ```
+
+Database migrations run automatically when the backend starts. To manage them manually:
+
+```bash
+pnpm --filter backend migration:generate src/database/migrations/<Name>
+pnpm --filter backend migration:run
+pnpm --filter backend migration:revert
+```
+
+## Authentication
+
+- Email and password, with email verification and password reset links sent by email.
+- Google sign-in, enabled when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. In the
+  Google Cloud console, create an OAuth client of type "Web application" with the authorized
+  redirect URI `http://localhost:3000/api/auth/google/callback`. A Google account whose email
+  matches an existing account is linked to it; a new one is asked to choose a username.
+- Sessions are stored in the database and identified by an httpOnly, `SameSite=Lax` cookie.
+  The browser only talks to the frontend origin, which proxies `/api` to the backend.
 
 ## Scripts
 

@@ -20,7 +20,7 @@ docker/           Dockerfiles
 
 ## Getting started
 
-Requirements: Docker, or Node.js 22 and pnpm 10.
+Requirements: Docker, or Node.js 24 and pnpm 10.
 
 ```bash
 cp .env.example .env

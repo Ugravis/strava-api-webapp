@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { Suspense } from "react";
 import { AuthCard } from "@/components/auth/auth-card";
 import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { RegisterForm } from "@/components/auth/register-form";
@@ -29,9 +28,7 @@ export default function RegisterPage() {
         </p>
       }
     >
-      <Suspense>
-        <GoogleSignIn />
-      </Suspense>
+      <GoogleSignIn />
       <RegisterForm />
     </AuthCard>
   );

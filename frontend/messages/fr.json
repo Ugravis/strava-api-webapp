@@ -12,7 +12,9 @@
   },
   "landing": {
     "title": "Chaque sortie dessine ta carte",
-    "description": "Connecte tes activités, complète les tuiles et les communes que tu traverses, collecte des balises et débloque des accomplissements."
+    "description": "Connecte tes activités, complète les tuiles et les communes que tu traverses, collecte des balises et débloque des accomplissements.",
+    "login": "Connexion",
+    "withGoogle": "Avec Google"
   },
   "navbar": {
     "login": "Se connecter",

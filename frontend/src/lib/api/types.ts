@@ -9,10 +9,6 @@ export interface User {
   createdAt: string;
 }
 
-export interface AuthProviders {
-  google: boolean;
-}
-
 export interface PendingGoogleSignup {
   email: string;
   displayName: string;

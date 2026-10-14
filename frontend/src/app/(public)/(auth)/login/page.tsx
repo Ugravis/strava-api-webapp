@@ -29,9 +29,7 @@ export default function LoginPage() {
         </p>
       }
     >
-      <Suspense>
-        <GoogleSignIn />
-      </Suspense>
+      <GoogleSignIn />
       <Suspense>
         <LoginForm />
       </Suspense>

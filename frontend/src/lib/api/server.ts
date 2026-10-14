@@ -20,15 +20,3 @@ export async function serverApiGet<T>(path: string): Promise<ServerApiResult<T>>
   return { ok: true, data: (await response.json()) as T };
 }
 
-/** Variant for public endpoints that do not depend on the visitor. */
-export async function publicApiGet<T>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(`${API_URL}/api${path}`, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-    return response.ok ? ((await response.json()) as T) : null;
-  } catch {
-    return null;
-  }
-}

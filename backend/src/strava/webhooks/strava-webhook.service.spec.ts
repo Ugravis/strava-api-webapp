@@ -1,5 +1,6 @@
 import type { Repository } from 'typeorm';
 import type { ActivitiesService } from '../../activities/activities.service';
+import type { StravaConfig } from '../../config/strava.config';
 import type { ProviderConnection } from '../../connections/provider-connection.entity';
 import type { StravaApiClient } from '../api/strava-api.client';
 import {
@@ -41,7 +42,10 @@ describe('StravaWebhookService', () => {
     >
   >;
   let activities: jest.Mocked<
-    Pick<ActivitiesService, 'upsertFromProvider' | 'removeFromProvider'>
+    Pick<
+      ActivitiesService,
+      'upsertFromProvider' | 'removeFromProvider' | 'keepMostRecentFromProvider'
+    >
   >;
   let service: StravaWebhookService;
 
@@ -56,12 +60,14 @@ describe('StravaWebhookService', () => {
     activities = {
       upsertFromProvider: jest.fn(),
       removeFromProvider: jest.fn(),
+      keepMostRecentFromProvider: jest.fn(),
     };
     service = new StravaWebhookService(
       events as unknown as Repository<StravaWebhookEvent>,
       api as unknown as StravaApiClient,
       connections as unknown as StravaConnectionService,
       activities as unknown as ActivitiesService,
+      { syncMaxActivities: 50 } as StravaConfig,
     );
   });
 
@@ -84,6 +90,11 @@ describe('StravaWebhookService', () => {
       'strava',
       '42',
       expect.objectContaining({ sportType: 'run', distanceM: 10000 }),
+    );
+    expect(activities.keepMostRecentFromProvider).toHaveBeenCalledWith(
+      'user-id',
+      'strava',
+      50,
     );
     expect(events.update).toHaveBeenCalledWith(
       'event-id',

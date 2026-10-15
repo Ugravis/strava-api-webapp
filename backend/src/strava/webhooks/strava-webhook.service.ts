@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, LessThan, Not, Repository } from 'typeorm';
 import { ActivitiesService } from '../../activities/activities.service';
+import stravaConfig, { type StravaConfig } from '../../config/strava.config';
 import type { ProviderConnection } from '../../connections/provider-connection.entity';
 import { StravaApiClient } from '../api/strava-api.client';
 import {
@@ -32,6 +33,7 @@ export class StravaWebhookService {
     private readonly api: StravaApiClient,
     private readonly connections: StravaConnectionService,
     private readonly activities: ActivitiesService,
+    @Inject(stravaConfig.KEY) private readonly config: StravaConfig,
   ) {}
 
   async record(dto: StravaWebhookEventDto): Promise<void> {
@@ -130,6 +132,14 @@ export class StravaWebhookService {
         activityId,
         toActivityData(activity),
       );
+      // Temporary development cap: the oldest activity makes room for the new one.
+      if (this.config.syncMaxActivities !== null) {
+        await this.activities.keepMostRecentFromProvider(
+          connection.userId,
+          PROVIDER,
+          this.config.syncMaxActivities,
+        );
+      }
     } catch (error) {
       // Deleted, or no longer visible (made private without the matching scope).
       if (error instanceof StravaApiError && error.status === 404) {

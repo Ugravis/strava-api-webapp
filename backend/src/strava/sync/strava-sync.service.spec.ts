@@ -52,7 +52,12 @@ describe('StravaSyncService', () => {
     >
   >;
   let activities: jest.Mocked<
-    Pick<ActivitiesService, 'upsertFromProvider' | 'removeMissingFromProvider'>
+    Pick<
+      ActivitiesService,
+      | 'upsertFromProvider'
+      | 'removeMissingFromProvider'
+      | 'keepMostRecentFromProvider'
+    >
   >;
   let syncJobs: jest.Mocked<
     Pick<SyncJobsService, 'saveProgress' | 'complete' | 'defer' | 'fail'>
@@ -74,6 +79,7 @@ describe('StravaSyncService', () => {
     activities = {
       upsertFromProvider: jest.fn(),
       removeMissingFromProvider: jest.fn().mockResolvedValue(0),
+      keepMostRecentFromProvider: jest.fn().mockResolvedValue(0),
     };
     syncJobs = {
       saveProgress: jest.fn(),
@@ -159,6 +165,27 @@ describe('StravaSyncService', () => {
       expect.any(Date),
       ['7', '8'],
     );
+  });
+
+  it('keeps at most the configured number of activities after a reconciliation', async () => {
+    api.listActivities.mockResolvedValue(stravaActivities(85));
+
+    await service.run(buildJob({ kind: 'reconcile' }));
+
+    expect(activities.keepMostRecentFromProvider).toHaveBeenCalledWith(
+      'user-id',
+      'strava',
+      50,
+    );
+  });
+
+  it('keeps every activity without a maximum', async () => {
+    config.syncMaxActivities = null;
+    api.listActivities.mockResolvedValue(stravaActivities(3));
+
+    await service.run(buildJob({ kind: 'reconcile' }));
+
+    expect(activities.keepMostRecentFromProvider).not.toHaveBeenCalled();
   });
 
   it('waits for the quota instead of failing', async () => {

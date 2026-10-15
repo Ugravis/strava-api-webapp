@@ -96,6 +96,24 @@ export class ActivitiesService {
     );
   }
 
+  /** Keeps only the `max` most recent provider activities of a user. */
+  keepMostRecentFromProvider(
+    userId: string,
+    provider: ActivityProvider,
+    max: number,
+  ): Promise<number> {
+    return this.deleteSources(
+      `AND s.activity_id NOT IN (
+         SELECT recent.id FROM activities recent
+         JOIN activity_sources rs ON rs.activity_id = recent.id
+         WHERE recent.user_id = $1 AND rs.provider = $2
+         ORDER BY recent.started_at DESC
+         LIMIT $3
+       )`,
+      [userId, provider, max],
+    );
+  }
+
   async stats(userId: string): Promise<ActivityStats> {
     const row = await this.activities
       .createQueryBuilder('activity')

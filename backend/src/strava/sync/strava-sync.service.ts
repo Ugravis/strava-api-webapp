@@ -45,6 +45,7 @@ export class StravaSyncService {
       } else {
         await this.reconcile(job, connection);
       }
+      await this.enforceMaxActivities(connection.userId);
       await this.connections.markSynced(connection.id);
       await this.syncJobs.complete(job);
     } catch (error) {
@@ -161,6 +162,17 @@ export class StravaSyncService {
       total: seen.length,
       nextPage: page,
     });
+  }
+
+  /** Temporary development cap: only the most recent activities are kept. */
+  private async enforceMaxActivities(userId: string): Promise<void> {
+    if (this.config.syncMaxActivities !== null) {
+      await this.activities.keepMostRecentFromProvider(
+        userId,
+        PROVIDER,
+        this.config.syncMaxActivities,
+      );
+    }
   }
 
   private async handleError(

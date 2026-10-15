@@ -1,7 +1,7 @@
 "use client";
 
 import { InfoIcon, RefreshCwIcon } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { StravaConnectionStatus } from "@/lib/api/types";
@@ -19,6 +19,8 @@ interface StravaConnectionSummaryProps {
 export function StravaConnectionSummary({ connection, syncing, onSync }: StravaConnectionSummaryProps) {
   const t = useTranslations("strava.sync");
   const format = useFormatter();
+  // Reference time of the relative date, refreshed so that it stays accurate.
+  const now = useNow({ updateInterval: 60_000 });
 
   return (
     <div className="flex flex-col gap-3">
@@ -33,7 +35,7 @@ export function StravaConnectionSummary({ connection, syncing, onSync }: StravaC
             </span>
             <span>
               {connection.lastSyncedAt
-                ? t("lastSynced", { date: format.relativeTime(new Date(connection.lastSyncedAt)) })
+                ? t("lastSynced", { date: format.relativeTime(new Date(connection.lastSyncedAt), now) })
                 : t("neverSynced")}
             </span>
           </div>

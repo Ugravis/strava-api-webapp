@@ -102,12 +102,13 @@ A new Strava application only accepts its owner's account until it is reviewed b
 
 ## Development tools
 
-In development, the dashboard ends with a temporary **Dev** panel: a read-only, auto-refreshed
-view of the database (webhook events, activities, sync jobs, connections, users) and of the
-Strava quotas, with the rows changed in the last minute highlighted. It is served by
+In development, a floating button at the bottom right of the app pages (next to the Next.js
+indicator) opens a temporary **Dev** panel: a read-only view of the database (webhook events,
+activities, sync jobs, connections, users) and of the Strava quotas, refreshed every 3 seconds
+while open, with the rows changed in the last minute highlighted. It is served by
 `GET /api/dev/overview`, which is never registered when `NODE_ENV=production`. To remove it:
 delete `backend/src/dev`, `frontend/src/components/dev` and their two references
-(`AppModule`, dashboard page).
+(`AppModule`, authenticated layout).
 
 ## Scripts
 

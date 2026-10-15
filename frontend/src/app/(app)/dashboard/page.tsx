@@ -3,7 +3,6 @@ import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { Dashboard } from "@/components/dashboard/dashboard";
-import { DevPanel } from "@/components/dev/dev-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { StravaConnectFeedback } from "@/components/strava/strava-connect-feedback";
 
@@ -22,8 +21,6 @@ export default function DashboardPage() {
         <StravaConnectFeedback />
       </Suspense>
       <Dashboard />
-      {/* Temporary development tools, see backend/src/dev. */}
-      {process.env.NODE_ENV === "development" && <DevPanel />}
     </div>
   );
 }

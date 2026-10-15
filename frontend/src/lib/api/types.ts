@@ -70,3 +70,19 @@ export interface DistancesOverview {
   totals: Record<DistanceFamily, number>;
   landmarks: LandmarkProgress[];
 }
+
+/** Activity expected to have a real-world track. */
+export interface MappableActivity {
+  id: string;
+  startedAt: string;
+}
+
+export interface ActivityTracksPage {
+  tracks: {
+    activityId: string;
+    /** Google encoded polyline, or null when the activity has no GPS track. */
+    polyline: string | null;
+  }[];
+  /** True when a further page may hold more tracks. */
+  hasMore: boolean;
+}

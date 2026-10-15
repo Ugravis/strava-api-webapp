@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useStravaConnection } from "@/hooks/use-strava-connection";
 import { errorCodeOf } from "@/lib/api/errors";
+import { clearTrackStore } from "@/lib/tracks/track-store";
 import { stravaService } from "@/services/strava.service";
 import { ConnectionSettingSkeleton } from "./connection-setting-skeleton";
 
@@ -47,6 +48,7 @@ export function StravaConnectionSetting() {
     setRevoking(true);
     try {
       await stravaService.disconnect();
+      await clearTrackStore();
       toast.success(t("settings.connections.revoked"));
       setOpen(false);
       await refresh();

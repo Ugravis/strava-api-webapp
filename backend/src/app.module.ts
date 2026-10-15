@@ -6,6 +6,7 @@ import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ActivitiesModule } from './activities/activities.module';
 import { AuthModule } from './auth/auth.module';
 import { DevModule } from './dev/dev.module';
+import { DistancesModule } from './distances/distances.module';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import googleConfig from './config/google.config';
@@ -39,6 +40,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     ActivitiesModule,
     StravaModule,
+    DistancesModule,
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),
   ],

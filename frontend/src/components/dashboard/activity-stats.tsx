@@ -1,11 +1,11 @@
 "use client";
 
-import { ActivityIcon, RouteIcon } from "lucide-react";
+import { ActivityIcon, MountainIcon, RouteIcon, TimerIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useActivityStats } from "@/hooks/use-activity-stats";
 import { StatCard } from "./stat-card";
 
-/** Activity count and total distance; `version` refreshes them during a sync. */
+/** Activity totals; `version` refreshes them during a sync. */
 export function ActivityStats({ version }: { version: string }) {
   const t = useTranslations("dashboard.stats");
   const format = useFormatter();
@@ -31,6 +31,30 @@ export function ActivityStats({ version }: { version: string }) {
             style: "unit",
             unit: "kilometer",
             maximumFractionDigits: 0,
+          })
+        }
+      />
+      <StatCard
+        label={t("elevation")}
+        icon={MountainIcon}
+        value={
+          stats &&
+          format.number(stats.totalElevationGainM, {
+            style: "unit",
+            unit: "meter",
+            maximumFractionDigits: 0,
+          })
+        }
+      />
+      <StatCard
+        label={t("movingTime")}
+        icon={TimerIcon}
+        value={
+          stats &&
+          format.number(Math.floor(stats.totalMovingTimeS / 3600), {
+            style: "unit",
+            unit: "hour",
+            unitDisplay: "short",
           })
         }
       />

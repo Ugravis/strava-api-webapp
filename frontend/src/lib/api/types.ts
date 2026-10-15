@@ -48,4 +48,7 @@ export interface StravaConnectionStatus {
 export interface ActivityStats {
   count: number;
   totalDistanceM: number;
+  totalElevationGainM: number;
+  totalMovingTimeS: number;
 }
+

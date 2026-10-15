@@ -189,6 +189,8 @@
     "stats": {
       "activities": "Activités",
       "distance": "Distance totale",
+      "elevation": "Dénivelé positif",
+      "movingTime": "Temps en mouvement",
       "error": "Impossible de charger tes statistiques pour le moment."
     }
   },

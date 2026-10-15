@@ -5,16 +5,14 @@ export interface ProgressTier {
   text: string;
 }
 
-/** Color steps of a progress, from the start of an iteration to its end. */
-const TIERS: ProgressTier[] = [
-  { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" },
-  { stroke: "stroke-orange-500", text: "text-orange-600 dark:text-orange-400" },
-  { stroke: "stroke-amber-400", text: "text-amber-600 dark:text-amber-400" },
-  { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+/** Color steps of a progress, each starting at `from` (share in [0, 1]), in increasing order. */
+const TIERS: (ProgressTier & { from: number })[] = [
+  { from: 0, stroke: "stroke-blue-500", text: "text-blue-600 dark:text-blue-400" },
+  { from: 0.5, stroke: "stroke-amber-400", text: "text-amber-600 dark:text-amber-400" },
+  { from: 0.75, stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
 ];
 
-/** Tier of a progress in [0, 1]: one per quarter. */
+/** Tier of a progress in [0, 1]: the last one it has reached. */
 export function progressTier(value: number): ProgressTier {
-  const index = Math.floor(Math.min(Math.max(value, 0), 1) * TIERS.length);
-  return TIERS[Math.min(index, TIERS.length - 1)];
+  return TIERS.findLast((tier) => value >= tier.from) ?? TIERS[0];
 }

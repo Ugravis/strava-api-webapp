@@ -100,6 +100,15 @@ A new Strava application only accepts its owner's account until it is reviewed b
   (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
   "Synchroniser" button keep the data up to date. Elsewhere, set `STRAVA_WEBHOOK_CALLBACK_URL`.
 
+## Development tools
+
+In development, the dashboard ends with a temporary **Dev** panel: a read-only, auto-refreshed
+view of the database (webhook events, activities, sync jobs, connections, users) and of the
+Strava quotas, with the rows changed in the last minute highlighted. It is served by
+`GET /api/dev/overview`, which is never registered when `NODE_ENV=production`. To remove it:
+delete `backend/src/dev`, `frontend/src/components/dev` and their two references
+(`AppModule`, dashboard page).
+
 ## Scripts
 
 | Command               | Description                                              |

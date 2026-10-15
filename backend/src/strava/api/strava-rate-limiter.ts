@@ -5,7 +5,7 @@ interface QuotaWindow {
   limit: number;
 }
 
-interface Quota {
+export interface Quota {
   fifteenMinutes: QuotaWindow;
   daily: QuotaWindow;
 }
@@ -48,6 +48,10 @@ function parseQuota(limit: string | null, usage: string | null): Quota | null {
  */
 export class StravaRateLimiter {
   private quotas: Quota[] = [];
+  private latest: { overall: Quota | null; read: Quota | null } = {
+    overall: null,
+    read: null,
+  };
   private observedAt: Date | null = null;
 
   /**
@@ -59,18 +63,20 @@ export class StravaRateLimiter {
   ) {}
 
   record(headers: Headers): void {
-    const quotas = [
-      parseQuota(
-        headers.get('x-ratelimit-limit'),
-        headers.get('x-ratelimit-usage'),
-      ),
-      parseQuota(
-        headers.get('x-readratelimit-limit'),
-        headers.get('x-readratelimit-usage'),
-      ),
-    ].filter((quota): quota is Quota => quota !== null);
+    const overall = parseQuota(
+      headers.get('x-ratelimit-limit'),
+      headers.get('x-ratelimit-usage'),
+    );
+    const read = parseQuota(
+      headers.get('x-readratelimit-limit'),
+      headers.get('x-readratelimit-usage'),
+    );
+    const quotas = [overall, read].filter(
+      (quota): quota is Quota => quota !== null,
+    );
     if (quotas.length > 0) {
       this.quotas = quotas;
+      this.latest = { overall, read };
       this.observedAt = this.now();
     }
   }
@@ -96,6 +102,15 @@ export class StravaRateLimiter {
         quota.fifteenMinutes.usage >= quota.fifteenMinutes.limit - this.reserve,
     );
     return shortExhausted ? nextQuarterHour(now) : null;
+  }
+
+  /** Last observed quotas, for diagnostics. */
+  snapshot(): {
+    observedAt: Date | null;
+    overall: Quota | null;
+    read: Quota | null;
+  } {
+    return { observedAt: this.observedAt, ...this.latest };
   }
 
   /** When to retry after a 429 response, whose headers were recorded. */

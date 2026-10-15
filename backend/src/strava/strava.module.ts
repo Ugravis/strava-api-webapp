@@ -30,6 +30,10 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
     StravaWebhookSubscriptionService,
     StravaWorker,
   ],
-  exports: [StravaConnectionService, StravaWebhookSubscriptionService],
+  exports: [
+    StravaConnectionService,
+    StravaWebhookSubscriptionService,
+    StravaRateLimiter,
+  ],
 })
 export class StravaModule {}

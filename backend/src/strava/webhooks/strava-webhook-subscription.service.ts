@@ -19,11 +19,19 @@ const DEVELOPMENT_TUNNEL_HOST =
 export class StravaWebhookSubscriptionService {
   private readonly logger = new Logger(StravaWebhookSubscriptionService.name);
   private subscriptionId: number | null = null;
+  private callbackUrl: string | null = null;
 
   constructor(
     @Inject(stravaConfig.KEY) private readonly config: StravaConfig,
     private readonly api: StravaApiClient,
   ) {}
+
+  /** Active subscription, for diagnostics. */
+  get current(): { id: number; callbackUrl: string | null } | null {
+    return this.subscriptionId === null
+      ? null
+      : { id: this.subscriptionId, callbackUrl: this.callbackUrl };
+  }
 
   /** Events from another subscription are rejected once ours is known. */
   accepts(subscriptionId: number): boolean {
@@ -62,6 +70,7 @@ export class StravaWebhookSubscriptionService {
     const [current] = await this.api.listWebhookSubscriptions();
     if (current?.callback_url === callbackUrl) {
       this.subscriptionId = current.id;
+      this.callbackUrl = callbackUrl;
       this.logger.log(
         `Strava webhook subscription ${current.id} is up to date`,
       );
@@ -84,6 +93,7 @@ export class StravaWebhookSubscriptionService {
       this.config.webhookVerifyToken,
     );
     this.subscriptionId = created.id;
+    this.callbackUrl = callbackUrl;
     this.logger.log(
       `Strava webhook subscription ${created.id} created for ${callbackUrl}`,
     );

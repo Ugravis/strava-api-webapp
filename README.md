@@ -20,24 +20,53 @@ docker/           Dockerfiles
 
 ## Getting started
 
-Requirements: Docker, or Node.js 22 and pnpm 10.
+Requirements: Docker, or Node.js 24 and pnpm 10.
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
 - API health check: http://localhost:4000/api/health
 - Adminer (database UI): http://localhost:8088 — system `PostgreSQL`, server `db`, credentials from `.env` (default `postgres` / `postgres`, database `strava_webapp`)
+- Mailpit (outgoing emails): http://localhost:8025
+- RustFS console (S3-compatible storage): http://localhost:9001, credentials `rustfsadmin` / `rustfsadmin`
 
-Without Docker (a PostGIS instance must be reachable with the `.env` settings):
+Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be reachable with the `.env` settings):
 
 ```bash
 pnpm install
 pnpm dev:backend
 pnpm dev:frontend
 ```
+
+Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
+drops every table, replays the migrations and empties the object storage (uploaded avatars); it
+refuses to run when `NODE_ENV=production`.
+To manage migrations manually:
+
+```bash
+pnpm --filter backend migration:generate src/database/migrations/<Name>
+pnpm --filter backend migration:run
+pnpm --filter backend migration:revert
+```
+
+## Authentication
+
+- Email and password, with password reset links sent by email. Email address verification is
+  not implemented yet.
+- Google sign-in, working once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set (the button is
+  always shown, and explains that Google is unavailable otherwise). In the
+  Google Cloud console, create an OAuth client of type "Web application" with the authorized
+  redirect URI `http://localhost:3000/api/auth/google/callback`. A Google account whose email
+  matches an existing account is linked to it; a new one is asked to choose a username.
+- Sign-up only asks for an email, a username, a password and the acceptance of the terms of use
+  (recorded in `users.terms_accepted_at`); the display name is optional and set from the profile.
+- Sessions are stored in the database and identified by an httpOnly, `SameSite=Lax` cookie.
+  With "Stay signed in", the cookie lasts 30 days and is extended while used; otherwise it ends
+  with the browser and the session expires after 24 hours of inactivity.
+  The browser only talks to the frontend origin, which proxies `/api` to the backend.
 
 ## Scripts
 

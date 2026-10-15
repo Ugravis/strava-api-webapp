@@ -1,0 +1,170 @@
+{
+  "metadata": {
+    "description": "Explore le monde à chaque sortie : complète les tuiles et les communes traversées, collecte des balises et débloque des badges."
+  },
+  "common": {
+    "or": "ou",
+    "loading": "Chargement…",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "unexpectedError": "Une erreur inattendue est survenue. Réessaie dans un instant."
+  },
+  "landing": {
+    "title": "Chaque sortie dessine ta carte",
+    "description": "Connecte tes activités, complète les tuiles et les communes que tu traverses, collecte des balises et débloque des accomplissements.",
+    "login": "Connexion",
+    "withGoogle": "Avec Google"
+  },
+  "navbar": {
+    "login": "Se connecter",
+    "register": "S'inscrire"
+  },
+  "nav": {
+    "label": "Navigation",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "openMenu": "Ouvrir le menu",
+    "userMenu": "Menu du compte"
+  },
+  "theme": {
+    "toggle": "Changer de thème",
+    "switchToDark": "Mode sombre",
+    "switchToLight": "Mode clair"
+  },
+  "fields": {
+    "email": "Email",
+    "emailPlaceholder": "toi@exemple.fr",
+    "password": "Mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "confirmPassword": "Confirme le mot de passe",
+    "displayName": "Nom affiché",
+    "displayNameDescription": "Optionnel, visible par les autres utilisateurs. À défaut, ton pseudo est affiché.",
+    "username": "Pseudo",
+    "usernamePlaceholder": "jean_dupont",
+    "usernameDescription": "3 à 20 caractères : lettres minuscules, chiffres et _.",
+    "usernameChecking": "Vérification…",
+    "usernameAvailable": "Ce pseudo est disponible.",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "rememberMe": "Rester connecté",
+    "acceptTerms": "J'accepte les <link>conditions d'utilisation</link>."
+  },
+  "validation": {
+    "emailInvalid": "Saisis une adresse email valide.",
+    "required": "Ce champ est requis.",
+    "passwordMin": "Le mot de passe doit contenir au moins 8 caractères.",
+    "passwordMax": "Le mot de passe doit contenir au plus 128 caractères.",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "displayNameMax": "Le nom doit contenir au plus 50 caractères.",
+    "usernameLength": "Le pseudo doit contenir entre 3 et 20 caractères.",
+    "usernamePattern": "Utilise uniquement des lettres minuscules, des chiffres et _.",
+    "usernameTaken": "Ce pseudo est déjà pris.",
+    "usernameReserved": "Ce pseudo est réservé.",
+    "termsRequired": "Tu dois accepter les conditions d'utilisation pour continuer."
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
+    "EMAIL_TAKEN": "Un compte existe déjà avec cette adresse email.",
+    "USERNAME_TAKEN": "Ce pseudo est déjà pris.",
+    "USERNAME_RESERVED": "Ce pseudo est réservé.",
+    "INVALID_TOKEN": "Ce lien est invalide ou a expiré.",
+    "INVALID_PASSWORD": "Le mot de passe est incorrect.",
+    "CONFIRMATION_MISMATCH": "La confirmation ne correspond pas à ton pseudo.",
+    "INVALID_IMAGE": "Ce fichier n'est pas une image valide.",
+    "OAUTH_SIGNUP_EXPIRED": "L'inscription avec Google a expiré. Recommence depuis le début.",
+    "TOO_MANY_REQUESTS": "Trop de tentatives. Patiente une minute avant de réessayer.",
+    "FILE_TOO_LARGE": "L'image ne doit pas dépasser 5 Mo.",
+    "UNEXPECTED": "Une erreur inattendue est survenue. Réessaie dans un instant."
+  },
+  "auth": {
+    "continueWithGoogle": "Continuer avec Google",
+    "login": {
+      "title": "Connexion",
+      "description": "Content de te revoir !",
+      "submit": "Se connecter",
+      "forgotPassword": "Mot de passe oublié ?",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "Inscris-toi",
+      "googleError": "La connexion avec Google a échoué. Réessaie.",
+      "googleDisabled": "La connexion avec Google n'est pas disponible pour le moment."
+    },
+    "register": {
+      "title": "Inscription",
+      "description": "Crée ton compte en quelques secondes.",
+      "submit": "Créer mon compte",
+      "hasAccount": "Déjà un compte ?",
+      "loginLink": "Connecte-toi"
+    },
+    "googleSignup": {
+      "title": "Finalise ton inscription",
+      "description": "Choisis ton pseudo pour terminer la création de ton compte {email}.",
+      "submit": "Terminer l'inscription",
+      "expiredTitle": "Inscription expirée",
+      "restart": "Revenir à la connexion"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "description": "Saisis ton email : nous t'enverrons un lien pour choisir un nouveau mot de passe.",
+      "submit": "Envoyer le lien",
+      "sentTitle": "Vérifie ta boîte mail",
+      "sentDescription": "Si un compte existe pour {email}, un lien de réinitialisation vient d'être envoyé. Il expire dans 1 heure.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Nouveau mot de passe",
+      "description": "Choisis un nouveau mot de passe pour ton compte.",
+      "submit": "Changer le mot de passe",
+      "success": "Ton mot de passe a été changé. Tu peux maintenant te connecter.",
+      "missingToken": "Ce lien est incomplet. Utilise le lien reçu par email."
+    },
+    "sessionExpired": "Ta session a expiré. Connecte-toi à nouveau."
+  },
+  "profile": {
+    "title": "Profil",
+    "memberSince": "Membre depuis {date}",
+    "addDisplayName": "Ajouter un nom affiché"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "description": "Gère ton profil et ton compte.",
+    "avatar": {
+      "title": "Photo de profil",
+      "description": "JPG, PNG, WebP ou GIF, 5 Mo maximum. L'image est recadrée au format carré.",
+      "upload": "Changer la photo",
+      "remove": "Supprimer la photo",
+      "updated": "Photo de profil mise à jour.",
+      "removed": "Photo de profil supprimée."
+    },
+    "profile": {
+      "title": "Profil public",
+      "description": "Ton nom et ton pseudo apparaissent sur ton profil.",
+      "updated": "Profil mis à jour."
+    },
+    "password": {
+      "title": "Mot de passe",
+      "description": "Tes autres sessions seront déconnectées.",
+      "descriptionNoPassword": "Ton compte utilise Google. Définis un mot de passe pour pouvoir aussi te connecter avec ton email.",
+      "submit": "Changer le mot de passe",
+      "submitNoPassword": "Définir un mot de passe",
+      "updated": "Mot de passe mis à jour."
+    },
+    "danger": {
+      "title": "Supprimer le compte",
+      "description": "Ton compte et toutes tes données seront définitivement supprimés.",
+      "action": "Supprimer mon compte",
+      "dialogTitle": "Supprimer définitivement ton compte ?",
+      "dialogDescription": "Cette action est irréversible. Toutes tes données seront perdues.",
+      "confirmWithPassword": "Saisis ton mot de passe pour confirmer.",
+      "confirmWithUsername": "Saisis ton pseudo « {username} » pour confirmer.",
+      "confirm": "Supprimer définitivement",
+      "deleted": "Ton compte a été supprimé."
+    }
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "placeholder": "Les conditions d'utilisation de la plateforme seront publiées prochainement."
+  }
+}

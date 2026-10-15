@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { originCheck } from './common/origin-check.middleware';
 import authConfig, { type AuthConfig } from './config/auth.config';
+import { StravaWebhookSubscriptionService } from './strava/webhooks/strava-webhook-subscription.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -20,5 +21,7 @@ async function bootstrap(): Promise<void> {
   app.enableCors({ origin: frontendOrigin, credentials: true });
   app.enableShutdownHooks();
   await app.listen(process.env.PORT ?? 4000);
+  // Strava validates the callback while subscribing: the server must listen first.
+  void app.get(StravaWebhookSubscriptionService).ensure();
 }
 void bootstrap();

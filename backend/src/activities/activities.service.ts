@@ -6,6 +6,7 @@ import {
   ActivitySource,
   type ActivityProvider,
 } from './activity-source.entity';
+import type { SportType } from './sport-type';
 
 /** Canonical fields of an activity, as produced by a provider mapper. */
 export type ActivityData = Pick<
@@ -25,7 +26,12 @@ export type ActivityData = Pick<
 export interface ActivityStats {
   count: number;
   totalDistanceM: number;
+  totalElevationGainM: number;
+  totalMovingTimeS: number;
 }
+
+/** Total distance of a user per sport type; absent sports have no activity. */
+export type DistanceBySportType = Partial<Record<SportType, number>>;
 
 /** Provider-agnostic storage of activities and of their provider sources. */
 @Injectable()
@@ -122,9 +128,37 @@ export class ActivitiesService {
         'COALESCE(SUM(activity.distance_m), 0)::float8',
         'totalDistanceM',
       )
+      .addSelect(
+        'COALESCE(SUM(activity.elevation_gain_m), 0)::float8',
+        'totalElevationGainM',
+      )
+      .addSelect(
+        'COALESCE(SUM(activity.moving_time_s), 0)::float8',
+        'totalMovingTimeS',
+      )
       .where('activity.user_id = :userId', { userId })
       .getRawOne<ActivityStats>();
-    return row ?? { count: 0, totalDistanceM: 0 };
+    return (
+      row ?? {
+        count: 0,
+        totalDistanceM: 0,
+        totalElevationGainM: 0,
+        totalMovingTimeS: 0,
+      }
+    );
+  }
+
+  async distanceBySportType(userId: string): Promise<DistanceBySportType> {
+    const rows = await this.activities
+      .createQueryBuilder('activity')
+      .select('activity.sport_type', 'sportType')
+      .addSelect('SUM(activity.distance_m)::float8', 'distanceM')
+      .where('activity.user_id = :userId', { userId })
+      .groupBy('activity.sport_type')
+      .getRawMany<{ sportType: SportType; distanceM: number }>();
+    return Object.fromEntries(
+      rows.map((row) => [row.sportType, row.distanceM]),
+    );
   }
 
   /**

@@ -6,15 +6,17 @@ interface ProgressRingProps {
   value: number;
   label: string;
   className?: string;
+  /** Color of the progress arc, e.g. `stroke-primary`. */
+  indicatorClassName?: string;
   /** Content centered inside the ring. */
   children?: ReactNode;
 }
 
 const RADIUS = 46;
-const STROKE_WIDTH = 6;
+const STROKE_WIDTH = 8;
 
 /** Circular progress bar drawn around its content. */
-export function ProgressRing({ value, label, className, children }: ProgressRingProps) {
+export function ProgressRing({ value, label, className, indicatorClassName = "stroke-primary", children }: ProgressRingProps) {
   const percent = Math.round(Math.min(Math.max(value, 0), 1) * 100);
 
   return (
@@ -39,7 +41,7 @@ export function ProgressRing({ value, label, className, children }: ProgressRing
             pathLength={100}
             strokeDasharray={100}
             strokeDashoffset={100 - percent}
-            className="stroke-primary transition-[stroke-dashoffset] duration-700 ease-out"
+            className={cn("transition-[stroke-dashoffset] duration-700 ease-out", indicatorClassName)}
           />
         )}
       </svg>

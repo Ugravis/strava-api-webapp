@@ -36,7 +36,7 @@ export function DistancesOverview() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {overview.totals.all === 0 && (
         <Alert>
           <InfoIcon />

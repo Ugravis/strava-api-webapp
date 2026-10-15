@@ -29,6 +29,7 @@ docker compose up --build
 
 - Frontend: http://localhost:3000
 - API health check: http://localhost:4000/api/health
+- Adminer (database UI): http://localhost:8088 — system `PostgreSQL`, server `db`, credentials from `.env` (default `postgres` / `postgres`, database `strava_webapp`)
 
 Without Docker (a PostGIS instance must be reachable with the `.env` settings):
 

@@ -6,7 +6,7 @@ import {
   ActivitySource,
   type ActivityProvider,
 } from './activity-source.entity';
-import type { SportType } from './sport-type';
+import { type SportType, VIRTUAL_SPORT_TYPES } from './sport-type';
 
 /** Canonical fields of an activity, as produced by a provider mapper. */
 export type ActivityData = Pick<
@@ -28,6 +28,12 @@ export interface ActivityStats {
   totalDistanceM: number;
   totalElevationGainM: number;
   totalMovingTimeS: number;
+}
+
+/** An activity expected to have a real-world track. */
+export interface MappableActivity {
+  id: string;
+  startedAt: Date;
 }
 
 /** Total distance of a user per sport type; absent sports have no activity. */
@@ -146,6 +152,42 @@ export class ActivitiesService {
         totalMovingTimeS: 0,
       }
     );
+  }
+
+  /** Activities that may have a track: recorded outdoors, in the real world. */
+  mappable(userId: string): Promise<MappableActivity[]> {
+    return this.activities
+      .createQueryBuilder('activity')
+      .select(['activity.id', 'activity.startedAt'])
+      .where('activity.user_id = :userId', { userId })
+      .andWhere('activity.indoor = false AND activity.manual = false')
+      .andWhere('activity.sport_type NOT IN (:...virtual)', {
+        virtual: VIRTUAL_SPORT_TYPES,
+      })
+      .orderBy('activity.started_at', 'DESC')
+      .getMany();
+  }
+
+  /** Activity ids of a user, keyed by their identifier at `provider`. */
+  async idsByExternalId(
+    userId: string,
+    provider: ActivityProvider,
+    externalIds: string[],
+  ): Promise<Map<string, string>> {
+    if (externalIds.length === 0) {
+      return new Map();
+    }
+    const rows = await this.dataSource
+      .getRepository(ActivitySource)
+      .createQueryBuilder('source')
+      .innerJoin('source.activity', 'activity')
+      .select('source.external_id', 'externalId')
+      .addSelect('source.activity_id', 'activityId')
+      .where('activity.user_id = :userId', { userId })
+      .andWhere('source.provider = :provider', { provider })
+      .andWhere('source.external_id IN (:...externalIds)', { externalIds })
+      .getRawMany<{ externalId: string; activityId: string }>();
+    return new Map(rows.map((row) => [row.externalId, row.activityId]));
   }
 
   async distanceBySportType(userId: string): Promise<DistanceBySportType> {

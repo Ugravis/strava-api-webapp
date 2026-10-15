@@ -32,3 +32,9 @@ export const SPORT_TYPES = [
 ] as const;
 
 export type SportType = (typeof SPORT_TYPES)[number];
+
+/** Sports practiced in a virtual world: their tracks are not real places. */
+export const VIRTUAL_SPORT_TYPES: readonly SportType[] = [
+  'virtual_run',
+  'virtual_ride',
+];

@@ -4,6 +4,7 @@ import type {
   SyncJobKind,
   SyncJobStatus,
 } from '../../connections/sync-job.entity';
+import type { TileProgress } from '../../tiles/tiles.service';
 
 export interface SyncJobResponse {
   kind: SyncJobKind;
@@ -28,6 +29,8 @@ export interface StravaConnectionResponse {
     lastSyncedAt: string | null;
   } | null;
   sync: SyncJobResponse | null;
+  /** Tile computation of the imported activities. */
+  tiles: TileProgress | null;
 }
 
 function toSyncJobResponse(job: SyncJob): SyncJobResponse {
@@ -49,6 +52,7 @@ export function toStravaConnectionResponse(
   available: boolean,
   connection: ProviderConnection | null,
   job: SyncJob | null,
+  tiles: TileProgress | null,
 ): StravaConnectionResponse {
   return {
     available,
@@ -59,5 +63,6 @@ export function toStravaConnectionResponse(
       lastSyncedAt: connection.lastSyncedAt?.toISOString() ?? null,
     },
     sync: connection && job ? toSyncJobResponse(job) : null,
+    tiles: connection ? tiles : null,
   };
 }

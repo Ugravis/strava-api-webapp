@@ -2,11 +2,21 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection, LineString } from "geojson";
-import { type GeoJSONSource, type LngLatBoundsLike, Map as MapLibreMap, NavigationControl } from "maplibre-gl";
+import {
+  type GeoJSONSource,
+  type LngLatBoundsLike,
+  Map as MapLibreMap,
+  NavigationControl,
+  setWorkerUrl,
+} from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { DEFAULT_VIEW, mapStyleUrl, TRACK_COLOR } from "./map-style";
+
+// MapLibre derives its worker URL from its own location at runtime, which the
+// bundler cannot follow: the worker is declared here so that it is emitted.
+setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href);
 
 const SOURCE_ID = "activity-tracks";
 const LAYER_ID = "activity-tracks-line";
@@ -112,5 +122,10 @@ export function ActivityMap({ lines, label }: { lines: TrackLine[]; label: strin
     }
   }, [lines]);
 
-  return <div ref={containerRef} role="region" aria-label={label} className="absolute inset-0" />;
+  // MapLibre styles its container (`position: relative`): it is wrapped to fill the parent.
+  return (
+    <div className="absolute inset-0">
+      <div ref={containerRef} role="region" aria-label={label} className="size-full" />
+    </div>
+  );
 }

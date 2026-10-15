@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { routes } from "@/config/routes";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
+import { clearTrackStore } from "@/lib/tracks/track-store";
 import { accountService } from "@/services/account.service";
 import { SettingsSection } from "./settings-section";
 
@@ -53,6 +54,7 @@ export function DeleteAccountSettings() {
       await accountService.deleteAccount(
         hasPassword ? { password: confirmation } : { usernameConfirmation: confirmation },
       );
+      await clearTrackStore();
       toast.success(t("settings.danger.deleted"));
       router.replace(routes.home);
       router.refresh();

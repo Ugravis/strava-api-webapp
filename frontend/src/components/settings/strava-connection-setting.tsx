@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTrackSyncManager } from "@/components/tracks/track-sync-provider";
 import { useStravaConnection } from "@/hooks/use-strava-connection";
 import { errorCodeOf } from "@/lib/api/errors";
 import { stravaService } from "@/services/strava.service";
@@ -27,6 +28,7 @@ export function StravaConnectionSetting() {
   const t = useTranslations();
   const format = useFormatter();
   const { status, error, refresh } = useStravaConnection();
+  const trackSync = useTrackSyncManager();
   const [open, setOpen] = useState(false);
   const [revoking, setRevoking] = useState(false);
 
@@ -47,6 +49,7 @@ export function StravaConnectionSetting() {
     setRevoking(true);
     try {
       await stravaService.disconnect();
+      await trackSync.reset();
       toast.success(t("settings.connections.revoked"));
       setOpen(false);
       await refresh();

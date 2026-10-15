@@ -23,6 +23,7 @@
   "nav": {
     "label": "Navigation",
     "dashboard": "Tableau de bord",
+    "map": "Carte",
     "distances": "Distances",
     "profile": "Profil",
     "settings": "Paramètres",
@@ -264,5 +265,17 @@
       "trans_siberian": "Transsibérien",
       "pan_american_highway": "Route panaméricaine"
     }
+  },
+  "map": {
+    "title": "Carte",
+    "description": "Toutes tes activités sur une seule carte.",
+    "label": "Carte de tes activités",
+    "checking": "Recherche de nouveaux tracés…",
+    "syncing": "Récupération des tracés : {fetched} sur {total}",
+    "trackCount": "{count, plural, =0 {Aucun tracé} one {# tracé} other {# tracés}}",
+    "empty": "Connecte Strava depuis le tableau de bord pour voir tes tracés ici.",
+    "error": "Impossible de récupérer tes tracés pour le moment.",
+    "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
+    "retry": "Réessayer"
   }
 }

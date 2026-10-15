@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
+import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
@@ -16,13 +17,15 @@ export async function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <UserProvider user={user}>
-      <SidebarProvider defaultOpen={sidebarOpen}>
-        <AppSidebar user={user} />
-        <SidebarInset>
-          <AppHeader />
-          <div className="flex flex-1 flex-col p-4 md:p-6">{children}</div>
-        </SidebarInset>
-      </SidebarProvider>
+      <TrackSyncProvider userId={user.id}>
+        <SidebarProvider defaultOpen={sidebarOpen}>
+          <AppSidebar user={user} />
+          <SidebarInset>
+            <AppHeader />
+            <div className="flex flex-1 flex-col p-4 md:p-6">{children}</div>
+          </SidebarInset>
+        </SidebarProvider>
+      </TrackSyncProvider>
     </UserProvider>
   );
 }

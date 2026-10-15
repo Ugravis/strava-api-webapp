@@ -1,7 +1,8 @@
 /**
  * Subset of the Strava API v3 payloads used by the application.
- * Location fields (`map`, `start_latlng`...) are deliberately not declared:
- * the Strava API Policy forbids keeping them beyond a short cache.
+ * The Strava API Policy forbids keeping location data beyond a short cache:
+ * `map` is only relayed to the athlete's browser, never persisted, and the
+ * other location fields (`start_latlng`...) are not declared.
  */
 
 export interface StravaAthleteSummary {
@@ -35,6 +36,12 @@ export interface StravaActivity {
   total_elevation_gain?: number | null;
   trainer?: boolean;
   manual?: boolean;
+  map?: StravaActivityMap | null;
+}
+
+export interface StravaActivityMap {
+  /** Low-resolution track, Google encoded polyline; empty without GPS. */
+  summary_polyline?: string | null;
 }
 
 export interface StravaWebhookSubscription {

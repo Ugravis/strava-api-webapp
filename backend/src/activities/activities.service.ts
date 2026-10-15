@@ -1,0 +1,142 @@
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, type EntityManager, Repository } from 'typeorm';
+import { Activity } from './activity.entity';
+import {
+  ActivitySource,
+  type ActivityProvider,
+} from './activity-source.entity';
+
+/** Canonical fields of an activity, as produced by a provider mapper. */
+export type ActivityData = Pick<
+  Activity,
+  | 'sportType'
+  | 'name'
+  | 'startedAt'
+  | 'timezone'
+  | 'distanceM'
+  | 'movingTimeS'
+  | 'elapsedTimeS'
+  | 'elevationGainM'
+  | 'indoor'
+  | 'manual'
+>;
+
+export interface ActivityStats {
+  count: number;
+  totalDistanceM: number;
+}
+
+/** Provider-agnostic storage of activities and of their provider sources. */
+@Injectable()
+export class ActivitiesService {
+  constructor(
+    @InjectRepository(Activity)
+    private readonly activities: Repository<Activity>,
+    @InjectDataSource() private readonly dataSource: DataSource,
+  ) {}
+
+  /** Creates or updates the activity known at `provider` as `externalId`. Idempotent. */
+  async upsertFromProvider(
+    userId: string,
+    provider: ActivityProvider,
+    externalId: string,
+    data: ActivityData,
+  ): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const fetchedAt = new Date();
+      const source = await manager.findOneBy(ActivitySource, {
+        provider,
+        externalId,
+      });
+      if (source) {
+        await manager.update(Activity, source.activityId, { ...data, userId });
+        await manager.update(ActivitySource, source.id, { fetchedAt });
+        return;
+      }
+      const activity = await manager.save(
+        manager.create(Activity, { ...data, userId }),
+      );
+      await manager.insert(ActivitySource, {
+        activityId: activity.id,
+        provider,
+        externalId,
+        fetchedAt,
+      });
+    });
+  }
+
+  /** Removes the given provider activities of a user, or all of them when no list is given. */
+  removeFromProvider(
+    userId: string,
+    provider: ActivityProvider,
+    externalIds?: string[],
+  ): Promise<number> {
+    const filter = externalIds ? 'AND s.external_id = ANY($3)' : '';
+    const parameters: unknown[] = [userId, provider];
+    if (externalIds) {
+      parameters.push(externalIds);
+    }
+    return this.deleteSources(filter, parameters);
+  }
+
+  /**
+   * Removes the provider activities started since `since` that are absent
+   * from `keptExternalIds`: they were deleted at the provider.
+   */
+  removeMissingFromProvider(
+    userId: string,
+    provider: ActivityProvider,
+    since: Date,
+    keptExternalIds: string[],
+  ): Promise<number> {
+    return this.deleteSources(
+      'AND a.started_at >= $3 AND NOT (s.external_id = ANY($4))',
+      [userId, provider, since, keptExternalIds],
+    );
+  }
+
+  async stats(userId: string): Promise<ActivityStats> {
+    const row = await this.activities
+      .createQueryBuilder('activity')
+      .select('COUNT(*)::int', 'count')
+      .addSelect(
+        'COALESCE(SUM(activity.distance_m), 0)::float8',
+        'totalDistanceM',
+      )
+      .where('activity.user_id = :userId', { userId })
+      .getRawOne<ActivityStats>();
+    return row ?? { count: 0, totalDistanceM: 0 };
+  }
+
+  /**
+   * Deletes matching sources (`s`, joined to their activity `a`; `$1` is the
+   * user, `$2` the provider), then the activities left without any source.
+   * Returns the number of deleted activities.
+   */
+  private deleteSources(
+    filter: string,
+    parameters: unknown[],
+  ): Promise<number> {
+    return this.dataSource.transaction(async (manager: EntityManager) => {
+      // PostgreSQL DELETE ... RETURNING resolves to [rows, row count].
+      const [deleted]: [{ activity_id: string }[], number] =
+        await manager.query(
+          `DELETE FROM activity_sources s USING activities a
+         WHERE s.activity_id = a.id AND a.user_id = $1 AND s.provider = $2 ${filter}
+         RETURNING s.activity_id`,
+          parameters,
+        );
+      if (deleted.length === 0) {
+        return 0;
+      }
+      const [, orphanCount]: [unknown[], number] = await manager.query(
+        `DELETE FROM activities a
+         WHERE a.id = ANY($1)
+           AND NOT EXISTS (SELECT 1 FROM activity_sources s WHERE s.activity_id = a.id)`,
+        [deleted.map((row) => row.activity_id)],
+      );
+      return orphanCount;
+    });
+  }
+}

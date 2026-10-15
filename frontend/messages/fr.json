@@ -22,6 +22,7 @@
   },
   "nav": {
     "label": "Navigation",
+    "dashboard": "Tableau de bord",
     "profile": "Profil",
     "settings": "Paramètres",
     "logout": "Déconnexion",
@@ -77,7 +78,8 @@
     "OAUTH_SIGNUP_EXPIRED": "L'inscription avec Google a expiré. Recommence depuis le début.",
     "TOO_MANY_REQUESTS": "Trop de tentatives. Patiente une minute avant de réessayer.",
     "FILE_TOO_LARGE": "L'image ne doit pas dépasser 5 Mo.",
-    "UNEXPECTED": "Une erreur inattendue est survenue. Réessaie dans un instant."
+    "UNEXPECTED": "Une erreur inattendue est survenue. Réessaie dans un instant.",
+    "PROVIDER_NOT_CONNECTED": "Ce compte n'est pas connecté."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -129,7 +131,7 @@
   },
   "settings": {
     "title": "Paramètres",
-    "description": "Gère ton profil et ton compte.",
+    "description": "Gère ton profil, tes connexions et ton compte.",
     "avatar": {
       "title": "Photo de profil",
       "description": "JPG, PNG, WebP ou GIF, 5 Mo maximum. L'image est recadrée au format carré.",
@@ -161,10 +163,72 @@
       "confirmWithUsername": "Saisis ton pseudo « {username} » pour confirmer.",
       "confirm": "Supprimer définitivement",
       "deleted": "Ton compte a été supprimé."
+    },
+    "connections": {
+      "title": "Connexions",
+      "description": "Les services d'où proviennent tes activités.",
+      "connected": "Connecté",
+      "notConnected": "Non connecté",
+      "connectedAs": "{name} · connecté depuis le {date}",
+      "connectedSince": "Connecté depuis le {date}",
+      "notConnectedDescription": "Importe tes activités depuis Strava.",
+      "revoke": "Révoquer",
+      "revokeTitle": "Révoquer l'accès à Strava ?",
+      "revokeDescription": "L'accès de la plateforme à ton compte Strava sera supprimé, ainsi que toutes les activités importées depuis Strava. Tu pourras te reconnecter à tout moment.",
+      "revokeConfirm": "Révoquer et supprimer",
+      "revoked": "L'accès à Strava a été révoqué et tes activités importées ont été supprimées."
     }
   },
   "terms": {
     "title": "Conditions d'utilisation",
     "placeholder": "Les conditions d'utilisation de la plateforme seront publiées prochainement."
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "description": "Vue d'ensemble de tes activités.",
+    "stats": {
+      "activities": "Activités",
+      "distance": "Distance totale",
+      "error": "Impossible de charger tes statistiques pour le moment."
+    }
+  },
+  "strava": {
+    "name": "Strava",
+    "connect": "Se connecter avec Strava",
+    "unavailable": "La connexion à Strava n'est pas disponible pour le moment.",
+    "statusError": "Impossible de récupérer l'état de ta connexion Strava.",
+    "retry": "Réessayer",
+    "connectCard": {
+      "title": "Connecte ton compte Strava",
+      "description": "Importe tes activités pour commencer à explorer la carte.",
+      "imported": "Nous importons le nom, le sport, la date, la distance, la durée et le dénivelé de tes activités, privées comprises si tu l'autorises.",
+      "noTracks": "Tes traces GPS ne sont pas conservées.",
+      "revocable": "Tu peux révoquer l'accès à tout moment depuis les paramètres : tes activités importées sont alors supprimées."
+    },
+    "outcome": {
+      "connected": "Ton compte Strava est connecté. L'import de tes activités commence.",
+      "denied": "Tu as refusé l'accès à Strava. Tu peux réessayer quand tu veux.",
+      "missing_scope": "L'accès à tes activités est nécessaire : coche « Voir les données de tes activités » sur l'écran de Strava.",
+      "already_linked": "Ce compte Strava est déjà connecté à un autre compte.",
+      "unavailable": "La connexion à Strava n'est pas disponible pour le moment.",
+      "error": "La connexion à Strava a échoué. Réessaie dans un instant."
+    },
+    "sync": {
+      "importing": "Import de tes activités en cours…",
+      "importingCount": "{count, plural, =0 {Préparation de l'import…} one {# activité importée} other {# activités importées}}",
+      "queued": "Synchronisation en attente…",
+      "rateLimited": "Strava limite le nombre de requêtes : l'import reprendra automatiquement à {time}.",
+      "retrying": "Une erreur est survenue, nouvelle tentative à {time}.",
+      "failed": "La synchronisation a échoué.",
+      "failedDescription": "Strava n'a pas répondu correctement. Réessaie dans quelques minutes.",
+      "hint": "Tu peux quitter cette page : l'import continue en arrière-plan.",
+      "now": "Synchroniser",
+      "requested": "Synchronisation lancée.",
+      "lastSynced": "Dernière synchronisation {date}",
+      "neverSynced": "Pas encore synchronisé",
+      "connectedAs": "Connecté à Strava en tant que {name}",
+      "connected": "Connecté à Strava",
+      "privateMissing": "Tes activités privées ne sont pas importées. Pour les inclure, révoque puis reconnecte Strava en cochant « Voir les données de tes activités privées »."
+    }
   }
 }

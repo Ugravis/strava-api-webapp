@@ -109,7 +109,7 @@ export class GoogleAuthController {
       }
       const { session } = outcome.result;
       this.sessionCookie.write(response, session);
-      return this.redirectToFrontend(response, '/profile');
+      return this.redirectToFrontend(response, '/dashboard');
     } catch (error) {
       this.logger.warn(
         `Google sign-in failed: ${error instanceof Error ? error.message : String(error)}`,

@@ -1,8 +1,8 @@
 /**
  * Subset of the Strava API v3 payloads used by the application.
  * The Strava API Policy forbids keeping location data beyond a short cache:
- * `map` is only relayed to the athlete's browser, never persisted, and the
- * other location fields (`start_latlng`...) are not declared.
+ * `map`, `start_latlng` and `end_latlng` are only relayed to the athlete's
+ * browser or turned into tiles, never persisted.
  */
 
 export interface StravaAthleteSummary {
@@ -37,6 +37,9 @@ export interface StravaActivity {
   trainer?: boolean;
   manual?: boolean;
   map?: StravaActivityMap | null;
+  /** True start, `[]` without GPS. Unlike `map`, never cropped for the owner. */
+  start_latlng?: [number, number] | [] | null;
+  end_latlng?: [number, number] | [] | null;
 }
 
 export interface StravaActivityMap {
@@ -54,4 +57,9 @@ export interface ListActivitiesParams {
   perPage: number;
   /** Only activities started after this date. */
   after?: Date;
+}
+
+/** `GET /activities/{id}/streams?key_by_type=true`, only the requested keys. */
+export interface StravaLatLngStreams {
+  latlng?: { data: [number, number][] };
 }

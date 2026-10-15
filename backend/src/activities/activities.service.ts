@@ -48,14 +48,17 @@ export class ActivitiesService {
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
-  /** Creates or updates the activity known at `provider` as `externalId`. Idempotent. */
-  async upsertFromProvider(
+  /**
+   * Creates or updates the activity known at `provider` as `externalId`.
+   * Idempotent. Returns the identifier of the activity.
+   */
+  upsertFromProvider(
     userId: string,
     provider: ActivityProvider,
     externalId: string,
     data: ActivityData,
-  ): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+  ): Promise<string> {
+    return this.dataSource.transaction(async (manager) => {
       const fetchedAt = new Date();
       const source = await manager.findOneBy(ActivitySource, {
         provider,
@@ -64,7 +67,7 @@ export class ActivitiesService {
       if (source) {
         await manager.update(Activity, source.activityId, { ...data, userId });
         await manager.update(ActivitySource, source.id, { fetchedAt });
-        return;
+        return source.activityId;
       }
       const activity = await manager.save(
         manager.create(Activity, { ...data, userId }),
@@ -75,6 +78,7 @@ export class ActivitiesService {
         externalId,
         fetchedAt,
       });
+      return activity.id;
     });
   }
 

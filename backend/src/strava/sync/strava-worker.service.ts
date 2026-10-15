@@ -8,7 +8,9 @@ import {
 import stravaConfig, { type StravaConfig } from '../../config/strava.config';
 import { SyncJobsService } from '../../connections/sync-jobs.service';
 import { StravaApiClient } from '../api/strava-api.client';
+import { TilesService } from '../../tiles/tiles.service';
 import { StravaConnectionService } from '../strava-connection.service';
+import { StravaTilesService } from '../tiles/strava-tiles.service';
 import { StravaWebhookService } from '../webhooks/strava-webhook.service';
 import { StravaSyncService } from './strava-sync.service';
 
@@ -19,8 +21,9 @@ const HISTORY_RETENTION_MS = 7 * 24 * HOUR_MS;
 /**
  * In-process background worker. Strava quotas are shared by the whole
  * application, so the work is processed one item at a time: webhook events
- * first (small and time-sensitive), then synchronization jobs. The queue
- * lives in the database, so nothing is lost when the process restarts.
+ * first (small and time-sensitive), then synchronization jobs, then the
+ * refinement of the tiles with full tracks. The queues live in the
+ * database, so nothing is lost when the process restarts.
  */
 @Injectable()
 export class StravaWorker
@@ -39,6 +42,8 @@ export class StravaWorker
     private readonly sync: StravaSyncService,
     private readonly webhooks: StravaWebhookService,
     private readonly connections: StravaConnectionService,
+    private readonly stravaTiles: StravaTilesService,
+    private readonly tiles: TilesService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -93,7 +98,7 @@ export class StravaWorker
       await this.sync.run(job);
       return true;
     }
-    return false;
+    return this.stravaTiles.refineNext();
   }
 
   /**
@@ -109,6 +114,14 @@ export class StravaWorker
         connection.id,
         connection.lastSyncedAt ? 'reconcile' : 'backfill',
       );
+    }
+    // Activities imported before the tiles existed: one more import pass
+    // reads their tracks again (one Strava request per 200 activities).
+    for (const userId of await this.tiles.usersWithUnhandledActivities()) {
+      const connection = await this.connections.findForUser(userId);
+      if (connection && !(await this.syncJobs.hasActiveJob(connection.id))) {
+        await this.syncJobs.enqueue(connection.id, 'backfill');
+      }
     }
     const historyLimit = new Date(Date.now() - HISTORY_RETENTION_MS);
     await this.syncJobs.purgeFinishedBefore(historyLimit);

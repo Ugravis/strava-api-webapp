@@ -9,6 +9,7 @@ import {
   StravaRateLimitedError,
 } from '../api/strava-api.errors';
 import type { StravaConnectionService } from '../strava-connection.service';
+import type { StravaTilesService } from '../tiles/strava-tiles.service';
 import type { StravaWebhookEvent } from './strava-webhook-event.entity';
 import { StravaWebhookService } from './strava-webhook.service';
 
@@ -68,6 +69,7 @@ describe('StravaWebhookService', () => {
       connections as unknown as StravaConnectionService,
       activities as unknown as ActivitiesService,
       { syncMaxActivities: 50 } as StravaConfig,
+      { fromSummaries: jest.fn() } as unknown as StravaTilesService,
     );
   });
 

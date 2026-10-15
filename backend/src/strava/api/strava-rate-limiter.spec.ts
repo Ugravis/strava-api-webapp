@@ -22,6 +22,22 @@ describe('StravaRateLimiter', () => {
     limiter = new StravaRateLimiter(2, () => now);
   });
 
+  it('leaves the rest of the quota once background work used its share', () => {
+    expect(limiter.hasCapacity(0.5)).toBe(true);
+    limiter.record(headers('49,400'));
+    expect(limiter.hasCapacity(0.5)).toBe(true);
+    limiter.record(headers('50,400'));
+    expect(limiter.hasCapacity(0.5)).toBe(false);
+    limiter.record(headers('10,500'));
+    expect(limiter.hasCapacity(0.5)).toBe(false);
+  });
+
+  it('gives the share back once the 15-minute window is over', () => {
+    limiter.record(headers('60,400'));
+    now = new Date('2026-10-15T10:16:00Z');
+    expect(limiter.hasCapacity(0.5)).toBe(true);
+  });
+
   it('allows requests before any response was observed', () => {
     expect(limiter.blockedUntil()).toBeNull();
   });

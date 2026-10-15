@@ -12,6 +12,7 @@ import {
 } from '../api/strava-api.errors';
 import { toActivityData } from '../strava-activity.mapper';
 import { StravaConnectionService } from '../strava-connection.service';
+import { StravaTilesService } from '../tiles/strava-tiles.service';
 import type { StravaWebhookEventDto } from './strava-webhook-event.dto';
 import { StravaWebhookEvent } from './strava-webhook-event.entity';
 
@@ -34,6 +35,7 @@ export class StravaWebhookService {
     private readonly connections: StravaConnectionService,
     private readonly activities: ActivitiesService,
     @Inject(stravaConfig.KEY) private readonly config: StravaConfig,
+    private readonly tiles: StravaTilesService,
   ) {}
 
   async record(dto: StravaWebhookEventDto): Promise<void> {
@@ -126,12 +128,16 @@ export class StravaWebhookService {
     const token = await this.connections.accessToken(connection.id);
     try {
       const activity = await this.api.getActivity(token, activityId);
-      await this.activities.upsertFromProvider(
+      const data = toActivityData(activity);
+      const id = await this.activities.upsertFromProvider(
         connection.userId,
         PROVIDER,
         activityId,
-        toActivityData(activity),
+        data,
       );
+      await this.tiles.fromSummaries(connection.userId, [
+        { activityId: id, activity, data },
+      ]);
       // Temporary development cap: the oldest activity makes room for the new one.
       if (this.config.syncMaxActivities !== null) {
         await this.activities.keepMostRecentFromProvider(

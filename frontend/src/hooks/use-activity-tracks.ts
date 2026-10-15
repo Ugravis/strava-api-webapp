@@ -1,27 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useCurrentUser } from "@/components/user/user-provider";
-import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
+import { useEffect, useState } from "react";
+import { useTrackSync, useTrackSyncManager } from "@/components/tracks/track-sync-provider";
 import { decodePolyline, type LngLat } from "@/lib/tracks/polyline";
-import { MemoryTrackStore, openTrackStore, type TrackStore } from "@/lib/tracks/track-store";
-import { syncTracks, type TrackSyncProgress } from "@/lib/tracks/track-sync";
-import { tracksService } from "@/services/tracks.service";
+import type { TrackStore } from "@/lib/tracks/track-store";
+import type { TrackSyncSnapshot } from "@/lib/tracks/track-sync-manager";
 
 export interface TrackLine {
   activityId: string;
   coordinates: LngLat[];
 }
 
-export type ActivityTracksStatus = "loading" | "syncing" | "ready" | "error";
-
-export interface ActivityTracksState {
+export interface ActivityTracksState extends TrackSyncSnapshot {
   /** Null until the local tracks are read. */
   lines: TrackLine[] | null;
-  status: ActivityTracksStatus;
-  /** Set while missing tracks are fetched. */
-  progress: TrackSyncProgress | null;
-  errorCode: ApiErrorCode | null;
   retry: () => void;
 }
 
@@ -34,54 +26,31 @@ async function readLines(store: TrackStore): Promise<TrackLine[]> {
 }
 
 /**
- * Tracks of the current user: the ones kept in the browser are shown at
- * once, then the missing ones are fetched.
+ * Tracks of the current user, read from the browser and read again whenever
+ * the background synchronization changes them.
  */
 export function useActivityTracks(): ActivityTracksState {
-  const user = useCurrentUser();
+  const manager = useTrackSyncManager();
+  const snapshot = useTrackSync();
   const [lines, setLines] = useState<TrackLine[] | null>(null);
-  const [status, setStatus] = useState<ActivityTracksStatus>("loading");
-  const [progress, setProgress] = useState<TrackSyncProgress | null>(null);
-  const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
-  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-
-    async function load() {
-      const store = await openTrackStore(user.id).catch(() => new MemoryTrackStore());
-      const local = await readLines(store);
-      if (cancelled) return;
-      setLines(local);
-      setStatus("syncing");
-
-      const changed = await syncTracks(store, tracksService, (next) => {
-        if (!cancelled) setProgress(next);
-      });
-      const synced = changed ? await readLines(store) : null;
-      if (cancelled) return;
-      if (synced) setLines(synced);
-      setProgress(null);
-      setStatus("ready");
-    }
-
-    load().catch((failure: unknown) => {
-      if (cancelled) return;
-      setLines((current) => current ?? []);
-      setProgress(null);
-      setErrorCode(errorCodeOf(failure));
-      setStatus("error");
-    });
+    manager
+      .getStore()
+      .then(readLines)
+      .then(
+        (next) => {
+          if (!cancelled) setLines(next);
+        },
+        () => {
+          if (!cancelled) setLines((current) => current ?? []);
+        },
+      );
     return () => {
       cancelled = true;
     };
-  }, [user.id, attempt]);
+  }, [manager, snapshot.version]);
 
-  const retry = useCallback(() => {
-    setErrorCode(null);
-    setStatus("syncing");
-    setAttempt((value) => value + 1);
-  }, []);
-
-  return { lines, status, progress, errorCode, retry };
+  return { ...snapshot, lines, retry: () => void manager.sync() };
 }

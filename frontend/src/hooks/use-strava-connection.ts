@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTrackSyncManager } from "@/components/tracks/track-sync-provider";
 import type { StravaConnectionStatus, SyncJob } from "@/lib/api/types";
 import { stravaService } from "@/services/strava.service";
 
@@ -61,6 +62,14 @@ export function useStravaConnection(): StravaConnectionState {
     const timer = setInterval(() => void refresh(), interval);
     return () => clearInterval(timer);
   }, [active, interval, refresh]);
+
+  // Tracks follow the activity import: once a sync ends, the new ones are fetched.
+  const trackSync = useTrackSyncManager();
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (wasActive.current && !active) void trackSync.sync();
+    wasActive.current = active;
+  }, [active, trackSync]);
 
   return { status, error, refresh, update: setStatus };
 }

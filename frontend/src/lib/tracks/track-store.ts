@@ -32,13 +32,52 @@ export interface TrackStore {
   ids(): Promise<string[]>;
   putMany(tracks: ActivityTrack[]): Promise<void>;
   deleteMany(activityIds: string[]): Promise<void>;
+  clear(): Promise<void>;
+}
+
+/**
+ * Opens the database for `userId`. Tracks left by another account on the
+ * same browser are discarded: a user's data is shown to that user only.
+ */
+async function openOwnedDatabase(userId: string, onClosed: () => void): Promise<IDBPDatabase<TrackSchema>> {
+  const db = await openDB<TrackSchema>(DB_NAME, DB_VERSION, {
+    upgrade(database) {
+      database.createObjectStore("tracks", { keyPath: "activityId" });
+      database.createObjectStore("meta");
+    },
+    // Another tab or `clearTrackStore` deletes the database: the connection
+    // is released so that the deletion is not blocked.
+    blocking() {
+      db.close();
+      onClosed();
+    },
+    terminated: onClosed,
+  });
+  const tx = db.transaction(["tracks", "meta"], "readwrite");
+  const owner = await tx.objectStore("meta").get(OWNER_KEY);
+  if (owner !== userId) {
+    await tx.objectStore("tracks").clear();
+    await tx.objectStore("meta").put(userId, OWNER_KEY);
+  }
+  await tx.done;
+  return db;
 }
 
 class IndexedDbTrackStore implements TrackStore {
-  constructor(private readonly db: IDBPDatabase<TrackSchema>) {}
+  private connection: Promise<IDBPDatabase<TrackSchema>> | null = null;
+
+  constructor(private readonly userId: string) {}
+
+  /** Reopens the database when it was closed for a deletion. */
+  database(): Promise<IDBPDatabase<TrackSchema>> {
+    this.connection ??= openOwnedDatabase(this.userId, () => {
+      this.connection = null;
+    });
+    return this.connection;
+  }
 
   async all(): Promise<ActivityTrack[]> {
-    const stored = await this.db.getAll("tracks");
+    const stored = await (await this.database()).getAll("tracks");
     return Promise.all(
       stored.map(async ({ activityId, data }) => ({
         activityId,
@@ -47,8 +86,8 @@ class IndexedDbTrackStore implements TrackStore {
     );
   }
 
-  ids(): Promise<string[]> {
-    return this.db.getAllKeys("tracks");
+  async ids(): Promise<string[]> {
+    return (await this.database()).getAllKeys("tracks");
   }
 
   async putMany(tracks: ActivityTrack[]): Promise<void> {
@@ -60,13 +99,17 @@ class IndexedDbTrackStore implements TrackStore {
         data: polyline ? await compressText(polyline) : null,
       })),
     );
-    const tx = this.db.transaction("tracks", "readwrite");
+    const tx = (await this.database()).transaction("tracks", "readwrite");
     await Promise.all([...stored.map((track) => tx.store.put(track)), tx.done]);
   }
 
   async deleteMany(activityIds: string[]): Promise<void> {
-    const tx = this.db.transaction("tracks", "readwrite");
+    const tx = (await this.database()).transaction("tracks", "readwrite");
     await Promise.all([...activityIds.map((id) => tx.store.delete(id)), tx.done]);
+  }
+
+  async clear(): Promise<void> {
+    await (await this.database()).clear("tracks");
   }
 }
 
@@ -89,36 +132,27 @@ export class MemoryTrackStore implements TrackStore {
   async deleteMany(activityIds: string[]): Promise<void> {
     for (const id of activityIds) this.tracks.delete(id);
   }
+
+  async clear(): Promise<void> {
+    this.tracks.clear();
+  }
 }
 
-/**
- * Opens the store of `userId`. Tracks left by another account on the same
- * browser are discarded: a user's data is shown to that user only.
- */
+/** Store of `userId`, in memory when IndexedDB is unavailable (e.g. private browsing). */
 export async function openTrackStore(userId: string): Promise<TrackStore> {
-  const db = await openDB<TrackSchema>(DB_NAME, DB_VERSION, {
-    upgrade(database) {
-      database.createObjectStore("tracks", { keyPath: "activityId" });
-      database.createObjectStore("meta");
-    },
-  });
-  const tx = db.transaction(["tracks", "meta"], "readwrite");
-  const owner = await tx.objectStore("meta").get(OWNER_KEY);
-  if (owner !== userId) {
-    await tx.objectStore("tracks").clear();
-    await tx.objectStore("meta").put(userId, OWNER_KEY);
+  const store = new IndexedDbTrackStore(userId);
+  try {
+    await store.database();
+    return store;
+  } catch {
+    return new MemoryTrackStore();
   }
-  await tx.done;
-  return new IndexedDbTrackStore(db);
 }
 
 /** Deletes every track kept in this browser, e.g. on sign-out. */
 export async function clearTrackStore(): Promise<void> {
   try {
-    await deleteDB(DB_NAME, {
-      // Another tab still holds the database open: it is deleted once closed.
-      blocked: () => undefined,
-    });
+    await deleteDB(DB_NAME);
   } catch {
     // IndexedDB may be unavailable (private browsing): nothing was stored.
   }

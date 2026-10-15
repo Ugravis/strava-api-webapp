@@ -8,7 +8,7 @@ import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 export function TracksStatus({ lines, status, progress }: Pick<ActivityTracksState, "lines" | "status" | "progress">) {
   const t = useTranslations("map");
   if (!lines) return null;
-  const syncing = status === "syncing" || status === "loading";
+  const syncing = status === "syncing" || status === "idle";
 
   return (
     <div

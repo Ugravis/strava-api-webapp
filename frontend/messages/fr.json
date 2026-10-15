@@ -23,6 +23,7 @@
   "nav": {
     "label": "Navigation",
     "dashboard": "Tableau de bord",
+    "distances": "Distances",
     "profile": "Profil",
     "settings": "Paramètres",
     "logout": "Déconnexion",
@@ -231,6 +232,37 @@
       "connectedAs": "Connecté à Strava en tant que {name}",
       "connected": "Connecté à Strava",
       "privateMissing": "Tes activités privées ne sont pas importées. Pour les inclure, révoque puis reconnecte Strava en cochant « Voir les données de tes activités privées »."
+    }
+  },
+  "distances": {
+    "title": "Distances",
+    "description": "Ton kilométrage comparé à des distances mythiques.",
+    "error": "Impossible de charger tes distances pour le moment.",
+    "retry": "Réessayer",
+    "empty": "Connecte Strava depuis le tableau de bord pour faire avancer tes badges.",
+    "familyTotal": "{distance} parcourus",
+    "completions": "{count, plural, =0 {Pas encore accompli} one {Accompli # fois} other {Accompli # fois}}",
+    "progressLabel": "{name} : {percent} de l'itération en cours",
+    "families": {
+      "all": "Tous sports",
+      "run": "Course à pied",
+      "hike": "Randonnée et marche",
+      "ride": "Vélo"
+    },
+    "landmarks": {
+      "earth_center": "Centre de la Terre",
+      "earth_circumference": "Tour du globe",
+      "earth_moon": "Terre-Lune",
+      "paris_ring_road": "Périphérique parisien",
+      "marathon": "Marathon",
+      "lake_geneva": "Tour du Léman",
+      "gr20": "GR20",
+      "camino_vezelay": "Compostelle depuis Vézelay",
+      "hexatrek": "HexaTrek",
+      "pacific_crest_trail": "Pacific Crest Trail",
+      "tour_de_france": "Tour de France",
+      "trans_siberian": "Transsibérien",
+      "pan_american_highway": "Route panaméricaine"
     }
   }
 }

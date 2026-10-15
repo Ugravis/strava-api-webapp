@@ -52,3 +52,21 @@ export interface ActivityStats {
   totalMovingTimeS: number;
 }
 
+/** Groups of sports compared to landmarks; `all` counts every activity. */
+export type DistanceFamily = "all" | "run" | "hike" | "ride";
+
+export interface LandmarkProgress {
+  id: string;
+  family: DistanceFamily;
+  distanceM: number;
+  /** Number of times the whole distance was covered. */
+  completions: number;
+  /** Share of the current iteration already covered, in [0, 1). */
+  progress: number;
+}
+
+export interface DistancesOverview {
+  /** Cumulated distance per family, in meters. */
+  totals: Record<DistanceFamily, number>;
+  landmarks: LandmarkProgress[];
+}

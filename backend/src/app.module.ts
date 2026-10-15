@@ -4,7 +4,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ActivitiesModule } from './activities/activities.module';
+import { ApiIndexModule } from './api-index/api-index.module';
 import { AuthModule } from './auth/auth.module';
+import { DEFAULT_THROTTLE } from './auth/throttle';
 import { DevModule } from './dev/dev.module';
 import { DistancesModule } from './distances/distances.module';
 import authConfig from './config/auth.config';
@@ -35,7 +37,7 @@ import { UsersModule } from './users/users.module';
       useFactory: (config: ConfigService): TypeOrmModuleOptions =>
         config.getOrThrow<TypeOrmModuleOptions>('database'),
     }),
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRoot([DEFAULT_THROTTLE]),
     UsersModule,
     AuthModule,
     ActivitiesModule,

@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { API_PREFIX } from './common/api-prefix';
 import { originCheck } from './common/origin-check.middleware';
 import authConfig, { type AuthConfig } from './config/auth.config';
 import { StravaWebhookSubscriptionService } from './strava/webhooks/strava-webhook-subscription.service';
@@ -14,7 +15,7 @@ async function bootstrap(): Promise<void> {
 
   // The API is reached through the frontend proxy: trust it for the client IP.
   app.set('trust proxy', process.env.TRUST_PROXY ?? 'loopback, uniquelocal');
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix(API_PREFIX);
   app.use(cookieParser(config.cookieSecret));
   app.use(originCheck(frontendOrigin));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

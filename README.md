@@ -29,6 +29,7 @@ docker compose up --build
 
 - Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
 - API health check: http://localhost:4000/api/health
+- API endpoint listing: http://localhost:3000/api (method, path, access, rate limit, status; not served in production)
 - Adminer (database UI): http://localhost:8088 — system `PostgreSQL`, server `db`, credentials from `.env` (default `postgres` / `postgres`, database `strava_webapp`)
 - Mailpit (outgoing emails): http://localhost:8025
 - RustFS console (S3-compatible storage): http://localhost:9001, credentials `rustfsadmin` / `rustfsadmin`

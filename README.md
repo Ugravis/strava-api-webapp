@@ -68,6 +68,48 @@ pnpm --filter backend migration:revert
   with the browser and the session expires after 24 hours of inactivity.
   The browser only talks to the frontend origin, which proxies `/api` to the backend.
 
+## Strava
+
+Activities are imported from Strava into the platform's own schema (`activities`, linked to
+their provider record through `activity_sources`), so that other sources (Garmin, GPX/FIT files)
+can be added later. **No GPS track or location is stored**: the
+[Strava API Policy](https://www.strava.com/legal/api_policy) of June 2026 forbids keeping
+location data beyond a 7-day cache.
+
+Setup: create an application on https://www.strava.com/settings/api with the authorization
+callback domain `localhost`, then fill `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in `.env`.
+A new Strava application only accepts its owner's account until it is reviewed by Strava.
+
+- **Connection**: OAuth 2.0 from the dashboard or the settings. Tokens are encrypted at rest
+  (`ENCRYPTION_SECRET`) and the access token (valid 6 hours) is refreshed automatically before it
+  expires. Revoking deletes the connection and every activity imported from Strava; so does a
+  revocation made from Strava, once confirmed.
+- **Synchronization**: a background worker processes a job queue stored in PostgreSQL, so jobs
+  survive restarts. The first import reads the most recent activities, up to
+  `STRAVA_SYNC_MAX_ACTIVITIES` (50 by default in Docker). The Strava quotas (100 read requests per
+  15 minutes, 1,000 per day, for the whole application) are tracked from the response headers:
+  when they run out, jobs wait for the next window instead of failing.
+- **Webhooks**: Strava pushes an event for each created, updated or deleted activity and for
+  revocations. Events are stored, acknowledged within the 2 seconds Strava allows, then processed.
+  They are not signed, so their content is never trusted: each one only triggers a read of the
+  activity from Strava. Strava gives up after 3 failed deliveries and offers no replay, so a
+  periodic reconciliation (every 6 hours and at startup) re-reads the last 30 days to catch events
+  missed while the backend was down.
+- **Webhooks in development** need a public URL: `docker compose --profile tunnel up` starts a
+  Cloudflare quick tunnel, whose random address the backend registers with Strava at startup
+  (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
+  "Synchroniser" button keep the data up to date. Elsewhere, set `STRAVA_WEBHOOK_CALLBACK_URL`.
+
+## Development tools
+
+In development, a floating button at the bottom right of the app pages (next to the Next.js
+indicator) opens a temporary **Dev** panel: a read-only view of the database (webhook events,
+activities, sync jobs, connections, users) and of the Strava quotas, refreshed every 3 seconds
+while open, with the rows changed in the last minute highlighted. It is served by
+`GET /api/dev/overview`, which is never registered when `NODE_ENV=production`. To remove it:
+delete `backend/src/dev`, `frontend/src/components/dev` and their two references
+(`AppModule`, authenticated layout).
+
 ## Scripts
 
 | Command               | Description                                              |

@@ -1,6 +1,7 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import type { AuthConfig } from '../config/auth.config';
 import type { MailService } from '../mail/mail.service';
+import type { StravaConnectionService } from '../strava/strava-connection.service';
 import type { AvatarsService } from '../users/avatars.service';
 import type { User } from '../users/user.entity';
 import type { UsersService } from '../users/users.service';
@@ -12,6 +13,7 @@ import type { UserTokensService } from './tokens/user-tokens.service';
 const config: AuthConfig = {
   frontendUrl: 'http://localhost:3000',
   cookieSecret: 'secret',
+  encryptionSecret: 'encryption-secret',
   secureCookies: false,
   sessionTtlDays: 30,
   browserSessionTtlHours: 24,
@@ -52,6 +54,7 @@ describe('AuthService', () => {
   let tokens: jest.Mocked<Pick<UserTokensService, 'issue' | 'consume'>>;
   let mail: jest.Mocked<Pick<MailService, 'sendPasswordReset'>>;
   let avatars: jest.Mocked<Pick<AvatarsService, 'deleteQuietly'>>;
+  let strava: jest.Mocked<Pick<StravaConnectionService, 'disconnect'>>;
   let service: AuthService;
 
   beforeEach(() => {
@@ -72,6 +75,7 @@ describe('AuthService', () => {
     };
     mail = { sendPasswordReset: jest.fn() };
     avatars = { deleteQuietly: jest.fn() };
+    strava = { disconnect: jest.fn() };
     service = new AuthService(
       users as unknown as UsersService,
       sessions as unknown as SessionsService,
@@ -79,6 +83,7 @@ describe('AuthService', () => {
       passwordHasher,
       mail as unknown as MailService,
       avatars as unknown as AvatarsService,
+      strava as unknown as StravaConnectionService,
       config,
     );
   });
@@ -329,6 +334,7 @@ describe('AuthService', () => {
       expect(avatars.deleteQuietly).toHaveBeenCalledWith(
         'avatars/user-id/abc.webp',
       );
+      expect(strava.disconnect).toHaveBeenCalledWith('user-id');
       expect(users.delete).toHaveBeenCalledWith('user-id');
     });
   });

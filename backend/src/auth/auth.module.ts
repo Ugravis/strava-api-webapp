@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from '../mail/mail.module';
+import { StravaModule } from '../strava/strava.module';
 import { UsersModule } from '../users/users.module';
 import { AccountController } from './account.controller';
 import { AuthController } from './auth.controller';
@@ -24,6 +25,7 @@ import { UserTokensService } from './tokens/user-tokens.service';
     TypeOrmModule.forFeature([Session, UserToken, OAuthAccount]),
     UsersModule,
     MailModule,
+    StravaModule,
   ],
   controllers: [AuthController, GoogleAuthController, AccountController],
   providers: [

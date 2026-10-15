@@ -5,16 +5,17 @@ export const routes = {
   googleSignup: "/register/google",
   forgotPassword: "/forgot-password",
   terms: "/terms",
+  dashboard: "/dashboard",
   profile: "/profile",
   settings: "/settings",
   sessionExpired: "/session-expired",
 } as const;
 
 /** Routes requiring a session, checked optimistically by the proxy. */
-export const PROTECTED_PREFIXES = [routes.profile, routes.settings];
+export const PROTECTED_PREFIXES = [routes.dashboard, routes.profile, routes.settings];
 
 /** Landing route once signed in. */
-export const DEFAULT_AUTHENTICATED_ROUTE = routes.profile;
+export const DEFAULT_AUTHENTICATED_ROUTE = routes.dashboard;
 
 export const SESSION_COOKIE = "session";
 

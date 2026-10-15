@@ -68,6 +68,14 @@ services:
       S3_BUCKET: ${S3_BUCKET:-strava-webapp}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-rustfsadmin}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-rustfsadmin}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-development-encryption-secret}
+      STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID:-}
+      STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:-}
+      STRAVA_SYNC_MAX_ACTIVITIES: ${STRAVA_SYNC_MAX_ACTIVITIES:-50}
+      STRAVA_WEBHOOK_VERIFY_TOKEN: ${STRAVA_WEBHOOK_VERIFY_TOKEN:-development-webhook-verify-token}
+      STRAVA_WEBHOOK_CALLBACK_URL: ${STRAVA_WEBHOOK_CALLBACK_URL:-}
+      # Hostname of the optional quick tunnel below (`--profile tunnel`).
+      STRAVA_WEBHOOK_TUNNEL_URL_SOURCE: http://tunnel:2000/quicktunnel
     ports:
       - "4000:4000"
     depends_on:
@@ -80,6 +88,16 @@ services:
     volumes:
       - ./backend/src:/app/backend/src
       - ./backend/test:/app/backend/test
+
+  # Optional public URL for Strava webhooks in development:
+  # `docker compose --profile tunnel up`. Exposes the backend on a random
+  # *.trycloudflare.com address, picked up by the backend at startup.
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    profiles: [tunnel]
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 --url http://backend:4000
+    depends_on:
+      - backend
 
   frontend:
     build:

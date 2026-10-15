@@ -15,9 +15,9 @@ export function DistanceFamilySection({ family, totalM, landmarks }: DistanceFam
   const headingId = `distances-${family}`;
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-4">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id={headingId} className="text-lg font-semibold tracking-tight">
+        <h2 id={headingId} className="text-base font-semibold tracking-tight">
           {t(`families.${family}`)}
         </h2>
         <p className="text-sm text-muted-foreground tabular-nums">
@@ -26,7 +26,7 @@ export function DistanceFamilySection({ family, totalM, landmarks }: DistanceFam
           })}
         </p>
       </div>
-      <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4">
+      <ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
         {landmarks.map((landmark) => (
           <LandmarkBadge key={landmark.id} landmark={landmark} />
         ))}

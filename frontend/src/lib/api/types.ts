@@ -43,6 +43,16 @@ export interface StravaConnectionStatus {
     lastSyncedAt: string | null;
   } | null;
   sync: SyncJob | null;
+  /** Tile computation of the imported activities; null without connection. */
+  tiles: TileProgress | null;
+}
+
+export interface TileProgress {
+  activities: number;
+  /** Activities whose tiles are computed, at least from the simplified track. */
+  computed: number;
+  /** Activities awaiting their full track to refine their tiles. */
+  refining: number;
 }
 
 export interface ActivityStats {
@@ -85,4 +95,16 @@ export interface ActivityTracksPage {
   }[];
   /** True when a further page may hold more tracks. */
   hasMore: boolean;
+}
+
+export interface TileStats {
+  /** Large tiles (zoom 14) crossed at least once. */
+  tiles: number;
+  /** Small tiles (zoom 17) crossed at least once. */
+  subtiles: number;
+}
+
+export interface TilesResponse {
+  /** `[x, y, mask]`: a large tile (zoom 14) and its small tiles as an unsigned 64-bit decimal mask. */
+  cells: [number, number, string][];
 }

@@ -194,6 +194,11 @@
       "elevation": "Dénivelé positif",
       "movingTime": "Temps en mouvement",
       "error": "Impossible de charger tes statistiques pour le moment."
+    },
+    "tiles": {
+      "tiles": "Tuiles",
+      "subtiles": "Petites tuiles",
+      "error": "Impossible de charger tes tuiles pour le moment."
     }
   },
   "strava": {
@@ -232,7 +237,14 @@
       "neverSynced": "Pas encore synchronisé",
       "connectedAs": "Connecté à Strava en tant que {name}",
       "connected": "Connecté à Strava",
-      "privateMissing": "Tes activités privées ne sont pas importées. Pour les inclure, révoque puis reconnecte Strava en cochant « Voir les données de tes activités privées »."
+      "privateMissing": "Tes activités privées ne sont pas importées. Pour les inclure, révoque puis reconnecte Strava en cochant « Voir les données de tes activités privées ».",
+      "tiles": {
+        "computing": "Calcul de tes tuiles…",
+        "computedCount": "{computed} sur {total}",
+        "refining": "Précision des tuiles",
+        "refiningCount": "{count, plural, one {# activité à vérifier} other {# activités à vérifier}}",
+        "refiningHint": "Les longues sorties et les activités dont le départ ou l'arrivée est masqué sont précisées avec leur tracé GPS complet, au rythme permis par Strava."
+      }
     }
   },
   "distances": {
@@ -276,6 +288,12 @@
     "empty": "Connecte Strava depuis le tableau de bord pour voir tes tracés ici.",
     "error": "Impossible de récupérer tes tracés pour le moment.",
     "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "tileMode": {
+      "label": "Affichage des tuiles",
+      "none": "Tracés",
+      "tiles": "Tuiles",
+      "subtiles": "Petites tuiles"
+    }
   }
 }

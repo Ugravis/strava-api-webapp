@@ -1,13 +1,13 @@
 import {
   BikeIcon,
-  Building2Icon,
-  DrillIcon,
+  CarIcon,
   EarthIcon,
   HexagonIcon,
   MedalIcon,
   MilestoneIcon,
   MountainIcon,
   MoonIcon,
+  PickaxeIcon,
   RouteIcon,
   ShellIcon,
   TrainFrontIcon,
@@ -19,10 +19,10 @@ import {
 import { createElement } from "react";
 
 const LANDMARK_ICONS: Record<string, LucideIcon> = {
-  earth_center: DrillIcon,
+  earth_center: PickaxeIcon,
   earth_circumference: EarthIcon,
   earth_moon: MoonIcon,
-  paris_ring_road: Building2Icon,
+  paris_ring_road: CarIcon,
   marathon: MedalIcon,
   lake_geneva: WavesIcon,
   gr20: MountainIcon,

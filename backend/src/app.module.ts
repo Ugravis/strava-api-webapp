@@ -43,6 +43,7 @@ import { UsersModule } from './users/users.module';
     ActivitiesModule,
     StravaModule,
     DistancesModule,
+    ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),
   ],

@@ -6,8 +6,9 @@ import { StravaApiClient } from '../api/strava-api.client';
 export const WEBHOOK_PATH = '/api/strava/webhook';
 const ATTEMPTS = 6;
 const RETRY_DELAY_MS = 5_000;
-/** Callbacks of development quick tunnels, safe to replace when stale. */
-const QUICK_TUNNEL_HOST = /\.trycloudflare\.com$/;
+/** Callbacks of development tunnels (Cloudflare, ngrok), safe to replace when stale. */
+const DEVELOPMENT_TUNNEL_HOST =
+  /\.(trycloudflare\.com|ngrok-free\.(app|dev)|ngrok\.(io|app|dev))$/;
 
 /**
  * Keeps the application's single Strava webhook subscription pointed at this
@@ -67,7 +68,9 @@ export class StravaWebhookSubscriptionService {
       return;
     }
     if (current) {
-      if (!QUICK_TUNNEL_HOST.test(new URL(current.callback_url).hostname)) {
+      if (
+        !DEVELOPMENT_TUNNEL_HOST.test(new URL(current.callback_url).hostname)
+      ) {
         // Never take over a subscription that may serve another environment.
         this.logger.warn(
           `Strava webhook subscription ${current.id} points to ${current.callback_url}: delete it to use ${callbackUrl}`,

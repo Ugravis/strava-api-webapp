@@ -97,7 +97,7 @@ A new Strava application only accepts its owner's account until it is reviewed b
   missed while the backend was down.
 - **Webhooks in development** need a public URL: `docker compose --profile tunnel up` starts a
   Cloudflare quick tunnel, whose random address the backend registers with Strava at startup
-  (replacing a previous quick tunnel subscription). Without it, the reconciliation and the
+  (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
   "Synchroniser" button keep the data up to date. Elsewhere, set `STRAVA_WEBHOOK_CALLBACK_URL`.
 
 ## Scripts

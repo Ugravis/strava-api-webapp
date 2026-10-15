@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -21,6 +23,7 @@ export enum ApiErrorCode {
   OAuthSignupExpired = 'OAUTH_SIGNUP_EXPIRED',
   ProviderDisabled = 'PROVIDER_DISABLED',
   ProviderNotConnected = 'PROVIDER_NOT_CONNECTED',
+  ProviderRateLimited = 'PROVIDER_RATE_LIMITED',
   Unauthenticated = 'UNAUTHENTICATED',
   CrossOriginRejected = 'CROSS_ORIGIN_REJECTED',
   NotFound = 'NOT_FOUND',
@@ -39,4 +42,6 @@ export const ApiErrors = {
     new ConflictException(body(code, message)),
   notFound: (code: ApiErrorCode, message: string) =>
     new NotFoundException(body(code, message)),
+  tooManyRequests: (code: ApiErrorCode, message: string) =>
+    new HttpException(body(code, message), HttpStatus.TOO_MANY_REQUESTS),
 };

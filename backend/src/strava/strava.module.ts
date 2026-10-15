@@ -8,6 +8,8 @@ import { StravaConnectionController } from './strava-connection.controller';
 import { StravaConnectionService } from './strava-connection.service';
 import { StravaSyncService } from './sync/strava-sync.service';
 import { StravaWorker } from './sync/strava-worker.service';
+import { StravaTracksController } from './tracks/strava-tracks.controller';
+import { StravaTracksService } from './tracks/strava-tracks.service';
 import { StravaWebhookEvent } from './webhooks/strava-webhook-event.entity';
 import { StravaWebhookSubscriptionService } from './webhooks/strava-webhook-subscription.service';
 import { StravaWebhookController } from './webhooks/strava-webhook.controller';
@@ -19,13 +21,18 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
     ActivitiesModule,
     ConnectionsModule,
   ],
-  controllers: [StravaConnectionController, StravaWebhookController],
+  controllers: [
+    StravaConnectionController,
+    StravaTracksController,
+    StravaWebhookController,
+  ],
   providers: [
     // One instance: the Strava quotas are shared by the whole application.
     { provide: StravaRateLimiter, useValue: new StravaRateLimiter() },
     StravaApiClient,
     StravaConnectionService,
     StravaSyncService,
+    StravaTracksService,
     StravaWebhookService,
     StravaWebhookSubscriptionService,
     StravaWorker,

@@ -5,9 +5,12 @@ import type { StreamReason } from './activity-tile-state.entity';
 import {
   fromSignedMask,
   type TileCell,
+  SUBTILE_ZOOM,
+  TILE_ZOOM,
   TileSet,
   toSignedMask,
 } from './tile-grid';
+import { type LevelMetrics, tileMetrics } from './tile-metrics';
 import type { ActivityTiles, TrackAssessment } from './track-tiles';
 
 /** An activity whose full track is awaited. */
@@ -21,12 +24,40 @@ export interface PendingStream {
   attempts: number;
 }
 
-export interface TileStats {
-  /** Large tiles (zoom 14) crossed at least once. */
-  tiles: number;
-  /** Small tiles (zoom 17) crossed at least once. */
-  subtiles: number;
+export interface LevelStats {
+  /** Tiles crossed at least once. */
+  visited: number;
+  /** Side of the largest square of visited tiles. */
+  maxSquare: number;
+  /** Tiles of the largest cluster. */
+  maxCluster: number;
+  /** Visited tiles whose four neighbors are visited too. */
+  clustered: number;
 }
+
+export interface TileStats {
+  /** Large tiles (zoom 14). */
+  tiles: LevelStats;
+  /** Small tiles (zoom 17). */
+  subtiles: LevelStats;
+}
+
+/** Activities that crossed one tile. */
+export interface TileVisits {
+  activities: number;
+  firstVisitedAt: string | null;
+  lastVisitedAt: string | null;
+  /** The latest ones first. */
+  recent: {
+    id: string;
+    name: string;
+    sportType: string;
+    startedAt: string;
+  }[];
+}
+
+/** Activities listed in the details of a tile. */
+const RECENT_VISITS = 5;
 
 export interface TileProgress {
   activities: number;
@@ -240,18 +271,71 @@ export class TilesService {
   }
 
   async stats(userId: string): Promise<TileStats> {
-    const [row]: TileStats[] = await this.dataSource.query(
-      `SELECT count(*)::int AS tiles,
-         COALESCE(sum(bit_count(mask::bit(64))), 0)::int AS subtiles
-       FROM (
-         SELECT bit_or(mask) AS mask FROM activity_tiles
-         WHERE user_id = $1
-         GROUP BY x, y
-       ) cells
-       WHERE mask <> 0`,
-      [userId],
+    const metrics = tileMetrics(await this.cells(userId));
+    const level = (metrics: LevelMetrics): LevelStats => ({
+      visited: metrics.visited,
+      maxSquare: metrics.maxSquare?.size ?? 0,
+      maxCluster: metrics.maxCluster.length,
+      clustered: metrics.clustered,
+    });
+    return { tiles: level(metrics.tiles), subtiles: level(metrics.subtiles) };
+  }
+
+  /**
+   * Activities of the user that crossed the tile `(x, y)` at `zoom`, either
+   * a large tile (zoom 14) or a small one (zoom 17).
+   */
+  async visits(
+    userId: string,
+    zoom: typeof TILE_ZOOM | typeof SUBTILE_ZOOM,
+    x: number,
+    y: number,
+  ): Promise<TileVisits> {
+    const shift = SUBTILE_ZOOM - TILE_ZOOM;
+    const side = 2 ** shift;
+    const [tileX, tileY, bits] =
+      zoom === TILE_ZOOM
+        ? [x, y, -1n]
+        : [
+            x >> shift,
+            y >> shift,
+            1n << BigInt((y % side) * side + (x % side)),
+          ];
+    const params = [userId, tileX, tileY, toSignedMask(bits)];
+    const filter = `FROM activity_tiles t JOIN activities a ON a.id = t.activity_id
+       WHERE t.user_id = $1 AND t.x = $2 AND t.y = $3 AND t.mask & $4 <> 0`;
+    const [summary]: {
+      activities: number;
+      first: Date | null;
+      last: Date | null;
+    }[] = await this.dataSource.query(
+      `SELECT count(*)::int AS activities, min(a.started_at) AS first, max(a.started_at) AS last
+       ${filter}`,
+      params,
     );
-    return row;
+    const recent: {
+      id: string;
+      name: string;
+      sport_type: string;
+      started_at: Date;
+    }[] = await this.dataSource.query(
+      `SELECT a.id, a.name, a.sport_type, a.started_at
+       ${filter}
+       ORDER BY a.started_at DESC
+       LIMIT ${RECENT_VISITS}`,
+      params,
+    );
+    return {
+      activities: summary.activities,
+      firstVisitedAt: summary.first?.toISOString() ?? null,
+      lastVisitedAt: summary.last?.toISOString() ?? null,
+      recent: recent.map((row) => ({
+        id: row.id,
+        name: row.name,
+        sportType: row.sport_type,
+        startedAt: row.started_at.toISOString(),
+      })),
+    };
   }
 
   /**

@@ -198,6 +198,11 @@
     "tiles": {
       "tiles": "Tuiles",
       "subtiles": "Petites tuiles",
+      "visited": "Explorées",
+      "maxSquare": "Plus grand carré",
+      "squareSize": "{size} × {size}",
+      "maxCluster": "Plus grand cluster",
+      "clustered": "Tuiles en cluster",
       "error": "Impossible de charger tes tuiles pour le moment."
     }
   },
@@ -293,7 +298,27 @@
       "label": "Affichage des tuiles",
       "none": "Tracés",
       "tiles": "Tuiles",
-      "subtiles": "Petites tuiles"
+      "subtiles": "Petites tuiles",
+      "both": "Les deux"
+    },
+    "legend": {
+      "tiles": "Tuiles",
+      "subtiles": "Petites",
+      "maxSquare": "Plus grand carré : {size} × {size}",
+      "maxCluster": "Plus grand cluster : {count, plural, =0 {aucun} one {# tuile} other {# tuiles}}"
+    },
+    "tilePopup": {
+      "tile": "Tuile",
+      "subtile": "Petite tuile",
+      "inMaxSquare": "Plus grand carré",
+      "inMaxCluster": "Plus grand cluster",
+      "clustered": "Cluster",
+      "subtiles": "Petites tuiles explorées",
+      "visits": "Passages",
+      "firstVisit": "Premier passage",
+      "lastVisit": "Dernier passage",
+      "recent": "Dernières activités",
+      "error": "Impossible de charger le détail de cette tuile."
     }
   }
 }

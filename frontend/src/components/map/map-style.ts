@@ -16,3 +16,7 @@ export const TRACK_COLOR = "#fc4c02";
 export const TILE_COLOR = "#7c3aed";
 /** Grid of the unvisited tiles, readable on the light and dark styles. */
 export const GRID_COLOR = "#64748b";
+/** Largest cluster of tiles. */
+export const CLUSTER_COLOR = "#2563eb";
+/** Outline of the largest square of tiles. */
+export const SQUARE_COLOR = "#f59e0b";

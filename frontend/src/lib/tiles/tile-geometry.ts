@@ -1,4 +1,5 @@
 import type { Feature, FeatureCollection, LineString, Polygon } from "geojson";
+import type { TileLevelAchievements, TilesResponse } from "@/lib/api/types";
 
 /** Large tiles: slippy-map tiles at zoom 14. */
 export const TILE_ZOOM = 14;
@@ -16,6 +17,16 @@ export interface TileCell {
   mask: bigint;
 }
 
+/** Zoom of one of the two levels of tiles. */
+export type TileZoom = typeof TILE_ZOOM | typeof SUBTILE_ZOOM;
+
+/** The tiles crossed by the user and their achievements, per level. */
+export interface ExploredTiles {
+  cells: TileCell[];
+  tiles: TileLevelAchievements;
+  subtiles: TileLevelAchievements;
+}
+
 export interface Bounds {
   west: number;
   south: number;
@@ -23,8 +34,8 @@ export interface Bounds {
   north: number;
 }
 
-export function parseCells(cells: [number, number, string][]): TileCell[] {
-  return cells.map(([x, y, mask]) => ({ x, y, mask: BigInt(mask) }));
+export function parseTiles({ cells, tiles, subtiles }: TilesResponse): ExploredTiles {
+  return { cells: cells.map(([x, y, mask]) => ({ x, y, mask: BigInt(mask) })), tiles, subtiles };
 }
 
 const lngOf = (x: number, zoom: number) => (x / 2 ** zoom) * 360 - 180;
@@ -36,11 +47,12 @@ const yOf = (lat: number, zoom: number) => {
   return ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** zoom;
 };
 
-function square(x: number, y: number, zoom: number): Feature<Polygon> {
+/** The `size × size` tiles whose top-left one is `(x, y)`. */
+function square(x: number, y: number, zoom: number, size = 1): Feature<Polygon> {
   const west = lngOf(x, zoom);
-  const east = lngOf(x + 1, zoom);
+  const east = lngOf(x + size, zoom);
   const north = latOf(y, zoom);
-  const south = latOf(y + 1, zoom);
+  const south = latOf(y + size, zoom);
   return {
     type: "Feature",
     properties: {},
@@ -84,6 +96,85 @@ export function subtilesCollection(cells: TileCell[]): FeatureCollection<Polygon
     }
   }
   return { type: "FeatureCollection", features };
+}
+
+/** Largest square of a level, as one polygon. */
+export function maxSquareCollection(achievements: TileLevelAchievements, zoom: TileZoom): FeatureCollection<Polygon> {
+  const { maxSquare } = achievements;
+  return {
+    type: "FeatureCollection",
+    features: maxSquare ? [square(maxSquare.x, maxSquare.y, zoom, maxSquare.size)] : [],
+  };
+}
+
+/** Tiles of the largest cluster of a level. */
+export function maxClusterCollection(achievements: TileLevelAchievements, zoom: TileZoom): FeatureCollection<Polygon> {
+  return {
+    type: "FeatureCollection",
+    features: achievements.maxCluster.map(([x, y]) => square(x, y, zoom)),
+  };
+}
+
+/** The tile of `zoom` holding the position `(lng, lat)`. */
+export function tileAt(lng: number, lat: number, zoom: TileZoom): [number, number] {
+  return [Math.floor(xOf(lng, zoom)), Math.floor(yOf(lat, zoom))];
+}
+
+export function countSubtiles(mask: bigint): number {
+  let count = 0;
+  for (let rest = mask; rest !== ZERO; rest &= rest - ONE) count++;
+  return count;
+}
+
+/** What the map knows about one tile, without asking the API. */
+export interface TileSummary {
+  visited: boolean;
+  /** Small tiles explored inside a large tile; null for a small tile. */
+  subtiles: number | null;
+  /** Its four neighbors are visited too. */
+  clustered: boolean;
+  inMaxCluster: boolean;
+  inMaxSquare: boolean;
+}
+
+/** Lookup of the explored tiles, built once per set of tiles. */
+export class TileIndex {
+  private readonly masks = new Map<string, bigint>();
+  private readonly maxClusters: Record<TileZoom, Set<string>>;
+
+  constructor(private readonly explored: ExploredTiles) {
+    for (const { x, y, mask } of explored.cells) this.masks.set(`${x}/${y}`, mask);
+    const keys = ({ maxCluster }: TileLevelAchievements) => new Set(maxCluster.map(([x, y]) => `${x}/${y}`));
+    this.maxClusters = { [TILE_ZOOM]: keys(explored.tiles), [SUBTILE_ZOOM]: keys(explored.subtiles) };
+  }
+
+  isVisited(zoom: TileZoom, x: number, y: number): boolean {
+    if (zoom === TILE_ZOOM) return (this.masks.get(`${x}/${y}`) ?? ZERO) !== ZERO;
+    const mask = this.masks.get(`${Math.floor(x / SUBTILES_PER_SIDE)}/${Math.floor(y / SUBTILES_PER_SIDE)}`);
+    const bit = (y % SUBTILES_PER_SIDE) * SUBTILES_PER_SIDE + (x % SUBTILES_PER_SIDE);
+    return mask !== undefined && ((mask >> BigInt(bit)) & ONE) === ONE;
+  }
+
+  summary(zoom: TileZoom, x: number, y: number): TileSummary {
+    const square = (zoom === TILE_ZOOM ? this.explored.tiles : this.explored.subtiles).maxSquare;
+    return {
+      visited: this.isVisited(zoom, x, y),
+      subtiles: zoom === TILE_ZOOM ? countSubtiles(this.masks.get(`${x}/${y}`) ?? ZERO) : null,
+      clustered: [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ].every(([dx, dy]) => this.isVisited(zoom, x + dx, y + dy)) && this.isVisited(zoom, x, y),
+      inMaxCluster: this.maxClusters[zoom].has(`${x}/${y}`),
+      inMaxSquare:
+        square !== null &&
+        x >= square.x &&
+        x < square.x + square.size &&
+        y >= square.y &&
+        y < square.y + square.size,
+    };
+  }
 }
 
 /**

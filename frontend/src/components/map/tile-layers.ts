@@ -20,6 +20,13 @@ import { firstGroundLayerId, type MapPalette } from "./map-style";
 /** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
 export type TileMode = "tiles" | "both";
 
+/** What the map shows of the tiles: its levels, and the clusters other than the largest of each. */
+export interface TileView {
+  mode: TileMode;
+  tileClusters: boolean;
+  subtileClusters: boolean;
+}
+
 /**
  * Tiles of the user, served as vector tiles by the backend. The browser
  * revalidates each one from its entity tag: when the tiles change, only the
@@ -38,6 +45,7 @@ const SOURCE_LAYERS = {
   tiles: "tiles",
   tilesOutline: "tiles_outline",
   tileCluster: "tile_cluster",
+  tileClusters: "tile_clusters",
   subtiles: "subtiles",
 } as const;
 
@@ -62,8 +70,9 @@ const CLICK_TOLERANCE_PX = [0, 6, 12];
 /** Zooms over which a layer fades in after its minimum zoom. */
 const FADE_ZOOMS = 1;
 
+const TILE_CLUSTERS_LAYER_ID = "tile-clusters-fill";
 const LEVEL_LAYERS = {
-  tiles: ["visited-tiles-fill", "tile-max-cluster-fill", "visited-tiles-outline", "tile-max-square-line"],
+  tiles: ["visited-tiles-fill", TILE_CLUSTERS_LAYER_ID, "tile-max-cluster-fill", "visited-tiles-outline", "tile-max-square-line"],
   subtiles: ["visited-subtiles-image", "visited-subtiles-fill", "subtile-grid-line", "subtile-max-square-line"],
 } as const;
 const ALL_LAYERS = [...LEVEL_LAYERS.tiles, ...LEVEL_LAYERS.subtiles, "tile-grid-line"];
@@ -74,7 +83,13 @@ export const TILE_FILL_LAYER_ID = "visited-tiles-fill";
  * Fills drawn as the ground of the map, right over its bare land: they
  * hide none of the vegetation, water, buildings, roads and names.
  */
-const GROUND_LAYERS = new Set([TILE_FILL_LAYER_ID, "tile-max-cluster-fill", "visited-subtiles-image", "visited-subtiles-fill"]);
+const GROUND_LAYERS = new Set([
+  TILE_FILL_LAYER_ID,
+  TILE_CLUSTERS_LAYER_ID,
+  "tile-max-cluster-fill",
+  "visited-subtiles-image",
+  "visited-subtiles-fill",
+]);
 
 /** Layers whose fill shows a visited tile, small tiles first: they react to the pointer. */
 export const CLICKABLE_LAYERS = ["visited-subtiles-fill", "visited-tiles-fill"];
@@ -145,8 +160,8 @@ function subtileOpacity(): ExpressionSpecification {
   return ["interpolate", ["linear"], ["zoom"], SUBTILE_MIN_ZOOM, 0, SUBTILE_MIN_ZOOM + FADE_ZOOMS, 1, from, 1, to, MERGED_SUBTILE_OPACITY];
 }
 
-/** Opacity of the fill of the largest cluster: stronger zoomed out, then merged into the large tiles. */
-function clusterOpacity({ clusterOpacity: opacity }: MapPalette): ExpressionSpecification {
+/** Opacity of the fill of a cluster: stronger zoomed out, then merged into the large tiles. */
+function clusterOpacity(opacity: number): ExpressionSpecification {
   const [from, to] = CLUSTER_MERGE_ZOOMS;
   return ["interpolate", ["linear"], ["zoom"], STRONG_FILL_ZOOM, Math.min(1, opacity * 2.5), from, opacity, to, 0];
 }
@@ -184,14 +199,24 @@ function rgba(color: string, alpha: number): string {
 
 // Absolute: MapLibre fetches the tiles from its worker.
 const tilesUrl = () => `${window.location.origin}/api/tiles/vector/{z}/{x}/{y}`;
-// The opacities of the small tiles are drawn in the images.
-const imagesUrl = ({ subtile, subtileOpacity, subtileCluster, subtileClusterOpacity }: MapPalette) =>
-  `${window.location.origin}/api/tiles/raster/{z}/{x}/{y}?color=${rgba(subtile, subtileOpacity)}&cluster=${rgba(subtileCluster, subtileClusterOpacity)}`;
+/**
+ * Images of the small tiles in the colors of `palette`, drawn in them with
+ * their opacities. Without their color, the other clusters look like the
+ * other small tiles.
+ */
+function imagesUrl(palette: MapPalette, clusters: boolean): string {
+  const colors = [
+    `color=${rgba(palette.subtile, palette.subtileOpacity)}`,
+    `cluster=${rgba(palette.subtileCluster, palette.subtileClusterOpacity)}`,
+    ...(clusters ? [`clusters=${rgba(palette.otherSubtileClusters, palette.otherSubtileClustersOpacity)}`] : []),
+  ];
+  return `${window.location.origin}/api/tiles/raster/{z}/{x}/{y}?${colors.join("&")}`;
+}
 
 /** Version of the tiles drawn by each map: a new one reloads its tiles. */
 const drawnVersions = new WeakMap<MapLibreMap, string>();
-/** Colors of the images of each map, those of its theme. */
-const drawnPalettes = new WeakMap<MapLibreMap, MapPalette>();
+/** Colors of the images of each map, those of its theme, and whether they show the other clusters. */
+const drawnImages = new WeakMap<MapLibreMap, { palette: MapPalette; clusters: boolean }>();
 
 /** Levels of the tile under the pointer, the most detailed first. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
@@ -233,23 +258,24 @@ export function visitedTileNear(
 
 /**
  * Adds the visited tiles as the ground of the map, and their outlines,
- * grids and squares below `beforeId`, hidden until a mode is set. Needs the version of the tiles: until then,
- * nothing is added.
+ * grids and squares below `beforeId`, hidden until a view is set. Needs the
+ * version of the tiles: until then, nothing is added.
  */
 export function addTileLayers(
   map: MapLibreMap,
   data: TileData,
   palette: MapPalette,
+  view: TileView,
   beforeId: string | undefined,
 ): void {
   if (!data.version || map.getSource(VECTOR_SOURCE)) return;
   drawnVersions.set(map, data.version);
-  drawnPalettes.set(map, palette);
+  drawnImages.set(map, { palette, clusters: view.subtileClusters });
   map.addSource(VECTOR_SOURCE, { type: "vector", tiles: [tilesUrl()], maxzoom: TILES_MAX_ZOOM });
   // 512 pixels images over 256 pixels: sharp on high density screens.
   map.addSource(RASTER_SOURCE, {
     type: "raster",
-    tiles: [imagesUrl(palette)],
+    tiles: [imagesUrl(palette, view.subtileClusters)],
     tileSize: 256,
     minzoom: SUBTILE_MIN_ZOOM,
     maxzoom: TILES_MAX_ZOOM,
@@ -272,11 +298,26 @@ export function addTileLayers(
       paint: { ...tilePaint(palette), "fill-antialias": false },
     },
     {
+      id: TILE_CLUSTERS_LAYER_ID,
+      type: "fill",
+      ...vector(SOURCE_LAYERS.tileClusters),
+      layout,
+      paint: {
+        "fill-color": palette.otherClusters,
+        "fill-opacity": clusterOpacity(palette.otherClustersOpacity),
+        "fill-antialias": false,
+      },
+    },
+    {
       id: "tile-max-cluster-fill",
       type: "fill",
       ...vector(SOURCE_LAYERS.tileCluster),
       layout,
-      paint: { "fill-color": palette.cluster, "fill-opacity": clusterOpacity(palette), "fill-antialias": false },
+      paint: {
+        "fill-color": palette.cluster,
+        "fill-opacity": clusterOpacity(palette.clusterOpacity),
+        "fill-antialias": false,
+      },
     },
     {
       id: "visited-tiles-outline",
@@ -349,20 +390,28 @@ export function setTileData(map: MapLibreMap, data: TileData): boolean {
     // Same addresses: the tiles are requested again and the browser
     // revalidates them, only those whose tiles changed are downloaded.
     source.setTiles([tilesUrl()]);
-    const palette = drawnPalettes.get(map);
-    if (palette) map.getSource<RasterTileSource>(RASTER_SOURCE)?.setTiles([imagesUrl(palette)]);
+    const images = drawnImages.get(map);
+    if (images) map.getSource<RasterTileSource>(RASTER_SOURCE)?.setTiles([imagesUrl(images.palette, images.clusters)]);
   }
   map.getSource<GeoJSONSource>(SOURCES.tileSquare)?.setData(data.tileSquare);
   map.getSource<GeoJSONSource>(SOURCES.subtileSquare)?.setData(data.subtileSquare);
   return true;
 }
 
-export function setTileMode(map: MapLibreMap, mode: TileMode): void {
+export function setTileView(map: MapLibreMap, { mode, tileClusters, subtileClusters }: TileView): void {
   const visible = new Set(VISIBLE_LAYERS[mode]);
+  if (!tileClusters) visible.delete(TILE_CLUSTERS_LAYER_ID);
   for (const id of ALL_LAYERS) {
     if (map.getLayer(id)) {
       map.setLayoutProperty(id, "visibility", visible.has(id) ? "visible" : "none");
     }
+  }
+  // The other clusters of small tiles are drawn in the images: they are
+  // requested again in their new colors.
+  const images = drawnImages.get(map);
+  if (images && images.clusters !== subtileClusters) {
+    drawnImages.set(map, { ...images, clusters: subtileClusters });
+    map.getSource<RasterTileSource>(RASTER_SOURCE)?.setTiles([imagesUrl(images.palette, subtileClusters)]);
   }
   updateGrids(map, mode);
 }

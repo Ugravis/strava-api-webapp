@@ -15,10 +15,11 @@ import {
   CLICKABLE_LAYERS,
   clickableZooms,
   setTileData,
-  setTileMode,
+  setTileView,
   type TileData,
   tileData,
   type TileMode,
+  type TileView,
   updateGrids,
   visitedTileNear,
 } from "./tile-layers";
@@ -42,7 +43,7 @@ interface ActivityMapProps {
   /** Null while loading. */
   summary: TilesSummary | null;
   countries: VisitedCountries;
-  tileMode: TileMode;
+  tileView: TileView;
   showTracks: boolean;
   label: string;
 }
@@ -57,7 +58,7 @@ interface SelectedTile {
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
+export function ActivityMap({ lines, summary, countries, tileView, showTracks, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -68,7 +69,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   // Whether the custom layers can be added. `isStyleLoaded()` stays false
   // while any tile of the base map is loading.
   const styleReadyRef = useRef(false);
-  const modeRef = useRef(tileMode);
+  const viewRef = useRef(tileView);
   const showTracksRef = useRef(showTracks);
   const framedRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
@@ -107,17 +108,17 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       // over tiles. The countries go lower, below the roads.
       const firstLabel = firstLabelId(map);
       setVisitedCountries(map, countriesRef.current, paletteRef.current);
-      addTileLayers(map, tilesRef.current, paletteRef.current, firstLabel);
+      addTileLayers(map, tilesRef.current, paletteRef.current, viewRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, paletteRef.current, showTracksRef.current, firstLabel);
-      setTileMode(map, modeRef.current);
+      setTileView(map, viewRef.current);
     });
-    map.on("moveend", () => updateGrids(map, modeRef.current));
+    map.on("moveend", () => updateGrids(map, viewRef.current.mode));
     // The tracks arrive after the map: once the user has moved it, they no
     // longer frame it.
     map.on("movestart", (event) => {
       if (event.originalEvent) framedRef.current = true;
     });
-    map.on("click", (event) => setSelected(selectTile(map, modeRef.current, event)));
+    map.on("click", (event) => setSelected(selectTile(map, viewRef.current.mode, event)));
     for (const layer of CLICKABLE_LAYERS) {
       map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
@@ -150,8 +151,8 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     if (!map || !styleReadyRef.current || setTileData(map, tilesRef.current)) return;
     // First version of the tiles: the layers go below the tracks.
     const beforeId = map.getLayer(TRACK_CASING_LAYER_ID) ? TRACK_CASING_LAYER_ID : firstLabelId(map);
-    addTileLayers(map, tilesRef.current, paletteRef.current, beforeId);
-    setTileMode(map, modeRef.current);
+    addTileLayers(map, tilesRef.current, paletteRef.current, viewRef.current, beforeId);
+    setTileView(map, viewRef.current);
   }, [summary]);
 
   useEffect(() => {
@@ -161,10 +162,10 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   }, [countries]);
 
   useEffect(() => {
-    modeRef.current = tileMode;
-    // Layers not added yet get the mode once the style is loaded.
-    if (mapRef.current) setTileMode(mapRef.current, tileMode);
-  }, [tileMode]);
+    viewRef.current = tileView;
+    // Layers not added yet get the view once the style is loaded.
+    if (mapRef.current) setTileView(mapRef.current, tileView);
+  }, [tileView]);
 
   useEffect(() => {
     showTracksRef.current = showTracks;
@@ -172,7 +173,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     if (mapRef.current) setTracksVisible(mapRef.current, showTracks);
   }, [showTracks]);
 
-  const shown = selected?.mode === tileMode ? selected : null;
+  const shown = selected?.mode === tileView.mode ? selected : null;
 
   useEffect(() => {
     const map = mapRef.current;

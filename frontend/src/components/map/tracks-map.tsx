@@ -8,7 +8,7 @@ import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
 import { useCountries } from "@/hooks/use-countries";
 import { useTileSummary } from "@/hooks/use-tile-summary";
 import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
-import { ALL_MAP_LAYERS, type MapLayers, tileModeOf } from "./map-layers";
+import { ALL_MAP_LAYERS, type MapLayers, tileViewOf } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
 import { MapStatsBar } from "./map-stats-bar";
 
@@ -37,6 +37,7 @@ export function TracksMap() {
     [completion],
   );
   const [layers, setLayers] = useState<MapLayers>(ALL_MAP_LAYERS);
+  const tileView = useMemo(() => tileViewOf(layers), [layers]);
 
   return (
     <div className="flex min-h-[60svh] flex-1 flex-col">
@@ -46,7 +47,7 @@ export function TracksMap() {
           lines={tracks.lines ?? NO_LINES}
           summary={summary}
           countries={countries}
-          tileMode={tileModeOf(layers)}
+          tileView={tileView}
           showTracks={layers.tracks}
           label={t("label")}
         />

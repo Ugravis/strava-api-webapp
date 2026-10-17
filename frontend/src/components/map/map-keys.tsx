@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { MAP_PALETTES, type MapPalette } from "./map-style";
 
@@ -22,7 +22,15 @@ function themed(keys: Partial<Record<string, ColorKey>>): CSSProperties {
 const SWATCH = "inline-block size-3 shrink-0 rounded-[3px]";
 
 /** Visited tiles: the light large tiles with their outline, or the deeper small tiles. */
-export function TileKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
+export function TileKey({
+  subtiles = false,
+  className,
+  children,
+}: {
+  subtiles?: boolean;
+  className?: string;
+  children?: ReactNode;
+}) {
   return (
     <span
       aria-hidden
@@ -33,7 +41,9 @@ export function TileKey({ subtiles = false, className }: { subtiles?: boolean; c
         subtiles ? "bg-(--fill)/60 dark:bg-(--fill-dark)/60" : "bg-(--fill)/35 dark:bg-(--fill-dark)/35",
         className,
       )}
-    />
+    >
+      {children}
+    </span>
   );
 }
 
@@ -45,6 +55,30 @@ export function ClusterKey({ subtiles = false, className }: { subtiles?: boolean
       style={themed({ fill: subtiles ? "subtileCluster" : "cluster" })}
       className={cn(SWATCH, "border border-foreground/15 bg-(--fill)/55 dark:bg-(--fill-dark)/65", className)}
     />
+  );
+}
+
+/**
+ * Other clusters: a light wash over the large tiles, whose look it takes
+ * with their outline, or small tiles a little deeper than the others.
+ */
+export function OtherClusterKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
+  if (subtiles) {
+    return (
+      <span
+        aria-hidden
+        style={themed({ fill: "otherSubtileClusters" })}
+        className={cn(SWATCH, "border border-foreground/15 bg-(--fill)/60 dark:bg-(--fill-dark)/60", className)}
+      />
+    );
+  }
+  return (
+    <TileKey className={cn("relative overflow-hidden", className)}>
+      <span
+        style={themed({ wash: "otherClusters" })}
+        className="absolute inset-0 bg-(--wash)/45 dark:bg-(--wash-dark)/55"
+      />
+    </TileKey>
   );
 }
 

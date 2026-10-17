@@ -66,12 +66,18 @@ export interface MapPalette {
    */
   cluster: string;
   clusterOpacity: number;
+  /** Other clusters of large tiles: a lighter wash of the same color, short of the largest. */
+  otherClusters: string;
+  otherClustersOpacity: number;
   /** Small tiles, deeper than the large ones they are drawn over: the two levels stand apart. */
   subtile: string;
   subtileOpacity: number;
   /** Largest cluster of small tiles, the most prominent level. */
   subtileCluster: string;
   subtileClusterOpacity: number;
+  /** Other clusters of small tiles: a little deeper than the small tiles, short of the largest. */
+  otherSubtileClusters: string;
+  otherSubtileClustersOpacity: number;
   /** Outline of the visited area: carries the contrast of the light fills. */
   tileOutline: string;
   square: string;
@@ -110,10 +116,14 @@ const LIGHT: MapPalette = {
   tileOpacity: 0.4,
   cluster: "#f4fbf6",
   clusterOpacity: 0.75,
+  otherClusters: "#f4fbf6",
+  otherClustersOpacity: 0.2,
   subtile: "#15803d",
   subtileOpacity: 0.5,
   subtileCluster: "#052e16",
   subtileClusterOpacity: 0.75,
+  otherSubtileClusters: "#166534",
+  otherSubtileClustersOpacity: 0.6,
   tileOutline: "#14532d",
   square: "#db2777",
   grid: "#5b4a35",
@@ -150,11 +160,15 @@ const DARK: MapPalette = {
   // Dark: the quiet levels are dark, the prominent ones light.
   cluster: "#0f1f17",
   clusterOpacity: 0.8,
+  otherClusters: "#0f1f17",
+  otherClustersOpacity: 0.25,
   tileOutline: "#4ade80",
   subtile: "#4ade80",
   subtileOpacity: 0.5,
   subtileCluster: "#bbf7d0",
   subtileClusterOpacity: 0.75,
+  otherSubtileClusters: "#86efac",
+  otherSubtileClustersOpacity: 0.6,
   square: "#f472b6",
   grid: "#a8a29e",
   track: "#fb7185",

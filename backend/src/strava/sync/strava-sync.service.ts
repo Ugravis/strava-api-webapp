@@ -1,10 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ActivitiesService } from '../../activities/activities.service';
+import {
+  ActivitiesService,
+  type ActivityData,
+} from '../../activities/activities.service';
 import stravaConfig, { type StravaConfig } from '../../config/strava.config';
 import type { ProviderConnection } from '../../connections/provider-connection.entity';
 import type { SyncJob } from '../../connections/sync-job.entity';
 import { SyncJobsService } from '../../connections/sync-jobs.service';
 import { StravaApiClient } from '../api/strava-api.client';
+import type { StravaActivity } from '../api/strava-api.types';
 import {
   StravaApiError,
   StravaAuthorizationRevokedError,
@@ -12,8 +16,15 @@ import {
 } from '../api/strava-api.errors';
 import { toActivityData } from '../strava-activity.mapper';
 import { StravaConnectionService } from '../strava-connection.service';
+import { StravaTilesService } from '../tiles/strava-tiles.service';
 
 const PROVIDER = 'strava';
+
+interface ImportedActivity {
+  activityId: string;
+  activity: StravaActivity;
+  data: ActivityData;
+}
 /** Largest page accepted by Strava. */
 const MAX_PAGE_SIZE = 200;
 /** Progress is saved every few activities, so that it moves smoothly. */
@@ -31,6 +42,7 @@ export class StravaSyncService {
     private readonly connections: StravaConnectionService,
     private readonly activities: ActivitiesService,
     private readonly syncJobs: SyncJobsService,
+    private readonly tiles: StravaTilesService,
   ) {}
 
   /** Runs a claimed job to completion, or puts it back in the queue. */
@@ -42,6 +54,7 @@ export class StravaSyncService {
     try {
       if (job.kind === 'backfill') {
         await this.backfill(job, connection);
+        await this.tiles.markUnhandledAsNoTrack(connection.userId);
       } else {
         await this.reconcile(job, connection);
       }
@@ -73,13 +86,9 @@ export class StravaSyncService {
       const batch = await this.api.listActivities(token, { page, perPage });
       const remaining = max === null ? batch.length : max - processed;
 
+      const imported: ImportedActivity[] = [];
       for (const activity of batch.slice(0, remaining)) {
-        await this.activities.upsertFromProvider(
-          connection.userId,
-          PROVIDER,
-          String(activity.id),
-          toActivityData(activity),
-        );
+        imported.push(await this.import(connection, activity));
         processed++;
         if (processed % PROGRESS_STEP === 0) {
           await this.syncJobs.saveProgress(job, {
@@ -89,6 +98,7 @@ export class StravaSyncService {
           });
         }
       }
+      await this.tiles.fromSummaries(connection.userId, imported);
       page++;
       await this.syncJobs.saveProgress(job, {
         processed,
@@ -126,16 +136,12 @@ export class StravaSyncService {
         perPage: MAX_PAGE_SIZE,
         after: since,
       });
+      const imported: ImportedActivity[] = [];
       for (const activity of batch) {
-        const externalId = String(activity.id);
-        await this.activities.upsertFromProvider(
-          connection.userId,
-          PROVIDER,
-          externalId,
-          toActivityData(activity),
-        );
-        seen.push(externalId);
+        imported.push(await this.import(connection, activity));
+        seen.push(String(activity.id));
       }
+      await this.tiles.fromSummaries(connection.userId, imported);
       await this.syncJobs.saveProgress(job, {
         processed: seen.length,
         total: null,
@@ -162,6 +168,20 @@ export class StravaSyncService {
       total: seen.length,
       nextPage: page,
     });
+  }
+
+  private async import(
+    connection: ProviderConnection,
+    activity: StravaActivity,
+  ): Promise<ImportedActivity> {
+    const data = toActivityData(activity);
+    const activityId = await this.activities.upsertFromProvider(
+      connection.userId,
+      PROVIDER,
+      String(activity.id),
+      data,
+    );
+    return { activityId, activity, data };
   }
 
   /** Temporary development cap: only the most recent activities are kept. */

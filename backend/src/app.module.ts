@@ -17,6 +17,7 @@ import storageConfig from './config/storage.config';
 import stravaConfig from './config/strava.config';
 import { HealthController } from './health/health.controller';
 import { StravaModule } from './strava/strava.module';
+import { TilesModule } from './tiles/tiles.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { UsersModule } from './users/users.module';
     ActivitiesModule,
     StravaModule,
     DistancesModule,
+    TilesModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),

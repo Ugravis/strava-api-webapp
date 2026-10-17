@@ -10,6 +10,7 @@ import {
 } from '../api/strava-api.errors';
 import type { StravaActivity } from '../api/strava-api.types';
 import type { StravaConnectionService } from '../strava-connection.service';
+import type { StravaTilesService } from '../tiles/strava-tiles.service';
 import { StravaSyncService } from './strava-sync.service';
 
 const connection = {
@@ -62,6 +63,9 @@ describe('StravaSyncService', () => {
   let syncJobs: jest.Mocked<
     Pick<SyncJobsService, 'saveProgress' | 'complete' | 'defer' | 'fail'>
   >;
+  let tiles: jest.Mocked<
+    Pick<StravaTilesService, 'fromSummaries' | 'markUnhandledAsNoTrack'>
+  >;
   let service: StravaSyncService;
 
   beforeEach(() => {
@@ -77,7 +81,11 @@ describe('StravaSyncService', () => {
       handleRevoked: jest.fn(),
     };
     activities = {
-      upsertFromProvider: jest.fn(),
+      upsertFromProvider: jest
+        .fn()
+        .mockImplementation((_user, _provider, externalId: string) =>
+          Promise.resolve(`activity-${externalId}`),
+        ),
       removeMissingFromProvider: jest.fn().mockResolvedValue(0),
       keepMostRecentFromProvider: jest.fn().mockResolvedValue(0),
     };
@@ -87,13 +95,27 @@ describe('StravaSyncService', () => {
       defer: jest.fn(),
       fail: jest.fn(),
     };
+    tiles = { fromSummaries: jest.fn(), markUnhandledAsNoTrack: jest.fn() };
     service = new StravaSyncService(
       config,
       api as unknown as StravaApiClient,
       connections as unknown as StravaConnectionService,
       activities as unknown as ActivitiesService,
       syncJobs as unknown as SyncJobsService,
+      tiles as unknown as StravaTilesService,
     );
+  });
+
+  it('computes the tiles of each imported page', async () => {
+    api.listActivities.mockResolvedValue(stravaActivities(2));
+
+    await service.run(buildJob());
+
+    expect(tiles.fromSummaries).toHaveBeenCalledWith('user-id', [
+      expect.objectContaining({ activityId: 'activity-1' }),
+      expect.objectContaining({ activityId: 'activity-2' }),
+    ]);
+    expect(tiles.markUnhandledAsNoTrack).toHaveBeenCalledWith('user-id');
   });
 
   it('imports at most the configured number of activities', async () => {

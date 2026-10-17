@@ -43,6 +43,16 @@ export interface StravaConnectionStatus {
     lastSyncedAt: string | null;
   } | null;
   sync: SyncJob | null;
+  /** Tile computation of the imported activities; null without connection. */
+  tiles: TileProgress | null;
+}
+
+export interface TileProgress {
+  activities: number;
+  /** Activities whose tiles are computed, at least from the simplified track. */
+  computed: number;
+  /** Activities awaiting their full track to refine their tiles. */
+  refining: number;
 }
 
 export interface ActivityStats {
@@ -85,4 +95,52 @@ export interface ActivityTracksPage {
   }[];
   /** True when a further page may hold more tracks. */
   hasMore: boolean;
+}
+
+export interface TileLevelStats {
+  /** Tiles crossed at least once. */
+  visited: number;
+  /** Side of the largest square of visited tiles. */
+  maxSquare: number;
+  /** Tiles of the largest cluster. */
+  maxCluster: number;
+  /** Visited tiles whose four neighbors are visited too. */
+  clustered: number;
+}
+
+export interface TileStats {
+  /** Large tiles (zoom 14). */
+  tiles: TileLevelStats;
+  /** Small tiles (zoom 17). */
+  subtiles: TileLevelStats;
+}
+
+/** Top-left tile and side of a square made of visited tiles. */
+export interface TileSquare {
+  x: number;
+  y: number;
+  size: number;
+}
+
+/** Shapes drawn on the map for one level of tiles. */
+export interface TileLevelAchievements {
+  maxSquare: TileSquare | null;
+  /** `[x, y]` of each tile of the largest cluster. */
+  maxCluster: [number, number][];
+}
+
+export interface TilesResponse {
+  /** `[x, y, mask]`: a large tile (zoom 14) and its small tiles as an unsigned 64-bit decimal mask. */
+  cells: [number, number, string][];
+  tiles: TileLevelAchievements;
+  subtiles: TileLevelAchievements;
+}
+
+/** Activities that crossed one tile. */
+export interface TileVisits {
+  activities: number;
+  firstVisitedAt: string | null;
+  lastVisitedAt: string | null;
+  /** The latest ones first. */
+  recent: { id: string; name: string; sportType: string; startedAt: string }[];
 }

@@ -11,6 +11,7 @@ import { useRequestSync } from "@/components/strava/use-request-sync";
 import { isSyncActive, useStravaConnection } from "@/hooks/use-strava-connection";
 import { ActivityStats } from "./activity-stats";
 import { DashboardSkeleton } from "./dashboard-skeleton";
+import { TileStats } from "./tile-stats";
 
 /** Main page: Strava connection, import progress and first metrics. */
 export function Dashboard() {
@@ -46,15 +47,17 @@ export function Dashboard() {
     );
   }
 
-  const { sync } = status;
+  const { sync, tiles } = status;
   const syncing = pending || isSyncActive(sync);
   // Totals follow the import while it runs, then its final state.
   const statsVersion = `${sync?.status ?? "none"}:${sync?.processed ?? 0}`;
+  const tilesVersion = `${tiles?.computed ?? 0}:${tiles?.refining ?? 0}`;
 
   return (
     <div className="flex flex-col gap-4">
-      {sync && <StravaSyncStatus sync={sync} onRetry={() => void requestSync()} retrying={pending} />}
+      <StravaSyncStatus sync={sync} tiles={tiles} onRetry={() => void requestSync()} retrying={pending} />
       <ActivityStats version={statsVersion} />
+      <TileStats version={tilesVersion} />
       <StravaConnectionSummary
         connection={status.connection}
         syncing={syncing}

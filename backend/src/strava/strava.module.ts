@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivitiesModule } from '../activities/activities.module';
 import { ConnectionsModule } from '../connections/connections.module';
+import { TilesModule } from '../tiles/tiles.module';
 import { StravaApiClient } from './api/strava-api.client';
 import { StravaRateLimiter } from './api/strava-rate-limiter';
 import { StravaConnectionController } from './strava-connection.controller';
 import { StravaConnectionService } from './strava-connection.service';
 import { StravaSyncService } from './sync/strava-sync.service';
 import { StravaWorker } from './sync/strava-worker.service';
+import { StravaTilesService } from './tiles/strava-tiles.service';
 import { StravaTracksController } from './tracks/strava-tracks.controller';
 import { StravaTracksService } from './tracks/strava-tracks.service';
 import { StravaWebhookEvent } from './webhooks/strava-webhook-event.entity';
@@ -20,6 +22,7 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
     TypeOrmModule.forFeature([StravaWebhookEvent]),
     ActivitiesModule,
     ConnectionsModule,
+    TilesModule,
   ],
   controllers: [
     StravaConnectionController,
@@ -32,6 +35,7 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
     StravaApiClient,
     StravaConnectionService,
     StravaSyncService,
+    StravaTilesService,
     StravaTracksService,
     StravaWebhookService,
     StravaWebhookSubscriptionService,

@@ -19,6 +19,7 @@ import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { generateToken } from '../common/crypto.util';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import { SyncJobsService } from '../connections/sync-jobs.service';
+import { TilesService } from '../tiles/tiles.service';
 import type { User } from '../users/user.entity';
 import {
   REQUIRED_ACTIVITY_SCOPES,
@@ -69,16 +70,25 @@ export class StravaConnectionController {
     private readonly api: StravaApiClient,
     private readonly connections: StravaConnectionService,
     private readonly syncJobs: SyncJobsService,
+    private readonly tiles: TilesService,
     @Inject(authConfig.KEY) private readonly config: AuthConfig,
   ) {}
 
   @Get()
   async status(@CurrentUser() user: User): Promise<StravaConnectionResponse> {
     const connection = await this.connections.findForUser(user.id);
-    const job = connection
-      ? await this.syncJobs.latestFor(connection.id)
-      : null;
-    return toStravaConnectionResponse(this.api.isEnabled, connection, job);
+    const [job, tiles] = connection
+      ? await Promise.all([
+          this.syncJobs.latestFor(connection.id),
+          this.tiles.progress(user.id),
+        ])
+      : [null, null];
+    return toStravaConnectionResponse(
+      this.api.isEnabled,
+      connection,
+      job,
+      tiles,
+    );
   }
 
   /** Starts the OAuth flow: the browser navigates here, then to Strava. */

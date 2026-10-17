@@ -8,6 +8,7 @@ import {
 import type {
   ListActivitiesParams,
   StravaActivity,
+  StravaLatLngStreams,
   StravaTokenResponse,
   StravaWebhookSubscription,
 } from './strava-api.types';
@@ -111,6 +112,20 @@ export class StravaApiClient {
       accessToken,
       `/activities/${encodeURIComponent(id)}`,
     );
+  }
+
+  /** Full GPS track, or null when the activity has none. */
+  async getLatLngStream(
+    accessToken: string,
+    id: string,
+  ): Promise<[number, number][] | null> {
+    const streams = await this.apiRequest<StravaLatLngStreams>(
+      accessToken,
+      `/activities/${encodeURIComponent(id)}/streams`,
+      { keys: 'latlng', key_by_type: 'true' },
+    );
+    const points = streams.latlng?.data;
+    return points && points.length > 0 ? points : null;
   }
 
   async listWebhookSubscriptions(): Promise<StravaWebhookSubscription[]> {

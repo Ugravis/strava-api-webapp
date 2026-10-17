@@ -4,11 +4,16 @@ import { CircleAlertIcon, InfoIcon, RefreshCwIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import { useActivityTracks } from "@/hooks/use-activity-tracks";
+import { useTiles } from "@/hooks/use-tiles";
 import { MapSkeleton } from "./map-skeleton";
+import type { TileMode } from "./tile-layers";
+import { TileLegend } from "./tile-legend";
+import { TileModeToggle } from "./tile-mode-toggle";
 import { TracksStatus } from "./tracks-status";
 
 // MapLibre needs the browser (WebGL): it is neither prerendered nor shipped
@@ -21,13 +26,17 @@ const ActivityMap = dynamic(() => import("./activity-map").then((module) => modu
 export function TracksMap() {
   const t = useTranslations("map");
   const { lines, status, progress, errorCode, retry } = useActivityTracks();
+  const { explored } = useTiles();
+  const [tileMode, setTileMode] = useState<TileMode>("tiles");
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden rounded-xl border">
-      {lines ? <ActivityMap lines={lines} label={t("label")} /> : <MapSkeleton />}
+      {lines ? <ActivityMap lines={lines} explored={explored} tileMode={tileMode} label={t("label")} /> : <MapSkeleton />}
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 [&>*]:pointer-events-auto">
         <TracksStatus lines={lines} status={status} progress={progress} />
+        {lines && <TileModeToggle mode={tileMode} onChange={setTileMode} />}
+        {lines && <TileLegend explored={explored} mode={tileMode} />}
       </div>
 
       <div className="pointer-events-none absolute inset-x-3 bottom-8 flex flex-col gap-2 sm:right-auto sm:max-w-md [&>*]:pointer-events-auto">

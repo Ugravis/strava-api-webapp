@@ -104,6 +104,28 @@ export class StravaRateLimiter {
     return shortExhausted ? nextQuarterHour(now) : null;
   }
 
+  /**
+   * Whether less than `share` of each current window is used: background
+   * work stops early, leaving the rest of the quota to the synchronization.
+   */
+  hasCapacity(share: number): boolean {
+    if (this.blockedUntil()) {
+      return false;
+    }
+    if (!this.observedAt) {
+      return true;
+    }
+    const now = this.now();
+    const sameDay = nextUtcMidnight(this.observedAt) > now;
+    const sameQuarter = nextQuarterHour(this.observedAt) > now;
+    return this.quotas.every(
+      (quota) =>
+        (!sameQuarter ||
+          quota.fifteenMinutes.usage < quota.fifteenMinutes.limit * share) &&
+        (!sameDay || quota.daily.usage < quota.daily.limit * share),
+    );
+  }
+
   /** Last observed quotas, for diagnostics. */
   snapshot(): {
     observedAt: Date | null;

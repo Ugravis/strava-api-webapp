@@ -120,15 +120,17 @@ the activity. The reads never aggregate them:
 - **Metrics**: the largest square, the clusters and the counters are computed by a background
   worker, in a worker thread (about 6 s for 500,000 small tiles, without blocking the API), once
   the tiles of the user have settled for 2 seconds (at most every 30 seconds during an import).
-  They are stored in `user_tile_metrics`, and the tiles of the largest clusters are marked in
-  `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
+  They are stored in `user_tile_metrics`, and the cluster tiles and those of the largest clusters
+  are marked in `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
   they are up to date.
 - **Map**: `GET /api/tiles/vector/:zoom/:x/:y` serves the tiles of the user as a vector tile (zoom 0
   to 12, the map stretches them beyond): the visited large tiles merged into one area, its outline
-  (from zoom 10), the area of the largest cluster, and at zoom 12 the small tiles, only to pick them
+  (from zoom 10), the area of the largest cluster, that of the other clusters, and at zoom 12 the
+  small tiles, only to pick them
   on the map. Zoomed out, the large tiles are grouped by ancestor, one pixel of a map tile (two
   at zoom 5). The small tiles are drawn from images,
-  `GET /api/tiles/raster/:zoom/:x/:y?color=<rrggbbaa>&cluster=<rrggbbaa>` (512 pixels PNG, zoom 5
+  `GET /api/tiles/raster/:zoom/:x/:y?color=<rrggbbaa>&cluster=<rrggbbaa>[&clusters=<rrggbbaa>]`
+  (the other clusters drawn like the other small tiles without their color; 512 pixels PNG, zoom 5
   to 12, tens of KB at most whatever the density), from the zoom of a whole country.
 - **Revalidation**: each map tile has an entity tag made of the number of rows of `user_tiles` it
   covers and their greatest `changed_seq`, a sequence taken under the lock of the user by the
@@ -138,8 +140,10 @@ the activity. The reads never aggregate them:
   again, the others answer `304 Not Modified` in a few milliseconds.
 - **Display**: nothing floats over the map but its zoom buttons: a band below it holds the key
   figures of each layer (visited tiles, largest cluster and square, number of tracks), the keys of
-  their colors, and the checkboxes of the tracks and the small tiles, both shown by default; the
-  large tiles are always drawn. The base map is the OpenFreeMap Positron style, recolored for each
+  their colors, and the checkboxes of the tracks, the small tiles and the other clusters of each
+  level, all shown by default; the large tiles are always drawn. The other clusters are a little
+  lighter than the large tiles and a little darker than the small tiles, short of the largest
+  cluster (mirrored in the dark theme). The base map is the OpenFreeMap Positron style, recolored for each
   theme (`components/map/map-style.ts`): beige land, desaturated outside the visited countries,
   flat grey roads, blue water, green tiles, pink largest squares and raspberry tracks. Text and
   lines keep a contrast of 4.5:1 and 3:1 with the land.

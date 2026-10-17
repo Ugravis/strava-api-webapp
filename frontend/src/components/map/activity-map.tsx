@@ -20,7 +20,7 @@ import {
   tileData,
   type TileMode,
   updateGrids,
-  visitedZoomAt,
+  visitedTileNear,
 } from "./tile-layers";
 import { TilePopup } from "./tile-popup";
 import {
@@ -99,6 +99,11 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
       setTracksOverTiles(map, modeRef.current !== "none");
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
+    // The tracks arrive after the map: once the user has moved it, they no
+    // longer frame it.
+    map.on("movestart", (event) => {
+      if (event.originalEvent) framedRef.current = true;
+    });
     map.on("click", (event) => setSelected(selectTile(map, modeRef.current, event)));
     for (const layer of CLICKABLE_LAYERS) {
       map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
@@ -196,17 +201,19 @@ function firstLabelId(map: MapLibreMap): string | undefined {
 }
 
 /**
- * The visited tile under the pointer, at the level shown, from the tiles
- * drawn. In the combined view, an unvisited small tile falls back to its
- * large tile.
+ * The visited tile under the pointer or a few pixels from it, at the level
+ * shown, from the tiles drawn. In the combined view, an unvisited small
+ * tile falls back to its large tile.
  */
 function selectTile(
   map: MapLibreMap,
   mode: TileMode,
   { point, lngLat: { lng, lat } }: { point: { x: number; y: number }; lngLat: { lng: number; lat: number } },
 ): SelectedTile | null {
-  const zoom = visitedZoomAt(map, point, clickableZooms(mode, map.getZoom()));
-  if (zoom === null) return null;
-  const [x, y] = tileAt(lng, lat, zoom);
-  return { mode, zoom, x, y, lngLat: [lng, lat] };
+  const found = visitedTileNear(map, point, clickableZooms(mode, map.getZoom()));
+  if (!found) return null;
+  const at = found.point === point ? { lng, lat } : map.unproject([found.point.x, found.point.y]);
+  const [x, y] = tileAt(at.lng, at.lat, found.zoom);
+  // The popup stays where the pointer is.
+  return { mode, zoom: found.zoom, x, y, lngLat: [lng, lat] };
 }

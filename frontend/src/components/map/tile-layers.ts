@@ -20,7 +20,11 @@ import { CLUSTER_COLOR, GRID_COLOR, SQUARE_COLOR, TILE_COLOR } from "./map-style
 /** Which levels of tiles the map shows, if any. The small tiles only come with the large ones. */
 export type TileMode = "none" | "tiles" | "both";
 
-/** Tiles of the user, served as vector tiles by the backend for each version of the tiles. */
+/**
+ * Tiles of the user, served as vector tiles by the backend. The browser
+ * revalidates each one from its entity tag: when the tiles change, only the
+ * map tiles they cover are downloaded again.
+ */
 const VECTOR_SOURCE = "user-tiles";
 /**
  * Small tiles of the user, served as images: their size stays bounded
@@ -28,10 +32,11 @@ const VECTOR_SOURCE = "user-tiles";
  */
 const RASTER_SOURCE = "user-subtiles";
 /** The backend serves the tiles down to this zoom; the map stretches them beyond. */
-const TILES_MAX_ZOOM = 14;
-/** Layers of the vector tiles. */
+const TILES_MAX_ZOOM = 12;
+/** Layers of the vector tiles: merged areas, and the small tiles at the deepest zoom, to pick them. */
 const SOURCE_LAYERS = {
   tiles: "tiles",
+  tilesOutline: "tiles_outline",
   tileCluster: "tile_cluster",
   subtiles: "subtiles",
 } as const;
@@ -51,14 +56,12 @@ const TILE_GRID_MIN_ZOOM = 12;
 const SUBTILE_GRID_MIN_ZOOM = 15;
 /** In the combined view, the small tiles fade in from this zoom, where the backend starts serving their images. */
 const SUBTILE_MIN_ZOOM = 5;
-/** The small tiles can be picked from this zoom, where the backend serves them as vector tiles; below, a click picks the large tile. */
+/** The small tiles can be picked from this zoom, where they span about 16 pixels; below, a click picks the large tile. */
 const SUBTILE_CLICK_MIN_ZOOM = 13;
-/**
- * The outlines of the visited large tiles appear with their grid; the backend
- * merges the contiguous tiles below zoom 10, their outlines would not follow
- * the tiles.
- */
+/** The outline of the visited area appears with the grid of the large tiles. */
 const TILE_OUTLINE_MIN_ZOOM = TILE_GRID_MIN_ZOOM;
+/** Distances from the pointer, in pixels, where a click looks for a tile: a finger is not precise. */
+const CLICK_TOLERANCE_PX = [0, 6, 12];
 /** Zooms over which a layer fades in after its minimum zoom. */
 const FADE_ZOOMS = 1;
 
@@ -86,9 +89,9 @@ function fadeIn(minZoom: number, opacity: number): ExpressionSpecification {
   return ["interpolate", ["linear"], ["zoom"], minZoom, 0, minZoom + FADE_ZOOMS, opacity];
 }
 
-/** What the map draws of the tiles: the vector tiles of a version, and the largest squares. */
+/** What the map draws of the tiles: the tiles of a version, and the largest squares. */
 export interface TileData {
-  /** Null while loading. */
+  /** Null while loading. A new version reloads the tiles. */
   version: string | null;
   tileSquare: FeatureCollection<Polygon>;
   subtileSquare: FeatureCollection<Polygon>;
@@ -113,14 +116,12 @@ function rgba(color: string, alpha: number): string {
 }
 
 // Absolute: MapLibre fetches the tiles from its worker.
-function tilesUrl(version: string): string {
-  return `${window.location.origin}/api/tiles/vector/{z}/{x}/{y}?v=${version}`;
-}
+const tilesUrl = () => `${window.location.origin}/api/tiles/vector/{z}/{x}/{y}`;
+const imagesUrl = () =>
+  `${window.location.origin}/api/tiles/raster/{z}/{x}/{y}?color=${rgba(TILE_COLOR, SUBTILE_ALPHA)}&cluster=${rgba(CLUSTER_COLOR, SUBTILE_CLUSTER_ALPHA)}`;
 
-function imagesUrl(version: string): string {
-  const colors = `color=${rgba(TILE_COLOR, SUBTILE_ALPHA)}&cluster=${rgba(CLUSTER_COLOR, SUBTILE_CLUSTER_ALPHA)}`;
-  return `${window.location.origin}/api/tiles/raster/{z}/{x}/{y}?v=${version}&${colors}`;
-}
+/** Version of the tiles drawn by each map: a new one reloads its tiles. */
+const drawnVersions = new WeakMap<MapLibreMap, string>();
 
 /** Levels of the tile under the pointer, the most detailed first, or none when no tile is shown. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
@@ -134,12 +135,37 @@ export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
   }
 }
 
-/** Level of the visited tile drawn at `point`, from the rendered features; null outside the tiles. */
-export function visitedZoomAt(map: MapLibreMap, point: { x: number; y: number }, zooms: TileZoom[]): TileZoom | null {
+/**
+ * The visited tile drawn at `point` or close to it: its level and the point
+ * inside it, looked for at growing distances. Null outside the tiles.
+ */
+export function visitedTileNear(
+  map: MapLibreMap,
+  point: { x: number; y: number },
+  zooms: TileZoom[],
+): { zoom: TileZoom; point: { x: number; y: number } } | null {
   const layers = CLICKABLE_LAYERS.filter((id) => map.getLayer(id) && zooms.includes(LAYER_ZOOMS[id]));
   if (layers.length === 0) return null;
-  const drawn = new Set(map.queryRenderedFeatures([point.x, point.y], { layers }).map((feature) => feature.layer.id));
-  return zooms.find((zoom) => CLICKABLE_LAYERS.some((id) => LAYER_ZOOMS[id] === zoom && drawn.has(id))) ?? null;
+  for (const distance of CLICK_TOLERANCE_PX) {
+    const candidates =
+      distance === 0
+        ? [point]
+        : [-1, 0, 1].flatMap((dx) =>
+            [-1, 0, 1]
+              .filter((dy) => dx !== 0 || dy !== 0)
+              .map((dy) => ({ x: point.x + dx * distance, y: point.y + dy * distance })),
+          );
+    // The most detailed level first: a small tile rather than its large tile.
+    for (const zoom of zooms) {
+      for (const candidate of candidates) {
+        const ids = layers.filter((id) => LAYER_ZOOMS[id] === zoom);
+        if (ids.length > 0 && map.queryRenderedFeatures([candidate.x, candidate.y], { layers: ids }).length > 0) {
+          return { zoom, point: candidate };
+        }
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -149,11 +175,12 @@ export function visitedZoomAt(map: MapLibreMap, point: { x: number; y: number },
  */
 export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string | undefined): void {
   if (!data.version || map.getSource(VECTOR_SOURCE)) return;
-  map.addSource(VECTOR_SOURCE, { type: "vector", tiles: [tilesUrl(data.version)], maxzoom: TILES_MAX_ZOOM });
+  drawnVersions.set(map, data.version);
+  map.addSource(VECTOR_SOURCE, { type: "vector", tiles: [tilesUrl()], maxzoom: TILES_MAX_ZOOM });
   // 512 pixels images over 256 pixels: sharp on high density screens.
   map.addSource(RASTER_SOURCE, {
     type: "raster",
-    tiles: [imagesUrl(data.version)],
+    tiles: [imagesUrl()],
     tileSize: 256,
     minzoom: SUBTILE_MIN_ZOOM,
     maxzoom: TILES_MAX_ZOOM,
@@ -185,7 +212,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
     {
       id: "visited-tiles-outline",
       type: "line",
-      ...vector(SOURCE_LAYERS.tiles),
+      ...vector(SOURCE_LAYERS.tilesOutline),
       minzoom: TILE_OUTLINE_MIN_ZOOM,
       layout,
       paint: { "line-color": TILE_COLOR, "line-opacity": fadeIn(TILE_OUTLINE_MIN_ZOOM, 0.35), "line-width": 0.5 },
@@ -242,15 +269,17 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
   for (const layer of layers) map.addLayer(layer, beforeId);
 }
 
-/** Points the tiles to the current version and updates the squares; false when the layers are not added yet. */
+/** Reloads the tiles of a new version and updates the squares; false when the layers are not added yet. */
 export function setTileData(map: MapLibreMap, data: TileData): boolean {
   const source = map.getSource<VectorTileSource>(VECTOR_SOURCE);
   if (!source || !data.version) return false;
-  const url = tilesUrl(data.version);
-  if (source.tiles[0] !== url) source.setTiles([url]);
-  const images = map.getSource<RasterTileSource>(RASTER_SOURCE);
-  const imageUrl = imagesUrl(data.version);
-  if (images && images.tiles[0] !== imageUrl) images.setTiles([imageUrl]);
+  if (drawnVersions.get(map) !== data.version) {
+    drawnVersions.set(map, data.version);
+    // Same addresses: the tiles are requested again and the browser
+    // revalidates them, only those whose tiles changed are downloaded.
+    source.setTiles([tilesUrl()]);
+    map.getSource<RasterTileSource>(RASTER_SOURCE)?.setTiles([imagesUrl()]);
+  }
   map.getSource<GeoJSONSource>(SOURCES.tileSquare)?.setData(data.tileSquare);
   map.getSource<GeoJSONSource>(SOURCES.subtileSquare)?.setData(data.subtileSquare);
   return true;

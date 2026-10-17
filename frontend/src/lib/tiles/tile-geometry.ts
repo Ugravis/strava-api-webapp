@@ -59,7 +59,25 @@ export function maxSquareCollection(maxSquare: TileSquare | null, zoom: TileZoom
 
 /** One tile, as one polygon. */
 export function tileCollection(zoom: TileZoom, x: number, y: number): FeatureCollection<Polygon> {
-  return { type: "FeatureCollection", features: [square(x, y, zoom)] };
+  return tilesCollection(zoom, [[x, y]]);
+}
+
+/** Tiles of one level, one polygon each. */
+export function tilesCollection(zoom: TileZoom, tiles: [number, number][]): FeatureCollection<Polygon> {
+  return { type: "FeatureCollection", features: tiles.map(([x, y]) => square(x, y, zoom)) };
+}
+
+/** Bounds of tiles of one level; null without tiles. */
+export function tilesBounds(zoom: TileZoom, tiles: [number, number][]): Bounds | null {
+  if (tiles.length === 0) return null;
+  const xs = tiles.map(([x]) => x);
+  const ys = tiles.map(([, y]) => y);
+  return {
+    west: lngOf(Math.min(...xs), zoom),
+    east: lngOf(Math.max(...xs) + 1, zoom),
+    north: latOf(Math.min(...ys), zoom),
+    south: latOf(Math.max(...ys) + 1, zoom),
+  };
 }
 
 /** The tile of `zoom` holding the position `(lng, lat)`. */

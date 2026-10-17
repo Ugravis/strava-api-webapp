@@ -129,6 +129,22 @@
   }
 }
 /*
+ * The side panel of the map covers its right edge: the controls there move
+ * along its left edge while it is unfolded.
+ */
+.map-with-panel {
+  --map-panel-width: min(24rem, calc(100% - 3rem));
+}
+.map-with-panel .maplibregl-ctrl-top-right,
+.map-with-panel .maplibregl-ctrl-bottom-right {
+  @apply transition-[right] duration-200 ease-out motion-reduce:transition-none;
+}
+.map-with-panel[data-panel="open"] .maplibregl-ctrl-top-right,
+.map-with-panel[data-panel="open"] .maplibregl-ctrl-bottom-right {
+  right: var(--map-panel-width);
+}
+
+/*
  * Map controls in the colors of the app, in both themes. Outside the layers
  * and under the map: they override the stylesheet of MapLibre, loaded with it.
  */

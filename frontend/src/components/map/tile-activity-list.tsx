@@ -12,11 +12,12 @@ interface TileActivityListProps {
   zoom: TileZoom;
   x: number;
   y: number;
+  onOpenActivity: (activityId: string) => void;
 }
 
 /** Every activity that crossed a tile, the latest ones first, a few at a time. */
-export function TileActivityList({ zoom, x, y }: TileActivityListProps) {
-  const t = useTranslations("map.tileDialog");
+export function TileActivityList({ zoom, x, y, onOpenActivity }: TileActivityListProps) {
+  const t = useTranslations("map.tilePanel");
   const { items, hasMore, loading, error, loadMore } = useTileActivities(zoom, x, y);
 
   if (items === null) {
@@ -45,7 +46,7 @@ export function TileActivityList({ zoom, x, y }: TileActivityListProps) {
     <div className="flex flex-col gap-2">
       <ul className="flex flex-col divide-y">
         {items.map((activity) => (
-          <TileActivityItem key={activity.id} activity={activity} />
+          <TileActivityItem key={activity.id} activity={activity} onOpen={onOpenActivity} />
         ))}
       </ul>
       {error ? (
@@ -63,7 +64,7 @@ export function TileActivityList({ zoom, x, y }: TileActivityListProps) {
 }
 
 function ListError({ onRetry }: { onRetry: () => void }) {
-  const t = useTranslations("map.tileDialog");
+  const t = useTranslations("map.tilePanel");
   return (
     <div className="flex items-center justify-between gap-3">
       <p className="text-muted-foreground">{t("activitiesError")}</p>

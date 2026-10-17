@@ -42,7 +42,8 @@ export function addTileHighlight(
       id: LAYER_ID,
       type: "line",
       source: SOURCE_ID,
-      paint: { "line-color": palette.highlight, "line-width": 2 },
+      // Discreet: it suggests the click without hiding the tile.
+      paint: { "line-color": palette.highlight, "line-opacity": 0.55, "line-width": 1.5 },
     },
     beforeId,
   );

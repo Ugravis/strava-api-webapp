@@ -4,10 +4,15 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
+import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
+import { usePanelHistory } from "@/hooks/use-panel-history";
 import type { TilesSummary } from "@/lib/api/types";
-import { tileAt } from "@/lib/tiles/tile-geometry";
+import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tilesBounds } from "@/lib/tiles/tile-geometry";
+import { ActivityPanel } from "./activity-panel";
+import { activityTileData, addActivityTileLayers, setActivityTiles } from "./activity-tiles-layer";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
+import { MapSidePanel } from "./map-side-panel";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
 import {
   addTileLayers,
@@ -20,8 +25,8 @@ import {
   updateGrids,
   visitedTileNear,
 } from "./tile-layers";
-import { TileDialog } from "./tile-dialog";
 import { addTileHighlight, sameTile, setTileHighlight, type TileRef } from "./tile-highlight";
+import { TilePanel } from "./tile-panel";
 import {
   addTrackLayer,
   boundsOf,
@@ -46,10 +51,17 @@ interface ActivityMapProps {
   label: string;
 }
 
-interface SelectedTile extends TileRef {
-  /** Mode the tile was picked in: changing it closes the dialog. */
-  mode: TileMode;
+/** What the side panel shows: a tile picked on the map, or an activity opened from it. */
+type PanelEntry = { kind: "tile"; tile: TileRef } | { kind: "activity"; activityId: string };
+
+function sameEntry(a: PanelEntry, b: PanelEntry): boolean {
+  return a.kind === "tile"
+    ? b.kind === "tile" && sameTile(a.tile, b.tile)
+    : b.kind === "activity" && a.activityId === b.activityId;
 }
+
+/** Margin around an activity framed on the map, in pixels. */
+const ACTIVITY_PADDING = 48;
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
@@ -69,10 +81,18 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const palette = mapPalette(resolvedTheme);
   const paletteRef = useRef(palette);
 
-  const [selected, setSelected] = useState<SelectedTile | null>(null);
+  const history = usePanelHistory(sameEntry);
+  const entry = history.current;
+  const [collapsed, setCollapsed] = useState(false);
+  const collapsedRef = useRef(collapsed);
+  const panelRef = useRef<HTMLElement>(null);
   // Outside React: the pointer moves far more often than the map should render.
   const hoveredRef = useRef<TileRef | null>(null);
   const shownRef = useRef<TileRef | null>(null);
+  // The click handler of the map is registered once: it calls the latest one.
+  const pickRef = useRef<(tile: TileRef) => void>(() => {});
+  const { tiles: activityTiles } = useActivityTiles(entry?.kind === "activity" ? entry.activityId : null);
+  const activityTilesRef = useRef(activityTileData(null));
 
   // Before the creation of the map: a hot reload of the code recreates the
   // map with the colors of the new code, instead of loading its style twice.
@@ -105,6 +125,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       setVisitedCountries(map, countriesRef.current, paletteRef.current);
       addTileLayers(map, tilesRef.current, paletteRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, paletteRef.current, showTracksRef.current, firstLabel);
+      addActivityTileLayers(map, activityTilesRef.current, paletteRef.current, firstLabel);
       addTileHighlight(map, shownRef.current ?? hoveredRef.current, paletteRef.current, firstLabel);
       setTileMode(map, modeRef.current);
     });
@@ -114,9 +135,10 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     map.on("movestart", (event) => {
       if (event.originalEvent) framedRef.current = true;
     });
+    // A click beside the tiles keeps the panel: only its button closes it.
     map.on("click", (event) => {
       const tile = pickTile(map, modeRef.current, event.point);
-      setSelected(tile && { ...tile, mode: modeRef.current });
+      if (tile) pickRef.current(tile);
     });
     // The tile under the pointer is outlined: a click opens it. Looked for
     // once per frame, and not while the map moves under the pointer.
@@ -198,19 +220,72 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     if (mapRef.current) setTracksVisible(mapRef.current, showTracks);
   }, [showTracks]);
 
-  const shown = selected?.mode === tileMode ? selected : null;
+  useEffect(() => {
+    collapsedRef.current = collapsed;
+  }, [collapsed]);
+
+  useEffect(() => {
+    pickRef.current = (tile) => {
+      history.push({ kind: "tile", tile });
+      setCollapsed(false);
+    };
+  });
+
+  const shown = entry?.kind === "tile" ? entry.tile : null;
 
   useEffect(() => {
     shownRef.current = shown;
-    // The selected tile stays outlined while its dialog is open.
+    // The selected tile stays outlined while the panel shows it.
     if (mapRef.current) setTileHighlight(mapRef.current, shown ?? hoveredRef.current);
   }, [shown]);
 
+  useEffect(() => {
+    activityTilesRef.current = activityTileData(activityTiles);
+    const map = mapRef.current;
+    if (!map) return;
+    setActivityTiles(map, activityTilesRef.current);
+    // The activity is framed unless the map already shows all of it.
+    const bounds = activityTiles && tilesBounds(TILE_ZOOM, activityTiles.tiles);
+    if (!bounds) return;
+    const view = map.getBounds();
+    if (view.contains([bounds.west, bounds.north]) && view.contains([bounds.east, bounds.south])) return;
+    const panel = panelRef.current && !collapsedRef.current ? panelRef.current.offsetWidth : 0;
+    map.fitBounds([bounds.west, bounds.south, bounds.east, bounds.north], {
+      padding: { top: ACTIVITY_PADDING, bottom: ACTIVITY_PADDING, left: ACTIVITY_PADDING, right: ACTIVITY_PADDING + panel },
+      maxZoom: SUBTILE_ZOOM - 3,
+    });
+  }, [activityTiles]);
+
   // MapLibre styles its container (`position: relative`): it is wrapped to fill the parent.
   return (
-    <div className="absolute inset-0">
+    <div className="map-with-panel absolute inset-0" data-panel={entry && !collapsed ? "open" : undefined}>
       <div ref={containerRef} role="region" aria-label={label} className="size-full" />
-      <TileDialog tile={shown} onClose={() => setSelected(null)} />
+      {entry && (
+        <MapSidePanel
+          ref={panelRef}
+          contentKey={entry.kind === "tile" ? `${entry.tile.zoom}/${entry.tile.x}/${entry.tile.y}` : entry.activityId}
+          collapsed={collapsed}
+          onCollapsedChange={setCollapsed}
+          canGoBack={history.canGoBack}
+          canGoForward={history.canGoForward}
+          onBack={history.back}
+          onForward={history.forward}
+          onClose={() => {
+            history.clear();
+            setCollapsed(false);
+          }}
+        >
+          {entry.kind === "tile" ? (
+            <TilePanel
+              key={`${entry.tile.zoom}/${entry.tile.x}/${entry.tile.y}`}
+              tile={entry.tile}
+              onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
+            />
+          ) : (
+            <ActivityPanel key={entry.activityId} activityId={entry.activityId} tiles={activityTiles} />
+          )}
+        </MapSidePanel>
+      )}
     </div>
   );
 }

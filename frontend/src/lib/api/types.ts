@@ -177,6 +177,30 @@ export interface TileActivity {
   stravaId: string | null;
 }
 
+/** An activity of the user, as shown on its own. */
+export interface ActivityDetails {
+  id: string;
+  name: string;
+  sportType: string;
+  startedAt: string;
+  /** IANA time zone of the start. */
+  timezone: string | null;
+  distanceM: number;
+  movingTimeS: number;
+  elapsedTimeS: number;
+  elevationGainM: number | null;
+  /** Identifier of the activity on Strava, to link to it. */
+  stravaId: string | null;
+}
+
+/** Tiles crossed by one activity, as `[x, y]` pairs of each level. */
+export interface ActivityTiles {
+  /** Large tiles (zoom 14). */
+  tiles: [number, number][];
+  /** Small tiles (zoom 17). */
+  subtiles: [number, number][];
+}
+
 /** A page of the activities that crossed a tile, the latest ones first. */
 export interface TileActivitiesPage {
   items: TileActivity[];

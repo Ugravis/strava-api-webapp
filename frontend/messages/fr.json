@@ -316,28 +316,6 @@
       "otherClusters": "Autres clusters",
       "maxSquare": "Carré max"
     },
-    "tileDialog": {
-      "tile": "Tuile",
-      "subtile": "Petite tuile",
-      "description": "Ce que tes activités ont exploré sur cette tuile.",
-      "inMaxSquare": "Plus grand carré",
-      "inMaxCluster": "Plus grand cluster",
-      "clustered": "Cluster",
-      "subtiles": "Petites tuiles explorées",
-      "visits": "Passages",
-      "firstVisit": "Premier passage",
-      "lastVisit": "Dernier passage",
-      "activities": "Activités",
-      "noActivities": "Aucune activité n'a traversé cette tuile.",
-      "loadMore": "Charger plus",
-      "viewOnStrava": "Voir sur Strava",
-      "error": "Impossible de charger le détail de cette tuile.",
-      "activitiesError": "Impossible de charger les activités.",
-      "retry": "Réessayer",
-      "close": "Fermer",
-      "hours": "{hours} h {minutes}",
-      "minutes": "{minutes} min"
-    },
     "sports": {
       "run": "Course à pied",
       "trail_run": "Trail",
@@ -365,6 +343,48 @@
       "handcycle": "Handbike",
       "workout": "Entraînement",
       "other": "Autre"
+    },
+    "tilePanel": {
+      "tile": "Tuile",
+      "subtile": "Petite tuile",
+      "description": "Ce que tes activités ont exploré sur cette tuile.",
+      "inMaxSquare": "Plus grand carré",
+      "inMaxCluster": "Plus grand cluster",
+      "clustered": "Cluster",
+      "subtiles": "Petites tuiles explorées",
+      "visits": "Passages",
+      "firstVisit": "Premier passage",
+      "lastVisit": "Dernier passage",
+      "activities": "Activités",
+      "noActivities": "Aucune activité n'a traversé cette tuile.",
+      "loadMore": "Charger plus",
+      "error": "Impossible de charger le détail de cette tuile.",
+      "activitiesError": "Impossible de charger les activités.",
+      "retry": "Réessayer",
+      "viewActivity": "Voir l'activité"
+    },
+    "panel": {
+      "label": "Détails",
+      "back": "Précédent",
+      "forward": "Suivant",
+      "close": "Fermer le panneau",
+      "collapse": "Replier le panneau",
+      "expand": "Déplier le panneau"
+    },
+    "activityPanel": {
+      "distance": "Distance",
+      "movingTime": "Temps en mouvement",
+      "elevation": "Dénivelé",
+      "tilesTitle": "Tuiles traversées",
+      "tiles": "Tuiles",
+      "subtiles": "Petites tuiles",
+      "legend": "En rose sur la carte",
+      "error": "Impossible de charger cette activité."
+    },
+    "activityFormat": {
+      "hours": "{hours} h {minutes}",
+      "minutes": "{minutes} min",
+      "viewOnStrava": "Voir sur Strava"
     }
   }
 }

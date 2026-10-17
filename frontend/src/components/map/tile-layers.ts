@@ -15,7 +15,7 @@ import {
   TILE_ZOOM,
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
-import { CLUSTER_COLOR, GRID_COLOR, SQUARE_COLOR, TILE_COLOR } from "./map-style";
+import { firstGroundLayerId, type MapPalette } from "./map-style";
 
 /** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
 export type TileMode = "tiles" | "both";
@@ -40,9 +40,6 @@ const SOURCE_LAYERS = {
   tileCluster: "tile_cluster",
   subtiles: "subtiles",
 } as const;
-/** Opacity of the small tiles and of those of the largest cluster, drawn in the images. */
-const SUBTILE_ALPHA = 0.4;
-const SUBTILE_CLUSTER_ALPHA = 0.55;
 
 const SOURCES = {
   tileSquare: "tile-max-square",
@@ -71,6 +68,14 @@ const LEVEL_LAYERS = {
 } as const;
 const ALL_LAYERS = [...LEVEL_LAYERS.tiles, ...LEVEL_LAYERS.subtiles, "tile-grid-line"];
 
+/** Lowest layer of the tiles: the visited countries go below it. */
+export const TILE_FILL_LAYER_ID = "visited-tiles-fill";
+/**
+ * Fills drawn as the ground of the map, right over its bare land: they
+ * hide none of the vegetation, water, buildings, roads and names.
+ */
+const GROUND_LAYERS = new Set([TILE_FILL_LAYER_ID, "tile-max-cluster-fill", "visited-subtiles-image", "visited-subtiles-fill"]);
+
 /** Layers whose fill shows a visited tile, small tiles first: they react to the pointer. */
 export const CLICKABLE_LAYERS = ["visited-subtiles-fill", "visited-tiles-fill"];
 const LAYER_ZOOMS: Record<string, TileZoom> = {
@@ -82,6 +87,69 @@ const VISIBLE_LAYERS: Record<TileMode, string[]> = {
   tiles: [...LEVEL_LAYERS.tiles, "tile-grid-line"],
   both: [...ALL_LAYERS],
 };
+
+/**
+ * Zooms over which the large tiles take the color of the largest cluster:
+ * zoomed in, the small tiles are the point, the large ones a quiet ground.
+ */
+const CLUSTER_MERGE_ZOOMS = [10, 11] as const;
+/** Once the large tiles are pale, the small tiles lighten too: they stand out without weighing on the map. */
+const MERGED_SUBTILE_OPACITY = 0.5;
+/** Up to this zoom, the fills are at their strongest; they lighten until the merge. */
+const STRONG_FILL_ZOOM = 7;
+
+/** Mix of `#rrggbb` colors, weighted. */
+function mix(colors: [string, number][]): string {
+  const channel = (i: number) =>
+    Math.round(colors.reduce((sum, [color, weight]) => sum + parseInt(color.slice(1 + 2 * i, 3 + 2 * i), 16) * weight, 0));
+  return `#${[0, 1, 2].map((i) => channel(i).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * Single fill giving the look of the cluster drawn over a large tile:
+ * `cluster` at its opacity over `tile` at its own.
+ */
+function clusterLook({ tile, tileOpacity, cluster, clusterOpacity }: MapPalette): { color: string; opacity: number } {
+  const tileWeight = tileOpacity * (1 - clusterOpacity);
+  const opacity = clusterOpacity + tileWeight;
+  return { color: mix([[cluster, clusterOpacity / opacity], [tile, tileWeight / opacity]]), opacity };
+}
+
+/**
+ * Paint of the fill of the large tiles: stronger zoomed out, where the tiles
+ * are the point of the map, lighter as the streets appear, then in the look
+ * of the largest cluster once zoomed in.
+ */
+function tilePaint(palette: MapPalette): { "fill-color": ExpressionSpecification; "fill-opacity": ExpressionSpecification } {
+  const [from, to] = CLUSTER_MERGE_ZOOMS;
+  const merged = clusterLook(palette);
+  return {
+    "fill-color": ["interpolate", ["linear"], ["zoom"], from, palette.tile, to, merged.color],
+    "fill-opacity": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      STRONG_FILL_ZOOM,
+      Math.min(1, palette.tileOpacity * 2.5),
+      from,
+      palette.tileOpacity,
+      to,
+      merged.opacity,
+    ],
+  };
+}
+
+/** Opacity of the images of the small tiles: fading in, then lighter once the large tiles are pale. */
+function subtileOpacity(): ExpressionSpecification {
+  const [from, to] = CLUSTER_MERGE_ZOOMS;
+  return ["interpolate", ["linear"], ["zoom"], SUBTILE_MIN_ZOOM, 0, SUBTILE_MIN_ZOOM + FADE_ZOOMS, 1, from, 1, to, MERGED_SUBTILE_OPACITY];
+}
+
+/** Opacity of the fill of the largest cluster: stronger zoomed out, then merged into the large tiles. */
+function clusterOpacity({ clusterOpacity: opacity }: MapPalette): ExpressionSpecification {
+  const [from, to] = CLUSTER_MERGE_ZOOMS;
+  return ["interpolate", ["linear"], ["zoom"], STRONG_FILL_ZOOM, Math.min(1, opacity * 2.5), from, opacity, to, 0];
+}
 
 /** Opacity rising from 0 at `minZoom` to `opacity` `zooms` later: the layer appears smoothly. */
 export function fadeIn(minZoom: number, opacity: number, zooms = FADE_ZOOMS): ExpressionSpecification {
@@ -116,11 +184,14 @@ function rgba(color: string, alpha: number): string {
 
 // Absolute: MapLibre fetches the tiles from its worker.
 const tilesUrl = () => `${window.location.origin}/api/tiles/vector/{z}/{x}/{y}`;
-const imagesUrl = () =>
-  `${window.location.origin}/api/tiles/raster/{z}/{x}/{y}?color=${rgba(TILE_COLOR, SUBTILE_ALPHA)}&cluster=${rgba(CLUSTER_COLOR, SUBTILE_CLUSTER_ALPHA)}`;
+// The opacities of the small tiles are drawn in the images.
+const imagesUrl = ({ subtile, subtileOpacity, subtileCluster, subtileClusterOpacity }: MapPalette) =>
+  `${window.location.origin}/api/tiles/raster/{z}/{x}/{y}?color=${rgba(subtile, subtileOpacity)}&cluster=${rgba(subtileCluster, subtileClusterOpacity)}`;
 
 /** Version of the tiles drawn by each map: a new one reloads its tiles. */
 const drawnVersions = new WeakMap<MapLibreMap, string>();
+/** Colors of the images of each map, those of its theme. */
+const drawnPalettes = new WeakMap<MapLibreMap, MapPalette>();
 
 /** Levels of the tile under the pointer, the most detailed first. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
@@ -161,18 +232,24 @@ export function visitedTileNear(
 }
 
 /**
- * Adds the visited tiles, their achievements and the grids below `beforeId`,
- * hidden until a mode is set. Needs the version of the tiles: until then,
+ * Adds the visited tiles as the ground of the map, and their outlines,
+ * grids and squares below `beforeId`, hidden until a mode is set. Needs the version of the tiles: until then,
  * nothing is added.
  */
-export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string | undefined): void {
+export function addTileLayers(
+  map: MapLibreMap,
+  data: TileData,
+  palette: MapPalette,
+  beforeId: string | undefined,
+): void {
   if (!data.version || map.getSource(VECTOR_SOURCE)) return;
   drawnVersions.set(map, data.version);
+  drawnPalettes.set(map, palette);
   map.addSource(VECTOR_SOURCE, { type: "vector", tiles: [tilesUrl()], maxzoom: TILES_MAX_ZOOM });
   // 512 pixels images over 256 pixels: sharp on high density screens.
   map.addSource(RASTER_SOURCE, {
     type: "raster",
-    tiles: [imagesUrl()],
+    tiles: [imagesUrl(palette)],
     tileSize: 256,
     minzoom: SUBTILE_MIN_ZOOM,
     maxzoom: TILES_MAX_ZOOM,
@@ -188,18 +265,18 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
   // shared by two of them leave no seam.
   const layers: LayerSpecification[] = [
     {
-      id: "visited-tiles-fill",
+      id: TILE_FILL_LAYER_ID,
       type: "fill",
       ...vector(SOURCE_LAYERS.tiles),
       layout,
-      paint: { "fill-color": TILE_COLOR, "fill-opacity": 0.22, "fill-antialias": false },
+      paint: { ...tilePaint(palette), "fill-antialias": false },
     },
     {
       id: "tile-max-cluster-fill",
       type: "fill",
       ...vector(SOURCE_LAYERS.tileCluster),
       layout,
-      paint: { "fill-color": CLUSTER_COLOR, "fill-opacity": 0.3, "fill-antialias": false },
+      paint: { "fill-color": palette.cluster, "fill-opacity": clusterOpacity(palette), "fill-antialias": false },
     },
     {
       id: "visited-tiles-outline",
@@ -207,7 +284,8 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       ...vector(SOURCE_LAYERS.tilesOutline),
       minzoom: TILE_OUTLINE_MIN_ZOOM,
       layout,
-      paint: { "line-color": TILE_COLOR, "line-opacity": fadeIn(TILE_OUTLINE_MIN_ZOOM, 0.35), "line-width": 0.5 },
+      // Opaque enough to reach a contrast of 3:1 with the land.
+      paint: { "line-color": palette.tileOutline, "line-opacity": fadeIn(TILE_OUTLINE_MIN_ZOOM, 0.8), "line-width": 1 },
     },
     {
       id: "visited-subtiles-image",
@@ -216,7 +294,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       minzoom: SUBTILE_MIN_ZOOM,
       layout,
       // Nearest pixel: the edges of the small tiles stay sharp once stretched.
-      paint: { "raster-opacity": fadeIn(SUBTILE_MIN_ZOOM, 1), "raster-resampling": "nearest" },
+      paint: { "raster-opacity": subtileOpacity(), "raster-resampling": "nearest" },
     },
     {
       // Invisible: picks the small tile under the pointer, drawn by the images.
@@ -225,7 +303,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       ...vector(SOURCE_LAYERS.subtiles),
       minzoom: SUBTILE_CLICK_MIN_ZOOM,
       layout,
-      paint: { "fill-color": TILE_COLOR, "fill-opacity": 0 },
+      paint: { "fill-color": palette.tile, "fill-opacity": 0 },
     },
     {
       id: "subtile-grid-line",
@@ -233,7 +311,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       source: SOURCES.subtileGrid,
       minzoom: SUBTILE_GRID_MIN_ZOOM,
       layout,
-      paint: { "line-color": GRID_COLOR, "line-opacity": fadeIn(SUBTILE_GRID_MIN_ZOOM, 0.15), "line-width": 0.5 },
+      paint: { "line-color": palette.grid, "line-opacity": fadeIn(SUBTILE_GRID_MIN_ZOOM, 0.15), "line-width": 0.5 },
     },
     {
       id: "tile-grid-line",
@@ -241,24 +319,25 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       source: SOURCES.tileGrid,
       minzoom: TILE_GRID_MIN_ZOOM,
       layout,
-      paint: { "line-color": GRID_COLOR, "line-opacity": fadeIn(TILE_GRID_MIN_ZOOM, 0.25), "line-width": 0.5 },
+      paint: { "line-color": palette.grid, "line-opacity": fadeIn(TILE_GRID_MIN_ZOOM, 0.25), "line-width": 0.5 },
     },
     {
       id: "tile-max-square-line",
       type: "line",
       source: SOURCES.tileSquare,
       layout,
-      paint: { "line-color": SQUARE_COLOR, "line-width": 3 },
+      paint: { "line-color": palette.square, "line-width": 2.5 },
     },
     {
       id: "subtile-max-square-line",
       type: "line",
       source: SOURCES.subtileSquare,
       layout,
-      paint: { "line-color": SQUARE_COLOR, "line-width": 2, "line-dasharray": [2, 1] },
+      paint: { "line-color": palette.square, "line-width": 2 },
     },
   ];
-  for (const layer of layers) map.addLayer(layer, beforeId);
+  const groundId = firstGroundLayerId(map);
+  for (const layer of layers) map.addLayer(layer, GROUND_LAYERS.has(layer.id) ? groundId : beforeId);
 }
 
 /** Reloads the tiles of a new version and updates the squares; false when the layers are not added yet. */
@@ -270,7 +349,8 @@ export function setTileData(map: MapLibreMap, data: TileData): boolean {
     // Same addresses: the tiles are requested again and the browser
     // revalidates them, only those whose tiles changed are downloaded.
     source.setTiles([tilesUrl()]);
-    map.getSource<RasterTileSource>(RASTER_SOURCE)?.setTiles([imagesUrl()]);
+    const palette = drawnPalettes.get(map);
+    if (palette) map.getSource<RasterTileSource>(RASTER_SOURCE)?.setTiles([imagesUrl(palette)]);
   }
   map.getSource<GeoJSONSource>(SOURCES.tileSquare)?.setData(data.tileSquare);
   map.getSource<GeoJSONSource>(SOURCES.subtileSquare)?.setData(data.subtileSquare);

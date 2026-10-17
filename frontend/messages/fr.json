@@ -301,22 +301,19 @@
     "label": "Carte de tes activités",
     "checking": "Recherche de nouveaux tracés…",
     "syncing": "Récupération des tracés : {fetched} sur {total}",
-    "trackCount": "{count, plural, =0 {Aucun tracé} one {# tracé} other {# tracés}}",
     "empty": "Connecte Strava depuis le tableau de bord pour voir tes tracés ici.",
     "error": "Impossible de récupérer tes tracés pour le moment.",
     "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
     "retry": "Réessayer",
-    "layers": {
-      "label": "Couches affichées",
+    "stats": {
+      "label": "Chiffres clés de la carte",
       "tracks": "Tracés",
-      "subtiles": "Petites tuiles"
-    },
-    "legend": {
-      "tiles": "Tuiles",
-      "subtiles": "Petites",
-      "maxSquare": "Plus grand carré : {size} × {size}",
-      "maxCluster": "Plus grand cluster : {count, plural, =0 {aucun} one {# tuile} other {# tuiles}}",
-      "zoomForSubtiles": "Zoome pour voir les petites tuiles"
+      "trackCount": "{count, plural, one {tracé} other {tracés}}",
+      "tiles": "Grandes tuiles",
+      "subtiles": "Petites tuiles",
+      "visited": "Visitées",
+      "maxCluster": "Plus grand cluster",
+      "maxSquare": "Carré max"
     },
     "tilePopup": {
       "tile": "Tuile",

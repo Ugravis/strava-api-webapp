@@ -43,8 +43,9 @@ pnpm dev:frontend
 ```
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
-drops every table, replays the migrations and empties the object storage (uploaded avatars); it
-refuses to run when `NODE_ENV=production`.
+drops every table, replays the migrations, imports the country boundaries again (about 5 minutes,
+`--skip-countries` to skip it) and empties the object storage (uploaded avatars); it refuses to run
+when `NODE_ENV=production`.
 To manage migrations manually:
 
 ```bash
@@ -107,13 +108,15 @@ A new Strava application only accepts its owner's account until it is reviewed b
 The tiles are grouped by country to show the completion of each visited country, on both levels.
 A tile belongs to every country it touches, even marginally, so a tile crossed by a border counts
 for each country. A country includes all its territories: the dependencies (La Réunion, French
-Polynesia, Greenland…) are attached to their sovereign country. Lakes are not removed.
+Polynesia, Svalbard…) are attached to their sovereign country, except Greenland, vast and
+self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes are not removed.
 
 - **Boundaries**: `pnpm countries:import [release]` reads the land boundaries of the countries
   from [Overture Maps](https://overturemaps.org) (OpenStreetMap data, ODbL, public S3 bucket, no
   account) with DuckDB, then stores them at full precision in PostGIS, subdivided in
   `country_parts` (Web Mercator). It takes about 5 minutes and reads about 300 MB. Run it once
-  after setting up the database, and again after `pnpm db:reset`; without it, no country is shown.
+  after setting up the database; `pnpm db:reset` runs it too (`pnpm db:reset --skip-countries` to
+  skip it). Without it, no country is shown.
   The release is pinned in `overture-countries.ts`. `country_parts` is only read by the worker,
   never by a user request.
 - **Location**: a background worker locates each visited large tile once: for every country it

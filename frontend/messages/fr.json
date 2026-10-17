@@ -316,9 +316,10 @@
       "otherClusters": "Autres clusters",
       "maxSquare": "Carré max"
     },
-    "tilePopup": {
+    "tileDialog": {
       "tile": "Tuile",
       "subtile": "Petite tuile",
+      "description": "Ce que tes activités ont exploré sur cette tuile.",
       "inMaxSquare": "Plus grand carré",
       "inMaxCluster": "Plus grand cluster",
       "clustered": "Cluster",
@@ -326,8 +327,44 @@
       "visits": "Passages",
       "firstVisit": "Premier passage",
       "lastVisit": "Dernier passage",
-      "recent": "Dernières activités",
-      "error": "Impossible de charger le détail de cette tuile."
+      "activities": "Activités",
+      "noActivities": "Aucune activité n'a traversé cette tuile.",
+      "loadMore": "Charger plus",
+      "viewOnStrava": "Voir sur Strava",
+      "error": "Impossible de charger le détail de cette tuile.",
+      "activitiesError": "Impossible de charger les activités.",
+      "retry": "Réessayer",
+      "close": "Fermer",
+      "hours": "{hours} h {minutes}",
+      "minutes": "{minutes} min"
+    },
+    "sports": {
+      "run": "Course à pied",
+      "trail_run": "Trail",
+      "virtual_run": "Course virtuelle",
+      "walk": "Marche",
+      "hike": "Randonnée",
+      "ride": "Vélo",
+      "gravel_ride": "Gravel",
+      "mountain_bike_ride": "VTT",
+      "e_bike_ride": "Vélo électrique",
+      "e_mountain_bike_ride": "VTT électrique",
+      "virtual_ride": "Vélo virtuel",
+      "swim": "Natation",
+      "alpine_ski": "Ski alpin",
+      "backcountry_ski": "Ski de randonnée",
+      "nordic_ski": "Ski de fond",
+      "snowboard": "Snowboard",
+      "snowshoe": "Raquettes",
+      "rowing": "Aviron",
+      "kayaking": "Kayak",
+      "canoeing": "Canoë",
+      "stand_up_paddling": "Stand up paddle",
+      "inline_skate": "Roller",
+      "wheelchair": "Fauteuil roulant",
+      "handcycle": "Handbike",
+      "workout": "Entraînement",
+      "other": "Autre"
     }
   }
 }

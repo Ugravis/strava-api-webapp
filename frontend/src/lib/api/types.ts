@@ -161,9 +161,27 @@ export interface TileVisits {
   activities: number;
   firstVisitedAt: string | null;
   lastVisitedAt: string | null;
-  /** The latest ones first. */
-  recent: { id: string; name: string; sportType: string; startedAt: string }[];
   tile: TileDetails;
+}
+
+/** An activity that crossed a tile. */
+export interface TileActivity {
+  id: string;
+  name: string;
+  sportType: string;
+  startedAt: string;
+  distanceM: number;
+  movingTimeS: number;
+  elevationGainM: number | null;
+  /** Identifier of the activity on Strava, to link to it. */
+  stravaId: string | null;
+}
+
+/** A page of the activities that crossed a tile, the latest ones first. */
+export interface TileActivitiesPage {
+  items: TileActivity[];
+  /** Cursor of the next page; null on the last one. */
+  next: string | null;
 }
 
 /** Tiles of one level touching a country, and those visited. */

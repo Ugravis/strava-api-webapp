@@ -128,32 +128,6 @@
     @apply font-sans;
   }
 }
-/* MapLibre popups follow the theme instead of their default white box. */
-@layer components {
-  .tile-popup .maplibregl-popup-content {
-    @apply rounded-xl bg-popover p-3 text-popover-foreground shadow-md ring-1 ring-foreground/10;
-  }
-  .tile-popup .maplibregl-popup-close-button {
-    @apply right-1.5 top-1.5 size-6 rounded-md text-base text-muted-foreground hover:bg-muted hover:text-foreground;
-  }
-  .tile-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip,
-  .tile-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-  .tile-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
-    border-bottom-color: var(--popover);
-  }
-  .tile-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
-  .tile-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-  .tile-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
-    border-top-color: var(--popover);
-  }
-  .tile-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
-    border-right-color: var(--popover);
-  }
-  .tile-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
-    border-left-color: var(--popover);
-  }
-}
-
 /*
  * Map controls in the colors of the app, in both themes. Outside the layers
  * and under the map: they override the stylesheet of MapLibre, loaded with it.

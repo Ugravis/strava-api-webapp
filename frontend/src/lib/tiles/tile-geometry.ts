@@ -57,6 +57,11 @@ export function maxSquareCollection(maxSquare: TileSquare | null, zoom: TileZoom
   };
 }
 
+/** One tile, as one polygon. */
+export function tileCollection(zoom: TileZoom, x: number, y: number): FeatureCollection<Polygon> {
+  return { type: "FeatureCollection", features: [square(x, y, zoom)] };
+}
+
 /** The tile of `zoom` holding the position `(lng, lat)`. */
 export function tileAt(lng: number, lat: number, zoom: TileZoom): [number, number] {
   return [Math.floor(xOf(lng, zoom)), Math.floor(yOf(lat, zoom))];

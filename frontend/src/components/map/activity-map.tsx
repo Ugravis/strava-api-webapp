@@ -1,18 +1,16 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
+import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import type { TilesSummary } from "@/lib/api/types";
-import { tileAt, type TileZoom } from "@/lib/tiles/tile-geometry";
+import { tileAt } from "@/lib/tiles/tile-geometry";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
 import {
   addTileLayers,
-  CLICKABLE_LAYERS,
   clickableZooms,
   setTileData,
   setTileMode,
@@ -22,7 +20,8 @@ import {
   updateGrids,
   visitedTileNear,
 } from "./tile-layers";
-import { TilePopup } from "./tile-popup";
+import { TileDialog } from "./tile-dialog";
+import { addTileHighlight, sameTile, setTileHighlight, type TileRef } from "./tile-highlight";
 import {
   addTrackLayer,
   boundsOf,
@@ -47,13 +46,9 @@ interface ActivityMapProps {
   label: string;
 }
 
-interface SelectedTile {
-  /** Mode the tile was picked in: changing it closes the popup. */
+interface SelectedTile extends TileRef {
+  /** Mode the tile was picked in: changing it closes the dialog. */
   mode: TileMode;
-  zoom: TileZoom;
-  x: number;
-  y: number;
-  lngLat: [number, number];
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
@@ -75,8 +70,9 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const paletteRef = useRef(palette);
 
   const [selected, setSelected] = useState<SelectedTile | null>(null);
-  // The popup content is rendered by React, inside the node MapLibre positions.
-  const [popupNode] = useState(() => document.createElement("div"));
+  // Outside React: the pointer moves far more often than the map should render.
+  const hoveredRef = useRef<TileRef | null>(null);
+  const shownRef = useRef<TileRef | null>(null);
 
   // Before the creation of the map: a hot reload of the code recreates the
   // map with the colors of the new code, instead of loading its style twice.
@@ -109,6 +105,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       setVisitedCountries(map, countriesRef.current, paletteRef.current);
       addTileLayers(map, tilesRef.current, paletteRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, paletteRef.current, showTracksRef.current, firstLabel);
+      addTileHighlight(map, shownRef.current ?? hoveredRef.current, paletteRef.current, firstLabel);
       setTileMode(map, modeRef.current);
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
@@ -117,13 +114,37 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     map.on("movestart", (event) => {
       if (event.originalEvent) framedRef.current = true;
     });
-    map.on("click", (event) => setSelected(selectTile(map, modeRef.current, event)));
-    for (const layer of CLICKABLE_LAYERS) {
-      map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
-      map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
-    }
+    map.on("click", (event) => {
+      const tile = pickTile(map, modeRef.current, event.point);
+      setSelected(tile && { ...tile, mode: modeRef.current });
+    });
+    // The tile under the pointer is outlined: a click opens it. Looked for
+    // once per frame, and not while the map moves under the pointer.
+    let pointer: { x: number; y: number } | null = null;
+    let frame = 0;
+    const hover = (tile: TileRef | null) => {
+      if (sameTile(tile, hoveredRef.current)) return;
+      hoveredRef.current = tile;
+      map.getCanvas().style.cursor = tile ? "pointer" : "";
+      setTileHighlight(map, shownRef.current ?? tile);
+    };
+    const pickHovered = () => {
+      frame = 0;
+      hover(pointer && !map.isMoving() ? pickTile(map, modeRef.current, pointer) : null);
+    };
+    map.on("mousemove", (event) => {
+      pointer = event.point;
+      if (!frame) frame = requestAnimationFrame(pickHovered);
+    });
+    map.on("mouseout", () => {
+      pointer = null;
+      hover(null);
+    });
+    map.on("movestart", () => hover(null));
+    map.on("moveend", pickHovered);
     mapRef.current = map;
     return () => {
+      cancelAnimationFrame(frame);
       map.remove();
       mapRef.current = null;
     };
@@ -163,7 +184,12 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   useEffect(() => {
     modeRef.current = tileMode;
     // Layers not added yet get the mode once the style is loaded.
-    if (mapRef.current) setTileMode(mapRef.current, tileMode);
+    if (!mapRef.current) return;
+    setTileMode(mapRef.current, tileMode);
+    // The tile under the pointer may belong to the other level.
+    hoveredRef.current = null;
+    mapRef.current.getCanvas().style.cursor = "";
+    setTileHighlight(mapRef.current, shownRef.current);
   }, [tileMode]);
 
   useEffect(() => {
@@ -175,31 +201,16 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const shown = selected?.mode === tileMode ? selected : null;
 
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !shown) return;
-    // The map's click handler already selects another tile or none.
-    const popup = new Popup({ className: "tile-popup", maxWidth: "none", closeOnClick: false, focusAfterOpen: false })
-      .setLngLat(shown.lngLat)
-      .setDOMContent(popupNode)
-      .addTo(map);
-    // Closed by its button: the selection follows.
-    const onClose = () => setSelected(null);
-    popup.on("close", onClose);
-    return () => {
-      popup.off("close", onClose);
-      popup.remove();
-    };
-  }, [shown, popupNode]);
+    shownRef.current = shown;
+    // The selected tile stays outlined while its dialog is open.
+    if (mapRef.current) setTileHighlight(mapRef.current, shown ?? hoveredRef.current);
+  }, [shown]);
 
   // MapLibre styles its container (`position: relative`): it is wrapped to fill the parent.
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} role="region" aria-label={label} className="size-full" />
-      {shown &&
-        createPortal(
-          <TilePopup key={`${shown.zoom}/${shown.x}/${shown.y}`} zoom={shown.zoom} x={shown.x} y={shown.y} />,
-          popupNode,
-        )}
+      <TileDialog tile={shown} onClose={() => setSelected(null)} />
     </div>
   );
 }
@@ -219,18 +230,13 @@ function firstLabelId(map: MapLibreMap): string | undefined {
 
 /**
  * The visited tile under the pointer or a few pixels from it, at the level
- * shown, from the tiles drawn. In the combined view, an unvisited small
- * tile falls back to its large tile.
+ * shown, from the tiles drawn; null where nothing can be picked. In the
+ * combined view, an unvisited small tile falls back to its large tile.
  */
-function selectTile(
-  map: MapLibreMap,
-  mode: TileMode,
-  { point, lngLat: { lng, lat } }: { point: { x: number; y: number }; lngLat: { lng: number; lat: number } },
-): SelectedTile | null {
+function pickTile(map: MapLibreMap, mode: TileMode, point: { x: number; y: number }): TileRef | null {
   const found = visitedTileNear(map, point, clickableZooms(mode, map.getZoom()));
   if (!found) return null;
-  const at = found.point === point ? { lng, lat } : map.unproject([found.point.x, found.point.y]);
-  const [x, y] = tileAt(at.lng, at.lat, found.zoom);
-  // The popup stays where the pointer is.
-  return { mode, zoom: found.zoom, x, y, lngLat: [lng, lat] };
+  const { lng, lat } = map.unproject([found.point.x, found.point.y]);
+  const [x, y] = tileAt(lng, lat, found.zoom);
+  return { zoom: found.zoom, x, y };
 }

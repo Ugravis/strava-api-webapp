@@ -54,6 +54,8 @@ const TILE_GRID_MIN_ZOOM = 11;
 const SUBTILE_GRID_MIN_ZOOM = 14;
 /** The small tiles fade in from this zoom, where the backend starts serving their images. */
 const SUBTILE_MIN_ZOOM = 5;
+/** The large tiles can be picked from this zoom, where they span about 16 pixels; below, nothing is picked. */
+const TILE_CLICK_MIN_ZOOM = 10;
 /** The small tiles can be picked from this zoom, where they span about 16 pixels; below, a click picks the large tile. */
 const SUBTILE_CLICK_MIN_ZOOM = 13;
 /**
@@ -96,7 +98,7 @@ const GROUND_LAYERS = new Set([
 ]);
 
 /** Layers whose fill shows a visited tile, small tiles first: they react to the pointer. */
-export const CLICKABLE_LAYERS = ["visited-subtiles-fill", "visited-tiles-fill"];
+const CLICKABLE_LAYERS = ["visited-subtiles-fill", "visited-tiles-fill"];
 const LAYER_ZOOMS: Record<string, TileZoom> = {
   "visited-subtiles-fill": SUBTILE_ZOOM,
   "visited-tiles-fill": TILE_ZOOM,
@@ -221,8 +223,9 @@ const drawnVersions = new WeakMap<MapLibreMap, string>();
 /** Colors of the images of each map, those of its theme. */
 const drawnPalettes = new WeakMap<MapLibreMap, MapPalette>();
 
-/** Levels of the tile under the pointer, the most detailed first. */
+/** Levels of the tile under the pointer, the most detailed first; none while the tiles are too small to aim at. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
+  if (mapZoom < TILE_CLICK_MIN_ZOOM) return [];
   return mode === "both" && mapZoom >= SUBTILE_CLICK_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
 }
 

@@ -8,15 +8,24 @@ describe('toCountryAreas', () => {
       [
         { country: 'FR', divisionId: 'france', wkb },
         { country: 'RE', divisionId: 'reunion', wkb },
-        { country: 'GL', divisionId: 'greenland', wkb },
+        { country: 'SJ', divisionId: 'svalbard', wkb },
       ],
       new Map([
         ['reunion', 'FR'],
-        ['greenland', 'DK'],
+        ['svalbard', 'NO'],
       ]),
     );
 
-    expect(areas.map((area) => area.code)).toEqual(['FR', 'FR', 'DK']);
+    expect(areas.map((area) => area.code)).toEqual(['FR', 'FR', 'NO']);
+  });
+
+  it('keeps Greenland as a country of its own', () => {
+    const [area] = toCountryAreas(
+      [{ country: 'GL', divisionId: 'greenland', wkb }],
+      new Map([['greenland', 'DK']]),
+    );
+
+    expect(area.code).toBe('GL');
   });
 
   it('keeps the code of an area without sovereign country', () => {

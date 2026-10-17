@@ -9,7 +9,8 @@ const BUCKET = 's3://overturemaps-us-west-2/release';
 /**
  * Downloads the land areas of every country and dependency of an Overture
  * Maps release (about 300 MB read from the public S3 bucket, no account
- * needed), with the dependencies attached to their sovereign country.
+ * needed), with the dependencies attached to their sovereign country
+ * (see `toCountryAreas`).
  */
 export async function readOvertureCountries(
   release: string,

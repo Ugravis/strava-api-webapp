@@ -15,15 +15,24 @@ export interface CountryArea {
 }
 
 /**
+ * Dependencies counted as countries of their own: vast and self-governing,
+ * they would outweigh their sovereign country (Greenland holds about 99 %
+ * of the tiles of Denmark).
+ */
+export const SEPARATE_DEPENDENCIES = new Set(['GL']);
+
+/**
  * Attaches the dependencies (overseas regions, territories) to their
- * sovereign country: La Réunion counts for France, Greenland for Denmark.
+ * sovereign country, La Réunion to France, except the separate ones.
  */
 export function toCountryAreas(
   areas: OvertureArea[],
   sovereignByDivision: Map<string, string>,
 ): CountryArea[] {
   return areas.map((area) => ({
-    code: sovereignByDivision.get(area.divisionId) ?? area.country,
+    code: SEPARATE_DEPENDENCIES.has(area.country)
+      ? area.country
+      : (sovereignByDivision.get(area.divisionId) ?? area.country),
     wkb: area.wkb,
   }));
 }

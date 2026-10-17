@@ -65,13 +65,13 @@ export const RASTER_MIN_ZOOM = 5;
  * browser keeps the tiles until it changes, so a change of their content
  * must increment it.
  */
-const TILES_FORMAT = 3;
+const TILES_FORMAT = 4;
 /**
- * Below zoom 4, the large tiles are grouped by ancestor at `zoom + 10`:
- * half a pixel of a 512 pixels map tile, one pixel of a high density
- * screen.
+ * Below zoom 5, the large tiles are grouped by ancestor at `zoom + 9`: one
+ * pixel of a 512 pixels map tile. Finer, the area would look like a thin
+ * lace once zoomed out.
  */
-const VECTOR_GROUPING_LEVELS = 10;
+const VECTOR_GROUPING_LEVELS = 9;
 const MVT_EXTENT = 4096;
 /** The outline of the visited area is served from this zoom, where the map draws it. */
 const VECTOR_OUTLINE_MIN_ZOOM = 10;
@@ -373,8 +373,8 @@ export class UserTilesService {
    * Vector tile (Mapbox Vector Tile) of the tiles of the user within the
    * map tile `(zoom, x, y)`: one area per layer, its tiles merged, so that
    * its size follows the outline of the tiles rather than their number.
-   * Below zoom 4, the large tiles are grouped by ancestor at `zoom + 10`,
-   * about one pixel wide.
+   * Below zoom 5, the large tiles are grouped by ancestor at `zoom + 9`,
+   * one pixel wide.
    */
   async vectorTile(
     userId: string,

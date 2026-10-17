@@ -7,15 +7,18 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 
-/** Top bar: menu button everywhere, logo on mobile where the sidebar is a drawer. */
+/**
+ * Top bar on mobile only, where the sidebar is a drawer: its button and the
+ * logo. On larger screens, the sidebar holds its own button.
+ */
 export function AppHeader() {
   const t = useTranslations("nav");
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur supports-backdrop-filter:bg-background/60 md:h-12">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur supports-backdrop-filter:bg-background/60 md:hidden">
       <SidebarTrigger className="-ml-1" aria-label={t("openMenu")} />
-      <Separator orientation="vertical" className="h-4 md:hidden" />
-      <Link href={DEFAULT_AUTHENTICATED_ROUTE} className="min-w-0 md:hidden">
+      <Separator orientation="vertical" className="h-4" />
+      <Link href={DEFAULT_AUTHENTICATED_ROUTE} className="min-w-0">
         <AppLogo />
       </Link>
     </header>

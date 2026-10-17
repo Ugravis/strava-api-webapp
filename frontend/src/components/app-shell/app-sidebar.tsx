@@ -18,6 +18,7 @@ import { siteConfig } from "@/config/site";
 import type { User } from "@/lib/api/types";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
+import { SidebarToggleMenuItem } from "./sidebar-toggle-menu-item";
 import { ThemeMenuItem } from "./theme-menu-item";
 
 export function AppSidebar({ user }: { user: User }) {
@@ -42,6 +43,7 @@ export function AppSidebar({ user }: { user: User }) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarToggleMenuItem />
           <ThemeMenuItem />
           <NavUser user={user} />
         </SidebarMenu>

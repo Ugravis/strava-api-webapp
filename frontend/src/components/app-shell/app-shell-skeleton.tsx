@@ -13,7 +13,7 @@ export function AppShellSkeleton() {
         </div>
       </div>
       <div className="flex flex-1 flex-col">
-        <div className="h-14 border-b md:h-12" />
+        <div className="h-14 border-b md:hidden" />
         <div className="flex flex-col gap-4 p-4 md:p-6">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32 w-full max-w-2xl" />

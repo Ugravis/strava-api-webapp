@@ -1,13 +1,16 @@
 import type { FeatureCollection, LineString } from "geojson";
-import type { GeoJSONSource, LngLatBoundsLike, Map as MapLibreMap } from "maplibre-gl";
+import type { ExpressionSpecification, GeoJSONSource, LngLatBoundsLike, Map as MapLibreMap } from "maplibre-gl";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
-import { TRACK_COLOR } from "./map-style";
+import type { MapPalette } from "./map-style";
 import { fadeIn } from "./tile-layers";
 
 const SOURCE_ID = "activity-tracks";
 export const TRACK_LAYER_ID = "activity-tracks-line";
-/** Over the tiles, the tracks fade in over two zooms once zoomed in on a few towns. */
-const TRACK_MIN_ZOOM = 10;
+/** Lowest layer of the tracks: the tiles go below it. */
+export const TRACK_CASING_LAYER_ID = "activity-tracks-casing";
+const TRACK_LAYERS = [TRACK_CASING_LAYER_ID, TRACK_LAYER_ID];
+/** The tracks fade in over two zooms once zoomed in on a town. */
+const TRACK_MIN_ZOOM = 12;
 const TRACK_FADE_ZOOMS = 2;
 
 export type TrackCollection = FeatureCollection<LineString, { activityId: string }>;
@@ -39,26 +42,50 @@ export function boundsOf(lines: TrackLine[]): LngLatBoundsLike | null {
   return Number.isFinite(west) ? [west, south, east, north] : null;
 }
 
-/** Adds the track layer below `beforeId`, typically the first label layer. */
+/** Track width by zoom, its casing wider by `extra` pixels. */
+function trackWidth(extra = 0): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], 4, 0.5 + extra, 12, 0.9 + extra, 17, 1.8 + extra];
+}
+
+/**
+ * Adds the tracks below `beforeId`, typically the first label layer, over a
+ * faint dark casing: they stay readable over the land and the tiles.
+ */
 export function addTrackLayer(
   map: MapLibreMap,
   data: TrackCollection,
+  palette: MapPalette,
   visible: boolean,
   beforeId: string | undefined,
 ): void {
   if (map.getSource(SOURCE_ID)) return;
   map.addSource(SOURCE_ID, { type: "geojson", data });
+  const common = {
+    type: "line",
+    source: SOURCE_ID,
+    minzoom: TRACK_MIN_ZOOM,
+    layout: { "line-join": "round", "line-cap": "round", visibility: visible ? "visible" : "none" },
+  } as const;
   map.addLayer(
     {
-      id: TRACK_LAYER_ID,
-      type: "line",
-      source: SOURCE_ID,
-      minzoom: TRACK_MIN_ZOOM,
-      layout: { "line-join": "round", "line-cap": "round", visibility: visible ? "visible" : "none" },
+      ...common,
+      id: TRACK_CASING_LAYER_ID,
       paint: {
-        "line-color": TRACK_COLOR,
-        "line-opacity": fadeIn(TRACK_MIN_ZOOM, 0.8, TRACK_FADE_ZOOMS),
-        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.5, 12, 0.8, 17, 1.6],
+        "line-color": palette.trackCasing,
+        "line-opacity": fadeIn(TRACK_MIN_ZOOM, 0.35, TRACK_FADE_ZOOMS),
+        "line-width": trackWidth(1),
+      },
+    },
+    beforeId,
+  );
+  map.addLayer(
+    {
+      ...common,
+      id: TRACK_LAYER_ID,
+      paint: {
+        "line-color": palette.track,
+        "line-opacity": fadeIn(TRACK_MIN_ZOOM, 0.75, TRACK_FADE_ZOOMS),
+        "line-width": trackWidth(),
       },
     },
     beforeId,
@@ -70,5 +97,7 @@ export function setTrackData(map: MapLibreMap, data: TrackCollection): void {
 }
 
 export function setTracksVisible(map: MapLibreMap, visible: boolean): void {
-  if (map.getLayer(TRACK_LAYER_ID)) map.setLayoutProperty(TRACK_LAYER_ID, "visibility", visible ? "visible" : "none");
+  for (const id of TRACK_LAYERS) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
 }

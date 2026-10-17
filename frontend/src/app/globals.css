@@ -153,3 +153,28 @@
     border-left-color: var(--popover);
   }
 }
+
+/*
+ * Map controls in the colors of the app, in both themes. Outside the layers
+ * and under the map: they override the stylesheet of MapLibre, loaded with it.
+ */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-group {
+  @apply overflow-hidden rounded-lg border bg-background shadow-sm;
+}
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  @apply border-t-border;
+}
+.maplibregl-map .maplibregl-ctrl-group button:not(:disabled):hover {
+  @apply bg-muted;
+}
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  @apply bg-background/85 text-muted-foreground;
+}
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  @apply text-foreground;
+}
+/* The icons are dark images: they are inverted on the dark theme. */
+.dark .maplibregl-map .maplibregl-ctrl-icon,
+.dark .maplibregl-map .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}

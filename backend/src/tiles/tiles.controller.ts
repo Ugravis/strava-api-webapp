@@ -4,8 +4,13 @@ import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import type { User } from '../users/user.entity';
-import { TileParamsDto } from './tile-params.dto';
-import { type TileVisits, TilesService } from './tiles.service';
+import { TileActivitiesQueryDto, TileParamsDto } from './tile-params.dto';
+import { decodeTileActivitiesCursor } from './tile-activities-cursor';
+import {
+  type TileActivitiesPage,
+  type TileVisits,
+  TilesService,
+} from './tiles.service';
 import {
   type TileDetails,
   type TilesSummary,
@@ -149,7 +154,24 @@ export class TilesController {
     response.type(contentType).send(await render());
   }
 
-  /** Details of one tile and the activities that crossed it. */
+  /** The activities that crossed one tile, the latest ones first, one page at a time. */
+  @Get(':zoom/:x/:y/activities')
+  activities(
+    @CurrentUser() user: User,
+    @Param() { zoom, x, y }: TileParamsDto,
+    @Query() { limit, cursor }: TileActivitiesQueryDto,
+  ): Promise<TileActivitiesPage> {
+    return this.tiles.activities(
+      user.id,
+      zoom,
+      x,
+      y,
+      limit,
+      cursor ? decodeTileActivitiesCursor(cursor) : null,
+    );
+  }
+
+  /** Details of one tile and a summary of the activities that crossed it. */
   @Get(':zoom/:x/:y')
   async visits(
     @CurrentUser() user: User,

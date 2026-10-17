@@ -41,10 +41,14 @@ const SOURCES = {
 /** The grids only make sense once their cells are a few pixels wide. */
 const TILE_GRID_MIN_ZOOM = 9;
 const SUBTILE_GRID_MIN_ZOOM = 13;
-/** In the combined view, the small tiles appear from this zoom, where the backend starts serving them. */
-export const COMBINED_SUBTILE_MIN_ZOOM = 13;
+/** In the combined view, the small tiles fade in from this zoom, where the backend starts serving them. */
+const SUBTILE_MIN_ZOOM = 10;
+/** The small tiles can be picked from this zoom; below, a click picks the large tile. */
+const SUBTILE_CLICK_MIN_ZOOM = 12;
 /** Below this zoom, the backend merges the contiguous tiles: their outlines would not follow the tiles. */
 const TILE_OUTLINE_MIN_ZOOM = 10;
+/** Zooms over which a layer fades in after its minimum zoom. */
+const FADE_ZOOMS = 1;
 
 const LEVEL_LAYERS = {
   tiles: ["visited-tiles-fill", "tile-max-cluster-fill", "visited-tiles-outline", "tile-max-square-line"],
@@ -65,11 +69,10 @@ const VISIBLE_LAYERS: Record<TileMode, string[]> = {
   both: [...ALL_LAYERS],
 };
 
-/** Large tiles fade under the small ones once they appear. */
-const TILE_FILL_OPACITY: Record<"single" | "both", number | ExpressionSpecification> = {
-  single: 0.22,
-  both: ["step", ["zoom"], 0.22, COMBINED_SUBTILE_MIN_ZOOM, 0.12],
-};
+/** Opacity rising from 0 at `minZoom` to `opacity` one zoom later: the layer appears smoothly. */
+function fadeIn(minZoom: number, opacity: number): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], minZoom, 0, minZoom + FADE_ZOOMS, opacity];
+}
 
 /** What the map draws of the tiles: the vector tiles of a version, and the largest squares. */
 export interface TileData {
@@ -103,7 +106,7 @@ export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
     case "tiles":
       return [TILE_ZOOM];
     case "both":
-      return mapZoom >= COMBINED_SUBTILE_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
+      return mapZoom >= SUBTILE_CLICK_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
   }
 }
 
@@ -136,7 +139,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       type: "fill",
       ...vector(SOURCE_LAYERS.tiles),
       layout,
-      paint: { "fill-color": TILE_COLOR, "fill-opacity": TILE_FILL_OPACITY.single, "fill-antialias": false },
+      paint: { "fill-color": TILE_COLOR, "fill-opacity": 0.22, "fill-antialias": false },
     },
     {
       id: "tile-max-cluster-fill",
@@ -151,23 +154,23 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       ...vector(SOURCE_LAYERS.tiles),
       minzoom: TILE_OUTLINE_MIN_ZOOM,
       layout,
-      paint: { "line-color": TILE_COLOR, "line-opacity": 0.6, "line-width": 1 },
+      paint: { "line-color": TILE_COLOR, "line-opacity": fadeIn(TILE_OUTLINE_MIN_ZOOM, 0.6), "line-width": 1 },
     },
     {
       id: "visited-subtiles-fill",
       type: "fill",
       ...vector(SOURCE_LAYERS.subtiles),
-      minzoom: COMBINED_SUBTILE_MIN_ZOOM,
+      minzoom: SUBTILE_MIN_ZOOM,
       layout,
-      paint: { "fill-color": TILE_COLOR, "fill-opacity": 0.35, "fill-antialias": false },
+      paint: { "fill-color": TILE_COLOR, "fill-opacity": fadeIn(SUBTILE_MIN_ZOOM, 0.35), "fill-antialias": false },
     },
     {
       id: "subtile-max-cluster-fill",
       type: "fill",
       ...vector(SOURCE_LAYERS.subtileCluster),
-      minzoom: COMBINED_SUBTILE_MIN_ZOOM,
+      minzoom: SUBTILE_MIN_ZOOM,
       layout,
-      paint: { "fill-color": CLUSTER_COLOR, "fill-opacity": 0.4, "fill-antialias": false },
+      paint: { "fill-color": CLUSTER_COLOR, "fill-opacity": fadeIn(SUBTILE_MIN_ZOOM, 0.4), "fill-antialias": false },
     },
     {
       id: "subtile-grid-line",
@@ -175,7 +178,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       source: SOURCES.subtileGrid,
       minzoom: SUBTILE_GRID_MIN_ZOOM,
       layout,
-      paint: { "line-color": GRID_COLOR, "line-opacity": 0.35, "line-width": 0.5 },
+      paint: { "line-color": GRID_COLOR, "line-opacity": fadeIn(SUBTILE_GRID_MIN_ZOOM, 0.35), "line-width": 0.5 },
     },
     {
       id: "tile-grid-line",
@@ -183,7 +186,7 @@ export function addTileLayers(map: MapLibreMap, data: TileData, beforeId: string
       source: SOURCES.tileGrid,
       minzoom: TILE_GRID_MIN_ZOOM,
       layout,
-      paint: { "line-color": GRID_COLOR, "line-opacity": 0.6, "line-width": 1 },
+      paint: { "line-color": GRID_COLOR, "line-opacity": fadeIn(TILE_GRID_MIN_ZOOM, 0.6), "line-width": 1 },
     },
     {
       id: "tile-max-square-line",
@@ -222,13 +225,6 @@ export function setTileMode(map: MapLibreMap, mode: TileMode): void {
     if (map.getLayer(id)) {
       map.setLayoutProperty(id, "visibility", visible.has(id) ? "visible" : "none");
     }
-  }
-  if (map.getLayer("visited-tiles-fill")) {
-    map.setPaintProperty(
-      "visited-tiles-fill",
-      "fill-opacity",
-      mode === "both" ? TILE_FILL_OPACITY.both : TILE_FILL_OPACITY.single,
-    );
   }
   updateGrids(map, mode);
 }

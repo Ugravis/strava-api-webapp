@@ -43,24 +43,12 @@ export function MapStatsBar({ tracks, summary, layers, onLayersChange }: MapStat
         checked={layers.tracks}
         onCheckedChange={(checked) => onLayersChange({ ...layers, tracks: checked })}
       />
-      <TilesSection
-        level="tiles"
-        summary={summary?.tiles}
-        clusters={{
-          checked: layers.tileClusters,
-          onCheckedChange: (checked) => onLayersChange({ ...layers, tileClusters: checked }),
-        }}
-      />
+      <TilesSection level="tiles" summary={summary?.tiles} />
       <TilesSection
         level="subtiles"
         summary={summary?.subtiles}
         checked={layers.subtiles}
         onCheckedChange={(checked) => onLayersChange({ ...layers, subtiles: checked })}
-        clusters={{
-          checked: layers.subtileClusters,
-          onCheckedChange: (checked) => onLayersChange({ ...layers, subtileClusters: checked }),
-          disabled: !layers.subtiles,
-        }}
       />
     </section>
   );
@@ -105,56 +93,16 @@ function StatsSection({ title, checked, onCheckedChange, columns = false, childr
   );
 }
 
-/** A layer drawn on demand within a section. */
-interface ToggleProps {
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-  disabled?: boolean;
-}
-
-/** A key figure, its label and the key of its color, with the checkbox of its layer if optional. */
-function Stat({
-  value,
-  label,
-  colorKey,
-  toggle,
-}: {
-  value: ReactNode;
-  label: string;
-  colorKey: ReactNode;
-  toggle?: ToggleProps;
-}) {
-  const caption = (
-    <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
-      {toggle && (
-        <Checkbox
-          checked={toggle.checked && !toggle.disabled}
-          onCheckedChange={(checked) => toggle.onCheckedChange(checked === true)}
-          disabled={toggle.disabled}
-        />
-      )}
-      {colorKey}
-      {label}
-    </span>
-  );
-  const content = (
-    <>
-      <span
-        className={cn(
-          "text-base leading-tight font-semibold tabular-nums transition-opacity",
-          toggle && !toggle.checked && "opacity-40",
-        )}
-      >
-        {value}
+/** A key figure, its label and the key of its color. */
+function Stat({ value, label, colorKey }: { value: ReactNode; label: string; colorKey: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5 md:items-center">
+      <span className="text-base leading-tight font-semibold tabular-nums">{value}</span>
+      <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+        {colorKey}
+        {label}
       </span>
-      {caption}
-    </>
-  );
-  const layout = "flex min-w-0 flex-col gap-0.5 md:items-center";
-  return toggle ? (
-    <label className={cn(layout, toggle.disabled ? "cursor-not-allowed" : "cursor-pointer")}>{content}</label>
-  ) : (
-    <div className={layout}>{content}</div>
+    </div>
   );
 }
 
@@ -165,15 +113,12 @@ function TilesSection({
   summary,
   checked,
   onCheckedChange,
-  clusters,
 }: {
   level: "tiles" | "subtiles";
   /** Undefined while loading. */
   summary: TileLevelSummary | undefined;
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
-  /** Checkbox of the clusters other than the largest. */
-  clusters: ToggleProps;
 }) {
   const t = useTranslations("map.stats");
   const format = useFormatter();
@@ -216,7 +161,6 @@ function TilesSection({
         value={value((s) => withShare(format.number(s.clustered - s.maxCluster), s.clustered - s.maxCluster, s))}
         label={t("otherClusters")}
         colorKey={<OtherClusterKey subtiles={level === "subtiles"} />}
-        toggle={clusters}
       />
     </StatsSection>
   );

@@ -139,11 +139,11 @@ the activity. The reads never aggregate them:
   synchronization, only the map tiles crossed by the new activities are rendered and downloaded
   again, the others answer `304 Not Modified` in a few milliseconds.
 - **Display**: nothing floats over the map but its zoom buttons: a band below it holds the key
-  figures of each layer (visited tiles, largest cluster and square, number of tracks), the keys of
-  their colors, and the checkboxes of the tracks, the small tiles and the other clusters of each
-  level, all shown by default; the large tiles are always drawn. The other clusters are a little
-  lighter than the large tiles and a little darker than the small tiles, short of the largest
-  cluster (mirrored in the dark theme). The base map is the OpenFreeMap Positron style, recolored for each
+  figures of each layer (visited tiles, largest square, largest and other clusters with their
+  share of the visited tiles, number of tracks), the keys of their colors, and the checkboxes of
+  the tracks and the small tiles, both shown by default; the large tiles are always drawn. The
+  other clusters are a little lighter than the large tiles and a little darker than the small
+  tiles, short of the largest cluster (mirrored in the dark theme). The base map is the OpenFreeMap Positron style, recolored for each
   theme (`components/map/map-style.ts`): beige land, desaturated outside the visited countries,
   flat grey roads, blue water, green tiles, pink largest squares and raspberry tracks. Text and
   lines keep a contrast of 4.5:1 and 3:1 with the land.
@@ -154,7 +154,9 @@ the activity. The reads never aggregate them:
   waterways and rivers fade in between zooms 8 and 10, the buildings between 13 and 14.5.
 - **Zoom**: zoomed out, the tiles are drawn at their strongest. Between zooms 11 and 12, the large
   tiles take the look of the largest cluster and the small tiles lighten: zoomed in, the small
-  tiles stand out over a quiet ground. The small tiles fade in between zooms 5 and 6, the grids
+  tiles stand out over a quiet ground. The small tiles fade in between zooms 5 and 6, the other
+  clusters of large tiles between zooms 5 and 6 (France on screen), those of small tiles between
+  zooms 10 and 11 (a city on screen, drawn by a second image layer requested from zoom 10), the grids
   from zoom 11 (large tiles) and 14 (small tiles), the tracks between zooms 12 and 14. A click
   picks the tile under the pointer or a few pixels from it.
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what

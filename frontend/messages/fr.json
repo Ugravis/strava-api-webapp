@@ -29,6 +29,8 @@
     "settings": "Paramètres",
     "logout": "Déconnexion",
     "openMenu": "Ouvrir le menu",
+    "collapseMenu": "Réduire le menu",
+    "expandMenu": "Agrandir le menu",
     "userMenu": "Menu du compte"
   },
   "theme": {
@@ -296,7 +298,6 @@
   },
   "map": {
     "title": "Carte",
-    "description": "Toutes tes activités sur une seule carte.",
     "label": "Carte de tes activités",
     "checking": "Recherche de nouveaux tracés…",
     "syncing": "Récupération des tracés : {fetched} sur {total}",

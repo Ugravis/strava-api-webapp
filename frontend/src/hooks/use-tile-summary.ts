@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
+import { sharedRequest } from "@/lib/api/shared-request";
 import type { TilesSummary } from "@/lib/api/types";
 import { tilesService } from "@/services/tiles.service";
 
 /** The backend computes the achievements in the background, a few seconds after the tiles change. */
 const PENDING_POLL_MS = 3_000;
+
+const fetchSummary = sharedRequest(() => tilesService.getSummary());
 
 /**
  * Counters, achievements and version of the tiles of the current user.
@@ -22,7 +25,7 @@ export function useTileSummary(): { summary: TilesSummary | null; error: boolean
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    tilesService.getSummary().then(
+    fetchSummary(`${version}/${poll}`).then(
       (next) => {
         if (cancelled) return;
         // Same version and state: the map keeps its sources untouched.

@@ -54,7 +54,7 @@ const RGBA_HEX = /^[0-9a-f]{8}$/i;
 /**
  * Colors of the image, chosen by the map, as `rrggbbaa`: the small tiles,
  * those of the largest cluster, and those of the other clusters, drawn like
- * the others without it.
+ * the others without it or zoomed out.
  */
 export class RasterTileQueryDto {
   @IsString()

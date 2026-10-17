@@ -155,8 +155,8 @@ the activity. The reads never aggregate them:
 - **Zoom**: zoomed out, the tiles are drawn at their strongest. The largest cluster of large tiles is
   opaque, the same color at every zoom; between zooms 11 and 12, the large tiles take its color and the small tiles lighten: zoomed in, the small
   tiles stand out over a quiet ground. The small tiles fade in between zooms 5 and 6, the other
-  clusters of large tiles between zooms 5 and 6 (France on screen), those of small tiles between
-  zooms 7 and 8 (a region on screen, drawn by a second image layer requested from zoom 7), the grids
+  clusters of large tiles between zooms 5 and 6 (France on screen), those of small tiles from zoom 7
+  (a region on screen, drawn in their images by the server, which the map cross-fades), the grids
   from zoom 11 (large tiles) and 14 (small tiles), the tracks between zooms 12 and 14. A click
   picks the tile under the pointer or a few pixels from it.
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what

@@ -48,8 +48,6 @@ function rgba(hex: string): Rgba {
 
 /** A view of the map loads a few dozen tiles at once. */
 const VECTOR_THROTTLE = { default: { limit: 600, ttl: 60_000 } };
-/** Twice as many images: the small tiles, and the other clusters of small tiles alone. */
-const RASTER_THROTTLE = { default: { limit: 1200, ttl: 60_000 } };
 
 @Controller('tiles')
 export class TilesController {
@@ -99,7 +97,7 @@ export class TilesController {
    * those of the map.
    */
   @Get('raster/:zoom/:x/:y')
-  @Throttle(RASTER_THROTTLE)
+  @Throttle(VECTOR_THROTTLE)
   async raster(
     @CurrentUser() user: User,
     @Param() { zoom, x, y }: RasterTileParamsDto,

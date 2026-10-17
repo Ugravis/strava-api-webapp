@@ -72,11 +72,16 @@ export const TILES_MAX_ZOOM = 12;
 /** The images of the small tiles are served from this zoom, where a country like France fits on a screen. */
 export const RASTER_MIN_ZOOM = 5;
 /**
+ * The other clusters of small tiles are drawn from this zoom, where a region
+ * fills the screen; zoomed out, they look like the other small tiles.
+ */
+const RASTER_CLUSTERS_MIN_ZOOM = 7;
+/**
  * Revision of the content of the tiles, part of their entity tags: the
  * browser keeps the tiles until it changes, so a change of their content
  * must increment it.
  */
-const TILES_FORMAT = 7;
+const TILES_FORMAT = 8;
 /**
  * Zoomed out, the large tiles are grouped by ancestor, at most at
  * `zoom + 9`, one pixel of a 512 pixels map tile: finer, the area would
@@ -487,9 +492,9 @@ export class UserTilesService {
   /**
    * PNG image of the small tiles of the user within the map tile
    * `(zoom, x, y)`, in `subtileColor`, those of the largest cluster in
-   * `maxClusterColor`, and those of the other clusters in `clusterColor`, or
-   * like the others without it. Its size stays bounded whatever the density
-   * of the tiles, unlike the vector tiles.
+   * `maxClusterColor`, and from `RASTER_CLUSTERS_MIN_ZOOM` those of the other
+   * clusters in `clusterColor`, otherwise like the others. Its size stays
+   * bounded whatever the density of the tiles, unlike the vector tiles.
    */
   async rasterTile(
     userId: string,
@@ -516,11 +521,12 @@ export class UserTilesService {
          AND y BETWEEN $3 * ${span} AND ($3 + 1) * ${span} - 1`,
       [userId, x, y],
     );
+    const clusters = clusterColor !== null && zoom >= RASTER_CLUSTERS_MIN_ZOOM;
     const cells = rows.map((row) => ({
       x: row.x,
       y: row.y,
       mask: fromSignedMask(row.mask),
-      clusterMask: clusterColor ? fromSignedMask(row.cluster) : 0n,
+      clusterMask: clusters ? fromSignedMask(row.cluster) : 0n,
       maxClusterMask: fromSignedMask(row.max_cluster),
     }));
     // Without its color, the palette entry of the other clusters is unused.

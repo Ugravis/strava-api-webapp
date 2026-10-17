@@ -6,15 +6,14 @@ import { OVERTURE_RELEASE, readOvertureCountries } from './overture-countries';
 const MIN_COUNTRIES = 150;
 /** Vertices per part: small parts keep the spatial index selective. */
 const PART_MAX_VERTICES = 256;
-/** Tolerance of the display outlines, in degrees (about 1 km). */
-const OUTLINE_TOLERANCE = 0.01;
 /** Web Mercator stops at about ±85.05°. */
 const MERCATOR_MAX_LAT = 85.0511;
 
 /**
  * Imports the country boundaries from Overture Maps, replacing the previous
- * ones. Every tile is located again by the backend afterwards, and the tile
- * totals of the visited countries are computed again.
+ * ones. The backend then locates every tile again (within an hour, or at
+ * its next start) and computes again the totals and the tile shapes of the
+ * visited countries.
  * Usage: `pnpm countries:import [release]` from the repository root.
  */
 async function importCountries(release: string): Promise<void> {
@@ -43,18 +42,8 @@ async function importCountries(release: string): Promise<void> {
       // Cascades to the parts and to the countries of the located tiles.
       await manager.query('DELETE FROM countries');
       await manager.query('DELETE FROM located_tiles');
-      // Islets narrower than the tolerance are dropped from the outline,
-      // except for a country that would vanish entirely (Monaco, Vatican).
       await manager.query(
-        `INSERT INTO countries (code, outline)
-         SELECT code, ST_Multi(ST_CollectionExtract(
-           CASE WHEN ST_IsEmpty(simplified) IS NOT FALSE
-             THEN ST_Simplify(geom, $1, true) ELSE simplified END, 3))
-         FROM (
-           SELECT code, geom, ST_Simplify(geom, $1) AS simplified
-           FROM (SELECT code, ST_Collect(geom) AS geom FROM country_areas GROUP BY code) c
-         ) s`,
-        [OUTLINE_TOLERANCE],
+        'INSERT INTO countries (code) SELECT DISTINCT code FROM country_areas',
       );
       await manager.query(
         `INSERT INTO country_parts (country_code, geom)

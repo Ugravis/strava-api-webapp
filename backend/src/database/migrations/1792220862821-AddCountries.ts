@@ -7,7 +7,10 @@ export class AddCountries1792220862821 implements MigrationInterface {
     // Installed by the PostGIS image, but not on every server.
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
     await queryRunner.query(
-      `CREATE TABLE "countries" ("code" character(2) NOT NULL, "total_tiles" integer, "total_subtiles" bigint, "outline" geometry(MultiPolygon,4326) NOT NULL, CONSTRAINT "PK_b47cbb5311bad9c9ae17b8c1eda" PRIMARY KEY ("code"))`,
+      `CREATE TABLE "countries" ("code" character(2) NOT NULL, "total_tiles" integer, "total_subtiles" bigint, "tile_shape" geometry(MultiPolygon,3857), "computed_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_b47cbb5311bad9c9ae17b8c1eda" PRIMARY KEY ("code"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_3e14e221a55531beac9f28cc42" ON "countries" USING gist ("tile_shape") `,
     );
     await queryRunner.query(
       `CREATE TABLE "country_parts" ("id" SERIAL NOT NULL, "country_code" character(2) NOT NULL, "geom" geometry(Polygon,3857) NOT NULL, CONSTRAINT "PK_2af13375dfe763434a7d259ad51" PRIMARY KEY ("id"))`,
@@ -25,6 +28,9 @@ export class AddCountries1792220862821 implements MigrationInterface {
       `CREATE TABLE "tile_countries" ("x" integer NOT NULL, "y" integer NOT NULL, "country_code" character(2) NOT NULL, "mask" bigint NOT NULL, CONSTRAINT "PK_76a464aee0174cfda787b0ecf63" PRIMARY KEY ("x", "y", "country_code"))`,
     );
     await queryRunner.query(
+      `CREATE INDEX "IDX_befcf2082d17e8e5a100983b55" ON "activity_tile_states"  ("updated_at") `,
+    );
+    await queryRunner.query(
       `ALTER TABLE "country_parts" ADD CONSTRAINT "FK_c7977f87c10a6adbbdd1a992f6d" FOREIGN KEY ("country_code") REFERENCES "countries"("code") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
@@ -33,6 +39,9 @@ export class AddCountries1792220862821 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_befcf2082d17e8e5a100983b55"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "tile_countries" DROP CONSTRAINT "FK_ba9f0490c4b40be0d293ff673d2"`,
     );
@@ -48,6 +57,9 @@ export class AddCountries1792220862821 implements MigrationInterface {
       `DROP INDEX "public"."IDX_c7977f87c10a6adbbdd1a992f6"`,
     );
     await queryRunner.query(`DROP TABLE "country_parts"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_3e14e221a55531beac9f28cc42"`,
+    );
     await queryRunner.query(`DROP TABLE "countries"`);
   }
 }

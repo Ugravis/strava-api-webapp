@@ -9,6 +9,14 @@ import { CountriesService } from './countries.service';
 /** Large tiles located per transaction. */
 const LOCATE_BATCH = 200;
 const POLL_INTERVAL_MS = 30_000;
+/**
+ * Between two complete scans of the tiles, only the tiles saved recently are
+ * looked at. The complete scans catch up on what the recent ones cannot see,
+ * such as a new import of the boundaries.
+ */
+const FULL_SCAN_INTERVAL_MS = 60 * 60 * 1000;
+/** Tiles saved by a transaction still open at a checkpoint are seen by the next scans. */
+const CHECKPOINT_MARGIN_MS = 10 * 60 * 1000;
 
 /**
  * In-process background worker locating the visited tiles in the countries,
@@ -23,6 +31,9 @@ export class CountriesWorker
   private timer: NodeJS.Timeout | null = null;
   private stopped = false;
   private current: Promise<void> = Promise.resolve();
+  /** Tiles saved since then are scanned; null before the first complete scan. */
+  private since: Date | null = null;
+  private lastFullScan = 0;
 
   constructor(private readonly countries: CountriesService) {}
 
@@ -60,7 +71,23 @@ export class CountriesWorker
     if (!(await this.countries.hasCountries())) {
       return false;
     }
-    if ((await this.countries.locateTiles(LOCATE_BATCH)) > 0) {
+    const fullScan =
+      this.since === null ||
+      Date.now() - this.lastFullScan >= FULL_SCAN_INTERVAL_MS;
+    const checkpoint = await this.countries.databaseNow();
+    const located = await this.countries.locateTiles(
+      LOCATE_BATCH,
+      fullScan ? null : this.since,
+    );
+    if (located === LOCATE_BATCH) {
+      return true;
+    }
+    // Caught up: the next scans start from this checkpoint.
+    if (fullScan) {
+      this.lastFullScan = Date.now();
+    }
+    this.since = new Date(checkpoint.getTime() - CHECKPOINT_MARGIN_MS);
+    if (located > 0) {
       return true;
     }
     const code = await this.countries.nextCountryWithoutTotals();

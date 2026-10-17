@@ -24,6 +24,8 @@ export type StreamReason = 'sparse' | 'cropped';
 /** Tile computation state of an activity. No location data is kept here. */
 @Entity('activity_tile_states')
 @Index(['status', 'runAfter'])
+// The countries worker looks for the tiles saved recently.
+@Index(['updatedAt'])
 export class ActivityTileState {
   @PrimaryColumn({ name: 'activity_id', type: 'uuid' })
   activityId!: string;

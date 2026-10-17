@@ -26,15 +26,11 @@ export interface CountriesCompletion {
   countries: CountryCompletion[];
   /** Visited large tiles whose countries are not known yet. */
   pendingTiles: number;
-}
-
-export interface CountryOutlines {
-  type: 'FeatureCollection';
-  features: {
-    type: 'Feature';
-    properties: { code: string };
-    geometry: { type: 'MultiPolygon'; coordinates: number[][][][] };
-  }[];
+  /**
+   * Changes whenever the tile shape of a country is computed: the vector
+   * tiles of the shapes can be cached until it changes. Null without shapes.
+   */
+  shapesVersion: string | null;
 }
 
 /** Large tiles of the user, with their small tiles. */
@@ -44,8 +40,12 @@ const USER_CELLS = `
   GROUP BY x, y
   HAVING bit_or(mask) <> 0`;
 
-/** Decimals of the outline coordinates (about 100 m). */
-const OUTLINE_DECIMALS = 3;
+/** Name of the layer of the country shapes in the vector tiles. */
+export const SHAPES_LAYER = 'countries';
+const MVT_EXTENT = 4096;
+const MVT_BUFFER = 64;
+/** Snapping grid of the tile shapes, in meters: tile edges computed at different zooms meet exactly. */
+const SHAPE_GRID_M = 1;
 
 /**
  * Countries touched by the tiles. A tile belongs to every country it
@@ -63,17 +63,32 @@ export class CountriesService {
     return row.exists;
   }
 
+  /** Current time of the database, the clock of `activity_tile_states.updated_at`. */
+  async databaseNow(): Promise<Date> {
+    const [row]: { now: Date }[] = await this.dataSource.query(
+      'SELECT now() AS now',
+    );
+    return row.now;
+  }
+
   /**
    * Locates up to `limit` visited large tiles not located yet: for each
    * country they touch, the mask of their small tiles touching it. A tile
    * inside a part of a country gets every small tile without testing them.
-   * Returns the number of tiles located.
+   * With `since`, only the tiles of the activities whose tiles were saved
+   * since then are considered, instead of every tile. Returns the number
+   * of tiles located.
    */
-  async locateTiles(limit: number): Promise<number> {
+  async locateTiles(limit: number, since: Date | null): Promise<number> {
+    const recent = since
+      ? `JOIN activity_tile_states s
+           ON s.activity_id = t.activity_id AND s.updated_at >= $2`
+      : '';
     return this.dataSource.transaction(async (manager) => {
       const [row]: { located: number }[] = await manager.query(
         `WITH todo AS (
            SELECT DISTINCT t.x, t.y FROM activity_tiles t
+           ${recent}
            WHERE NOT EXISTS (
              SELECT 1 FROM located_tiles l WHERE l.x = t.x AND l.y = t.y
            )
@@ -106,7 +121,7 @@ export class CountriesService {
            GROUP BY x, y, country_code
          )
          SELECT count(*)::int AS located FROM marked`,
-        [limit],
+        since ? [limit, since] : [limit],
       );
       return row.located;
     });
@@ -127,6 +142,9 @@ export class CountriesService {
    * Counts the tiles touching a country by a quadtree descent from the
    * whole world: a tile inside one part of the country counts with all its
    * descendants, a tile crossing its boundary is split, down to zoom 17.
+   * The same descent gives the tile shape of the country: the union of its
+   * large tiles, made of the covered tiles down to zoom 14 and of the large
+   * tiles crossing its boundary.
    */
   async computeTotals(code: string): Promise<TileTotals> {
     const runner = this.dataSource.createQueryRunner();
@@ -137,6 +155,9 @@ export class CountriesService {
         'CREATE TEMP TABLE frontier (x integer, y integer) ON COMMIT DROP',
       );
       await runner.query('INSERT INTO frontier VALUES (0, 0)');
+      await runner.query(
+        'CREATE TEMP TABLE shape_tiles (zoom integer, x integer, y integer) ON COMMIT DROP',
+      );
       let totals: TileTotals = { tiles: 0, subtiles: 0 };
       for (let zoom = 1; zoom <= SUBTILE_ZOOM; zoom++) {
         await runner.query(
@@ -158,6 +179,13 @@ export class CountriesService {
            FROM children`,
         )) as { covered: number; partial: number }[];
         totals = addLevel(totals, zoom, level.covered, level.partial);
+        if (zoom <= TILE_ZOOM) {
+          await runner.query(
+            `INSERT INTO shape_tiles
+             SELECT $1, x, y FROM children WHERE covered OR $1 = ${TILE_ZOOM}`,
+            [zoom],
+          );
+        }
         await runner.query('DROP TABLE frontier');
         await runner.query(
           'CREATE TEMP TABLE frontier ON COMMIT DROP AS SELECT x, y FROM children WHERE NOT covered',
@@ -165,7 +193,14 @@ export class CountriesService {
         await runner.query('DROP TABLE children');
       }
       await runner.query(
-        'UPDATE countries SET total_tiles = $2, total_subtiles = $3 WHERE code = $1',
+        `UPDATE countries SET total_tiles = $2, total_subtiles = $3,
+           tile_shape = (
+             SELECT ST_Multi(ST_CollectionExtract(
+               ST_Union(ST_TileEnvelope(zoom, x, y), ${SHAPE_GRID_M}), 3))
+             FROM shape_tiles
+           ),
+           computed_at = now()
+         WHERE code = $1`,
         [code, totals.tiles, totals.subtiles],
       );
       await runner.commitTransaction();
@@ -198,14 +233,17 @@ export class CountriesService {
        ORDER BY tiles DESC, subtiles DESC, c.code`,
       [userId],
     );
-    const [pending]: { tiles: number }[] = await this.dataSource.query(
-      `WITH cells AS (${USER_CELLS})
-       SELECT count(*)::int AS tiles FROM cells
-       WHERE NOT EXISTS (
-         SELECT 1 FROM located_tiles l WHERE l.x = cells.x AND l.y = cells.y
-       )`,
-      [userId],
-    );
+    const [state]: { pending: number; version: string | null }[] =
+      await this.dataSource.query(
+        `WITH cells AS (${USER_CELLS})
+         SELECT
+           (SELECT count(*)::int FROM cells WHERE NOT EXISTS (
+             SELECT 1 FROM located_tiles l WHERE l.x = cells.x AND l.y = cells.y
+           )) AS pending,
+           (SELECT floor(extract(epoch FROM max(computed_at)) * 1000)::text
+            FROM countries) AS version`,
+        [userId],
+      );
     return {
       countries: rows.map((row) => ({
         code: row.code,
@@ -216,28 +254,29 @@ export class CountriesService {
             row.total_subtiles === null ? null : Number(row.total_subtiles),
         },
       })),
-      pendingTiles: pending.tiles,
+      pendingTiles: state.pending,
+      shapesVersion: state.version,
     };
   }
 
-  /** Simplified outlines of the countries touched by the tiles of the user. */
-  async outlines(userId: string): Promise<CountryOutlines> {
-    const [row]: { outlines: CountryOutlines }[] = await this.dataSource.query(
-      `WITH cells AS (${USER_CELLS})
-       SELECT json_build_object(
-         'type', 'FeatureCollection',
-         'features', COALESCE(json_agg(json_build_object(
-           'type', 'Feature',
-           'properties', json_build_object('code', c.code),
-           'geometry', ST_AsGeoJSON(c.outline, ${OUTLINE_DECIMALS})::json
-         )), '[]'::json)
-       ) AS outlines
-       FROM countries c
-       WHERE c.code IN (
-         SELECT t.country_code FROM cells JOIN tile_countries t USING (x, y)
-       )`,
-      [userId],
+  /**
+   * Vector tile (Mapbox Vector Tile) of the tile shapes of the countries,
+   * with their code. Geography only, the same for every user: the map
+   * keeps the countries the user visited.
+   */
+  async shapesTile(zoom: number, x: number, y: number): Promise<Buffer> {
+    const [row]: { tile: Buffer }[] = await this.dataSource.query(
+      `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
+       shapes AS (
+         SELECT c.code,
+           ST_AsMVTGeom(c.tile_shape, b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         FROM countries c, bounds b
+         WHERE c.tile_shape && b.envelope
+       )
+       SELECT ST_AsMVT(shapes, '${SHAPES_LAYER}', ${MVT_EXTENT}, 'geom') AS tile
+       FROM shapes WHERE geom IS NOT NULL`,
+      [zoom, x, y],
     );
-    return row.outlines;
+    return row.tile;
   }
 }

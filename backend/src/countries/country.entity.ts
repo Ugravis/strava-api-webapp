@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * A country with all its territories (overseas regions and dependencies
@@ -18,11 +18,22 @@ export class Country {
   @Column({ name: 'total_subtiles', type: 'bigint', nullable: true })
   totalSubtiles!: string | null;
 
-  /** Simplified outline (about 500 m), for display only. */
+  /**
+   * Union of the large tiles touching the country, in Web Mercator: drawn
+   * on the map, the sea and the lakes of the base map over it. Computed
+   * with the totals.
+   */
+  @Index({ spatial: true })
   @Column({
+    name: 'tile_shape',
     type: 'geometry',
     spatialFeatureType: 'MultiPolygon',
-    srid: 4326,
+    srid: 3857,
+    nullable: true,
   })
-  outline!: string;
+  tileShape!: string | null;
+
+  /** When the totals and the tile shape were computed. */
+  @Column({ name: 'computed_at', type: 'timestamptz', nullable: true })
+  computedAt!: Date | null;
 }

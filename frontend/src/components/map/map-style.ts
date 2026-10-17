@@ -20,3 +20,5 @@ export const GRID_COLOR = "#64748b";
 export const CLUSTER_COLOR = "#2563eb";
 /** Outline of the largest square of tiles. */
 export const SQUARE_COLOR = "#f59e0b";
+/** Light fill of the visited countries. */
+export const COUNTRY_COLOR = "#0d9488";

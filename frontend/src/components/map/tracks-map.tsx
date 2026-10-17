@@ -9,6 +9,7 @@ import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import { useActivityTracks } from "@/hooks/use-activity-tracks";
+import { useCountryOutlines } from "@/hooks/use-country-outlines";
 import { useTiles } from "@/hooks/use-tiles";
 import { MapSkeleton } from "./map-skeleton";
 import type { TileMode } from "./tile-layers";
@@ -27,11 +28,16 @@ export function TracksMap() {
   const t = useTranslations("map");
   const { lines, status, progress, errorCode, retry } = useActivityTracks();
   const { explored } = useTiles();
+  const countries = useCountryOutlines();
   const [tileMode, setTileMode] = useState<TileMode>("tiles");
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden rounded-xl border">
-      {lines ? <ActivityMap lines={lines} explored={explored} tileMode={tileMode} label={t("label")} /> : <MapSkeleton />}
+      {lines ? (
+        <ActivityMap lines={lines} explored={explored} countries={countries} tileMode={tileMode} label={t("label")} />
+      ) : (
+        <MapSkeleton />
+      )}
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 [&>*]:pointer-events-auto">
         <TracksStatus lines={lines} status={status} progress={progress} />

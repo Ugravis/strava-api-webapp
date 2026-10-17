@@ -6,7 +6,9 @@ import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
+import type { CountryOutlines } from "@/lib/api/types";
 import { type ExploredTiles, TILE_ZOOM, TileIndex, tileAt, type TileZoom } from "@/lib/tiles/tile-geometry";
+import { addCountryLayer, EMPTY_COUNTRIES, setCountryData } from "./country-layer";
 import { DEFAULT_VIEW, mapStyleUrl } from "./map-style";
 import {
   addTileLayers,
@@ -37,6 +39,8 @@ interface ActivityMapProps {
   lines: TrackLine[];
   /** Null while loading. */
   explored: ExploredTiles | null;
+  /** Visited countries; null while loading. */
+  countries: CountryOutlines | null;
   tileMode: TileMode;
   label: string;
 }
@@ -51,13 +55,14 @@ interface SelectedTile {
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapProps) {
+export function ActivityMap({ lines, explored, countries, tileMode, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   // Kept for the style changes, which drop the custom layers.
   const tracksRef = useRef<TrackCollection>(trackCollection([]));
   const tilesRef = useRef<TileData>(tileData(null));
+  const countriesRef = useRef<CountryOutlines>(EMPTY_COUNTRIES);
   const modeRef = useRef(tileMode);
   const framedRef = useRef(false);
   const initialStyleRef = useRef(mapStyleUrl(resolvedTheme));
@@ -81,8 +86,10 @@ export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapPro
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {
-      // Below the first label layer, keeping place names readable; tracks over tiles.
+      // Below the first label layer, keeping place names readable; countries,
+      // then tiles, then tracks.
       const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+      addCountryLayer(map, countriesRef.current, firstLabel);
       addTileLayers(map, tilesRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, firstLabel);
       setTileMode(map, modeRef.current);
@@ -132,6 +139,13 @@ export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapPro
     tilesRef.current = tileData(explored);
     setTileData(map, tilesRef.current);
   }, [explored, index]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !countries) return;
+    countriesRef.current = countries;
+    setCountryData(map, countries);
+  }, [countries]);
 
   useEffect(() => {
     modeRef.current = tileMode;

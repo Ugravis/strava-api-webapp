@@ -152,7 +152,7 @@ the activity. The reads never aggregate them:
   roads appear later than in the base style (motorways from zoom 6, major roads from 9, minor
   roads from 12, paths from 15), each class fading in from the zoom its data arrives at; the
   waterways and rivers fade in between zooms 8 and 10, the buildings between 13 and 14.5.
-- **Zoom**: zoomed out, the tiles are drawn at their strongest. Between zooms 10 and 11, the large
+- **Zoom**: zoomed out, the tiles are drawn at their strongest. Between zooms 11 and 12, the large
   tiles take the look of the largest cluster and the small tiles lighten: zoomed in, the small
   tiles stand out over a quiet ground. The small tiles fade in between zooms 5 and 6, the grids
   from zoom 11 (large tiles) and 14 (small tiles), the tracks between zooms 12 and 14. A click

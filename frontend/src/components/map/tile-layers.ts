@@ -107,7 +107,7 @@ const VISIBLE_LAYERS: Record<TileMode, string[]> = {
  * Zooms over which the large tiles take the color of the largest cluster:
  * zoomed in, the small tiles are the point, the large ones a quiet ground.
  */
-const CLUSTER_MERGE_ZOOMS = [10, 11] as const;
+const CLUSTER_MERGE_ZOOMS = [11, 12] as const;
 /** Once the large tiles are pale, the small tiles lighten too: they stand out without weighing on the map. */
 const MERGED_SUBTILE_OPACITY = 0.5;
 /** Up to this zoom, the fills are at their strongest; they lighten until the merge. */

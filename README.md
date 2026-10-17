@@ -126,8 +126,7 @@ the activity. The reads never aggregate them:
 - **Map**: `GET /api/tiles/vector/:zoom/:x/:y` serves the tiles of the user as a vector tile (zoom 0
   to 12, the map stretches them beyond): the visited large tiles merged into one area, its outline
   (from zoom 10), the area of the largest cluster, and at zoom 12 the small tiles, only to pick them
-  on the map. Below zoom 4, the large tiles are grouped by ancestor, about one pixel of a high
-  density screen. The small tiles are drawn from images,
+  on the map. Below zoom 5, the large tiles are grouped by ancestor, one pixel of a map tile. The small tiles are drawn from images,
   `GET /api/tiles/raster/:zoom/:x/:y?color=<rrggbbaa>&cluster=<rrggbbaa>` (512 pixels PNG, zoom 5
   to 12, tens of KB at most whatever the density), from the zoom of a whole country.
 - **Revalidation**: each map tile has an entity tag made of the number of rows of `user_tiles` it
@@ -136,8 +135,10 @@ the activity. The reads never aggregate them:
   when the content of the tiles changes). The browser revalidates every tile (`no-cache`): after a
   synchronization, only the map tiles crossed by the new activities are rendered and downloaded
   again, the others answer `304 Not Modified` in a few milliseconds.
-- **Display**: in the combined view, the small tiles fade in between zooms 5 and 6 over the large
-  tiles, which keep their color; the grids fade in from zoom 12 (large tiles) and 15 (small tiles).
+- **Display**: the large tiles are always drawn; checkboxes add the tracks and the small tiles,
+  both shown by default. The small tiles fade in between zooms 5 and 6, over the large tiles which
+  keep their color; the grids fade in from zoom 11 (large tiles) and 14 (small tiles). The tracks
+  fade in between zooms 10 and 12.
   A click picks the tile under the pointer or a few pixels from it.
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
   the map shows about it (cluster, largest square), without loading every tile in the browser.

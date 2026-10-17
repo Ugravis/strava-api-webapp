@@ -29,6 +29,14 @@ export class UserTile {
   @Column({ name: 'max_cluster_mask', type: 'bigint', default: 0 })
   maxClusterMask!: string;
 
+  /** Small tiles of every cluster of small tiles, as of the last metrics. */
+  @Column({ name: 'cluster_mask', type: 'bigint', default: 0 })
+  clusterMask!: string;
+
+  /** Whether the large tile is a cluster tile, as of the last metrics. */
+  @Column({ name: 'in_cluster', type: 'boolean', default: false })
+  inCluster!: boolean;
+
   /** Whether the large tile belongs to the largest cluster of large tiles, as of the last metrics. */
   @Column({ name: 'in_max_cluster', type: 'boolean', default: false })
   inMaxCluster!: boolean;

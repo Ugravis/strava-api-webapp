@@ -23,7 +23,7 @@ export interface LevelMetrics {
   /** Largest group of connected cluster tiles. */
   maxCluster: TilePoint[];
   /** Cluster tiles: visited tiles whose four neighbors are visited too. */
-  clustered: number;
+  clusterTiles: TilePoint[];
 }
 
 export interface TileMetrics {
@@ -87,11 +87,11 @@ const NEIGHBORS: TilePoint[] = [
 
 /**
  * Cluster tiles, as defined by the usual tile explorers: visited tiles whose
- * four neighbors are visited too. Returns their count and the largest group
- * of them connected by their sides.
+ * four neighbors are visited too. Returns them and the largest group of them
+ * connected by their sides.
  */
 export function clusters(points: TilePoint[]): {
-  clustered: number;
+  clusterTiles: TilePoint[];
   maxCluster: TilePoint[];
 } {
   const visited = new Set(points.map(([x, y]) => keyOf(x, y)));
@@ -121,7 +121,7 @@ export function clusters(points: TilePoint[]): {
     }
     if (group.length > maxCluster.length) maxCluster = group;
   }
-  return { clustered: inner.size, maxCluster };
+  return { clusterTiles: [...inner.values()], maxCluster };
 }
 
 export function levelMetrics(points: TilePoint[]): LevelMetrics {

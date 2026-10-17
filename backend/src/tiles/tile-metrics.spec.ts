@@ -53,7 +53,7 @@ describe('tile metrics', () => {
         [2, 1],
         [3, 1],
       ]);
-      expect(result.clustered).toBe(3);
+      expect(sorted(result.clusterTiles)).toEqual(sorted(result.maxCluster));
     });
 
     it('returns the largest of the disconnected clusters', () => {
@@ -70,12 +70,18 @@ describe('tile metrics', () => {
         [5, 2],
         [6, 2],
       ]);
-      expect(result.clustered).toBe(4);
+      // The lone cluster tile of the left cross, outside of the largest.
+      expect(sorted(result.clusterTiles)).toEqual([
+        [1, 1],
+        [6, 1],
+        [5, 2],
+        [6, 2],
+      ]);
     });
 
     it('is empty without enclosed tiles', () => {
       expect(clusters(grid('###', '#.#', '###'))).toEqual({
-        clustered: 0,
+        clusterTiles: [],
         maxCluster: [],
       });
     });
@@ -104,11 +110,11 @@ describe('tile metrics', () => {
         visited: 2,
         maxSquare: { x: 0, y: 0, size: 1 },
         maxCluster: [],
-        clustered: 0,
+        clusterTiles: [],
       });
       expect(metrics.subtiles.visited).toBe(128);
       expect(metrics.subtiles.maxSquare).toEqual({ x: 0, y: 0, size: 8 });
-      expect(metrics.subtiles.clustered).toBe(14 * 6);
+      expect(metrics.subtiles.clusterTiles).toHaveLength(14 * 6);
     });
   });
 });

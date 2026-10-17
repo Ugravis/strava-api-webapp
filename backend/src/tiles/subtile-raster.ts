@@ -12,14 +12,16 @@ const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 export const RASTER_EMPTY = 0;
 export const RASTER_SUBTILE = 1;
 export const RASTER_CLUSTER = 2;
+export const RASTER_MAX_CLUSTER = 3;
 
-/** A large tile and its small tiles, visited and in the largest cluster. */
+/** A large tile and its small tiles, visited, in a cluster and in the largest cluster. */
 export interface RasterCell {
   x: number;
   y: number;
   /** Unsigned 64-bit masks. */
   mask: bigint;
   clusterMask: bigint;
+  maxClusterMask: bigint;
 }
 
 /** Red, green, blue and alpha, from 0 to 255. */
@@ -40,7 +42,8 @@ function forEachBit(mask: bigint, visit: (bit: number) => void): void {
 /**
  * Palette indexes of the image of the map tile `(zoom, tileX, tileY)`: each
  * visited small tile covers its pixels, at least one when it is smaller,
- * and those of the largest cluster cover the others.
+ * those of a cluster cover the others, and those of the largest cluster
+ * cover all of them.
  */
 export function rasterIndices(
   cells: RasterCell[],
@@ -70,6 +73,11 @@ export function rasterIndices(
   }
   for (const cell of cells) {
     forEachBit(cell.clusterMask, (bit) => paint(cell, bit, RASTER_CLUSTER));
+  }
+  for (const cell of cells) {
+    forEachBit(cell.maxClusterMask, (bit) =>
+      paint(cell, bit, RASTER_MAX_CLUSTER),
+    );
   }
   return pixels;
 }

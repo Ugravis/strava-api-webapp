@@ -3,6 +3,7 @@ import {
   encodePng,
   RASTER_CLUSTER,
   RASTER_EMPTY,
+  RASTER_MAX_CLUSTER,
   RASTER_SIZE,
   RASTER_SUBTILE,
   rasterIndices,
@@ -15,7 +16,7 @@ describe('subtile raster', () => {
   it('covers 64 pixels per small tile at zoom 14', () => {
     // Small tile (1, 2) of the large tile (8, 5), map tile (14, 8, 5).
     const pixels = rasterIndices(
-      [{ x: 8, y: 5, mask: 1n << 17n, clusterMask: 0n }],
+      [{ x: 8, y: 5, mask: 1n << 17n, clusterMask: 0n, maxClusterMask: 0n }],
       14,
       8,
       5,
@@ -31,7 +32,15 @@ describe('subtile raster', () => {
   it('keeps one pixel for a small tile smaller than a pixel', () => {
     // At zoom 5, a map tile spans 4096 small tiles: eight per pixel.
     const pixels = rasterIndices(
-      [{ x: 512 * 3 + 100, y: 512 * 2, mask: 1n << 63n, clusterMask: 0n }],
+      [
+        {
+          x: 512 * 3 + 100,
+          y: 512 * 2,
+          mask: 1n << 63n,
+          clusterMask: 0n,
+          maxClusterMask: 0n,
+        },
+      ],
       5,
       3,
       2,
@@ -40,15 +49,24 @@ describe('subtile raster', () => {
     expect(pixels.filter((pixel) => pixel !== RASTER_EMPTY)).toHaveLength(1);
   });
 
-  it('draws the largest cluster over the other small tiles', () => {
+  it('draws the clusters over the other small tiles, the largest on top', () => {
     const pixels = rasterIndices(
-      [{ x: 0, y: 0, mask: 0b11n, clusterMask: 0b10n }],
+      [
+        {
+          x: 0,
+          y: 0,
+          mask: 0b111n,
+          clusterMask: 0b110n,
+          maxClusterMask: 0b100n,
+        },
+      ],
       14,
       0,
       0,
     );
     expect(at(pixels, 0, 0)).toBe(RASTER_SUBTILE);
     expect(at(pixels, 64, 0)).toBe(RASTER_CLUSTER);
+    expect(at(pixels, 128, 0)).toBe(RASTER_MAX_CLUSTER);
   });
 
   it('encodes an indexed PNG with a transparent background', async () => {

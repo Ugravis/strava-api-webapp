@@ -43,8 +43,9 @@ pnpm dev:frontend
 ```
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
-drops every table, replays the migrations and empties the object storage (uploaded avatars); it
-refuses to run when `NODE_ENV=production`.
+drops every table, replays the migrations, imports the country boundaries again (about 5 minutes,
+`--skip-countries` to skip it) and empties the object storage (uploaded avatars); it refuses to run
+when `NODE_ENV=production`.
 To manage migrations manually:
 
 ```bash
@@ -102,6 +103,40 @@ A new Strava application only accepts its owner's account until it is reviewed b
   (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
   "Synchroniser" button keep the data up to date. Elsewhere, set `STRAVA_WEBHOOK_CALLBACK_URL`.
 
+## Countries
+
+The tiles are grouped by country to show the completion of each visited country, on both levels.
+A tile belongs to every country it touches, even marginally, so a tile crossed by a border counts
+for each country. A country includes all its territories: the dependencies (La Réunion, French
+Polynesia, Svalbard…) are attached to their sovereign country, except Greenland, vast and
+self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes are not removed.
+
+- **Boundaries**: `pnpm countries:import [release]` reads the land boundaries of the countries
+  from [Overture Maps](https://overturemaps.org) (OpenStreetMap data, ODbL, public S3 bucket, no
+  account) with DuckDB, then stores them at full precision in PostGIS, subdivided in
+  `country_parts` (Web Mercator). It takes about 5 minutes and reads about 300 MB. Run it once
+  after setting up the database; `pnpm db:reset` runs it too (`pnpm db:reset --skip-countries` to
+  skip it). Without it, no country is shown.
+  The release is pinned in `overture-countries.ts`. `country_parts` is only read by the worker,
+  never by a user request.
+- **Location**: a background worker locates each visited large tile once: for every country it
+  touches, `tile_countries` stores the mask of its small tiles touching it. Between two complete
+  scans (at startup, then hourly), it only looks at the tiles saved recently. These tables only
+  hold geography, no user data. The completion is then computed in SQL from the masks
+  (`bit_count(user_mask & country_mask)`), without geometry.
+- **Totals and shapes**: when a country is visited for the first time, the worker counts the
+  tiles touching it by a quadtree descent (a tile inside the country counts with all its
+  descendants without being tested), and merges its large tiles into its tile shape
+  (`countries.tile_shape`): about 8 s for Switzerland, 45 s for France, several minutes for the
+  largest countries; once for every user.
+- **Map**: `GET /api/countries/shapes/:zoom/:x/:y?countries=CH,FR` serves, as a vector tile
+  (zoom 0 to 10, a few KB each), the union of the tile shapes of the given countries and its outer
+  borders: two visited neighbors are drawn as one area, and only the borders with the countries
+  not visited follow the tiles. Geography only, cached by the browser for each set of countries
+  until a new shape is computed (`shapesVersion`). Copies of the water layers of the base map
+  (sea, lakes, rivers) are drawn over the area, so that the water keeps the same color everywhere.
+- The completion uses every tile of the user, hidden areas included: visible to the owner only.
+
 ## Development tools
 
 In development, a floating button at the bottom right of the app pages (next to the Next.js
@@ -114,16 +149,17 @@ delete `backend/src/dev`, `frontend/src/components/dev` and their two references
 
 ## Scripts
 
-| Command               | Description                                              |
-| --------------------- | -------------------------------------------------------- |
-| `pnpm check-all`      | Run every CI check on all packages, sequentially         |
-| `pnpm check:backend`  | Backend: lint, type-check, unit tests, e2e tests, build  |
-| `pnpm check:frontend` | Frontend: lint, type-check, build                        |
-| `pnpm check:shared`   | Shared package: type-check                               |
-| `pnpm lint`           | Lint all packages                                        |
-| `pnpm typecheck`      | Type-check all packages                                  |
-| `pnpm test`           | Run unit tests                                           |
-| `pnpm build`          | Build all packages                                       |
+| Command                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `pnpm check-all`        | Run every CI check on all packages, sequentially        |
+| `pnpm check:backend`    | Backend: lint, type-check, unit tests, e2e tests, build |
+| `pnpm check:frontend`   | Frontend: lint, type-check, build                       |
+| `pnpm check:shared`     | Shared package: type-check                              |
+| `pnpm lint`             | Lint all packages                                       |
+| `pnpm typecheck`        | Type-check all packages                                 |
+| `pnpm test`             | Run unit tests                                          |
+| `pnpm build`            | Build all packages                                      |
+| `pnpm countries:import` | Import the country boundaries from Overture Maps        |
 
 The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.
 

@@ -204,6 +204,17 @@
       "maxCluster": "Plus grand cluster",
       "clustered": "Tuiles en cluster",
       "error": "Impossible de charger tes tuiles pour le moment."
+    },
+    "countries": {
+      "title": "Pays",
+      "tiles": "Tuiles",
+      "subtiles": "Petites tuiles",
+      "count": "{visited} sur {total}",
+      "computingTotal": "{visited} sur … (calcul du total)",
+      "locating": "{count, plural, one {Localisation de {formatted} tuile…} other {Localisation de {formatted} tuiles…}}",
+      "pending": "Tes tuiles sont en cours de localisation.",
+      "empty": "Aucun pays visité pour le moment.",
+      "error": "Impossible de charger tes pays pour le moment."
     }
   },
   "strava": {

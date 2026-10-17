@@ -4,12 +4,15 @@ import { CircleAlertIcon, InfoIcon, RefreshCwIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { routes } from "@/config/routes";
 import { useActivityTracks } from "@/hooks/use-activity-tracks";
+import { useCountries } from "@/hooks/use-countries";
 import { useTiles } from "@/hooks/use-tiles";
+import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { MapSkeleton } from "./map-skeleton";
 import type { TileMode } from "./tile-layers";
 import { TileLegend } from "./tile-legend";
@@ -27,11 +30,25 @@ export function TracksMap() {
   const t = useTranslations("map");
   const { lines, status, progress, errorCode, retry } = useActivityTracks();
   const { explored } = useTiles();
+  // Fetched again when new tracks arrive, and while new tiles are located.
+  const { version } = useTrackSync();
+  const { completion } = useCountries(String(version));
+  const countries = useMemo<VisitedCountries>(
+    () =>
+      completion
+        ? { codes: completion.countries.map((country) => country.code), shapesVersion: completion.shapesVersion }
+        : NO_COUNTRIES,
+    [completion],
+  );
   const [tileMode, setTileMode] = useState<TileMode>("tiles");
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden rounded-xl border">
-      {lines ? <ActivityMap lines={lines} explored={explored} tileMode={tileMode} label={t("label")} /> : <MapSkeleton />}
+      {lines ? (
+        <ActivityMap lines={lines} explored={explored} countries={countries} tileMode={tileMode} label={t("label")} />
+      ) : (
+        <MapSkeleton />
+      )}
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 [&>*]:pointer-events-auto">
         <TracksStatus lines={lines} status={status} progress={progress} />

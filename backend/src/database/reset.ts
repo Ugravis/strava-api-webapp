@@ -1,12 +1,15 @@
 import 'reflect-metadata';
 import storageConfig from '../config/storage.config';
+import { importCountries } from '../countries/import/countries-importer';
 import { S3StorageService } from '../storage/s3-storage.service';
 import dataSource from './data-source';
 
 /**
- * Development only: drops every table and type, replays the migrations and
- * empties the object storage (uploaded avatars).
- * Usage: `pnpm db:reset` from the repository root.
+ * Development only: drops every table and type, replays the migrations,
+ * imports the country boundaries again (about 5 minutes) and empties the
+ * object storage (uploaded avatars).
+ * Usage: `pnpm db:reset` from the repository root;
+ * `pnpm db:reset --skip-countries` keeps the database without countries.
  */
 async function reset(): Promise<void> {
   if (process.env.NODE_ENV === 'production') {
@@ -23,6 +26,9 @@ async function reset(): Promise<void> {
     await dataSource.dropDatabase();
     const migrations = await dataSource.runMigrations();
     console.log(`Database ready: ${migrations.length} migration(s) applied.`);
+    if (!process.argv.includes('--skip-countries')) {
+      await importCountries(dataSource);
+    }
   } finally {
     await dataSource.destroy();
   }

@@ -10,6 +10,7 @@ import { StravaSyncStatus } from "@/components/strava/strava-sync-status";
 import { useRequestSync } from "@/components/strava/use-request-sync";
 import { isSyncActive, useStravaConnection } from "@/hooks/use-strava-connection";
 import { ActivityStats } from "./activity-stats";
+import { CountryStats } from "./country-stats";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 import { TileStats } from "./tile-stats";
 
@@ -58,6 +59,7 @@ export function Dashboard() {
       <StravaSyncStatus sync={sync} tiles={tiles} onRetry={() => void requestSync()} retrying={pending} />
       <ActivityStats version={statsVersion} />
       <TileStats version={tilesVersion} />
+      <CountryStats version={tilesVersion} />
       <StravaConnectionSummary
         connection={status.connection}
         syncing={syncing}

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { type ExploredTiles, TILE_ZOOM, TileIndex, tileAt, type TileZoom } from "@/lib/tiles/tile-geometry";
+import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
 import { DEFAULT_VIEW, mapStyleUrl } from "./map-style";
 import {
   addTileLayers,
@@ -37,6 +38,7 @@ interface ActivityMapProps {
   lines: TrackLine[];
   /** Null while loading. */
   explored: ExploredTiles | null;
+  countries: VisitedCountries;
   tileMode: TileMode;
   label: string;
 }
@@ -51,13 +53,17 @@ interface SelectedTile {
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapProps) {
+export function ActivityMap({ lines, explored, countries, tileMode, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   // Kept for the style changes, which drop the custom layers.
   const tracksRef = useRef<TrackCollection>(trackCollection([]));
   const tilesRef = useRef<TileData>(tileData(null));
+  const countriesRef = useRef<VisitedCountries>(NO_COUNTRIES);
+  // Whether the custom layers can be added. `isStyleLoaded()` stays false
+  // while any tile of the base map is loading.
+  const styleReadyRef = useRef(false);
   const modeRef = useRef(tileMode);
   const framedRef = useRef(false);
   const initialStyleRef = useRef(mapStyleUrl(resolvedTheme));
@@ -81,8 +87,11 @@ export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapPro
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {
-      // Below the first label layer, keeping place names readable; tracks over tiles.
+      styleReadyRef.current = true;
+      // Below the first label layer, keeping place names readable; tracks
+      // over tiles. The countries go lower, below the roads.
       const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+      setVisitedCountries(map, countriesRef.current);
       addTileLayers(map, tilesRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, firstLabel);
       setTileMode(map, modeRef.current);
@@ -108,6 +117,7 @@ export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapPro
     const url = mapStyleUrl(resolvedTheme);
     if (url === initialStyleRef.current) return;
     initialStyleRef.current = url;
+    styleReadyRef.current = false;
     mapRef.current?.setStyle(url);
   }, [resolvedTheme]);
 
@@ -132,6 +142,12 @@ export function ActivityMap({ lines, explored, tileMode, label }: ActivityMapPro
     tilesRef.current = tileData(explored);
     setTileData(map, tilesRef.current);
   }, [explored, index]);
+
+  useEffect(() => {
+    countriesRef.current = countries;
+    // Before the style is loaded, the layers get the countries on load.
+    if (mapRef.current && styleReadyRef.current) setVisitedCountries(mapRef.current, countries);
+  }, [countries]);
 
   useEffect(() => {
     modeRef.current = tileMode;

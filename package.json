@@ -16,6 +16,7 @@
     "check:frontend": "pnpm --filter frontend check",
     "check:shared": "pnpm --filter @strava-webapp/shared check",
     "check-all": "pnpm -r --workspace-concurrency=1 check",
-    "db:reset": "pnpm --filter backend db:reset"
+    "db:reset": "pnpm --filter backend db:reset",
+    "countries:import": "pnpm --filter backend countries:import"
   }
 }

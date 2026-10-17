@@ -27,7 +27,7 @@ import {
   addTrackLayer,
   boundsOf,
   setTrackData,
-  setTracksOverTiles,
+  setTracksVisible,
   TRACK_LAYER_ID,
   type TrackCollection,
   trackCollection,
@@ -43,6 +43,7 @@ interface ActivityMapProps {
   summary: TilesSummary | null;
   countries: VisitedCountries;
   tileMode: TileMode;
+  showTracks: boolean;
   label: string;
 }
 
@@ -56,7 +57,7 @@ interface SelectedTile {
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, summary, countries, tileMode, label }: ActivityMapProps) {
+export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -68,6 +69,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
   // while any tile of the base map is loading.
   const styleReadyRef = useRef(false);
   const modeRef = useRef(tileMode);
+  const showTracksRef = useRef(showTracks);
   const framedRef = useRef(false);
   const initialStyleRef = useRef(mapStyleUrl(resolvedTheme));
 
@@ -94,9 +96,8 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
       const firstLabel = firstLabelId(map);
       setVisitedCountries(map, countriesRef.current);
       addTileLayers(map, tilesRef.current, firstLabel);
-      addTrackLayer(map, tracksRef.current, firstLabel);
+      addTrackLayer(map, tracksRef.current, showTracksRef.current, firstLabel);
       setTileMode(map, modeRef.current);
-      setTracksOverTiles(map, modeRef.current !== "none");
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
     // The tracks arrive after the map: once the user has moved it, they no
@@ -157,11 +158,14 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
   useEffect(() => {
     modeRef.current = tileMode;
     // Layers not added yet get the mode once the style is loaded.
-    if (mapRef.current) {
-      setTileMode(mapRef.current, tileMode);
-      setTracksOverTiles(mapRef.current, tileMode !== "none");
-    }
+    if (mapRef.current) setTileMode(mapRef.current, tileMode);
   }, [tileMode]);
+
+  useEffect(() => {
+    showTracksRef.current = showTracks;
+    // A layer not added yet is shown or hidden once the style is loaded.
+    if (mapRef.current) setTracksVisible(mapRef.current, showTracks);
+  }, [showTracks]);
 
   const shown = selected?.mode === tileMode ? selected : null;
 

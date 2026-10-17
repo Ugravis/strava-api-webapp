@@ -6,7 +6,6 @@ import { CLUSTER_COLOR, SQUARE_COLOR } from "./map-style";
 import type { TileMode } from "./tile-layers";
 
 const LEVELS: Record<TileMode, ("tiles" | "subtiles")[]> = {
-  none: [],
   tiles: ["tiles"],
   both: ["tiles", "subtiles"],
 };
@@ -15,7 +14,7 @@ const LEVELS: Record<TileMode, ("tiles" | "subtiles")[]> = {
 export function TileLegend({ summary, mode }: { summary: TilesSummary | null; mode: TileMode }) {
   const t = useTranslations("map.legend");
   const levels = LEVELS[mode];
-  if (!summary || levels.length === 0) return null;
+  if (!summary) return null;
   const combined = levels.length > 1;
 
   return (

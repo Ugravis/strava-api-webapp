@@ -27,18 +27,15 @@ export interface CountriesCompletion {
   /** Visited large tiles whose countries are not known yet. */
   pendingTiles: number;
   /**
-   * Changes whenever the tile shape of a country is computed: the vector
-   * tiles of the shapes can be cached until it changes. Null without shapes.
+   * Changes whenever the tile shape of one of these countries is computed:
+   * the vector tiles of their shapes can be cached until it changes. Null
+   * without shapes.
    */
   shapesVersion: string | null;
 }
 
 /** Large tiles of the user, with their small tiles. */
-const USER_CELLS = `
-  SELECT x, y, bit_or(mask) AS mask FROM activity_tiles
-  WHERE user_id = $1
-  GROUP BY x, y
-  HAVING bit_or(mask) <> 0`;
+const USER_CELLS = 'SELECT x, y, mask FROM user_tiles WHERE user_id = $1';
 
 /** Layers of the shape tiles: the merged areas and their outer borders. */
 const SHAPES_AREA_LAYER = 'visited';
@@ -222,11 +219,14 @@ export class CountriesService {
       subtiles: number;
       total_tiles: number | null;
       total_subtiles: string | null;
+      /** Milliseconds since the epoch, when the tile shape was computed. */
+      computed_at: string | null;
     }[] = await this.dataSource.query(
       `WITH cells AS (${USER_CELLS})
        SELECT c.code, count(*)::int AS tiles,
          sum(bit_count((cells.mask & t.mask)::bit(64)))::int AS subtiles,
-         c.total_tiles, c.total_subtiles
+         c.total_tiles, c.total_subtiles,
+         floor(extract(epoch FROM c.computed_at) * 1000)::bigint::text AS computed_at
        FROM cells
        JOIN tile_countries t USING (x, y)
        JOIN countries c ON c.code = t.country_code
@@ -234,17 +234,18 @@ export class CountriesService {
        ORDER BY tiles DESC, subtiles DESC, c.code`,
       [userId],
     );
-    const [state]: { pending: number; version: string | null }[] =
-      await this.dataSource.query(
-        `WITH cells AS (${USER_CELLS})
-         SELECT
-           (SELECT count(*)::int FROM cells WHERE NOT EXISTS (
-             SELECT 1 FROM located_tiles l WHERE l.x = cells.x AND l.y = cells.y
-           )) AS pending,
-           (SELECT floor(extract(epoch FROM max(computed_at)) * 1000)::text
-            FROM countries) AS version`,
-        [userId],
-      );
+    const [state]: { pending: number }[] = await this.dataSource.query(
+      `WITH cells AS (${USER_CELLS})
+       SELECT count(*)::int AS pending FROM cells WHERE NOT EXISTS (
+         SELECT 1 FROM located_tiles l WHERE l.x = cells.x AND l.y = cells.y
+       )`,
+      [userId],
+    );
+    // Only the shapes of the countries of the user: a country visited by
+    // another user leaves the cache of their shapes intact.
+    const computed = rows.flatMap((row) =>
+      row.computed_at === null ? [] : [Number(row.computed_at)],
+    );
     return {
       countries: rows.map((row) => ({
         code: row.code,
@@ -256,7 +257,7 @@ export class CountriesService {
         },
       })),
       pendingTiles: state.pending,
-      shapesVersion: state.version,
+      shapesVersion: computed.length > 0 ? String(Math.max(...computed)) : null,
     };
   }
 

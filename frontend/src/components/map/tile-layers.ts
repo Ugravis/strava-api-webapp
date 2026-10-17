@@ -17,8 +17,8 @@ import {
 } from "@/lib/tiles/tile-geometry";
 import { CLUSTER_COLOR, GRID_COLOR, SQUARE_COLOR, TILE_COLOR } from "./map-style";
 
-/** Which levels of tiles the map shows, if any. The small tiles only come with the large ones. */
-export type TileMode = "none" | "tiles" | "both";
+/** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
+export type TileMode = "tiles" | "both";
 
 /**
  * Tiles of the user, served as vector tiles by the backend. The browser
@@ -51,10 +51,10 @@ const SOURCES = {
   subtileGrid: "subtile-grid",
 } as const;
 
-/** The grids only appear once their cells are large enough to be aimed at, about 128 pixels. */
-const TILE_GRID_MIN_ZOOM = 12;
-const SUBTILE_GRID_MIN_ZOOM = 15;
-/** In the combined view, the small tiles fade in from this zoom, where the backend starts serving their images. */
+/** The grids only appear once their cells are large enough to be aimed at, about 64 pixels. */
+const TILE_GRID_MIN_ZOOM = 11;
+const SUBTILE_GRID_MIN_ZOOM = 14;
+/** The small tiles fade in from this zoom, where the backend starts serving their images. */
 const SUBTILE_MIN_ZOOM = 5;
 /** The small tiles can be picked from this zoom, where they span about 16 pixels; below, a click picks the large tile. */
 const SUBTILE_CLICK_MIN_ZOOM = 13;
@@ -79,14 +79,13 @@ const LAYER_ZOOMS: Record<string, TileZoom> = {
 };
 
 const VISIBLE_LAYERS: Record<TileMode, string[]> = {
-  none: [],
   tiles: [...LEVEL_LAYERS.tiles, "tile-grid-line"],
   both: [...ALL_LAYERS],
 };
 
-/** Opacity rising from 0 at `minZoom` to `opacity` one zoom later: the layer appears smoothly. */
-function fadeIn(minZoom: number, opacity: number): ExpressionSpecification {
-  return ["interpolate", ["linear"], ["zoom"], minZoom, 0, minZoom + FADE_ZOOMS, opacity];
+/** Opacity rising from 0 at `minZoom` to `opacity` `zooms` later: the layer appears smoothly. */
+export function fadeIn(minZoom: number, opacity: number, zooms = FADE_ZOOMS): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], minZoom, 0, minZoom + zooms, opacity];
 }
 
 /** What the map draws of the tiles: the tiles of a version, and the largest squares. */
@@ -123,16 +122,9 @@ const imagesUrl = () =>
 /** Version of the tiles drawn by each map: a new one reloads its tiles. */
 const drawnVersions = new WeakMap<MapLibreMap, string>();
 
-/** Levels of the tile under the pointer, the most detailed first, or none when no tile is shown. */
+/** Levels of the tile under the pointer, the most detailed first. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
-  switch (mode) {
-    case "none":
-      return [];
-    case "tiles":
-      return [TILE_ZOOM];
-    case "both":
-      return mapZoom >= SUBTILE_CLICK_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
-  }
+  return mode === "both" && mapZoom >= SUBTILE_CLICK_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
 }
 
 /**
@@ -300,7 +292,7 @@ export function updateGrids(map: MapLibreMap, mode: TileMode): void {
   const bounds = map.getBounds();
   const area = { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() };
   const zoom = map.getZoom();
-  const tileGrid = mode !== "none" && zoom >= TILE_GRID_MIN_ZOOM ? gridCollection(area, TILE_ZOOM) : EMPTY_LINES;
+  const tileGrid = zoom >= TILE_GRID_MIN_ZOOM ? gridCollection(area, TILE_ZOOM) : EMPTY_LINES;
   const subtileGrid = mode === "both" && zoom >= SUBTILE_GRID_MIN_ZOOM ? gridCollection(area, SUBTILE_ZOOM) : EMPTY_LINES;
   map.getSource<GeoJSONSource>(SOURCES.tileGrid)?.setData(tileGrid);
   map.getSource<GeoJSONSource>(SOURCES.subtileGrid)?.setData(subtileGrid);

@@ -305,11 +305,10 @@
     "error": "Impossible de récupérer tes tracés pour le moment.",
     "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
     "retry": "Réessayer",
-    "tileMode": {
-      "label": "Affichage des tuiles",
-      "none": "Tracés",
-      "tiles": "Tuiles",
-      "both": "Les deux"
+    "layers": {
+      "label": "Couches affichées",
+      "tracks": "Tracés",
+      "subtiles": "Petites tuiles"
     },
     "legend": {
       "tiles": "Tuiles",

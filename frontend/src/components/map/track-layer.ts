@@ -2,11 +2,13 @@ import type { FeatureCollection, LineString } from "geojson";
 import type { GeoJSONSource, LngLatBoundsLike, Map as MapLibreMap } from "maplibre-gl";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { TRACK_COLOR } from "./map-style";
+import { fadeIn } from "./tile-layers";
 
 const SOURCE_ID = "activity-tracks";
 export const TRACK_LAYER_ID = "activity-tracks-line";
-/** Over the tiles, the tracks only appear once zoomed in on a few streets. */
-const TRACK_MIN_ZOOM_OVER_TILES = 12;
+/** Over the tiles, the tracks fade in over two zooms once zoomed in on a few towns. */
+const TRACK_MIN_ZOOM = 10;
+const TRACK_FADE_ZOOMS = 2;
 
 export type TrackCollection = FeatureCollection<LineString, { activityId: string }>;
 
@@ -38,7 +40,12 @@ export function boundsOf(lines: TrackLine[]): LngLatBoundsLike | null {
 }
 
 /** Adds the track layer below `beforeId`, typically the first label layer. */
-export function addTrackLayer(map: MapLibreMap, data: TrackCollection, beforeId: string | undefined): void {
+export function addTrackLayer(
+  map: MapLibreMap,
+  data: TrackCollection,
+  visible: boolean,
+  beforeId: string | undefined,
+): void {
   if (map.getSource(SOURCE_ID)) return;
   map.addSource(SOURCE_ID, { type: "geojson", data });
   map.addLayer(
@@ -46,10 +53,11 @@ export function addTrackLayer(map: MapLibreMap, data: TrackCollection, beforeId:
       id: TRACK_LAYER_ID,
       type: "line",
       source: SOURCE_ID,
-      layout: { "line-join": "round", "line-cap": "round" },
+      minzoom: TRACK_MIN_ZOOM,
+      layout: { "line-join": "round", "line-cap": "round", visibility: visible ? "visible" : "none" },
       paint: {
         "line-color": TRACK_COLOR,
-        "line-opacity": 0.8,
+        "line-opacity": fadeIn(TRACK_MIN_ZOOM, 0.8, TRACK_FADE_ZOOMS),
         "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.5, 12, 0.8, 17, 1.6],
       },
     },
@@ -61,8 +69,6 @@ export function setTrackData(map: MapLibreMap, data: TrackCollection): void {
   map.getSource<GeoJSONSource>(SOURCE_ID)?.setData(data);
 }
 
-/** Alone, the tracks are drawn at every zoom; over the tiles, only when zoomed in. */
-export function setTracksOverTiles(map: MapLibreMap, overTiles: boolean): void {
-  if (!map.getLayer(TRACK_LAYER_ID)) return;
-  map.setLayerZoomRange(TRACK_LAYER_ID, overTiles ? TRACK_MIN_ZOOM_OVER_TILES : 0, 24);
+export function setTracksVisible(map: MapLibreMap, visible: boolean): void {
+  if (map.getLayer(TRACK_LAYER_ID)) map.setLayoutProperty(TRACK_LAYER_ID, "visibility", visible ? "visible" : "none");
 }

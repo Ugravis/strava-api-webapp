@@ -1,4 +1,11 @@
-import { Controller, Get, Header, Param, StreamableFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  Query,
+  StreamableFile,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
@@ -7,7 +14,10 @@ import {
   type CountriesCompletion,
   CountriesService,
 } from './countries.service';
-import { ShapesTileParamsDto } from './shapes-tile-params.dto';
+import {
+  ShapesTileParamsDto,
+  ShapesTileQueryDto,
+} from './shapes-tile-params.dto';
 
 /** A view of the map loads a few dozen tiles at once. */
 const SHAPES_THROTTLE = { default: { limit: 600, ttl: 60_000 } };
@@ -26,9 +36,10 @@ export class CountriesController {
   }
 
   /**
-   * Vector tile of the tile shapes of the countries. Geography only: the
-   * same for every user, cached by the browser. The map requests it with
-   * the `shapesVersion` of the completion, which changes with the shapes.
+   * Vector tile of the merged tile shapes of the given countries. Geography
+   * only, cached by the browser: the map requests it with the countries the
+   * user visited and the `shapesVersion` of the completion, which changes
+   * with the shapes.
    */
   @Get('shapes/:zoom/:x/:y')
   @Throttle(SHAPES_THROTTLE)
@@ -36,10 +47,14 @@ export class CountriesController {
   @Header('Cache-Control', 'private, max-age=31536000, immutable')
   async shapes(
     @Param() { zoom, x, y }: ShapesTileParamsDto,
+    @Query() { countries }: ShapesTileQueryDto,
   ): Promise<StreamableFile> {
     if (x >= 2 ** zoom || y >= 2 ** zoom) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such tile');
     }
-    return new StreamableFile(await this.countries.shapesTile(zoom, x, y));
+    const codes = countries ? countries.split(',') : [];
+    return new StreamableFile(
+      await this.countries.shapesTile(zoom, x, y, codes),
+    );
   }
 }

@@ -40,8 +40,9 @@ const USER_CELLS = `
   GROUP BY x, y
   HAVING bit_or(mask) <> 0`;
 
-/** Name of the layer of the country shapes in the vector tiles. */
-export const SHAPES_LAYER = 'countries';
+/** Layers of the shape tiles: the merged areas and their outer borders. */
+const SHAPES_AREA_LAYER = 'visited';
+const SHAPES_BORDER_LAYER = 'borders';
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 /** Snapping grid of the tile shapes, in meters: tile edges computed at different zooms meet exactly. */
@@ -260,22 +261,45 @@ export class CountriesService {
   }
 
   /**
-   * Vector tile (Mapbox Vector Tile) of the tile shapes of the countries,
-   * with their code. Geography only, the same for every user: the map
-   * keeps the countries the user visited.
+   * Vector tile (Mapbox Vector Tile) of the union of the tile shapes of the
+   * given countries: one area, so that the large tiles shared by two of them
+   * are drawn once, and its borders with the other countries. Geography
+   * only: the map asks for the countries the user visited.
    */
-  async shapesTile(zoom: number, x: number, y: number): Promise<Buffer> {
+  async shapesTile(
+    zoom: number,
+    x: number,
+    y: number,
+    codes: string[],
+  ): Promise<Buffer> {
+    // The shapes are clipped beyond the buffer of the tile: the edges added
+    // by the clipping fall outside the buffer, where the borders are cut.
     const [row]: { tile: Buffer }[] = await this.dataSource.query(
       `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
-       shapes AS (
-         SELECT c.code,
-           ST_AsMVTGeom(c.tile_shape, b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
-         FROM countries c, bounds b
-         WHERE c.tile_shape && b.envelope
+       clip AS (
+         SELECT ST_Expand(envelope,
+           (ST_XMax(envelope) - ST_XMin(envelope)) * ${(2 * MVT_BUFFER) / MVT_EXTENT}) AS box
+         FROM bounds
+       ),
+       merged AS (
+         SELECT ST_Union(ST_ClipByBox2D(c.tile_shape, clip.box), ${SHAPE_GRID_M}) AS geom
+         FROM countries c, clip
+         WHERE c.code = ANY($4) AND c.tile_shape && clip.box
+       ),
+       areas AS (
+         SELECT ST_AsMVTGeom(m.geom, b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         FROM merged m, bounds b WHERE m.geom IS NOT NULL
+       ),
+       borders AS (
+         SELECT ST_AsMVTGeom(ST_Boundary(m.geom), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         FROM merged m, bounds b WHERE m.geom IS NOT NULL
        )
-       SELECT ST_AsMVT(shapes, '${SHAPES_LAYER}', ${MVT_EXTENT}, 'geom') AS tile
-       FROM shapes WHERE geom IS NOT NULL`,
-      [zoom, x, y],
+       SELECT
+         (SELECT ST_AsMVT(areas, '${SHAPES_AREA_LAYER}', ${MVT_EXTENT}, 'geom')
+          FROM areas WHERE geom IS NOT NULL)
+         || (SELECT ST_AsMVT(borders, '${SHAPES_BORDER_LAYER}', ${MVT_EXTENT}, 'geom')
+          FROM borders WHERE geom IS NOT NULL) AS tile`,
+      [zoom, x, y, codes],
     );
     return row.tile;
   }

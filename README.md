@@ -126,11 +126,12 @@ Polynesia, Greenland…) are attached to their sovereign country. Lakes are not 
   descendants without being tested), and merges its large tiles into its tile shape
   (`countries.tile_shape`): about 8 s for Switzerland, 45 s for France, several minutes for the
   largest countries; once for every user.
-- **Map**: the tile shapes are served as vector tiles (`GET /api/countries/shapes/:zoom/:x/:y`,
-  zoom 0 to 10, a few KB each), the same for every user and cached by the browser until a new
-  shape is computed (`shapesVersion`). The map keeps the countries visited by the user and draws
-  copies of the water layers of the base map over them, so that only the land borders follow
-  the tiles.
+- **Map**: `GET /api/countries/shapes/:zoom/:x/:y?countries=CH,FR` serves, as a vector tile
+  (zoom 0 to 10, a few KB each), the union of the tile shapes of the given countries and its outer
+  borders: two visited neighbors are drawn as one area, and only the borders with the countries
+  not visited follow the tiles. Geography only, cached by the browser for each set of countries
+  until a new shape is computed (`shapesVersion`). Copies of the water layers of the base map
+  (sea, lakes, rivers) are drawn over the area, so that the water keeps the same color everywhere.
 - The completion uses every tile of the user, hidden areas included: visible to the owner only.
 
 ## Development tools

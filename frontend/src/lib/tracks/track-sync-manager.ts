@@ -24,6 +24,7 @@ export class TrackSyncManager {
   private store: Promise<TrackStore> | null = null;
   private running: Promise<void> | null = null;
   private rerun = false;
+  private started = false;
 
   constructor(
     private readonly userId: string,
@@ -42,6 +43,16 @@ export class TrackSyncManager {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   };
+
+  /**
+   * First synchronization of the session, once: a provider mounted twice
+   * (React Strict Mode) does not queue a second run.
+   */
+  start(): void {
+    if (this.started) return;
+    this.started = true;
+    void this.sync();
+  }
 
   sync(): Promise<void> {
     if (this.running) {
@@ -66,9 +77,27 @@ export class TrackSyncManager {
 
   private async run(): Promise<void> {
     this.update({ status: "syncing", errorCode: null });
+    let written = false;
     try {
       const store = await this.getStore();
-      const changed = await syncTracks(store, this.source, (progress) => this.update({ progress }));
+      // Notes the writes: a failure after some of them still changed the tracks.
+      const tracked: TrackStore = {
+        all: () => store.all(),
+        ids: () => store.ids(),
+        putMany: async (tracks) => {
+          written = true;
+          await store.putMany(tracks);
+        },
+        deleteMany: async (activityIds) => {
+          written = true;
+          await store.deleteMany(activityIds);
+        },
+        clear: async () => {
+          written = true;
+          await store.clear();
+        },
+      };
+      const changed = await syncTracks(tracked, this.source, (progress) => this.update({ progress }));
       this.update({
         status: "ready",
         progress: null,
@@ -76,11 +105,12 @@ export class TrackSyncManager {
       });
     } catch (failure) {
       // Tracks fetched before the failure are stored: they are shown anyway.
+      // Without any, the tracks and what depends on them are not read again.
       this.update({
         status: "error",
         progress: null,
         errorCode: errorCodeOf(failure),
-        version: this.snapshot.version + 1,
+        version: written ? this.snapshot.version + 1 : this.snapshot.version,
       });
     }
   }

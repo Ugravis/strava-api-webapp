@@ -14,7 +14,7 @@ export function TrackSyncProvider({ userId, children }: { userId: string; childr
   const [manager] = useState(() => new TrackSyncManager(userId, tracksService));
 
   useEffect(() => {
-    void manager.sync();
+    manager.start();
   }, [manager]);
 
   return <TrackSyncContext value={manager}>{children}</TrackSyncContext>;

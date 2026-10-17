@@ -65,13 +65,21 @@ export const RASTER_MIN_ZOOM = 5;
  * browser keeps the tiles until it changes, so a change of their content
  * must increment it.
  */
-const TILES_FORMAT = 4;
+const TILES_FORMAT = 6;
 /**
- * Below zoom 5, the large tiles are grouped by ancestor at `zoom + 9`: one
- * pixel of a 512 pixels map tile. Finer, the area would look like a thin
- * lace once zoomed out.
+ * Zoomed out, the large tiles are grouped by ancestor, at most at
+ * `zoom + 9`, one pixel of a 512 pixels map tile: finer, the area would
+ * look like a thin lace. Below zoom 6, the first grouping, at zoom 13, two
+ * pixels at zoom 5, comes before it.
  */
 const VECTOR_GROUPING_LEVELS = 9;
+const FIRST_GROUPING_ZOOM = 6;
+
+/** Level at which the large tiles of a map tile at `zoom` are grouped. */
+function groupingLevel(zoom: number): number {
+  const ceiling = zoom < FIRST_GROUPING_ZOOM ? TILE_ZOOM - 1 : TILE_ZOOM;
+  return Math.min(ceiling, zoom + VECTOR_GROUPING_LEVELS);
+}
 const MVT_EXTENT = 4096;
 /** The outline of the visited area is served from this zoom, where the map draws it. */
 const VECTOR_OUTLINE_MIN_ZOOM = 10;
@@ -363,7 +371,7 @@ export class UserTilesService {
 
   /** Large tiles read around a map tile, so that its areas reach its buffer. */
   private marginOf(zoom: number): number {
-    const level = Math.min(TILE_ZOOM, zoom + VECTOR_GROUPING_LEVELS);
+    const level = groupingLevel(zoom);
     const cellsPerSide = 2 ** (level - zoom);
     const margin = Math.ceil((cellsPerSide * MVT_BUFFER) / MVT_EXTENT) + 1;
     return margin << (TILE_ZOOM - level);
@@ -373,8 +381,8 @@ export class UserTilesService {
    * Vector tile (Mapbox Vector Tile) of the tiles of the user within the
    * map tile `(zoom, x, y)`: one area per layer, its tiles merged, so that
    * its size follows the outline of the tiles rather than their number.
-   * Below zoom 5, the large tiles are grouped by ancestor at `zoom + 9`,
-   * one pixel wide.
+   * Zoomed out, the large tiles are grouped by ancestor (`groupingLevel`),
+   * one or two pixels wide.
    */
   async vectorTile(
     userId: string,
@@ -382,7 +390,7 @@ export class UserTilesService {
     x: number,
     y: number,
   ): Promise<Buffer> {
-    const level = Math.min(TILE_ZOOM, zoom + VECTOR_GROUPING_LEVELS);
+    const level = groupingLevel(zoom);
     const shift = TILE_ZOOM - level;
     const { minX, maxX, minY, maxY } = tileRange(
       zoom,

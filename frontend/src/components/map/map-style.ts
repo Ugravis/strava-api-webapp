@@ -76,8 +76,8 @@ export interface MapPalette {
   subtileCluster: string;
   subtileClusterOpacity: number;
   /**
-   * Other clusters of small tiles: the color of the small tiles, denser.
-   * Opaque zoomed out, a deeper color would merge into the largest cluster.
+   * Other clusters of small tiles: a little deeper and denser than the small
+   * tiles. Opaque zoomed out, a much deeper color merges into the largest cluster.
    */
   otherSubtileClusters: string;
   otherSubtileClustersOpacity: number;
@@ -125,7 +125,7 @@ const LIGHT: MapPalette = {
   subtileOpacity: 0.5,
   subtileCluster: "#052e16",
   subtileClusterOpacity: 0.75,
-  otherSubtileClusters: "#15803d",
+  otherSubtileClusters: "#166534",
   otherSubtileClustersOpacity: 0.75,
   tileOutline: "#14532d",
   square: "#db2777",
@@ -170,7 +170,7 @@ const DARK: MapPalette = {
   subtileOpacity: 0.5,
   subtileCluster: "#bbf7d0",
   subtileClusterOpacity: 0.75,
-  otherSubtileClusters: "#4ade80",
+  otherSubtileClusters: "#68e796",
   otherSubtileClustersOpacity: 0.75,
   square: "#f472b6",
   grid: "#a8a29e",

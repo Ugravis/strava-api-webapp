@@ -61,6 +61,9 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
   const tracksRef = useRef<TrackCollection>(trackCollection([]));
   const tilesRef = useRef<TileData>(tileData(null));
   const countriesRef = useRef<VisitedCountries>(NO_COUNTRIES);
+  // Whether the custom layers can be added. `isStyleLoaded()` stays false
+  // while any tile of the base map is loading.
+  const styleReadyRef = useRef(false);
   const modeRef = useRef(tileMode);
   const framedRef = useRef(false);
   const initialStyleRef = useRef(mapStyleUrl(resolvedTheme));
@@ -84,6 +87,7 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {
+      styleReadyRef.current = true;
       // Below the first label layer, keeping place names readable; tracks
       // over tiles. The countries go lower, below the roads.
       const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
@@ -113,6 +117,7 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
     const url = mapStyleUrl(resolvedTheme);
     if (url === initialStyleRef.current) return;
     initialStyleRef.current = url;
+    styleReadyRef.current = false;
     mapRef.current?.setStyle(url);
   }, [resolvedTheme]);
 
@@ -141,7 +146,7 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
   useEffect(() => {
     countriesRef.current = countries;
     // Before the style is loaded, the layers get the countries on load.
-    if (mapRef.current?.isStyleLoaded()) setVisitedCountries(mapRef.current, countries);
+    if (mapRef.current && styleReadyRef.current) setVisitedCountries(mapRef.current, countries);
   }, [countries]);
 
   useEffect(() => {

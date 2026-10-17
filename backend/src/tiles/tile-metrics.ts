@@ -138,3 +138,17 @@ export function tileMetrics(cells: TileCell[]): TileMetrics {
     subtiles: levelMetrics(subtilePoints(cells)),
   };
 }
+
+/** Metrics of one level, as stored once computed. */
+export interface StoredLevelMetrics {
+  visited: number;
+  maxSquare: TileSquare | null;
+  /** Tiles of the largest cluster. */
+  maxCluster: number;
+  clustered: number;
+}
+
+export interface StoredMetrics {
+  tiles: StoredLevelMetrics;
+  subtiles: StoredLevelMetrics;
+}

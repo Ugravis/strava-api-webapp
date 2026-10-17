@@ -111,19 +111,26 @@ Polynesia, Greenland…) are attached to their sovereign country. Lakes are not 
 
 - **Boundaries**: `pnpm countries:import [release]` reads the land boundaries of the countries
   from [Overture Maps](https://overturemaps.org) (OpenStreetMap data, ODbL, public S3 bucket, no
-  account) with DuckDB, then stores them in PostGIS: subdivided at full precision in
-  `country_parts` (Web Mercator, for the computations) and simplified to about 1 km in
-  `countries.outline` (for the map). It takes about 5 minutes and reads about 300 MB. Run it once
+  account) with DuckDB, then stores them at full precision in PostGIS, subdivided in
+  `country_parts` (Web Mercator). It takes about 5 minutes and reads about 300 MB. Run it once
   after setting up the database, and again after `pnpm db:reset`; without it, no country is shown.
-  The release is pinned in `overture-countries.ts`.
+  The release is pinned in `overture-countries.ts`. `country_parts` is only read by the worker,
+  never by a user request.
 - **Location**: a background worker locates each visited large tile once: for every country it
-  touches, `tile_countries` stores the mask of its small tiles touching it. These tables only hold
-  geography, no user data. The completion is then computed in SQL from the masks
+  touches, `tile_countries` stores the mask of its small tiles touching it. Between two complete
+  scans (at startup, then hourly), it only looks at the tiles saved recently. These tables only
+  hold geography, no user data. The completion is then computed in SQL from the masks
   (`bit_count(user_mask & country_mask)`), without geometry.
-- **Totals**: the number of tiles touching a country is computed by the worker when the country
-  is visited for the first time, by a quadtree descent (a tile inside the country counts with all
-  its descendants without being tested): about 15 s for Switzerland, 40 s for France, several
-  minutes for the largest countries.
+- **Totals and shapes**: when a country is visited for the first time, the worker counts the
+  tiles touching it by a quadtree descent (a tile inside the country counts with all its
+  descendants without being tested), and merges its large tiles into its tile shape
+  (`countries.tile_shape`): about 8 s for Switzerland, 45 s for France, several minutes for the
+  largest countries; once for every user.
+- **Map**: the tile shapes are served as vector tiles (`GET /api/countries/shapes/:zoom/:x/:y`,
+  zoom 0 to 10, a few KB each), the same for every user and cached by the browser until a new
+  shape is computed (`shapesVersion`). The map keeps the countries visited by the user and draws
+  copies of the water layers of the base map over them, so that only the land borders follow
+  the tiles.
 - The completion uses every tile of the user, hidden areas included: visible to the owner only.
 
 ## Development tools

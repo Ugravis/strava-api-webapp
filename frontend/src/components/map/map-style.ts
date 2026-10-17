@@ -61,11 +61,10 @@ export interface MapPalette {
   tile: string;
   tileOpacity: number;
   /**
-   * Largest cluster of large tiles: a quiet wash over them, pale in light,
-   * dark in dark. Zoomed in, every large tile takes its look.
+   * Largest cluster of large tiles, opaque: pale in light, dark in dark, the
+   * same at every zoom. Zoomed in, every large tile takes its color.
    */
   cluster: string;
-  clusterOpacity: number;
   /** Other clusters of large tiles: a lighter wash of the same color, short of the largest. */
   otherClusters: string;
   otherClustersOpacity: number;
@@ -118,7 +117,6 @@ const LIGHT: MapPalette = {
   tile: "#16a34a",
   tileOpacity: 0.4,
   cluster: "#f4fbf6",
-  clusterOpacity: 0.75,
   otherClusters: "#f4fbf6",
   otherClustersOpacity: 0.2,
   subtile: "#15803d",
@@ -162,7 +160,6 @@ const DARK: MapPalette = {
   tileOpacity: 0.35,
   // Dark: the quiet levels are dark, the prominent ones light.
   cluster: "#0f1f17",
-  clusterOpacity: 0.8,
   otherClusters: "#0f1f17",
   otherClustersOpacity: 0.25,
   tileOutline: "#4ade80",

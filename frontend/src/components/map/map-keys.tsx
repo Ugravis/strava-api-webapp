@@ -47,13 +47,18 @@ export function TileKey({
   );
 }
 
-/** Largest cluster: quiet over the large tiles, prominent over the small ones; a faint edge keeps it visible on the band. */
+/** Largest cluster: opaque and quiet over the large tiles, prominent over the small ones; a faint edge keeps it visible on the band. */
 export function ClusterKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
   return (
     <span
       aria-hidden
       style={themed({ fill: subtiles ? "subtileCluster" : "cluster" })}
-      className={cn(SWATCH, "border border-foreground/15 bg-(--fill)/55 dark:bg-(--fill-dark)/65", className)}
+      className={cn(
+        SWATCH,
+        "border border-foreground/15",
+        subtiles ? "bg-(--fill)/55 dark:bg-(--fill-dark)/65" : "bg-(--fill) dark:bg-(--fill-dark)",
+        className,
+      )}
     />
   );
 }

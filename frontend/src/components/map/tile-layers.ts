@@ -60,11 +60,11 @@ const SUBTILE_MIN_ZOOM = 5;
 const SUBTILE_CLICK_MIN_ZOOM = 13;
 /**
  * The other clusters fade in from these zooms: those of large tiles once a
- * country like France fills the screen, those of small tiles once a city
- * does, where a small tile spans a few pixels.
+ * country like France fills the screen, those of small tiles once a region
+ * does.
  */
 const TILE_CLUSTERS_MIN_ZOOM = 5;
-const SUBTILE_CLUSTERS_MIN_ZOOM = 10;
+const SUBTILE_CLUSTERS_MIN_ZOOM = 7;
 /** The outline of the visited area appears with the grid of the large tiles. */
 const TILE_OUTLINE_MIN_ZOOM = TILE_GRID_MIN_ZOOM;
 /** Distances from the pointer, in pixels, where a click looks for a tile: a finger is not precise. */
@@ -121,33 +121,15 @@ const MERGED_SUBTILE_OPACITY = 0.5;
 /** Up to this zoom, the fills are at their strongest; they lighten until the merge. */
 const STRONG_FILL_ZOOM = 7;
 
-/** Mix of `#rrggbb` colors, weighted. */
-function mix(colors: [string, number][]): string {
-  const channel = (i: number) =>
-    Math.round(colors.reduce((sum, [color, weight]) => sum + parseInt(color.slice(1 + 2 * i, 3 + 2 * i), 16) * weight, 0));
-  return `#${[0, 1, 2].map((i) => channel(i).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/**
- * Single fill giving the look of the cluster drawn over a large tile:
- * `cluster` at its opacity over `tile` at its own.
- */
-function clusterLook({ tile, tileOpacity, cluster, clusterOpacity }: MapPalette): { color: string; opacity: number } {
-  const tileWeight = tileOpacity * (1 - clusterOpacity);
-  const opacity = clusterOpacity + tileWeight;
-  return { color: mix([[cluster, clusterOpacity / opacity], [tile, tileWeight / opacity]]), opacity };
-}
-
 /**
  * Paint of the fill of the large tiles: stronger zoomed out, where the tiles
- * are the point of the map, lighter as the streets appear, then in the look
+ * are the point of the map, lighter as the streets appear, then in the color
  * of the largest cluster once zoomed in.
  */
 function tilePaint(palette: MapPalette): { "fill-color": ExpressionSpecification; "fill-opacity": ExpressionSpecification } {
   const [from, to] = CLUSTER_MERGE_ZOOMS;
-  const merged = clusterLook(palette);
   return {
-    "fill-color": ["interpolate", ["linear"], ["zoom"], from, palette.tile, to, merged.color],
+    "fill-color": ["interpolate", ["linear"], ["zoom"], from, palette.tile, to, palette.cluster],
     "fill-opacity": [
       "interpolate",
       ["linear"],
@@ -157,7 +139,7 @@ function tilePaint(palette: MapPalette): { "fill-color": ExpressionSpecification
       from,
       palette.tileOpacity,
       to,
-      merged.opacity,
+      1,
     ],
   };
 }
@@ -173,13 +155,10 @@ function subtileOpacity(minZoom: number): ExpressionSpecification {
   return ["interpolate", ["linear"], ["zoom"], minZoom, 0, ...opaque, to, MERGED_SUBTILE_OPACITY];
 }
 
-/** Opacity of the fill of the largest cluster: stronger zoomed out, then merged into the large tiles. */
-function clusterOpacity(opacity: number): ExpressionSpecification {
-  const [from, to] = CLUSTER_MERGE_ZOOMS;
-  return ["interpolate", ["linear"], ["zoom"], STRONG_FILL_ZOOM, Math.min(1, opacity * 2.5), from, opacity, to, 0];
-}
-
-/** Opacity of the fill of the other clusters: fading in from `TILE_CLUSTERS_MIN_ZOOM`, then like the largest. */
+/**
+ * Opacity of the fill of the other clusters: fading in from
+ * `TILE_CLUSTERS_MIN_ZOOM`, stronger zoomed out, then merged into the large tiles.
+ */
 function otherClustersOpacity(opacity: number): ExpressionSpecification {
   const [from, to] = CLUSTER_MERGE_ZOOMS;
   const strong = Math.min(1, opacity * 2.5);
@@ -373,11 +352,8 @@ export function addTileLayers(
       type: "fill",
       ...vector(SOURCE_LAYERS.tileCluster),
       layout,
-      paint: {
-        "fill-color": palette.cluster,
-        "fill-opacity": clusterOpacity(palette.clusterOpacity),
-        "fill-antialias": false,
-      },
+      // Opaque: its color stays the same at every zoom, whatever the large tiles below.
+      paint: { "fill-color": palette.cluster, "fill-antialias": false },
     },
     {
       id: "visited-tiles-outline",

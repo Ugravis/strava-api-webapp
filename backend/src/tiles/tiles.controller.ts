@@ -101,7 +101,7 @@ export class TilesController {
   async raster(
     @CurrentUser() user: User,
     @Param() { zoom, x, y }: RasterTileParamsDto,
-    @Query() { color, cluster }: RasterTileQueryDto,
+    @Query() { color, cluster, clusters }: RasterTileQueryDto,
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
@@ -115,6 +115,7 @@ export class TilesController {
           y,
           rgba(color),
           rgba(cluster),
+          clusters ? rgba(clusters) : null,
         ),
     });
   }

@@ -34,6 +34,17 @@ export interface TileDetails {
   inMaxSquare: boolean;
 }
 
+/** Cluster marks of a large tile, as written by `saveMetrics`. */
+interface TileMarks {
+  x: number;
+  y: number;
+  inMaxCluster: boolean;
+  /** Signed 64-bit masks, as text. */
+  maxClusterMask: string;
+  inCluster: boolean;
+  clusterMask: string;
+}
+
 /** A user whose metrics are behind their tiles. */
 export interface StaleMetrics {
   userId: string;
@@ -65,7 +76,7 @@ export const RASTER_MIN_ZOOM = 5;
  * browser keeps the tiles until it changes, so a change of their content
  * must increment it.
  */
-const TILES_FORMAT = 6;
+const TILES_FORMAT = 7;
 /**
  * Zoomed out, the large tiles are grouped by ancestor, at most at
  * `zoom + 9`, one pixel of a 512 pixels map tile: finer, the area would
@@ -91,13 +102,14 @@ const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 
 /**
  * Layers of the vector tiles: the visited large tiles merged into one area,
- * its outline, the area of the largest cluster, and at the deepest zoom the
- * small tiles, only to pick them on the map.
+ * its outline, the area of the largest cluster, that of the other clusters,
+ * and at the deepest zoom the small tiles, only to pick them on the map.
  */
 export const VECTOR_LAYERS = {
   tiles: 'tiles',
   tilesOutline: 'tiles_outline',
   tileCluster: 'tile_cluster',
+  tileClusters: 'tile_clusters',
   subtiles: 'subtiles',
 } as const;
 
@@ -274,31 +286,50 @@ export class UserTilesService {
 
   /**
    * Stores the metrics computed from the tiles at `version`, and marks the
-   * tiles of the largest clusters. Only the rows whose marks change are
-   * written, with a new change value: the other map tiles stay valid.
+   * cluster tiles and those of the largest clusters. Only the rows whose
+   * marks change are written, with a new change value: the other map tiles
+   * stay valid.
    */
   saveMetrics(
     { userId, version }: StaleMetrics,
-    { metrics, tileCluster, subtileCluster }: PackedMetrics,
+    {
+      metrics,
+      tileCluster,
+      subtileCluster,
+      tileClusters,
+      subtileClusters,
+    }: PackedMetrics,
   ): Promise<void> {
-    const marks = new Map<
-      string,
-      { x: number; y: number; inCluster: boolean; mask: string }
-    >();
+    const marks = new Map<string, TileMarks>();
     const markAt = (x: number, y: number) => {
       const key = `${x}/${y}`;
       let mark = marks.get(key);
       if (!mark) {
-        mark = { x, y, inCluster: false, mask: '0' };
+        mark = {
+          x,
+          y,
+          inMaxCluster: false,
+          maxClusterMask: '0',
+          inCluster: false,
+          clusterMask: '0',
+        };
         marks.set(key, mark);
       }
       return mark;
     };
     tileCluster.xs.forEach((x, i) => {
-      markAt(x, tileCluster.ys[i]).inCluster = true;
+      markAt(x, tileCluster.ys[i]).inMaxCluster = true;
     });
     subtileCluster.xs.forEach((x, i) => {
-      markAt(x, subtileCluster.ys[i]).mask = subtileCluster.masks[i].toString();
+      markAt(x, subtileCluster.ys[i]).maxClusterMask =
+        subtileCluster.masks[i].toString();
+    });
+    tileClusters.xs.forEach((x, i) => {
+      markAt(x, tileClusters.ys[i]).inCluster = true;
+    });
+    subtileClusters.xs.forEach((x, i) => {
+      markAt(x, subtileClusters.ys[i]).clusterMask =
+        subtileClusters.masks[i].toString();
     });
     const rows = [...marks.values()];
     return this.dataSource.transaction(async (manager) => {
@@ -310,27 +341,36 @@ export class UserTilesService {
       );
       await manager.query(
         `WITH marks AS (
-           SELECT * FROM unnest($2::integer[], $3::integer[], $4::boolean[], $5::bigint[])
-             AS m(x, y, in_cluster, mask)
+           SELECT * FROM unnest(
+             $2::integer[], $3::integer[], $4::boolean[], $5::bigint[], $6::boolean[], $7::bigint[]
+           ) AS m(x, y, in_max_cluster, max_cluster_mask, in_cluster, cluster_mask)
          ),
          change AS (SELECT nextval('user_tiles_change_seq') AS seq)
          UPDATE user_tiles u
-         SET in_max_cluster = COALESCE(m.in_cluster, false),
-           max_cluster_mask = COALESCE(m.mask, 0),
+         SET in_max_cluster = COALESCE(m.in_max_cluster, false),
+           max_cluster_mask = COALESCE(m.max_cluster_mask, 0),
+           in_cluster = COALESCE(m.in_cluster, false),
+           cluster_mask = COALESCE(m.cluster_mask, 0),
            changed_seq = change.seq
          FROM user_tiles t
          LEFT JOIN marks m ON m.x = t.x AND m.y = t.y
          CROSS JOIN change
          WHERE u.user_id = $1 AND t.user_id = $1 AND u.x = t.x AND u.y = t.y
-           AND (t.in_max_cluster OR t.max_cluster_mask <> 0 OR m.x IS NOT NULL)
-           AND (t.in_max_cluster, t.max_cluster_mask)
-             IS DISTINCT FROM (COALESCE(m.in_cluster, false), COALESCE(m.mask, 0))`,
+           AND (t.in_cluster OR t.cluster_mask <> 0 OR t.in_max_cluster
+             OR t.max_cluster_mask <> 0 OR m.x IS NOT NULL)
+           AND (t.in_max_cluster, t.max_cluster_mask, t.in_cluster, t.cluster_mask)
+             IS DISTINCT FROM (
+               COALESCE(m.in_max_cluster, false), COALESCE(m.max_cluster_mask, 0),
+               COALESCE(m.in_cluster, false), COALESCE(m.cluster_mask, 0)
+             )`,
         [
           userId,
           rows.map((row) => row.x),
           rows.map((row) => row.y),
+          rows.map((row) => row.inMaxCluster),
+          rows.map((row) => row.maxClusterMask),
           rows.map((row) => row.inCluster),
-          rows.map((row) => row.mask),
+          rows.map((row) => row.clusterMask),
         ],
       );
       await manager.query(
@@ -403,11 +443,12 @@ export class UserTilesService {
     const [row]: { tile: Buffer }[] = await this.dataSource.query(
       `WITH bounds AS (SELECT ST_TileEnvelope($2, $3, $4) AS envelope),
        cells AS MATERIALIZED (
-         SELECT x, y, mask, in_max_cluster FROM user_tiles
+         SELECT x, y, mask, in_max_cluster, in_cluster FROM user_tiles
          WHERE user_id = $1 AND x BETWEEN $5 AND $6 AND y BETWEEN $7 AND $8
        ),
        grouped AS MATERIALIZED (
-         SELECT x >> ${shift} AS x, y >> ${shift} AS y, bool_or(in_max_cluster) AS cluster
+         SELECT x >> ${shift} AS x, y >> ${shift} AS y,
+           bool_or(in_max_cluster) AS cluster, bool_or(in_cluster) AS clustered
          FROM cells GROUP BY 1, 2
        ),
        visited AS (
@@ -416,6 +457,11 @@ export class UserTilesService {
        cluster AS (
          SELECT ST_Union(geom) AS geom
          FROM (${rectanglesSql('(SELECT x, y FROM grouped WHERE cluster) c', level)}) r
+       ),
+       -- Only filled, without antialiasing: its rectangles are not merged.
+       other_clusters AS (
+         SELECT ST_Collect(geom) AS geom
+         FROM (${rectanglesSql('(SELECT x, y FROM grouped WHERE clustered AND NOT cluster) c', level)}) r
        ),
        subtiles AS (
          SELECT ST_Collect(geom) AS geom FROM (${rectanglesSql(
@@ -431,6 +477,7 @@ export class UserTilesService {
        SELECT ${layerSql(VECTOR_LAYERS.tiles, '(SELECT geom FROM visited)')}
          || ${zoom >= VECTOR_OUTLINE_MIN_ZOOM ? layerSql(VECTOR_LAYERS.tilesOutline, '(SELECT ST_Boundary(geom) FROM visited)') : "''::bytea"}
          || ${layerSql(VECTOR_LAYERS.tileCluster, '(SELECT geom FROM cluster)')}
+         || ${layerSql(VECTOR_LAYERS.tileClusters, '(SELECT geom FROM other_clusters)')}
          || ${layerSql(VECTOR_LAYERS.subtiles, '(SELECT geom FROM subtiles)')} AS tile`,
       [userId, zoom, x, y, minX, maxX, minY, maxY],
     );
@@ -440,8 +487,9 @@ export class UserTilesService {
   /**
    * PNG image of the small tiles of the user within the map tile
    * `(zoom, x, y)`, in `subtileColor`, those of the largest cluster in
-   * `clusterColor`. Its size stays bounded whatever the density of the
-   * tiles, unlike the vector tiles.
+   * `maxClusterColor`, and those of the other clusters in `clusterColor`, or
+   * like the others without it. Its size stays bounded whatever the density
+   * of the tiles, unlike the vector tiles.
    */
   async rasterTile(
     userId: string,
@@ -449,26 +497,37 @@ export class UserTilesService {
     x: number,
     y: number,
     subtileColor: Rgba,
-    clusterColor: Rgba,
+    maxClusterColor: Rgba,
+    clusterColor: Rgba | null,
   ): Promise<Buffer> {
     const span = 2 ** (TILE_ZOOM - zoom);
-    const rows: { x: number; y: number; mask: string; cluster: string }[] =
-      await this.dataSource.query(
-        `SELECT x, y, mask::text, max_cluster_mask::text AS cluster FROM user_tiles
-         WHERE user_id = $1
-           AND x BETWEEN $2 * ${span} AND ($2 + 1) * ${span} - 1
-           AND y BETWEEN $3 * ${span} AND ($3 + 1) * ${span} - 1`,
-        [userId, x, y],
-      );
+    const rows: {
+      x: number;
+      y: number;
+      mask: string;
+      max_cluster: string;
+      cluster: string;
+    }[] = await this.dataSource.query(
+      `SELECT x, y, mask::text, max_cluster_mask::text AS max_cluster,
+         cluster_mask::text AS cluster
+       FROM user_tiles
+       WHERE user_id = $1
+         AND x BETWEEN $2 * ${span} AND ($2 + 1) * ${span} - 1
+         AND y BETWEEN $3 * ${span} AND ($3 + 1) * ${span} - 1`,
+      [userId, x, y],
+    );
     const cells = rows.map((row) => ({
       x: row.x,
       y: row.y,
       mask: fromSignedMask(row.mask),
-      clusterMask: fromSignedMask(row.cluster),
+      clusterMask: clusterColor ? fromSignedMask(row.cluster) : 0n,
+      maxClusterMask: fromSignedMask(row.max_cluster),
     }));
+    // Without its color, the palette entry of the other clusters is unused.
     return encodePng(rasterIndices(cells, zoom, x, y), [
       subtileColor,
-      clusterColor,
+      clusterColor ?? subtileColor,
+      maxClusterColor,
     ]);
   }
 }

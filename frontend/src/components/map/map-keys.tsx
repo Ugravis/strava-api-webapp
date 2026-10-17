@@ -38,7 +38,7 @@ export function TileKey({
       className={cn(
         SWATCH,
         "border border-(--line) dark:border-(--line-dark)",
-        subtiles ? "bg-(--fill)/70 dark:bg-(--fill-dark)/70" : "bg-(--fill)/35 dark:bg-(--fill-dark)/35",
+        subtiles ? "bg-(--fill)/75 dark:bg-(--fill-dark)/75" : "bg-(--fill)/35 dark:bg-(--fill-dark)/35",
         className,
       )}
     >
@@ -68,7 +68,7 @@ export function OtherClusterKey({ subtiles = false, className }: { subtiles?: bo
       <span
         aria-hidden
         style={themed({ fill: "otherSubtileClusters" })}
-        className={cn(SWATCH, "border border-foreground/15 bg-(--fill)/70 dark:bg-(--fill-dark)/70", className)}
+        className={cn(SWATCH, "border border-foreground/15 bg-(--fill)/75 dark:bg-(--fill-dark)/75", className)}
       />
     );
   }

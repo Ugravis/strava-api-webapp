@@ -75,7 +75,10 @@ export interface MapPalette {
   /** Largest cluster of small tiles, the most prominent level. */
   subtileCluster: string;
   subtileClusterOpacity: number;
-  /** Other clusters of small tiles: a little deeper than the small tiles, short of the largest. */
+  /**
+   * Other clusters of small tiles: the color of the small tiles, denser.
+   * Opaque zoomed out, a deeper color would merge into the largest cluster.
+   */
   otherSubtileClusters: string;
   otherSubtileClustersOpacity: number;
   /** Outline of the visited area: carries the contrast of the light fills. */
@@ -122,8 +125,8 @@ const LIGHT: MapPalette = {
   subtileOpacity: 0.5,
   subtileCluster: "#052e16",
   subtileClusterOpacity: 0.75,
-  otherSubtileClusters: "#14532d",
-  otherSubtileClustersOpacity: 0.7,
+  otherSubtileClusters: "#15803d",
+  otherSubtileClustersOpacity: 0.75,
   tileOutline: "#14532d",
   square: "#db2777",
   grid: "#5b4a35",
@@ -167,8 +170,8 @@ const DARK: MapPalette = {
   subtileOpacity: 0.5,
   subtileCluster: "#bbf7d0",
   subtileClusterOpacity: 0.75,
-  otherSubtileClusters: "#86efac",
-  otherSubtileClustersOpacity: 0.7,
+  otherSubtileClusters: "#4ade80",
+  otherSubtileClustersOpacity: 0.75,
   square: "#f472b6",
   grid: "#a8a29e",
   track: "#fb7185",

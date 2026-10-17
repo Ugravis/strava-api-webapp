@@ -309,14 +309,14 @@
       "label": "Affichage des tuiles",
       "none": "Tracés",
       "tiles": "Tuiles",
-      "subtiles": "Petites tuiles",
       "both": "Les deux"
     },
     "legend": {
       "tiles": "Tuiles",
       "subtiles": "Petites",
       "maxSquare": "Plus grand carré : {size} × {size}",
-      "maxCluster": "Plus grand cluster : {count, plural, =0 {aucun} one {# tuile} other {# tuiles}}"
+      "maxCluster": "Plus grand cluster : {count, plural, =0 {aucun} one {# tuile} other {# tuiles}}",
+      "zoomForSubtiles": "Zoome pour voir les petites tuiles"
     },
     "tilePopup": {
       "tile": "Tuile",

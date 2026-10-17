@@ -98,6 +98,9 @@ A new Strava application only accepts its owner's account until it is reviewed b
   activity from Strava. Strava gives up after 3 failed deliveries and offers no replay, so a
   periodic reconciliation (every 6 hours and at startup) re-reads the last 30 days to catch events
   missed while the backend was down.
+- **Tracks in the browser**: the list of the activities expected on the map
+  (`GET /api/activities/mappable`) is requested whenever the app opens; it has an entity tag and is
+  only downloaded again once the activities changed.
 - **Webhooks in development** need a public URL: `docker compose --profile tunnel up` starts a
   Cloudflare quick tunnel, whose random address the backend registers with Strava at startup
   (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
@@ -120,11 +123,22 @@ the activity. The reads never aggregate them:
   They are stored in `user_tile_metrics`, and the tiles of the largest clusters are marked in
   `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
   they are up to date.
-- **Map**: `GET /api/tiles/vector/:zoom/:x/:y?v=<version>` serves the tiles of the user as a
-  vector tile (zoom 0 to 14, tens of KB at most): the large tiles and those of the largest
-  cluster, then from zoom 12 the small tiles and those of their largest cluster. The contiguous
-  tiles of a row are merged below zoom 10, and below zoom 6 the large tiles are grouped by
-  ancestor, about one pixel wide. Cached by the browser for each version of the tiles.
+- **Map**: `GET /api/tiles/vector/:zoom/:x/:y` serves the tiles of the user as a vector tile (zoom 0
+  to 12, the map stretches them beyond): the visited large tiles merged into one area, its outline
+  (from zoom 10), the area of the largest cluster, and at zoom 12 the small tiles, only to pick them
+  on the map. Below zoom 4, the large tiles are grouped by ancestor, about one pixel of a high
+  density screen. The small tiles are drawn from images,
+  `GET /api/tiles/raster/:zoom/:x/:y?color=<rrggbbaa>&cluster=<rrggbbaa>` (512 pixels PNG, zoom 5
+  to 12, tens of KB at most whatever the density), from the zoom of a whole country.
+- **Revalidation**: each map tile has an entity tag made of the number of rows of `user_tiles` it
+  covers and their greatest `changed_seq`, a sequence taken under the lock of the user by the
+  trigger and by the metrics worker, plus a revision of the content (`TILES_FORMAT`, to increment
+  when the content of the tiles changes). The browser revalidates every tile (`no-cache`): after a
+  synchronization, only the map tiles crossed by the new activities are rendered and downloaded
+  again, the others answer `304 Not Modified` in a few milliseconds.
+- **Display**: in the combined view, the small tiles fade in between zooms 5 and 6 over the large
+  tiles, which keep their color; the grids fade in from zoom 12 (large tiles) and 15 (small tiles).
+  A click picks the tile under the pointer or a few pixels from it.
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
   the map shows about it (cluster, largest square), without loading every tile in the browser.
 - **Large histories**: `pnpm db:seed:bench` (development only) creates the account `bench`

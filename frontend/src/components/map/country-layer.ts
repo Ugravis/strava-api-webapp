@@ -17,6 +17,8 @@ const BORDER_SOURCE_LAYER = "borders";
 /** The backend serves the shapes down to this zoom; the map stretches them beyond. */
 const SHAPES_MAX_ZOOM = 10;
 const FILL_ID = "visited-countries-fill";
+/** Zoom from which the borders of the visited area fade in. */
+const BORDER_MIN_ZOOM = 7;
 const LINE_ID = "visited-countries-line";
 const WATER_MASK_PREFIX = "visited-countries-water-";
 /** The shapes go below these layers of the base map: roads, buildings and borders stay readable. */
@@ -68,7 +70,14 @@ function addCountryLayers(map: MapLibreMap, countries: VisitedCountries & { shap
       type: "line",
       source: SOURCE_ID,
       "source-layer": BORDER_SOURCE_LAYER,
-      paint: { "line-color": COUNTRY_COLOR, "line-opacity": 0.4, "line-width": 1 },
+      // At the scale of a continent, the borders following the tiles along the
+      // coasts would be a scribble: they appear once the tiles are visible.
+      minzoom: BORDER_MIN_ZOOM,
+      paint: {
+        "line-color": COUNTRY_COLOR,
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], BORDER_MIN_ZOOM, 0, BORDER_MIN_ZOOM + 1, 0.4],
+        "line-width": 1,
+      },
     },
     beforeId,
   );

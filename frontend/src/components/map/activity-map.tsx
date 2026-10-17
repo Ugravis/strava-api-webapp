@@ -3,22 +3,24 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
-import { type ExploredTiles, TILE_ZOOM, TileIndex, tileAt, type TileZoom } from "@/lib/tiles/tile-geometry";
+import type { TilesSummary } from "@/lib/api/types";
+import { tileAt, type TileZoom } from "@/lib/tiles/tile-geometry";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
 import { DEFAULT_VIEW, mapStyleUrl } from "./map-style";
 import {
   addTileLayers,
   CLICKABLE_LAYERS,
-  clickedZoom,
+  clickableZooms,
   setTileData,
   setTileMode,
   type TileData,
   tileData,
   type TileMode,
   updateGrids,
+  visitedTileNear,
 } from "./tile-layers";
 import { TilePopup } from "./tile-popup";
 import {
@@ -26,6 +28,7 @@ import {
   boundsOf,
   setTrackData,
   setTracksOverTiles,
+  TRACK_LAYER_ID,
   type TrackCollection,
   trackCollection,
 } from "./track-layer";
@@ -37,7 +40,7 @@ setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url)
 interface ActivityMapProps {
   lines: TrackLine[];
   /** Null while loading. */
-  explored: ExploredTiles | null;
+  summary: TilesSummary | null;
   countries: VisitedCountries;
   tileMode: TileMode;
   label: string;
@@ -53,7 +56,7 @@ interface SelectedTile {
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, explored, countries, tileMode, label }: ActivityMapProps) {
+export function ActivityMap({ lines, summary, countries, tileMode, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -68,8 +71,6 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
   const framedRef = useRef(false);
   const initialStyleRef = useRef(mapStyleUrl(resolvedTheme));
 
-  const index = useMemo(() => (explored ? new TileIndex(explored) : null), [explored]);
-  const indexRef = useRef(index);
   const [selected, setSelected] = useState<SelectedTile | null>(null);
   // The popup content is rendered by React, inside the node MapLibre positions.
   const [popupNode] = useState(() => document.createElement("div"));
@@ -90,7 +91,7 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
       styleReadyRef.current = true;
       // Below the first label layer, keeping place names readable; tracks
       // over tiles. The countries go lower, below the roads.
-      const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+      const firstLabel = firstLabelId(map);
       setVisitedCountries(map, countriesRef.current);
       addTileLayers(map, tilesRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, firstLabel);
@@ -98,10 +99,12 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
       setTracksOverTiles(map, modeRef.current !== "none");
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
-    map.on("click", (event) => {
-      const tile = selectTile(indexRef.current, modeRef.current, map.getZoom(), event.lngLat);
-      setSelected(tile);
+    // The tracks arrive after the map: once the user has moved it, they no
+    // longer frame it.
+    map.on("movestart", (event) => {
+      if (event.originalEvent) framedRef.current = true;
     });
+    map.on("click", (event) => setSelected(selectTile(map, modeRef.current, event)));
     for (const layer of CLICKABLE_LAYERS) {
       map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
@@ -136,12 +139,14 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
   }, [lines]);
 
   useEffect(() => {
-    indexRef.current = index;
+    tilesRef.current = tileData(summary);
     const map = mapRef.current;
-    if (!map || !explored) return;
-    tilesRef.current = tileData(explored);
-    setTileData(map, tilesRef.current);
-  }, [explored, index]);
+    // Before the style is loaded, the layers get the tiles on load.
+    if (!map || !styleReadyRef.current || setTileData(map, tilesRef.current)) return;
+    // First version of the tiles: the layers go below the tracks.
+    addTileLayers(map, tilesRef.current, map.getLayer(TRACK_LAYER_ID) ? TRACK_LAYER_ID : firstLabelId(map));
+    setTileMode(map, modeRef.current);
+  }, [summary]);
 
   useEffect(() => {
     countriesRef.current = countries;
@@ -177,44 +182,38 @@ export function ActivityMap({ lines, explored, countries, tileMode, label }: Act
     };
   }, [shown, popupNode]);
 
-  const summary = shown && index?.summary(shown.zoom, shown.x, shown.y);
-
   // MapLibre styles its container (`position: relative`): it is wrapped to fill the parent.
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} role="region" aria-label={label} className="size-full" />
       {shown &&
-        summary &&
         createPortal(
-          <TilePopup
-            key={`${shown.zoom}/${shown.x}/${shown.y}`}
-            zoom={shown.zoom}
-            x={shown.x}
-            y={shown.y}
-            summary={summary}
-          />,
+          <TilePopup key={`${shown.zoom}/${shown.x}/${shown.y}`} zoom={shown.zoom} x={shown.x} y={shown.y} />,
           popupNode,
         )}
     </div>
   );
 }
 
+/** Below the first label layer, keeping place names readable. */
+function firstLabelId(map: MapLibreMap): string | undefined {
+  return map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+}
+
 /**
- * The visited tile under the pointer, at the level shown. In the combined
- * view, an unvisited small tile falls back to its large tile.
+ * The visited tile under the pointer or a few pixels from it, at the level
+ * shown, from the tiles drawn. In the combined view, an unvisited small
+ * tile falls back to its large tile.
  */
 function selectTile(
-  index: TileIndex | null,
+  map: MapLibreMap,
   mode: TileMode,
-  mapZoom: number,
-  { lng, lat }: { lng: number; lat: number },
+  { point, lngLat: { lng, lat } }: { point: { x: number; y: number }; lngLat: { lng: number; lat: number } },
 ): SelectedTile | null {
-  const zoom = clickedZoom(mode, mapZoom);
-  if (!index || zoom === null) return null;
-  const candidates: TileZoom[] = mode === "both" && zoom !== TILE_ZOOM ? [zoom, TILE_ZOOM] : [zoom];
-  for (const candidate of candidates) {
-    const [x, y] = tileAt(lng, lat, candidate);
-    if (index.isVisited(candidate, x, y)) return { mode, zoom: candidate, x, y, lngLat: [lng, lat] };
-  }
-  return null;
+  const found = visitedTileNear(map, point, clickableZooms(mode, map.getZoom()));
+  if (!found) return null;
+  const at = found.point === point ? { lng, lat } : map.unproject([found.point.x, found.point.y]);
+  const [x, y] = tileAt(at.lng, at.lat, found.zoom);
+  // The popup stays where the pointer is.
+  return { mode, zoom: found.zoom, x, y, lngLat: [lng, lat] };
 }

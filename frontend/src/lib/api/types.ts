@@ -122,18 +122,38 @@ export interface TileSquare {
   size: number;
 }
 
-/** Shapes drawn on the map for one level of tiles. */
-export interface TileLevelAchievements {
+/** Counters and achievements of one level of tiles. */
+export interface TileLevelSummary {
+  /** Tiles crossed at least once. */
+  visited: number;
+  /** Largest square of visited tiles; null without tiles. */
   maxSquare: TileSquare | null;
-  /** `[x, y]` of each tile of the largest cluster. */
-  maxCluster: [number, number][];
+  /** Tiles of the largest cluster. */
+  maxCluster: number;
+  /** Visited tiles whose four neighbors are visited too. */
+  clustered: number;
 }
 
-export interface TilesResponse {
-  /** `[x, y, mask]`: a large tile (zoom 14) and its small tiles as an unsigned 64-bit decimal mask. */
-  cells: [number, number, string][];
-  tiles: TileLevelAchievements;
-  subtiles: TileLevelAchievements;
+export interface TilesSummary {
+  /** Changes whenever the tiles change: the vector tiles of the map are cached until it does. */
+  version: string;
+  /** False while the achievements of the latest tiles are being computed. */
+  upToDate: boolean;
+  /** Large tiles (zoom 14). */
+  tiles: TileLevelSummary;
+  /** Small tiles (zoom 17). */
+  subtiles: TileLevelSummary;
+}
+
+/** What the map shows about one tile, at the level of its zoom. */
+export interface TileDetails {
+  visited: boolean;
+  /** Small tiles explored inside a large tile; null for a small tile. */
+  subtiles: number | null;
+  /** Its four neighbors are visited too. */
+  clustered: boolean;
+  inMaxCluster: boolean;
+  inMaxSquare: boolean;
 }
 
 /** Activities that crossed one tile. */
@@ -143,6 +163,7 @@ export interface TileVisits {
   lastVisitedAt: string | null;
   /** The latest ones first. */
   recent: { id: string; name: string; sportType: string; startedAt: string }[];
+  tile: TileDetails;
 }
 
 /** Tiles of one level touching a country, and those visited. */

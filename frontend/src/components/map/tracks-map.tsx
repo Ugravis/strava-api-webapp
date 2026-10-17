@@ -9,9 +9,9 @@ import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { routes } from "@/config/routes";
-import { useActivityTracks } from "@/hooks/use-activity-tracks";
+import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
 import { useCountries } from "@/hooks/use-countries";
-import { useTiles } from "@/hooks/use-tiles";
+import { useTileSummary } from "@/hooks/use-tile-summary";
 import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { MapSkeleton } from "./map-skeleton";
 import type { TileMode } from "./tile-layers";
@@ -26,10 +26,12 @@ const ActivityMap = dynamic(() => import("./activity-map").then((module) => modu
   loading: () => <MapSkeleton />,
 });
 
+const NO_LINES: TrackLine[] = [];
+
 export function TracksMap() {
   const t = useTranslations("map");
   const { lines, status, progress, errorCode, retry } = useActivityTracks();
-  const { explored } = useTiles();
+  const { summary } = useTileSummary();
   // Fetched again when new tracks arrive, and while new tiles are located.
   const { version } = useTrackSync();
   const { completion } = useCountries(String(version));
@@ -44,16 +46,19 @@ export function TracksMap() {
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden rounded-xl border">
-      {lines ? (
-        <ActivityMap lines={lines} explored={explored} countries={countries} tileMode={tileMode} label={t("label")} />
-      ) : (
-        <MapSkeleton />
-      )}
+      {/* Drawn at once: the tracks, read from the browser, arrive later. */}
+      <ActivityMap
+        lines={lines ?? NO_LINES}
+        summary={summary}
+        countries={countries}
+        tileMode={tileMode}
+        label={t("label")}
+      />
 
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col items-start gap-2 [&>*]:pointer-events-auto">
         <TracksStatus lines={lines} status={status} progress={progress} />
-        {lines && <TileModeToggle mode={tileMode} onChange={setTileMode} />}
-        {lines && <TileLegend explored={explored} mode={tileMode} />}
+        <TileModeToggle mode={tileMode} onChange={setTileMode} />
+        <TileLegend summary={summary} mode={tileMode} />
       </div>
 
       <div className="pointer-events-none absolute inset-x-3 bottom-8 flex flex-col gap-2 sm:right-auto sm:max-w-md [&>*]:pointer-events-auto">

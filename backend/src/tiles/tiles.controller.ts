@@ -1,14 +1,9 @@
-import { Controller, Get, Header, Param, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, Res } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import type { User } from '../users/user.entity';
-import {
-  subtilePoints,
-  type TilePoint,
-  type TileSquare,
-  tilePoints,
-} from './tile-metrics';
 import { TileParamsDto } from './tile-params.dto';
 import { type TileVisits, TilesService } from './tiles.service';
 import {
@@ -16,20 +11,12 @@ import {
   type TilesSummary,
   UserTilesService,
 } from './user-tiles.service';
-import { VectorTileParamsDto } from './vector-tile-params.dto';
-
-/** Shapes drawn on the map for one level of tiles. */
-export interface LevelAchievements {
-  maxSquare: TileSquare | null;
-  maxCluster: TilePoint[];
-}
-
-export interface TilesResponse {
-  /** `[x, y, mask]`: a large tile (zoom 14) and its small tiles as an unsigned 64-bit decimal mask. */
-  cells: [number, number, string][];
-  tiles: LevelAchievements;
-  subtiles: LevelAchievements;
-}
+import type { Rgba } from './subtile-raster';
+import {
+  RasterTileParamsDto,
+  RasterTileQueryDto,
+  VectorTileParamsDto,
+} from './vector-tile-params.dto';
 
 export interface LevelStats {
   /** Tiles crossed at least once. */
@@ -54,6 +41,11 @@ export interface TileVisitsResponse extends TileVisits {
   tile: TileDetails;
 }
 
+/** `rrggbbaa`, validated by the DTO. */
+function rgba(hex: string): Rgba {
+  return [0, 2, 4, 6].map((i) => parseInt(hex.slice(i, i + 2), 16)) as Rgba;
+}
+
 /** A view of the map loads a few dozen tiles at once. */
 const VECTOR_THROTTLE = { default: { limit: 600, ttl: 60_000 } };
 
@@ -63,30 +55,6 @@ export class TilesController {
     private readonly tiles: TilesService,
     private readonly userTiles: UserTilesService,
   ) {}
-
-  /**
-   * Every tile crossed by the user, including the areas hidden to others.
-   * Grows with the history: replaced by the summary and the vector tiles.
-   */
-  @Get()
-  async list(@CurrentUser() user: User): Promise<TilesResponse> {
-    const [cells, clusters, summary] = await Promise.all([
-      this.userTiles.cells(user.id),
-      this.userTiles.maxClusters(user.id),
-      this.userTiles.summary(user.id),
-    ]);
-    return {
-      cells: cells.map(({ x, y, mask }) => [x, y, mask.toString()]),
-      tiles: {
-        maxSquare: summary.tiles.maxSquare,
-        maxCluster: tilePoints(clusters.tiles),
-      },
-      subtiles: {
-        maxSquare: summary.subtiles.maxSquare,
-        maxCluster: subtilePoints(clusters.subtiles),
-      },
-    };
-  }
 
   /** Counters and achievements of the user, and the version of the tiles for the vector tiles. */
   @Get('summary')
@@ -106,24 +74,78 @@ export class TilesController {
 
   /**
    * Vector tile of the tiles of the user, including the areas hidden to
-   * others: owner only. Requested with the version of the tiles from the
-   * summary (`?v=`), only part of the URL: the browser caches the tiles of
-   * each version.
+   * others: owner only. Revalidated by the browser from its entity tag,
+   * which changes with the tiles it covers.
    */
   @Get('vector/:zoom/:x/:y')
   @Throttle(VECTOR_THROTTLE)
-  @Header('Content-Type', 'application/vnd.mapbox-vector-tile')
-  @Header('Cache-Control', 'private, max-age=31536000, immutable')
   async vector(
     @CurrentUser() user: User,
     @Param() { zoom, x, y }: VectorTileParamsDto,
-  ): Promise<StreamableFile> {
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.sendTile(user, zoom, x, y, request, response, {
+      contentType: 'application/vnd.mapbox-vector-tile',
+      render: () => this.userTiles.vectorTile(user.id, zoom, x, y),
+    });
+  }
+
+  /**
+   * PNG image of the small tiles of the user, including the areas hidden to
+   * others: owner only. Revalidated like the vector tiles; the colors are
+   * those of the map.
+   */
+  @Get('raster/:zoom/:x/:y')
+  @Throttle(VECTOR_THROTTLE)
+  async raster(
+    @CurrentUser() user: User,
+    @Param() { zoom, x, y }: RasterTileParamsDto,
+    @Query() { color, cluster }: RasterTileQueryDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.sendTile(user, zoom, x, y, request, response, {
+      contentType: 'image/png',
+      render: () =>
+        this.userTiles.rasterTile(
+          user.id,
+          zoom,
+          x,
+          y,
+          rgba(color),
+          rgba(cluster),
+        ),
+    });
+  }
+
+  /**
+   * Sends a map tile, or `304 Not Modified` when the browser holds the
+   * current one: only the map tiles whose tiles changed are rendered again.
+   */
+  private async sendTile(
+    user: User,
+    zoom: number,
+    x: number,
+    y: number,
+    request: Request,
+    response: Response,
+    {
+      contentType,
+      render,
+    }: { contentType: string; render: () => Promise<Buffer> },
+  ): Promise<void> {
     if (x >= 2 ** zoom || y >= 2 ** zoom) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such tile');
     }
-    return new StreamableFile(
-      await this.userTiles.vectorTile(user.id, zoom, x, y),
-    );
+    const tag = await this.userTiles.tileTag(user.id, zoom, x, y);
+    response.set({ ETag: tag, 'Cache-Control': 'private, no-cache' });
+    // Compares with the tag held by the browser, weak or not.
+    if (request.fresh) {
+      response.status(304).end();
+      return;
+    }
+    response.type(contentType).send(await render());
   }
 
   /** Details of one tile and the activities that crossed it. */

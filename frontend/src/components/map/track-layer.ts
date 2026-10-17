@@ -4,7 +4,7 @@ import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { TRACK_COLOR } from "./map-style";
 
 const SOURCE_ID = "activity-tracks";
-const LAYER_ID = "activity-tracks-line";
+export const TRACK_LAYER_ID = "activity-tracks-line";
 /** Over the tiles, the tracks only appear once zoomed in on a few streets. */
 const TRACK_MIN_ZOOM_OVER_TILES = 12;
 
@@ -43,7 +43,7 @@ export function addTrackLayer(map: MapLibreMap, data: TrackCollection, beforeId:
   map.addSource(SOURCE_ID, { type: "geojson", data });
   map.addLayer(
     {
-      id: LAYER_ID,
+      id: TRACK_LAYER_ID,
       type: "line",
       source: SOURCE_ID,
       layout: { "line-join": "round", "line-cap": "round" },
@@ -63,6 +63,6 @@ export function setTrackData(map: MapLibreMap, data: TrackCollection): void {
 
 /** Alone, the tracks are drawn at every zoom; over the tiles, only when zoomed in. */
 export function setTracksOverTiles(map: MapLibreMap, overTiles: boolean): void {
-  if (!map.getLayer(LAYER_ID)) return;
-  map.setLayerZoomRange(LAYER_ID, overTiles ? TRACK_MIN_ZOOM_OVER_TILES : 0, 24);
+  if (!map.getLayer(TRACK_LAYER_ID)) return;
+  map.setLayerZoomRange(TRACK_LAYER_ID, overTiles ? TRACK_MIN_ZOOM_OVER_TILES : 0, 24);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid2x2Icon, Grid3x3Icon, LayersIcon, RouteIcon, type LucideIcon } from "lucide-react";
+import { Grid2x2Icon, LayersIcon, RouteIcon, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { TileMode } from "./tile-layers";
@@ -8,7 +8,6 @@ import type { TileMode } from "./tile-layers";
 const MODES: { mode: TileMode; icon: LucideIcon }[] = [
   { mode: "none", icon: RouteIcon },
   { mode: "tiles", icon: Grid2x2Icon },
-  { mode: "subtiles", icon: Grid3x3Icon },
   { mode: "both", icon: LayersIcon },
 ];
 

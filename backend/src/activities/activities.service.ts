@@ -158,6 +158,22 @@ export class ActivitiesService {
     );
   }
 
+  /**
+   * Entity tag of the activities of a user: it changes whenever one is
+   * added, changed or deleted, so that the list of the mappable activities
+   * is only downloaded again when it may have changed.
+   */
+  async listTag(userId: string): Promise<string> {
+    const [row]: { count: number; updated: string | null }[] =
+      await this.activities.query(
+        `SELECT count(*)::int AS count,
+           floor(extract(epoch FROM max(updated_at)) * 1000)::bigint::text AS updated
+         FROM activities WHERE user_id = $1`,
+        [userId],
+      );
+    return `"${row.count}-${row.updated ?? 0}"`;
+  }
+
   /** Activities that may have a track: recorded outdoors, in the real world. */
   mappable(userId: string): Promise<MappableActivity[]> {
     return this.activities

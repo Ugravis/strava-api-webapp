@@ -17,6 +17,7 @@
     "check:shared": "pnpm --filter @strava-webapp/shared check",
     "check-all": "pnpm -r --workspace-concurrency=1 check",
     "db:reset": "pnpm --filter backend db:reset",
+    "db:seed:bench": "pnpm --filter backend db:seed:bench",
     "countries:import": "pnpm --filter backend countries:import"
   }
 }

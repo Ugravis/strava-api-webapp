@@ -103,6 +103,35 @@ A new Strava application only accepts its owner's account until it is reviewed b
   (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
   "Synchroniser" button keep the data up to date. Elsewhere, set `STRAVA_WEBHOOK_CALLBACK_URL`.
 
+## Tiles
+
+The tiles crossed by each activity are stored in `activity_tiles` (one row per activity and large
+tile, the small tiles as a 64-bit mask), so that they follow the deletion and the refinement of
+the activity. The reads never aggregate them:
+
+- **Union per user**: `user_tiles` holds every large tile of each user with all its small tiles.
+  A statement trigger on `activity_tiles` recomputes the cells touched by each insertion or
+  deletion (cascades included) and increments the version of the user's tiles
+  (`user_tile_metrics.version`). An advisory lock per user serializes the refreshes, so that
+  concurrent transactions lose no small tile.
+- **Metrics**: the largest square, the clusters and the counters are computed by a background
+  worker, in a worker thread (about 6 s for 500,000 small tiles, without blocking the API), once
+  the tiles of the user have settled for 2 seconds (at most every 30 seconds during an import).
+  They are stored in `user_tile_metrics`, and the tiles of the largest clusters are marked in
+  `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
+  they are up to date.
+- **Map**: `GET /api/tiles/vector/:zoom/:x/:y?v=<version>` serves the tiles of the user as a
+  vector tile (zoom 0 to 14, tens of KB at most): the large tiles and those of the largest
+  cluster, then from zoom 12 the small tiles and those of their largest cluster. The contiguous
+  tiles of a row are merged below zoom 10, and below zoom 6 the large tiles are grouped by
+  ancestor, about one pixel wide. Cached by the browser for each version of the tiles.
+- **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
+  the map shows about it (cluster, largest square), without loading every tile in the browser.
+- **Large histories**: `pnpm db:seed:bench` (development only) creates the account `bench`
+  (`bench@example.com`, password `BenchPassword123!`) with a synthetic history of 500,000 small
+  tiles over about 50 countries (`pnpm db:seed:bench 100000` for another size), to measure the
+  map and the API. Running it again replaces the account.
+
 ## Countries
 
 The tiles are grouped by country to show the completion of each visited country, on both levels.
@@ -133,7 +162,7 @@ self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes
   (zoom 0 to 10, a few KB each), the union of the tile shapes of the given countries and its outer
   borders: two visited neighbors are drawn as one area, and only the borders with the countries
   not visited follow the tiles. Geography only, cached by the browser for each set of countries
-  until a new shape is computed (`shapesVersion`). Copies of the water layers of the base map
+  until the shape of one of them is computed (`shapesVersion`). Copies of the water layers of the base map
   (sea, lakes, rivers) are drawn over the area, so that the water keeps the same color everywhere.
 - The completion uses every tile of the user, hidden areas included: visible to the owner only.
 
@@ -160,6 +189,7 @@ delete `backend/src/dev`, `frontend/src/components/dev` and their two references
 | `pnpm test`             | Run unit tests                                          |
 | `pnpm build`            | Build all packages                                      |
 | `pnpm countries:import` | Import the country boundaries from Overture Maps        |
+| `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
 The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.
 

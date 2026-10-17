@@ -27,6 +27,7 @@
     "migration:run": "pnpm typeorm migration:run",
     "migration:revert": "pnpm typeorm migration:revert",
     "db:reset": "node --env-file-if-exists=../.env -r ts-node/register src/database/reset.ts",
+    "db:seed:bench": "node --env-file-if-exists=../.env -r ts-node/register src/database/seed-bench.ts",
     "countries:import": "node --env-file-if-exists=../.env -r ts-node/register src/countries/import/import-countries.ts"
   },
   "dependencies": {

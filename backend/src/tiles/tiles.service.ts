@@ -4,13 +4,11 @@ import { DataSource, type EntityManager } from 'typeorm';
 import type { StreamReason } from './activity-tile-state.entity';
 import {
   fromSignedMask,
-  type TileCell,
   SUBTILE_ZOOM,
   TILE_ZOOM,
   TileSet,
   toSignedMask,
 } from './tile-grid';
-import { type LevelMetrics, tileMetrics } from './tile-metrics';
 import type { ActivityTiles, TrackAssessment } from './track-tiles';
 
 /** An activity whose full track is awaited. */
@@ -22,24 +20,6 @@ export interface PendingStream {
   hiddenEndM: number;
   /** Including the current one. */
   attempts: number;
-}
-
-export interface LevelStats {
-  /** Tiles crossed at least once. */
-  visited: number;
-  /** Side of the largest square of visited tiles. */
-  maxSquare: number;
-  /** Tiles of the largest cluster. */
-  maxCluster: number;
-  /** Visited tiles whose four neighbors are visited too. */
-  clustered: number;
-}
-
-export interface TileStats {
-  /** Large tiles (zoom 14). */
-  tiles: LevelStats;
-  /** Small tiles (zoom 17). */
-  subtiles: LevelStats;
 }
 
 /** Activities that crossed one tile. */
@@ -251,34 +231,6 @@ export class TilesService {
       [pending.activityId, pending.userId],
     );
     return row.uncovered === 0;
-  }
-
-  /** Every large tile crossed by the user, with its small tiles. */
-  async cells(userId: string): Promise<TileCell[]> {
-    const rows: { x: number; y: number; mask: string }[] =
-      await this.dataSource.query(
-        `SELECT x, y, bit_or(mask)::text AS mask FROM activity_tiles
-         WHERE user_id = $1
-         GROUP BY x, y
-         HAVING bit_or(mask) <> 0`,
-        [userId],
-      );
-    return rows.map((row) => ({
-      x: row.x,
-      y: row.y,
-      mask: fromSignedMask(row.mask),
-    }));
-  }
-
-  async stats(userId: string): Promise<TileStats> {
-    const metrics = tileMetrics(await this.cells(userId));
-    const level = (metrics: LevelMetrics): LevelStats => ({
-      visited: metrics.visited,
-      maxSquare: metrics.maxSquare?.size ?? 0,
-      maxCluster: metrics.maxCluster.length,
-      clustered: metrics.clustered,
-    });
-    return { tiles: level(metrics.tiles), subtiles: level(metrics.subtiles) };
   }
 
   /**

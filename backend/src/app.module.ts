@@ -7,6 +7,7 @@ import { ActivitiesModule } from './activities/activities.module';
 import { ApiIndexModule } from './api-index/api-index.module';
 import { AuthModule } from './auth/auth.module';
 import { DEFAULT_THROTTLE } from './auth/throttle';
+import { CountriesModule } from './countries/countries.module';
 import { DevModule } from './dev/dev.module';
 import { DistancesModule } from './distances/distances.module';
 import authConfig from './config/auth.config';
@@ -45,6 +46,7 @@ import { UsersModule } from './users/users.module';
     StravaModule,
     DistancesModule,
     TilesModule,
+    CountriesModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),

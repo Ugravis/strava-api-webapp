@@ -1,28 +1,27 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { ExploredTiles } from "@/lib/tiles/tile-geometry";
+import type { TilesSummary } from "@/lib/api/types";
 import { CLUSTER_COLOR, SQUARE_COLOR } from "./map-style";
 import type { TileMode } from "./tile-layers";
 
 const LEVELS: Record<TileMode, ("tiles" | "subtiles")[]> = {
   none: [],
   tiles: ["tiles"],
-  subtiles: ["subtiles"],
   both: ["tiles", "subtiles"],
 };
 
 /** Key of the shapes drawn over the tiles, with their sizes. */
-export function TileLegend({ explored, mode }: { explored: ExploredTiles | null; mode: TileMode }) {
+export function TileLegend({ summary, mode }: { summary: TilesSummary | null; mode: TileMode }) {
   const t = useTranslations("map.legend");
   const levels = LEVELS[mode];
-  if (!explored || levels.length === 0) return null;
+  if (!summary || levels.length === 0) return null;
   const combined = levels.length > 1;
 
   return (
     <ul className="flex flex-col gap-1 rounded-xl border bg-background/90 px-3 py-2 text-xs shadow-sm backdrop-blur">
       {levels.map((level) => {
-        const { maxSquare, maxCluster } = explored[level];
+        const { maxSquare, maxCluster } = summary[level];
         const prefix = combined ? `${t(level)} · ` : "";
         return [
           <li key={`${level}-square`} className="flex items-center gap-2">
@@ -41,10 +40,11 @@ export function TileLegend({ explored, mode }: { explored: ExploredTiles | null;
               aria-hidden
             />
             {prefix}
-            {t("maxCluster", { count: maxCluster.length })}
+            {t("maxCluster", { count: maxCluster })}
           </li>,
         ];
       })}
+      {combined && <li className="text-muted-foreground">{t("zoomForSubtiles")}</li>}
     </ul>
   );
 }

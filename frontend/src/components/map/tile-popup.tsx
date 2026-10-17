@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTileVisits } from "@/hooks/use-tile-visits";
-import { TILE_ZOOM, type TileSummary, type TileZoom } from "@/lib/tiles/tile-geometry";
+import { TILE_ZOOM, type TileZoom } from "@/lib/tiles/tile-geometry";
 
 const SUBTILES_PER_TILE = 64;
 
@@ -13,41 +13,41 @@ interface TilePopupProps {
   zoom: TileZoom;
   x: number;
   y: number;
-  summary: TileSummary;
 }
 
-/** Details of a visited tile: its achievements and the activities that crossed it. */
-export function TilePopup({ zoom, x, y, summary }: TilePopupProps) {
+/** Details of a visited tile: its achievements and the activities that crossed it, loaded from the API. */
+export function TilePopup({ zoom, x, y }: TilePopupProps) {
   const t = useTranslations("map.tilePopup");
   const format = useFormatter();
   const { visits, error } = useTileVisits(zoom, x, y);
+  const tile = visits?.tile;
   const date = (value: string) => format.dateTime(new Date(value), { dateStyle: "medium" });
 
   return (
     <div className="flex w-64 max-w-[calc(100vw-4rem)] flex-col gap-3 text-sm">
       <div className="flex flex-col gap-1.5 pr-5">
         <p className="font-medium">{zoom === TILE_ZOOM ? t("tile") : t("subtile")}</p>
-        {(summary.inMaxSquare || summary.inMaxCluster || summary.clustered) && (
+        {tile && (tile.inMaxSquare || tile.inMaxCluster || tile.clustered) && (
           <div className="flex flex-wrap gap-1">
-            {summary.inMaxSquare && <Badge variant="outline">{t("inMaxSquare")}</Badge>}
-            {summary.inMaxCluster ? (
+            {tile.inMaxSquare && <Badge variant="outline">{t("inMaxSquare")}</Badge>}
+            {tile.inMaxCluster ? (
               <Badge variant="outline">{t("inMaxCluster")}</Badge>
             ) : (
-              summary.clustered && <Badge variant="outline">{t("clustered")}</Badge>
+              tile.clustered && <Badge variant="outline">{t("clustered")}</Badge>
             )}
           </div>
         )}
       </div>
 
-      {summary.subtiles !== null && (
+      {tile && tile.subtiles !== null && (
         <div className="flex flex-col gap-1.5">
           <p className="flex justify-between text-muted-foreground">
             {t("subtiles")}
             <span className="font-medium text-foreground tabular-nums">
-              {summary.subtiles} / {SUBTILES_PER_TILE}
+              {tile.subtiles} / {SUBTILES_PER_TILE}
             </span>
           </p>
-          <Progress value={(summary.subtiles / SUBTILES_PER_TILE) * 100} aria-label={t("subtiles")} />
+          <Progress value={(tile.subtiles / SUBTILES_PER_TILE) * 100} aria-label={t("subtiles")} />
         </div>
       )}
 

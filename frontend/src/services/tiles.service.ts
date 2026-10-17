@@ -1,8 +1,8 @@
 import { apiRequest } from "@/lib/api/client";
-import type { TileStats, TilesResponse, TileVisits } from "@/lib/api/types";
+import type { TileStats, TilesSummary, TileVisits } from "@/lib/api/types";
 
 export const tilesService = {
-  getTiles: () => apiRequest<TilesResponse>("/tiles"),
+  getSummary: () => apiRequest<TilesSummary>("/tiles/summary"),
 
   getStats: () => apiRequest<TileStats>("/tiles/stats"),
 

@@ -32,4 +32,11 @@ export class UserTile {
   /** Whether the large tile belongs to the largest cluster of large tiles, as of the last metrics. */
   @Column({ name: 'in_max_cluster', type: 'boolean', default: false })
   inMaxCluster!: boolean;
+
+  /**
+   * Value of `user_tiles_change_seq` at the last change of the row, taken
+   * under the lock of the user: the map tiles are revalidated from it.
+   */
+  @Column({ name: 'changed_seq', type: 'bigint', default: 0 })
+  changedSeq!: string;
 }

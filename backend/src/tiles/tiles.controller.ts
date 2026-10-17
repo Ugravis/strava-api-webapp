@@ -1,11 +1,5 @@
-import {
-  Controller,
-  Get,
-  Header,
-  Param,
-  Query,
-  StreamableFile,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, Res } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
@@ -80,53 +74,78 @@ export class TilesController {
 
   /**
    * Vector tile of the tiles of the user, including the areas hidden to
-   * others: owner only. Requested with the version of the tiles from the
-   * summary (`?v=`), only part of the URL: the browser caches the tiles of
-   * each version.
+   * others: owner only. Revalidated by the browser from its entity tag,
+   * which changes with the tiles it covers.
    */
   @Get('vector/:zoom/:x/:y')
   @Throttle(VECTOR_THROTTLE)
-  @Header('Content-Type', 'application/vnd.mapbox-vector-tile')
-  @Header('Cache-Control', 'private, max-age=31536000, immutable')
   async vector(
     @CurrentUser() user: User,
     @Param() { zoom, x, y }: VectorTileParamsDto,
-  ): Promise<StreamableFile> {
-    if (x >= 2 ** zoom || y >= 2 ** zoom) {
-      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such tile');
-    }
-    return new StreamableFile(
-      await this.userTiles.vectorTile(user.id, zoom, x, y),
-    );
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.sendTile(user, zoom, x, y, request, response, {
+      contentType: 'application/vnd.mapbox-vector-tile',
+      render: () => this.userTiles.vectorTile(user.id, zoom, x, y),
+    });
   }
 
   /**
    * PNG image of the small tiles of the user, including the areas hidden to
-   * others: owner only. Requested with the version of the tiles, like the
-   * vector tiles, and the colors of the map.
+   * others: owner only. Revalidated like the vector tiles; the colors are
+   * those of the map.
    */
   @Get('raster/:zoom/:x/:y')
   @Throttle(VECTOR_THROTTLE)
-  @Header('Content-Type', 'image/png')
-  @Header('Cache-Control', 'private, max-age=31536000, immutable')
   async raster(
     @CurrentUser() user: User,
     @Param() { zoom, x, y }: RasterTileParamsDto,
     @Query() { color, cluster }: RasterTileQueryDto,
-  ): Promise<StreamableFile> {
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.sendTile(user, zoom, x, y, request, response, {
+      contentType: 'image/png',
+      render: () =>
+        this.userTiles.rasterTile(
+          user.id,
+          zoom,
+          x,
+          y,
+          rgba(color),
+          rgba(cluster),
+        ),
+    });
+  }
+
+  /**
+   * Sends a map tile, or `304 Not Modified` when the browser holds the
+   * current one: only the map tiles whose tiles changed are rendered again.
+   */
+  private async sendTile(
+    user: User,
+    zoom: number,
+    x: number,
+    y: number,
+    request: Request,
+    response: Response,
+    {
+      contentType,
+      render,
+    }: { contentType: string; render: () => Promise<Buffer> },
+  ): Promise<void> {
     if (x >= 2 ** zoom || y >= 2 ** zoom) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such tile');
     }
-    return new StreamableFile(
-      await this.userTiles.rasterTile(
-        user.id,
-        zoom,
-        x,
-        y,
-        rgba(color),
-        rgba(cluster),
-      ),
-    );
+    const tag = await this.userTiles.tileTag(user.id, zoom, x, y);
+    response.set({ ETag: tag, 'Cache-Control': 'private, no-cache' });
+    // Compares with the tag held by the browser, weak or not.
+    if (request.fresh) {
+      response.status(304).end();
+      return;
+    }
+    response.type(contentType).send(await render());
   }
 
   /** Details of one tile and the activities that crossed it. */

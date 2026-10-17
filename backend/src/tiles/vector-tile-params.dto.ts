@@ -1,24 +1,24 @@
 import { Type } from 'class-transformer';
 import { IsInt, IsString, Matches, Max, Min } from 'class-validator';
-import { RASTER_MIN_ZOOM, VECTOR_MAX_ZOOM } from './user-tiles.service';
+import { RASTER_MIN_ZOOM, TILES_MAX_ZOOM } from './user-tiles.service';
 
 export class VectorTileParamsDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(VECTOR_MAX_ZOOM)
+  @Max(TILES_MAX_ZOOM)
   zoom!: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(2 ** VECTOR_MAX_ZOOM - 1)
+  @Max(2 ** TILES_MAX_ZOOM - 1)
   x!: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(2 ** VECTOR_MAX_ZOOM - 1)
+  @Max(2 ** TILES_MAX_ZOOM - 1)
   y!: number;
 }
 
@@ -26,19 +26,19 @@ export class RasterTileParamsDto {
   @Type(() => Number)
   @IsInt()
   @Min(RASTER_MIN_ZOOM)
-  @Max(VECTOR_MAX_ZOOM)
+  @Max(TILES_MAX_ZOOM)
   zoom!: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(2 ** VECTOR_MAX_ZOOM - 1)
+  @Max(2 ** TILES_MAX_ZOOM - 1)
   x!: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(2 ** VECTOR_MAX_ZOOM - 1)
+  @Max(2 ** TILES_MAX_ZOOM - 1)
   y!: number;
 }
 

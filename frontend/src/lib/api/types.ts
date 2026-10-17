@@ -1,3 +1,5 @@
+import type { FeatureCollection, MultiPolygon } from "geojson";
+
 export interface User {
   id: string;
   email: string;
@@ -144,3 +146,30 @@ export interface TileVisits {
   /** The latest ones first. */
   recent: { id: string; name: string; sportType: string; startedAt: string }[];
 }
+
+/** Tiles of one level touching a country, and those visited. */
+export interface CountryLevelCompletion {
+  visited: number;
+  /** Null while the total is being computed. */
+  total: number | null;
+}
+
+/** Completion of a country visited by the user. */
+export interface CountryCompletion {
+  /** ISO 3166-1 alpha-2 code. */
+  code: string;
+  /** Large tiles (zoom 14). */
+  tiles: CountryLevelCompletion;
+  /** Small tiles (zoom 17). */
+  subtiles: CountryLevelCompletion;
+}
+
+export interface CountriesCompletion {
+  /** Most visited first. */
+  countries: CountryCompletion[];
+  /** Visited large tiles whose countries are not known yet. */
+  pendingTiles: number;
+}
+
+/** Simplified outlines of the countries visited by the user. */
+export type CountryOutlines = FeatureCollection<MultiPolygon, { code: string }>;

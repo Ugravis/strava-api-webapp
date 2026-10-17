@@ -126,8 +126,8 @@ the activity. The reads never aggregate them:
 - **Map**: `GET /api/tiles/vector/:zoom/:x/:y` serves the tiles of the user as a vector tile (zoom 0
   to 12, the map stretches them beyond): the visited large tiles merged into one area, its outline
   (from zoom 10), the area of the largest cluster, and at zoom 12 the small tiles, only to pick them
-  on the map. Below zoom 4, the large tiles are grouped by ancestor, about one pixel of a high
-  density screen. The small tiles are drawn from images,
+  on the map. Zoomed out, the large tiles are grouped by ancestor, one pixel of a map tile (two
+  at zoom 5). The small tiles are drawn from images,
   `GET /api/tiles/raster/:zoom/:x/:y?color=<rrggbbaa>&cluster=<rrggbbaa>` (512 pixels PNG, zoom 5
   to 12, tens of KB at most whatever the density), from the zoom of a whole country.
 - **Revalidation**: each map tile has an entity tag made of the number of rows of `user_tiles` it
@@ -136,9 +136,23 @@ the activity. The reads never aggregate them:
   when the content of the tiles changes). The browser revalidates every tile (`no-cache`): after a
   synchronization, only the map tiles crossed by the new activities are rendered and downloaded
   again, the others answer `304 Not Modified` in a few milliseconds.
-- **Display**: in the combined view, the small tiles fade in between zooms 5 and 6 over the large
-  tiles, which keep their color; the grids fade in from zoom 12 (large tiles) and 15 (small tiles).
-  A click picks the tile under the pointer or a few pixels from it.
+- **Display**: nothing floats over the map but its zoom buttons: a band below it holds the key
+  figures of each layer (visited tiles, largest cluster and square, number of tracks), the keys of
+  their colors, and the checkboxes of the tracks and the small tiles, both shown by default; the
+  large tiles are always drawn. The base map is the OpenFreeMap Positron style, recolored for each
+  theme (`components/map/map-style.ts`): beige land, desaturated outside the visited countries,
+  flat grey roads, blue water, green tiles, pink largest squares and raspberry tracks. Text and
+  lines keep a contrast of 4.5:1 and 3:1 with the land.
+- **Layers**: the visited countries and the tiles are the ground of the map, right over its bare
+  land: vegetation (translucent), water, buildings, roads and names stay visible over them. The
+  roads appear later than in the base style (motorways from zoom 6, major roads from 9, minor
+  roads from 12, paths from 15), each class fading in from the zoom its data arrives at; the
+  waterways and rivers fade in between zooms 8 and 10, the buildings between 13 and 14.5.
+- **Zoom**: zoomed out, the tiles are drawn at their strongest. Between zooms 10 and 11, the large
+  tiles take the look of the largest cluster and the small tiles lighten: zoomed in, the small
+  tiles stand out over a quiet ground. The small tiles fade in between zooms 5 and 6, the grids
+  from zoom 11 (large tiles) and 14 (small tiles), the tracks between zooms 12 and 14. A click
+  picks the tile under the pointer or a few pixels from it.
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
   the map shows about it (cluster, largest square), without loading every tile in the browser.
 - **Large histories**: `pnpm db:seed:bench` (development only) creates the account `bench`

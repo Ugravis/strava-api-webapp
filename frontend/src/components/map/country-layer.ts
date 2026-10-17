@@ -1,5 +1,6 @@
-import type { LayerSpecification, Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
-import { COUNTRY_COLOR } from "./map-style";
+import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
+import { firstGroundLayerId, type MapPalette } from "./map-style";
+import { TILE_FILL_LAYER_ID } from "./tile-layers";
 
 /** Countries visited by the user and the version of the shapes, from the completion. */
 export interface VisitedCountries {
@@ -20,11 +21,6 @@ const FILL_ID = "visited-countries-fill";
 /** Zoom from which the borders of the visited area fade in. */
 const BORDER_MIN_ZOOM = 7;
 const LINE_ID = "visited-countries-line";
-const WATER_MASK_PREFIX = "visited-countries-water-";
-/** The shapes go below these layers of the base map: roads, buildings and borders stay readable. */
-const ABOVE_SOURCE_LAYERS = new Set(["transportation", "building", "aeroway", "boundary"]);
-/** Water of the base map, drawn again over the shapes. */
-const WATER_SOURCE_LAYERS = new Set(["water", "waterway"]);
 
 /** The countries are part of the URL, sorted: the browser caches each set of countries. */
 function tilesUrl({ codes, shapesVersion }: VisitedCountries & { shapesVersion: string }): string {
@@ -33,22 +29,19 @@ function tilesUrl({ codes, shapesVersion }: VisitedCountries & { shapesVersion: 
   return `${window.location.origin}/api/countries/shapes/{z}/{x}/{y}?countries=${countries}&v=${shapesVersion}`;
 }
 
-function sourceLayerOf(layer: LayerSpecification): string | undefined {
-  return "source-layer" in layer ? layer["source-layer"] : undefined;
-}
-
 /**
  * Adds the visited countries, merged by the backend into one area made of
- * the large tiles touching them, over the land of the base map: only the
- * borders with the countries not visited follow the tiles. Copies of its
- * water layers then hide the parts of the border tiles at sea, on lakes and
- * rivers: the water keeps the same color everywhere.
+ * the large tiles touching them, as the ground of the map: only the borders
+ * with the countries not visited follow the tiles, and the water of the
+ * base map, drawn over them, hides the parts of the border tiles at sea.
  */
-function addCountryLayers(map: MapLibreMap, countries: VisitedCountries & { shapesVersion: string }): void {
-  const layers = map.getStyle().layers;
-  const beforeId =
-    layers.find((layer) => ABOVE_SOURCE_LAYERS.has(sourceLayerOf(layer) ?? ""))?.id ??
-    layers.find((layer) => layer.type === "symbol")?.id;
+function addCountryLayers(
+  map: MapLibreMap,
+  countries: VisitedCountries & { shapesVersion: string },
+  palette: MapPalette,
+): void {
+  // Below the tiles when they are drawn first.
+  const beforeId = map.getLayer(TILE_FILL_LAYER_ID) ? TILE_FILL_LAYER_ID : firstGroundLayerId(map);
   map.addSource(SOURCE_ID, {
     type: "vector",
     tiles: [tilesUrl(countries)],
@@ -60,7 +53,7 @@ function addCountryLayers(map: MapLibreMap, countries: VisitedCountries & { shap
       type: "fill",
       source: SOURCE_ID,
       "source-layer": AREA_SOURCE_LAYER,
-      paint: { "fill-color": COUNTRY_COLOR, "fill-opacity": 0.12 },
+      paint: { "fill-color": palette.country, "fill-opacity": palette.countryOpacity },
     },
     beforeId,
   );
@@ -74,28 +67,22 @@ function addCountryLayers(map: MapLibreMap, countries: VisitedCountries & { shap
       // coasts would be a scribble: they appear once the tiles are visible.
       minzoom: BORDER_MIN_ZOOM,
       paint: {
-        "line-color": COUNTRY_COLOR,
-        "line-opacity": ["interpolate", ["linear"], ["zoom"], BORDER_MIN_ZOOM, 0, BORDER_MIN_ZOOM + 1, 0.4],
-        "line-width": 1,
+        "line-color": palette.countryBorder,
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], BORDER_MIN_ZOOM, 0, BORDER_MIN_ZOOM + 1, 0.35],
+        "line-width": 0.8,
       },
     },
     beforeId,
   );
-  // Same source as the base map: no extra download.
-  for (const layer of layers) {
-    if (WATER_SOURCE_LAYERS.has(sourceLayerOf(layer) ?? "") && (layer.type === "fill" || layer.type === "line")) {
-      map.addLayer({ ...layer, id: `${WATER_MASK_PREFIX}${layer.id}` }, beforeId);
-    }
-  }
 }
 
 /** Shows the visited countries, adding the layers once there are shapes. */
-export function setVisitedCountries(map: MapLibreMap, countries: VisitedCountries): void {
+export function setVisitedCountries(map: MapLibreMap, countries: VisitedCountries, palette: MapPalette): void {
   const { shapesVersion } = countries;
   if (!shapesVersion) return;
   const source = map.getSource<VectorTileSource>(SOURCE_ID);
   if (!source) {
-    addCountryLayers(map, { ...countries, shapesVersion });
+    addCountryLayers(map, { ...countries, shapesVersion }, palette);
     return;
   }
   const url = tilesUrl({ ...countries, shapesVersion });

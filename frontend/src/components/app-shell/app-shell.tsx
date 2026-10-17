@@ -22,7 +22,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
           <AppSidebar user={user} />
           <SidebarInset>
             <AppHeader />
-            <div className="flex flex-1 flex-col p-4 md:p-6">{children}</div>
+            {children}
           </SidebarInset>
         </SidebarProvider>
       </TrackSyncProvider>

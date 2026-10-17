@@ -29,6 +29,8 @@
     "settings": "Paramètres",
     "logout": "Déconnexion",
     "openMenu": "Ouvrir le menu",
+    "collapseMenu": "Réduire le menu",
+    "expandMenu": "Agrandir le menu",
     "userMenu": "Menu du compte"
   },
   "theme": {
@@ -296,27 +298,22 @@
   },
   "map": {
     "title": "Carte",
-    "description": "Toutes tes activités sur une seule carte.",
     "label": "Carte de tes activités",
     "checking": "Recherche de nouveaux tracés…",
     "syncing": "Récupération des tracés : {fetched} sur {total}",
-    "trackCount": "{count, plural, =0 {Aucun tracé} one {# tracé} other {# tracés}}",
     "empty": "Connecte Strava depuis le tableau de bord pour voir tes tracés ici.",
     "error": "Impossible de récupérer tes tracés pour le moment.",
     "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
     "retry": "Réessayer",
-    "tileMode": {
-      "label": "Affichage des tuiles",
-      "none": "Tracés",
-      "tiles": "Tuiles",
-      "both": "Les deux"
-    },
-    "legend": {
-      "tiles": "Tuiles",
-      "subtiles": "Petites",
-      "maxSquare": "Plus grand carré : {size} × {size}",
-      "maxCluster": "Plus grand cluster : {count, plural, =0 {aucun} one {# tuile} other {# tuiles}}",
-      "zoomForSubtiles": "Zoome pour voir les petites tuiles"
+    "stats": {
+      "label": "Chiffres clés de la carte",
+      "tracks": "Tracés",
+      "trackCount": "{count, plural, one {tracé} other {tracés}}",
+      "tiles": "Grandes tuiles",
+      "subtiles": "Petites tuiles",
+      "visited": "Visitées",
+      "maxCluster": "Plus grand cluster",
+      "maxSquare": "Carré max"
     },
     "tilePopup": {
       "tile": "Tuile",

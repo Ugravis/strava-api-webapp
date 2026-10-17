@@ -9,7 +9,7 @@ import type { TrackLine } from "@/hooks/use-activity-tracks";
 import type { TilesSummary } from "@/lib/api/types";
 import { tileAt, type TileZoom } from "@/lib/tiles/tile-geometry";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
-import { DEFAULT_VIEW, mapStyleUrl } from "./map-style";
+import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
 import {
   addTileLayers,
   CLICKABLE_LAYERS,
@@ -27,8 +27,8 @@ import {
   addTrackLayer,
   boundsOf,
   setTrackData,
-  setTracksOverTiles,
-  TRACK_LAYER_ID,
+  setTracksVisible,
+  TRACK_CASING_LAYER_ID,
   type TrackCollection,
   trackCollection,
 } from "./track-layer";
@@ -43,6 +43,7 @@ interface ActivityMapProps {
   summary: TilesSummary | null;
   countries: VisitedCountries;
   tileMode: TileMode;
+  showTracks: boolean;
   label: string;
 }
 
@@ -56,7 +57,7 @@ interface SelectedTile {
 }
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, summary, countries, tileMode, label }: ActivityMapProps) {
+export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -68,23 +69,36 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
   // while any tile of the base map is loading.
   const styleReadyRef = useRef(false);
   const modeRef = useRef(tileMode);
+  const showTracksRef = useRef(showTracks);
   const framedRef = useRef(false);
-  const initialStyleRef = useRef(mapStyleUrl(resolvedTheme));
+  const palette = mapPalette(resolvedTheme);
+  const paletteRef = useRef(palette);
 
   const [selected, setSelected] = useState<SelectedTile | null>(null);
   // The popup content is rendered by React, inside the node MapLibre positions.
   const [popupNode] = useState(() => document.createElement("div"));
 
+  // Before the creation of the map: a hot reload of the code recreates the
+  // map with the colors of the new code, instead of loading its style twice.
+  useEffect(() => {
+    if (palette === paletteRef.current) return;
+    paletteRef.current = palette;
+    styleReadyRef.current = false;
+    if (mapRef.current) setBaseStyle(mapRef.current, palette);
+  }, [palette]);
+
   useEffect(() => {
     if (!containerRef.current) return;
+    // A new map, its style not loaded yet: the layers wait for it.
+    styleReadyRef.current = false;
     const map = new MapLibreMap({
       container: containerRef.current,
-      style: initialStyleRef.current,
       ...DEFAULT_VIEW,
       attributionControl: { compact: true },
       dragRotate: false,
       pitchWithRotate: false,
     });
+    setBaseStyle(map, paletteRef.current);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {
@@ -92,11 +106,10 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
       // Below the first label layer, keeping place names readable; tracks
       // over tiles. The countries go lower, below the roads.
       const firstLabel = firstLabelId(map);
-      setVisitedCountries(map, countriesRef.current);
-      addTileLayers(map, tilesRef.current, firstLabel);
-      addTrackLayer(map, tracksRef.current, firstLabel);
+      setVisitedCountries(map, countriesRef.current, paletteRef.current);
+      addTileLayers(map, tilesRef.current, paletteRef.current, firstLabel);
+      addTrackLayer(map, tracksRef.current, paletteRef.current, showTracksRef.current, firstLabel);
       setTileMode(map, modeRef.current);
-      setTracksOverTiles(map, modeRef.current !== "none");
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
     // The tracks arrive after the map: once the user has moved it, they no
@@ -115,14 +128,6 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
       mapRef.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    const url = mapStyleUrl(resolvedTheme);
-    if (url === initialStyleRef.current) return;
-    initialStyleRef.current = url;
-    styleReadyRef.current = false;
-    mapRef.current?.setStyle(url);
-  }, [resolvedTheme]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -144,24 +149,28 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
     // Before the style is loaded, the layers get the tiles on load.
     if (!map || !styleReadyRef.current || setTileData(map, tilesRef.current)) return;
     // First version of the tiles: the layers go below the tracks.
-    addTileLayers(map, tilesRef.current, map.getLayer(TRACK_LAYER_ID) ? TRACK_LAYER_ID : firstLabelId(map));
+    const beforeId = map.getLayer(TRACK_CASING_LAYER_ID) ? TRACK_CASING_LAYER_ID : firstLabelId(map);
+    addTileLayers(map, tilesRef.current, paletteRef.current, beforeId);
     setTileMode(map, modeRef.current);
   }, [summary]);
 
   useEffect(() => {
     countriesRef.current = countries;
     // Before the style is loaded, the layers get the countries on load.
-    if (mapRef.current && styleReadyRef.current) setVisitedCountries(mapRef.current, countries);
+    if (mapRef.current && styleReadyRef.current) setVisitedCountries(mapRef.current, countries, paletteRef.current);
   }, [countries]);
 
   useEffect(() => {
     modeRef.current = tileMode;
     // Layers not added yet get the mode once the style is loaded.
-    if (mapRef.current) {
-      setTileMode(mapRef.current, tileMode);
-      setTracksOverTiles(mapRef.current, tileMode !== "none");
-    }
+    if (mapRef.current) setTileMode(mapRef.current, tileMode);
   }, [tileMode]);
+
+  useEffect(() => {
+    showTracksRef.current = showTracks;
+    // A layer not added yet is shown or hidden once the style is loaded.
+    if (mapRef.current) setTracksVisible(mapRef.current, showTracks);
+  }, [showTracks]);
 
   const shown = selected?.mode === tileMode ? selected : null;
 
@@ -193,6 +202,14 @@ export function ActivityMap({ lines, summary, countries, tileMode, label }: Acti
         )}
     </div>
   );
+}
+
+/**
+ * Loads the base style in the colors of `palette`, from scratch: the custom
+ * layers, dropped, are added again with the new colors once it is loaded.
+ */
+function setBaseStyle(map: MapLibreMap, palette: MapPalette): void {
+  map.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
 }
 
 /** Below the first label layer, keeping place names readable. */

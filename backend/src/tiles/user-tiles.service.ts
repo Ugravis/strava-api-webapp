@@ -6,7 +6,6 @@ import {
   fromSignedMask,
   SUBTILE_ZOOM,
   TILE_ZOOM,
-  type TileCell,
 } from './tile-grid';
 import type { StoredLevelMetrics, StoredMetrics } from './tile-metrics';
 import type { PackedCells, PackedMetrics } from './tile-metrics-packing';
@@ -55,7 +54,7 @@ const MAX_METRICS_AGE = "interval '30 seconds'";
 /** Deepest zoom of the vector tiles: the map stretches them beyond. */
 export const VECTOR_MAX_ZOOM = TILE_ZOOM;
 /** The small tiles are only served from this zoom, where they span a few pixels. */
-export const VECTOR_SUBTILE_MIN_ZOOM = 12;
+export const VECTOR_SUBTILE_MIN_ZOOM = 13;
 /**
  * From this zoom, each large tile is a feature of its own; below, the
  * contiguous tiles of a row are merged, which keeps the tiles small.
@@ -141,44 +140,6 @@ export class UserTilesService {
       upToDate: row.metrics_version === row.version,
       tiles: row.metrics?.tiles ?? EMPTY_LEVEL,
       subtiles: row.metrics?.subtiles ?? EMPTY_LEVEL,
-    };
-  }
-
-  /** Every large tile crossed by the user, with its small tiles. */
-  async cells(userId: string): Promise<TileCell[]> {
-    const rows: { x: number; y: number; mask: string }[] =
-      await this.dataSource.query(
-        'SELECT x, y, mask::text FROM user_tiles WHERE user_id = $1',
-        [userId],
-      );
-    return rows.map(({ x, y, mask }) => ({ x, y, mask: fromSignedMask(mask) }));
-  }
-
-  /** Large tiles of the largest cluster, and small tiles of the largest cluster grouped by large tile. */
-  async maxClusters(
-    userId: string,
-  ): Promise<{ tiles: TileCell[]; subtiles: TileCell[] }> {
-    const rows: {
-      x: number;
-      y: number;
-      in_max_cluster: boolean;
-      max_cluster_mask: string;
-    }[] = await this.dataSource.query(
-      `SELECT x, y, in_max_cluster, max_cluster_mask::text FROM user_tiles
-       WHERE user_id = $1 AND (in_max_cluster OR max_cluster_mask <> 0)`,
-      [userId],
-    );
-    return {
-      tiles: rows
-        .filter((row) => row.in_max_cluster)
-        .map(({ x, y }) => ({ x, y, mask: -1n })),
-      subtiles: rows
-        .filter((row) => row.max_cluster_mask !== '0')
-        .map(({ x, y, max_cluster_mask }) => ({
-          x,
-          y,
-          mask: fromSignedMask(max_cluster_mask),
-        })),
     };
   }
 

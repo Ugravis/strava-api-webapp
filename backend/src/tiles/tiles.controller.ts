@@ -3,12 +3,6 @@ import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import type { User } from '../users/user.entity';
-import {
-  subtilePoints,
-  type TilePoint,
-  type TileSquare,
-  tilePoints,
-} from './tile-metrics';
 import { TileParamsDto } from './tile-params.dto';
 import { type TileVisits, TilesService } from './tiles.service';
 import {
@@ -17,19 +11,6 @@ import {
   UserTilesService,
 } from './user-tiles.service';
 import { VectorTileParamsDto } from './vector-tile-params.dto';
-
-/** Shapes drawn on the map for one level of tiles. */
-export interface LevelAchievements {
-  maxSquare: TileSquare | null;
-  maxCluster: TilePoint[];
-}
-
-export interface TilesResponse {
-  /** `[x, y, mask]`: a large tile (zoom 14) and its small tiles as an unsigned 64-bit decimal mask. */
-  cells: [number, number, string][];
-  tiles: LevelAchievements;
-  subtiles: LevelAchievements;
-}
 
 export interface LevelStats {
   /** Tiles crossed at least once. */
@@ -63,30 +44,6 @@ export class TilesController {
     private readonly tiles: TilesService,
     private readonly userTiles: UserTilesService,
   ) {}
-
-  /**
-   * Every tile crossed by the user, including the areas hidden to others.
-   * Grows with the history: replaced by the summary and the vector tiles.
-   */
-  @Get()
-  async list(@CurrentUser() user: User): Promise<TilesResponse> {
-    const [cells, clusters, summary] = await Promise.all([
-      this.userTiles.cells(user.id),
-      this.userTiles.maxClusters(user.id),
-      this.userTiles.summary(user.id),
-    ]);
-    return {
-      cells: cells.map(({ x, y, mask }) => [x, y, mask.toString()]),
-      tiles: {
-        maxSquare: summary.tiles.maxSquare,
-        maxCluster: tilePoints(clusters.tiles),
-      },
-      subtiles: {
-        maxSquare: summary.subtiles.maxSquare,
-        maxCluster: subtilePoints(clusters.subtiles),
-      },
-    };
-  }
 
   /** Counters and achievements of the user, and the version of the tiles for the vector tiles. */
   @Get('summary')

@@ -71,7 +71,7 @@ services:
       ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-development-encryption-secret}
       STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID:-}
       STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:-}
-      STRAVA_SYNC_MAX_ACTIVITIES: ${STRAVA_SYNC_MAX_ACTIVITIES:-200}
+      STRAVA_SYNC_MAX_ACTIVITIES: ${STRAVA_SYNC_MAX_ACTIVITIES:-}
       STRAVA_WEBHOOK_VERIFY_TOKEN: ${STRAVA_WEBHOOK_VERIFY_TOKEN:-development-webhook-verify-token}
       STRAVA_WEBHOOK_CALLBACK_URL: ${STRAVA_WEBHOOK_CALLBACK_URL:-}
       # Hostname of the optional quick tunnel below (`--profile tunnel`).

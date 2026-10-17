@@ -177,16 +177,43 @@ function TilesSection({
 }) {
   const t = useTranslations("map.stats");
   const format = useFormatter();
-  const value = (render: (summary: TileLevelSummary) => string) => (summary ? render(summary) : <ValueSkeleton />);
+  const value = (render: (summary: TileLevelSummary) => ReactNode) => (summary ? render(summary) : <ValueSkeleton />);
   const size = (summary: TileLevelSummary) => summary.maxSquare?.size ?? 0;
+  /** A figure and the share of the visited tiles it covers; a small share keeps two significant digits rather than rounding to 0 %. */
+  const withShare = (text: string, tiles: number, { visited }: TileLevelSummary) => {
+    const share = visited > 0 ? tiles / visited : 0;
+    return (
+      <>
+        {text}
+        {visited > 0 && (
+          <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+            {format.number(
+              share,
+              share > 0 && share < 0.01
+                ? { style: "percent", maximumSignificantDigits: 2 }
+                : { style: "percent", maximumFractionDigits: 1 },
+            )}
+          </span>
+        )}
+      </>
+    );
+  };
 
   return (
     <StatsSection title={t(level)} checked={checked} onCheckedChange={onCheckedChange} columns>
       <Stat value={value((s) => format.number(s.visited))} label={t("visited")} colorKey={<TileKey subtiles={level === "subtiles"} />} />
-      <Stat value={value((s) => `${size(s)} × ${size(s)}`)} label={t("maxSquare")} colorKey={<SquareKey />} />
-      <Stat value={value((s) => format.number(s.maxCluster))} label={t("maxCluster")} colorKey={<ClusterKey subtiles={level === "subtiles"} />} />
       <Stat
-        value={value((s) => format.number(s.clustered - s.maxCluster))}
+        value={value((s) => withShare(`${size(s)} × ${size(s)}`, size(s) ** 2, s))}
+        label={t("maxSquare")}
+        colorKey={<SquareKey />}
+      />
+      <Stat
+        value={value((s) => withShare(format.number(s.maxCluster), s.maxCluster, s))}
+        label={t("maxCluster")}
+        colorKey={<ClusterKey subtiles={level === "subtiles"} />}
+      />
+      <Stat
+        value={value((s) => withShare(format.number(s.clustered - s.maxCluster), s.clustered - s.maxCluster, s))}
         label={t("otherClusters")}
         colorKey={<OtherClusterKey subtiles={level === "subtiles"} />}
         toggle={clusters}

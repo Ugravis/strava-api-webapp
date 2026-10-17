@@ -53,6 +53,14 @@ export interface TileActivitiesPage {
   next: string | null;
 }
 
+/** Tiles crossed by one activity, as `[x, y]` pairs of each level. */
+export interface ActivityTilesResponse {
+  /** Large tiles (zoom 14). */
+  tiles: [number, number][];
+  /** Small tiles (zoom 17). */
+  subtiles: [number, number][];
+}
+
 export interface TileProgress {
   activities: number;
   /** Activities whose tiles are computed, at least from the simplified track. */
@@ -352,6 +360,37 @@ export class TilesService {
             })
           : null,
     };
+  }
+
+  /** Tiles crossed by one activity of the user; null when the user has no such activity. */
+  async activityTiles(
+    userId: string,
+    activityId: string,
+  ): Promise<ActivityTilesResponse | null> {
+    const [activity]: unknown[] = await this.dataSource.query(
+      'SELECT 1 FROM activities WHERE id = $1 AND user_id = $2',
+      [activityId, userId],
+    );
+    if (!activity) return null;
+    const rows: { x: number; y: number; mask: string }[] =
+      await this.dataSource.query(
+        'SELECT x, y, mask FROM activity_tiles WHERE activity_id = $1 AND user_id = $2',
+        [activityId, userId],
+      );
+    const side = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
+    const subtiles: [number, number][] = [];
+    for (const row of rows) {
+      const mask = fromSignedMask(row.mask);
+      for (let bit = 0; bit < side * side; bit++) {
+        if ((mask >> BigInt(bit)) & 1n) {
+          subtiles.push([
+            row.x * side + (bit % side),
+            row.y * side + Math.floor(bit / side),
+          ]);
+        }
+      }
+    }
+    return { tiles: rows.map((row) => [row.x, row.y]), subtiles };
   }
 
   /**

@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -7,6 +15,7 @@ import type { User } from '../users/user.entity';
 import { TileActivitiesQueryDto, TileParamsDto } from './tile-params.dto';
 import { decodeTileActivitiesCursor } from './tile-activities-cursor';
 import {
+  type ActivityTilesResponse,
   type TileActivitiesPage,
   type TileVisits,
   TilesService,
@@ -152,6 +161,19 @@ export class TilesController {
       return;
     }
     response.type(contentType).send(await render());
+  }
+
+  /** Tiles crossed by one activity of the user. */
+  @Get('activity/:id')
+  async activityTiles(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ActivityTilesResponse> {
+    const tiles = await this.tiles.activityTiles(user.id, id);
+    if (!tiles) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such activity');
+    }
+    return tiles;
   }
 
   /** The activities that crossed one tile, the latest ones first, one page at a time. */

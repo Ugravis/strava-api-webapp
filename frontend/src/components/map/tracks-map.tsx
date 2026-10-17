@@ -4,13 +4,15 @@ import { CircleAlertIcon, InfoIcon, RefreshCwIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { routes } from "@/config/routes";
 import { useActivityTracks } from "@/hooks/use-activity-tracks";
-import { useCountryOutlines } from "@/hooks/use-country-outlines";
+import { useCountries } from "@/hooks/use-countries";
 import { useTiles } from "@/hooks/use-tiles";
+import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { MapSkeleton } from "./map-skeleton";
 import type { TileMode } from "./tile-layers";
 import { TileLegend } from "./tile-legend";
@@ -28,7 +30,16 @@ export function TracksMap() {
   const t = useTranslations("map");
   const { lines, status, progress, errorCode, retry } = useActivityTracks();
   const { explored } = useTiles();
-  const countries = useCountryOutlines();
+  // Fetched again when new tracks arrive, and while new tiles are located.
+  const { version } = useTrackSync();
+  const { completion } = useCountries(String(version));
+  const countries = useMemo<VisitedCountries>(
+    () =>
+      completion
+        ? { codes: completion.countries.map((country) => country.code), shapesVersion: completion.shapesVersion }
+        : NO_COUNTRIES,
+    [completion],
+  );
   const [tileMode, setTileMode] = useState<TileMode>("tiles");
 
   return (

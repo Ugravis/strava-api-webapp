@@ -1,5 +1,3 @@
-import type { FeatureCollection, MultiPolygon } from "geojson";
-
 export interface User {
   id: string;
   email: string;
@@ -169,7 +167,6 @@ export interface CountriesCompletion {
   countries: CountryCompletion[];
   /** Visited large tiles whose countries are not known yet. */
   pendingTiles: number;
+  /** Changes with the shapes of the countries drawn on the map; null without shapes. */
+  shapesVersion: string | null;
 }
-
-/** Simplified outlines of the countries visited by the user. */
-export type CountryOutlines = FeatureCollection<MultiPolygon, { code: string }>;

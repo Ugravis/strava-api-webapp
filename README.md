@@ -87,9 +87,9 @@ A new Strava application only accepts its owner's account until it is reviewed b
   expires. Revoking deletes the connection and every activity imported from Strava; so does a
   revocation made from Strava, once confirmed.
 - **Synchronization**: a background worker processes a job queue stored in PostgreSQL, so jobs
-  survive restarts. The first import reads the most recent activities, up to
-  `STRAVA_SYNC_MAX_ACTIVITIES` (200 by default in Docker: the largest page Strava returns, so a
-  single request). The Strava quotas (100 read requests per
+  survive restarts. The first import reads the whole history, 200 activities per request
+  (the largest page Strava returns); `STRAVA_SYNC_MAX_ACTIVITIES` caps it to the most recent
+  ones. The Strava quotas (100 read requests per
   15 minutes, 1,000 per day, for the whole application) are tracked from the response headers:
   when they run out, jobs wait for the next window instead of failing.
 - **Webhooks**: Strava pushes an event for each created, updated or deleted activity and for

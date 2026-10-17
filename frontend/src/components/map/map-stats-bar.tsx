@@ -36,7 +36,7 @@ export function MapStatsBar({ tracks, summary, layers, onLayersChange }: MapStat
   return (
     <section
       aria-label={t("label")}
-      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background [scrollbar-width:none] md:grid md:grid-cols-3 md:overflow-visible"
+      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-3 md:overflow-visible"
     >
       <TracksSection
         tracks={tracks}

@@ -120,13 +120,17 @@ the activity. The reads never aggregate them:
   They are stored in `user_tile_metrics`, and the tiles of the largest clusters are marked in
   `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
   they are up to date.
-- **Map**: `GET /api/tiles/vector/:zoom/:x/:y?v=<version>` serves the tiles of the user as a
-  vector tile (zoom 0 to 14, at most about 150 KB gzipped for the densest areas): the large tiles
-  and those of the largest cluster, then from zoom 10 the small tiles and those of their largest
-  cluster. Contiguous tiles are merged into rectangles (large tiles below zoom 10, small tiles
-  below zoom 13), and below zoom 4 the large tiles are grouped by ancestor, about one pixel wide.
-  Cached by the browser for each version of the tiles. In the combined view, the small tiles
-  fade in between zooms 10 and 11 over the large tiles, which keep their color.
+- **Map**: `GET /api/tiles/vector/:zoom/:x/:y?v=<version>` serves the large tiles of the user and
+  those of the largest cluster as a vector tile (zoom 0 to 14): contiguous tiles are merged into
+  rectangles below zoom 10, and below zoom 4 the tiles are grouped by ancestor, about one pixel of
+  a high density screen. The small tiles are drawn from images,
+  `GET /api/tiles/raster/:zoom/:x/:y?v=<version>&color=<rrggbbaa>&cluster=<rrggbbaa>` (512 pixels
+  PNG, zoom 5 to 14, tens of KB at most whatever the density), from the zoom of a whole country;
+  they are also served as vector tiles from zoom 13, only to pick them on the map. Both are cached
+  by the browser for each version of the tiles, which includes a revision of their content
+  (`VECTOR_FORMAT`): it must be incremented when the content of the tiles changes. In the combined
+  view, the small tiles fade in between zooms 5 and 6 over the large tiles, which keep their color;
+  the grids fade in from zoom 12 (large tiles) and 15 (small tiles).
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
   the map shows about it (cluster, largest square), without loading every tile in the browser.
 - **Large histories**: `pnpm db:seed:bench` (development only) creates the account `bench`

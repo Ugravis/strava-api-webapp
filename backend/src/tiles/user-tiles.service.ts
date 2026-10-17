@@ -8,6 +8,7 @@ import {
   TILE_ZOOM,
 } from './tile-grid';
 import type { StoredLevelMetrics, StoredMetrics } from './tile-metrics';
+import { encodePng, rasterIndices, type Rgba } from './subtile-raster';
 import type { PackedCells, PackedMetrics } from './tile-metrics-packing';
 
 /** Tiles of a user and their metrics, as stored. */
@@ -53,17 +54,28 @@ const MAX_METRICS_AGE = "interval '30 seconds'";
 
 /** Deepest zoom of the vector tiles: the map stretches them beyond. */
 export const VECTOR_MAX_ZOOM = TILE_ZOOM;
-/** The small tiles are only served from this zoom, where they span about four pixels. */
-export const VECTOR_SUBTILE_MIN_ZOOM = 10;
 /**
- * From these zooms, each tile is a feature of its own; below, the
+ * The small tiles are served from this zoom, to pick them on the map; they
+ * are drawn from the raster tiles, whose size does not grow with the density.
+ */
+export const VECTOR_SUBTILE_MIN_ZOOM = 13;
+/** The raster tiles of the small tiles are served from this zoom, where a country like France fits on a screen. */
+export const RASTER_MIN_ZOOM = 5;
+/**
+ * Revision of the content of the vector tiles, part of the version given to
+ * the map: the browser caches the tiles of each version, so a change of
+ * their content must change it.
+ */
+const VECTOR_FORMAT = 2;
+/**
+ * From this zoom, each large tile is a feature of its own; below, the
  * contiguous tiles are merged into rectangles, which keeps the tiles small.
  */
 const VECTOR_SINGLE_TILE_MIN_ZOOM = 10;
-const VECTOR_SINGLE_SUBTILE_MIN_ZOOM = 13;
 /**
  * Below zoom 4, the large tiles are grouped by ancestor at `zoom + 10`:
- * half a pixel of a 512 pixels map tile, one pixel of a high density screen.
+ * half a pixel of a 512 pixels map tile, one pixel of a high density
+ * screen.
  */
 const VECTOR_GROUPING_LEVELS = 10;
 const MVT_EXTENT = 4096;
@@ -139,14 +151,14 @@ export class UserTilesService {
     );
     if (!row) {
       return {
-        version: '0',
+        version: `${VECTOR_FORMAT}.0`,
         upToDate: true,
         tiles: EMPTY_LEVEL,
         subtiles: EMPTY_LEVEL,
       };
     }
     return {
-      version: row.version,
+      version: `${VECTOR_FORMAT}.${row.version}`,
       upToDate: row.metrics_version === row.version,
       tiles: row.metrics?.tiles ?? EMPTY_LEVEL,
       subtiles: row.metrics?.subtiles ?? EMPTY_LEVEL,
@@ -313,17 +325,12 @@ export class UserTilesService {
       ),
       ...(withSubtiles
         ? [
-            layerSql(
-              VECTOR_LAYERS.subtiles,
-              'subtiles',
-              SUBTILE_ZOOM,
-              zoom < VECTOR_SINGLE_SUBTILE_MIN_ZOOM,
-            ),
+            layerSql(VECTOR_LAYERS.subtiles, 'subtiles', SUBTILE_ZOOM, false),
             layerSql(
               VECTOR_LAYERS.subtileCluster,
               'subtile_cluster',
               SUBTILE_ZOOM,
-              zoom < VECTOR_SINGLE_SUBTILE_MIN_ZOOM,
+              false,
             ),
           ]
         : []),
@@ -346,5 +353,40 @@ export class UserTilesService {
       [userId, zoom, x, y],
     );
     return row.tile;
+  }
+
+  /**
+   * PNG image of the small tiles of the user within the map tile
+   * `(zoom, x, y)`, in `subtileColor`, those of the largest cluster in
+   * `clusterColor`. Its size stays bounded whatever the density of the
+   * tiles, unlike the vector tiles.
+   */
+  async rasterTile(
+    userId: string,
+    zoom: number,
+    x: number,
+    y: number,
+    subtileColor: Rgba,
+    clusterColor: Rgba,
+  ): Promise<Buffer> {
+    const span = 2 ** (TILE_ZOOM - zoom);
+    const rows: { x: number; y: number; mask: string; cluster: string }[] =
+      await this.dataSource.query(
+        `SELECT x, y, mask::text, max_cluster_mask::text AS cluster FROM user_tiles
+         WHERE user_id = $1
+           AND x BETWEEN $2 * ${span} AND ($2 + 1) * ${span} - 1
+           AND y BETWEEN $3 * ${span} AND ($3 + 1) * ${span} - 1`,
+        [userId, x, y],
+      );
+    const cells = rows.map((row) => ({
+      x: row.x,
+      y: row.y,
+      mask: fromSignedMask(row.mask),
+      clusterMask: fromSignedMask(row.cluster),
+    }));
+    return encodePng(rasterIndices(cells, zoom, x, y), [
+      subtileColor,
+      clusterColor,
+    ]);
   }
 }

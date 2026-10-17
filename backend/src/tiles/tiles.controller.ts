@@ -1,4 +1,11 @@
-import { Controller, Get, Header, Param, StreamableFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  Query,
+  StreamableFile,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
@@ -10,7 +17,12 @@ import {
   type TilesSummary,
   UserTilesService,
 } from './user-tiles.service';
-import { VectorTileParamsDto } from './vector-tile-params.dto';
+import type { Rgba } from './subtile-raster';
+import {
+  RasterTileParamsDto,
+  RasterTileQueryDto,
+  VectorTileParamsDto,
+} from './vector-tile-params.dto';
 
 export interface LevelStats {
   /** Tiles crossed at least once. */
@@ -33,6 +45,11 @@ export interface TileStats {
 /** A tile and the activities that crossed it. */
 export interface TileVisitsResponse extends TileVisits {
   tile: TileDetails;
+}
+
+/** `rrggbbaa`, validated by the DTO. */
+function rgba(hex: string): Rgba {
+  return [0, 2, 4, 6].map((i) => parseInt(hex.slice(i, i + 2), 16)) as Rgba;
 }
 
 /** A view of the map loads a few dozen tiles at once. */
@@ -80,6 +97,35 @@ export class TilesController {
     }
     return new StreamableFile(
       await this.userTiles.vectorTile(user.id, zoom, x, y),
+    );
+  }
+
+  /**
+   * PNG image of the small tiles of the user, including the areas hidden to
+   * others: owner only. Requested with the version of the tiles, like the
+   * vector tiles, and the colors of the map.
+   */
+  @Get('raster/:zoom/:x/:y')
+  @Throttle(VECTOR_THROTTLE)
+  @Header('Content-Type', 'image/png')
+  @Header('Cache-Control', 'private, max-age=31536000, immutable')
+  async raster(
+    @CurrentUser() user: User,
+    @Param() { zoom, x, y }: RasterTileParamsDto,
+    @Query() { color, cluster }: RasterTileQueryDto,
+  ): Promise<StreamableFile> {
+    if (x >= 2 ** zoom || y >= 2 ** zoom) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such tile');
+    }
+    return new StreamableFile(
+      await this.userTiles.rasterTile(
+        user.id,
+        zoom,
+        x,
+        y,
+        rgba(color),
+        rgba(cluster),
+      ),
     );
   }
 

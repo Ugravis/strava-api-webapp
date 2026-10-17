@@ -53,15 +53,19 @@ const MAX_METRICS_AGE = "interval '30 seconds'";
 
 /** Deepest zoom of the vector tiles: the map stretches them beyond. */
 export const VECTOR_MAX_ZOOM = TILE_ZOOM;
-/** The small tiles are only served from this zoom, where they span a few pixels. */
-export const VECTOR_SUBTILE_MIN_ZOOM = 13;
+/** The small tiles are only served from this zoom, where they span about four pixels. */
+export const VECTOR_SUBTILE_MIN_ZOOM = 10;
 /**
- * From this zoom, each large tile is a feature of its own; below, the
- * contiguous tiles of a row are merged, which keeps the tiles small.
+ * From these zooms, each tile is a feature of its own; below, the
+ * contiguous tiles are merged into rectangles, which keeps the tiles small.
  */
 const VECTOR_SINGLE_TILE_MIN_ZOOM = 10;
-/** Below zoom 6, the large tiles are grouped by ancestor, about one pixel wide. */
-const VECTOR_GROUPING_LEVELS = 8;
+const VECTOR_SINGLE_SUBTILE_MIN_ZOOM = 13;
+/**
+ * Below zoom 4, the large tiles are grouped by ancestor at `zoom + 10`:
+ * half a pixel of a 512 pixels map tile, one pixel of a high density screen.
+ */
+const VECTOR_GROUPING_LEVELS = 10;
 const MVT_EXTENT = 4096;
 /** Half of the Web Mercator world, in meters. */
 const WORLD_HALF_M = 20037508.342789244;
@@ -81,7 +85,8 @@ export const VECTOR_LAYERS = {
 
 /**
  * Features of one vector tile layer: the cells of `source` (columns `x`,
- * `y`, at `level`), each one alone or merged with the next ones of its row.
+ * `y`, at `level`), each one alone or merged into rectangles: the
+ * contiguous cells of a row, then the identical runs of consecutive rows.
  */
 function layerSql(
   name: string,
@@ -90,20 +95,25 @@ function layerSql(
   merge: boolean,
 ): string {
   const size = (2 * WORLD_HALF_M) / 2 ** level;
-  const runs = merge
-    ? `SELECT y, min(x) AS x0, max(x) AS x1 FROM (
-         SELECT x, y, x - row_number() OVER (PARTITION BY y ORDER BY x) AS run
-         FROM ${source}
-       ) cells GROUP BY y, run`
-    : `SELECT y, x AS x0, x AS x1 FROM ${source}`;
+  const rectangles = merge
+    ? `SELECT x0, x1, min(y) AS y0, max(y) AS y1 FROM (
+         SELECT x0, x1, y, y - row_number() OVER (PARTITION BY x0, x1 ORDER BY y) AS block
+         FROM (
+           SELECT y, min(x) AS x0, max(x) AS x1 FROM (
+             SELECT x, y, x - row_number() OVER (PARTITION BY y ORDER BY x) AS run
+             FROM ${source}
+           ) cells GROUP BY y, run
+         ) runs
+       ) blocks GROUP BY x0, x1, block`
+    : `SELECT x AS x0, x AS x1, y AS y0, y AS y1 FROM ${source}`;
   return `COALESCE((
     SELECT ST_AsMVT(features, '${name}', ${MVT_EXTENT}, 'geom') FROM (
       SELECT ST_AsMVTGeom(
         ST_MakeEnvelope(
-          ${-WORLD_HALF_M} + x0 * ${size}, ${WORLD_HALF_M} - (y + 1) * ${size},
-          ${-WORLD_HALF_M} + (x1 + 1) * ${size}, ${WORLD_HALF_M} - y * ${size}, 3857),
+          ${-WORLD_HALF_M} + x0 * ${size}, ${WORLD_HALF_M} - (y1 + 1) * ${size},
+          ${-WORLD_HALF_M} + (x1 + 1) * ${size}, ${WORLD_HALF_M} - y0 * ${size}, 3857),
         bounds.envelope, ${MVT_EXTENT}, 0, true) AS geom
-      FROM (${runs}) runs, bounds
+      FROM (${rectangles}) rectangles, bounds
     ) features WHERE geom IS NOT NULL
   ), ''::bytea)`;
 }
@@ -274,8 +284,8 @@ export class UserTilesService {
 
   /**
    * Vector tile (Mapbox Vector Tile) of the tiles of the user within the
-   * map tile `(zoom, x, y)`. Below zoom 6, the large tiles are grouped by
-   * ancestor at `zoom + 8`, about one pixel wide.
+   * map tile `(zoom, x, y)`. Below zoom 4, the large tiles are grouped by
+   * ancestor at `zoom + 10`, about one pixel wide.
    */
   async vectorTile(
     userId: string,
@@ -303,12 +313,17 @@ export class UserTilesService {
       ),
       ...(withSubtiles
         ? [
-            layerSql(VECTOR_LAYERS.subtiles, 'subtiles', SUBTILE_ZOOM, false),
+            layerSql(
+              VECTOR_LAYERS.subtiles,
+              'subtiles',
+              SUBTILE_ZOOM,
+              zoom < VECTOR_SINGLE_SUBTILE_MIN_ZOOM,
+            ),
             layerSql(
               VECTOR_LAYERS.subtileCluster,
               'subtile_cluster',
               SUBTILE_ZOOM,
-              false,
+              zoom < VECTOR_SINGLE_SUBTILE_MIN_ZOOM,
             ),
           ]
         : []),

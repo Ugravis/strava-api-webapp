@@ -121,10 +121,12 @@ the activity. The reads never aggregate them:
   `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
   they are up to date.
 - **Map**: `GET /api/tiles/vector/:zoom/:x/:y?v=<version>` serves the tiles of the user as a
-  vector tile (zoom 0 to 14, tens of KB at most): the large tiles and those of the largest
-  cluster, then from zoom 13 the small tiles and those of their largest cluster. The contiguous
-  tiles of a row are merged below zoom 10, and below zoom 6 the large tiles are grouped by
-  ancestor, about one pixel wide. Cached by the browser for each version of the tiles.
+  vector tile (zoom 0 to 14, at most about 150 KB gzipped for the densest areas): the large tiles
+  and those of the largest cluster, then from zoom 10 the small tiles and those of their largest
+  cluster. Contiguous tiles are merged into rectangles (large tiles below zoom 10, small tiles
+  below zoom 13), and below zoom 4 the large tiles are grouped by ancestor, about one pixel wide.
+  Cached by the browser for each version of the tiles. In the combined view, the small tiles
+  fade in between zooms 10 and 11 over the large tiles, which keep their color.
 - **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
   the map shows about it (cluster, largest square), without loading every tile in the browser.
 - **Large histories**: `pnpm db:seed:bench` (development only) creates the account `bench`

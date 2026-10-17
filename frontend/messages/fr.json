@@ -313,6 +313,7 @@
       "subtiles": "Petites tuiles",
       "visited": "Visitées",
       "maxCluster": "Plus grand cluster",
+      "otherClusters": "Autres clusters",
       "maxSquare": "Carré max"
     },
     "tilePopup": {

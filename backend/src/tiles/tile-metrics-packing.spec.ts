@@ -27,5 +27,8 @@ describe('tile metrics packing', () => {
     expect([...packed.subtileCluster.ys]).toEqual([3]);
     // Every small tile but the border ones.
     expect(packed.subtileCluster.masks[0]).toBe(0x007e7e7e7e7e7e00n);
+    expect([...packed.subtileClusters.xs]).toEqual([2]);
+    expect(packed.subtileClusters.masks[0]).toBe(0x007e7e7e7e7e7e00n);
+    expect([...packed.tileClusters.xs]).toEqual([]);
   });
 });

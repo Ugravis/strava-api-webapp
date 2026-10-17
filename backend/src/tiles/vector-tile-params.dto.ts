@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsString, Matches, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
 import { RASTER_MIN_ZOOM, TILES_MAX_ZOOM } from './user-tiles.service';
 
 export class VectorTileParamsDto {
@@ -44,7 +51,11 @@ export class RasterTileParamsDto {
 
 const RGBA_HEX = /^[0-9a-f]{8}$/i;
 
-/** Colors of the image, chosen by the map, as `rrggbbaa`: the small tiles and those of the largest cluster. */
+/**
+ * Colors of the image, chosen by the map, as `rrggbbaa`: the small tiles,
+ * those of the largest cluster, and those of the other clusters, drawn like
+ * the others without it or zoomed out.
+ */
 export class RasterTileQueryDto {
   @IsString()
   @Matches(RGBA_HEX)
@@ -53,4 +64,9 @@ export class RasterTileQueryDto {
   @IsString()
   @Matches(RGBA_HEX)
   cluster!: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(RGBA_HEX)
+  clusters?: string;
 }

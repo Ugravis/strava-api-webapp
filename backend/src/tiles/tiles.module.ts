@@ -5,6 +5,8 @@ import { ActivityGainsService } from './activity-gains.service';
 import { ActivityGainsWorker } from './activity-gains.worker';
 import { ActivityTile } from './activity-tile.entity';
 import { ActivityTileState } from './activity-tile-state.entity';
+import { TileFirstVisit } from './tile-first-visit.entity';
+import { TileHistoryService } from './tile-history.service';
 import { TileMetricsWorker } from './tile-metrics.worker';
 import { TilesController } from './tiles.controller';
 import { TilesService } from './tiles.service';
@@ -18,6 +20,7 @@ import { UserTilesService } from './user-tiles.service';
       ActivityGain,
       ActivityTile,
       ActivityTileState,
+      TileFirstVisit,
       UserTile,
       UserTileMetrics,
     ]),
@@ -26,6 +29,7 @@ import { UserTilesService } from './user-tiles.service';
   providers: [
     TilesService,
     UserTilesService,
+    TileHistoryService,
     TileMetricsWorker,
     ActivityGainsService,
     ActivityGainsWorker,

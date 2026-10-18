@@ -33,8 +33,14 @@ import type { Rgba } from './subtile-raster';
 import {
   RasterTileParamsDto,
   RasterTileQueryDto,
+  TileHistoryQueryDto,
+  TileHistoryRasterQueryDto,
   VectorTileParamsDto,
 } from './vector-tile-params.dto';
+import {
+  type TileHistorySummary,
+  TileHistoryService,
+} from './tile-history.service';
 
 export interface LevelStats {
   /** Tiles crossed at least once. */
@@ -79,6 +85,7 @@ export class TilesController {
     private readonly tiles: TilesService,
     private readonly gains: ActivityGainsService,
     private readonly userTiles: UserTilesService,
+    private readonly tileHistory: TileHistoryService,
   ) {}
 
   /** Counters and achievements of the user, and the version of the tiles for the vector tiles. */
@@ -110,7 +117,8 @@ export class TilesController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.sendTile(user, zoom, x, y, request, response, {
+    await this.sendTile(zoom, x, y, request, response, {
+      tag: () => this.userTiles.tileTag(user.id, zoom, x, y),
       contentType: 'application/vnd.mapbox-vector-tile',
       render: () => this.userTiles.vectorTile(user.id, zoom, x, y),
     });
@@ -130,7 +138,8 @@ export class TilesController {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    await this.sendTile(user, zoom, x, y, request, response, {
+    await this.sendTile(zoom, x, y, request, response, {
+      tag: () => this.userTiles.tileTag(user.id, zoom, x, y),
       contentType: 'image/png',
       render: () =>
         this.userTiles.rasterTile(
@@ -145,26 +154,86 @@ export class TilesController {
     });
   }
 
+  /** Counts of the tiles gained since a date, or visited before it. */
+  @Get('history')
+  history(
+    @CurrentUser() user: User,
+    @Query() { mode, date }: TileHistoryQueryDto,
+  ): Promise<TileHistorySummary> {
+    return this.tileHistory.summary(user.id, mode, date);
+  }
+
+  /**
+   * Vector tile of the large tiles gained since a date, or visited before
+   * it: owner only. Revalidated whenever the first visits are replayed.
+   */
+  @Get('history/vector/:zoom/:x/:y')
+  @Throttle(VECTOR_THROTTLE)
+  async historyVector(
+    @CurrentUser() user: User,
+    @Param() { zoom, x, y }: VectorTileParamsDto,
+    @Query() { mode, date }: TileHistoryQueryDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.sendTile(zoom, x, y, request, response, {
+      tag: () => this.tileHistory.tileTag(user.id),
+      contentType: 'application/vnd.mapbox-vector-tile',
+      render: () =>
+        this.tileHistory.vectorTile(user.id, mode, date, zoom, x, y),
+    });
+  }
+
+  /** PNG image of the small tiles gained since a date, or visited before it: owner only. */
+  @Get('history/raster/:zoom/:x/:y')
+  @Throttle(VECTOR_THROTTLE)
+  async historyRaster(
+    @CurrentUser() user: User,
+    @Param() { zoom, x, y }: RasterTileParamsDto,
+    @Query() { mode, date, color }: TileHistoryRasterQueryDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    await this.sendTile(zoom, x, y, request, response, {
+      tag: () => this.tileHistory.tileTag(user.id),
+      contentType: 'image/png',
+      render: () =>
+        this.tileHistory.rasterTile(
+          user.id,
+          mode,
+          date,
+          zoom,
+          x,
+          y,
+          rgba(color),
+        ),
+    });
+  }
+
   /**
    * Sends a map tile, or `304 Not Modified` when the browser holds the
    * current one: only the map tiles whose tiles changed are rendered again.
    */
   private async sendTile(
-    user: User,
     zoom: number,
     x: number,
     y: number,
     request: Request,
     response: Response,
     {
+      tag: tagOf,
       contentType,
       render,
-    }: { contentType: string; render: () => Promise<Buffer> },
+    }: {
+      tag: () => Promise<string>;
+      contentType: string;
+      render: () => Promise<Buffer>;
+    },
   ): Promise<void> {
     if (x >= 2 ** zoom || y >= 2 ** zoom) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such tile');
     }
-    const tag = await this.userTiles.tileTag(user.id, zoom, x, y);
+    const tag = await tagOf();
     response.set({ ETag: tag, 'Cache-Control': 'private, no-cache' });
     // Compares with the tag held by the browser, weak or not.
     if (request.fresh) {

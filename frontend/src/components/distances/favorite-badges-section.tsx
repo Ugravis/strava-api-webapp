@@ -42,7 +42,8 @@ export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId
         className={cn(
           empty
             ? "border border-dashed border-amber-500/40 bg-amber-50/40 ring-0 dark:bg-amber-500/5"
-            : "bg-linear-to-br from-amber-100/80 via-card to-card ring-amber-500/30 dark:from-amber-500/15",
+            : // Strong in the top left corner, faint in the bottom right one.
+            "bg-linear-to-br from-amber-100/80 via-card via-55% to-amber-50 ring-amber-500/30 dark:from-amber-500/15 dark:to-amber-500/5",
         )}
       >
         <CardHeader>

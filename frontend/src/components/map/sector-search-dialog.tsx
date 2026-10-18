@@ -107,8 +107,6 @@ export function SectorSearchDialog({ open, onOpenChange, onPick, visited, curren
       title={t("title")}
       description={t("description")}
       className="top-1/2 -translate-y-1/2 sm:max-w-md"
-      // A blur over the map would delay the opening of the popup.
-      overlayClassName="supports-backdrop-filter:backdrop-blur-none"
     >
       <Command
         // The name is searched, in the language of the page; the code too, typed in full.

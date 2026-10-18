@@ -14,8 +14,10 @@ const EMPTY: History<never> = { entries: [], index: -1 };
  * A browsing history, like a browser's: a new entry drops those ahead of the
  * current one, back and forward move between them.
  */
-export function usePanelHistory<T>(same: (a: T, b: T) => boolean) {
-  const [{ entries, index }, setHistory] = useState<History<T>>(EMPTY);
+export function usePanelHistory<T>(same: (a: T, b: T) => boolean, initial: T | null = null) {
+  const [{ entries, index }, setHistory] = useState<History<T>>(() =>
+    initial === null ? EMPTY : { entries: [initial], index: 0 },
+  );
 
   const push = useCallback(
     (entry: T) =>

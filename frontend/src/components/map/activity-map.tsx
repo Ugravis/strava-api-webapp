@@ -3,14 +3,17 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { usePanelHistory } from "@/hooks/use-panel-history";
 import type { TilesSummary } from "@/lib/api/types";
-import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tilesBounds } from "@/lib/tiles/tile-geometry";
+import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
 import { ActivityPanel } from "./activity-panel";
-import { activityTileData, addActivityTileLayers, setActivityTiles } from "./activity-tiles-layer";
+import { activityTileData, addActivityTileLayers, NO_ACTIVITY_TILES, setActivityTiles } from "./activity-tiles-layer";
+import { activityTrack, addActivityTrackLayer, setActivityTrack } from "./activity-track-layer";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
 import { MapSidePanel } from "./map-side-panel";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
@@ -27,6 +30,7 @@ import {
 } from "./tile-layers";
 import { addTileHighlight, sameTile, setTileHighlight, type TileRef } from "./tile-highlight";
 import { TilePanel } from "./tile-panel";
+import { entryFromSearch, entryKey, sameEntry, searchWithEntry } from "./panel-entry";
 import {
   addTrackLayer,
   boundsOf,
@@ -51,17 +55,10 @@ interface ActivityMapProps {
   label: string;
 }
 
-/** What the side panel shows: a tile picked on the map, or an activity opened from it. */
-type PanelEntry = { kind: "tile"; tile: TileRef } | { kind: "activity"; activityId: string };
-
-function sameEntry(a: PanelEntry, b: PanelEntry): boolean {
-  return a.kind === "tile"
-    ? b.kind === "tile" && sameTile(a.tile, b.tile)
-    : b.kind === "activity" && a.activityId === b.activityId;
-}
-
 /** Margin around an activity framed on the map, in pixels. */
 const ACTIVITY_PADDING = 48;
+/** A tile centered on the map is shown at least at the zoom where it can be picked, and a little closer. */
+const CENTER_MIN_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 11, [SUBTILE_ZOOM]: 14 };
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
@@ -77,12 +74,17 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const styleReadyRef = useRef(false);
   const modeRef = useRef(tileMode);
   const showTracksRef = useRef(showTracks);
-  const framedRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
   const paletteRef = useRef(palette);
 
-  const history = usePanelHistory(sameEntry);
+  const t = useTranslations("map.panel");
+  // The address of the page may name a tile or an activity: the map opens on it.
+  const [fromAddress] = useState(() => entryFromSearch(window.location.search));
+  const history = usePanelHistory(sameEntry, fromAddress.entry);
   const entry = history.current;
+  const [gainedOnly, setGainedOnly] = useState(false);
+  // Opened on a tile or an activity, the map does not frame the tracks.
+  const framedRef = useRef(fromAddress.entry !== null);
   const [collapsed, setCollapsed] = useState(false);
   const collapsedRef = useRef(collapsed);
   const panelRef = useRef<HTMLElement>(null);
@@ -91,8 +93,23 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const shownRef = useRef<TileRef | null>(null);
   // The click handler of the map is registered once: it calls the latest one.
   const pickRef = useRef<(tile: TileRef) => void>(() => {});
-  const { tiles: activityTiles } = useActivityTiles(entry?.kind === "activity" ? entry.activityId : null);
-  const activityTilesRef = useRef(activityTileData(null));
+  // The tile just picked on the map: unlike a tile reached otherwise, the camera stays.
+  const pickedRef = useRef<TileRef | null>(null);
+  const activityId = entry?.kind === "activity" ? entry.activityId : null;
+  const { tiles: activityTiles } = useActivityTiles(activityId);
+  const activityData = useMemo(() => {
+    if (!activityTiles) return NO_ACTIVITY_TILES;
+    const { gains } = activityTiles;
+    return gainedOnly && gains
+      ? activityTileData(gains.tiles.gained, gains.subtiles.gained)
+      : activityTileData(activityTiles.tiles, activityTiles.subtiles);
+  }, [activityTiles, gainedOnly]);
+  const activityDataRef = useRef(activityData);
+  const activityLine = useMemo(
+    () => (activityId ? lines.find((line) => line.activityId === activityId) : undefined),
+    [lines, activityId],
+  );
+  const activityTrackRef = useRef(activityTrack(activityLine));
 
   // Before the creation of the map: a hot reload of the code recreates the
   // map with the colors of the new code, instead of loading its style twice.
@@ -125,7 +142,8 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       setVisitedCountries(map, countriesRef.current, paletteRef.current);
       addTileLayers(map, tilesRef.current, paletteRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, paletteRef.current, showTracksRef.current, firstLabel);
-      addActivityTileLayers(map, activityTilesRef.current, paletteRef.current, firstLabel);
+      addActivityTileLayers(map, activityDataRef.current, paletteRef.current);
+      addActivityTrackLayer(map, activityTrackRef.current, paletteRef.current, firstLabel);
       addTileHighlight(map, shownRef.current ?? hoveredRef.current, paletteRef.current, firstLabel);
       setTileMode(map, modeRef.current);
     });
@@ -226,6 +244,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
 
   useEffect(() => {
     pickRef.current = (tile) => {
+      pickedRef.current = tile;
       history.push({ kind: "tile", tile });
       setCollapsed(false);
     };
@@ -234,24 +253,58 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const shown = entry?.kind === "tile" ? entry.tile : null;
 
   useEffect(() => {
+    if (fromAddress.invalid) toast.error(t("invalidLink"));
+  }, [fromAddress, t]);
+
+  useEffect(() => {
+    // The address follows the entry shown, without adding to the history of the browser.
+    const search = searchWithEntry(window.location.search, entry);
+    if (search !== window.location.search) {
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}`);
+    }
+  }, [entry]);
+
+  useEffect(() => {
     shownRef.current = shown;
+    const map = mapRef.current;
+    if (!map) return;
     // The selected tile stays outlined while the panel shows it.
-    if (mapRef.current) setTileHighlight(mapRef.current, shown ?? hoveredRef.current);
+    setTileHighlight(map, shown ?? hoveredRef.current);
+    if (!shown) return;
+    // Reached by the arrows or the address, the tile is centered beside the panel.
+    if (shown === pickedRef.current) {
+      pickedRef.current = null;
+      return;
+    }
+    map.easeTo({
+      center: tileCenter(shown.zoom, shown.x, shown.y),
+      zoom: Math.max(map.getZoom(), CENTER_MIN_ZOOMS[shown.zoom]),
+      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, 0],
+    });
   }, [shown]);
 
   useEffect(() => {
-    activityTilesRef.current = activityTileData(activityTiles);
+    activityDataRef.current = activityData;
+    if (mapRef.current) setActivityTiles(mapRef.current, activityData);
+  }, [activityData]);
+
+  useEffect(() => {
+    activityTrackRef.current = activityTrack(activityLine);
+    if (mapRef.current) setActivityTrack(mapRef.current, activityTrackRef.current);
+  }, [activityLine]);
+
+  useEffect(() => {
+    // The activity shown is the focus: the map frames all of it, beside the panel.
     const map = mapRef.current;
-    if (!map) return;
-    setActivityTiles(map, activityTilesRef.current);
-    // The activity is framed unless the map already shows all of it.
     const bounds = activityTiles && tilesBounds(TILE_ZOOM, activityTiles.tiles);
-    if (!bounds) return;
-    const view = map.getBounds();
-    if (view.contains([bounds.west, bounds.north]) && view.contains([bounds.east, bounds.south])) return;
-    const panel = panelRef.current && !collapsedRef.current ? panelRef.current.offsetWidth : 0;
+    if (!map || !bounds) return;
     map.fitBounds([bounds.west, bounds.south, bounds.east, bounds.north], {
-      padding: { top: ACTIVITY_PADDING, bottom: ACTIVITY_PADDING, left: ACTIVITY_PADDING, right: ACTIVITY_PADDING + panel },
+      padding: {
+        top: ACTIVITY_PADDING,
+        bottom: ACTIVITY_PADDING,
+        left: ACTIVITY_PADDING,
+        right: ACTIVITY_PADDING + panelWidthOf(panelRef.current, collapsedRef.current),
+      },
       maxZoom: SUBTILE_ZOOM - 3,
     });
   }, [activityTiles]);
@@ -263,7 +316,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       {entry && (
         <MapSidePanel
           ref={panelRef}
-          contentKey={entry.kind === "tile" ? `${entry.tile.zoom}/${entry.tile.x}/${entry.tile.y}` : entry.activityId}
+          contentKey={entryKey(entry)}
           collapsed={collapsed}
           onCollapsedChange={setCollapsed}
           canGoBack={history.canGoBack}
@@ -277,12 +330,18 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
         >
           {entry.kind === "tile" ? (
             <TilePanel
-              key={`${entry.tile.zoom}/${entry.tile.x}/${entry.tile.y}`}
+              key={entryKey(entry)}
               tile={entry.tile}
               onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
             />
           ) : (
-            <ActivityPanel key={entry.activityId} activityId={entry.activityId} tiles={activityTiles} />
+            <ActivityPanel
+              key={entry.activityId}
+              activityId={entry.activityId}
+              tiles={activityTiles}
+              gainedOnly={gainedOnly}
+              onGainedOnlyChange={setGainedOnly}
+            />
           )}
         </MapSidePanel>
       )}
@@ -296,6 +355,11 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
  */
 function setBaseStyle(map: MapLibreMap, palette: MapPalette): void {
   map.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
+}
+
+/** Width of the panel over the map: none when folded or closed. */
+function panelWidthOf(panel: HTMLElement | null, collapsed: boolean): number {
+  return panel && !collapsed ? panel.offsetWidth : 0;
 }
 
 /** Below the first label layer, keeping place names readable. */

@@ -43,6 +43,8 @@ export function TilePanel({ tile: { zoom, x, y }, onOpenActivity }: TilePanelPro
 
       {error ? (
         <p className="text-muted-foreground">{t("error")}</p>
+      ) : details && !details.visited ? (
+        <p className="text-muted-foreground">{t("notVisited")}</p>
       ) : !visits ? (
         <PanelFiguresSkeleton count={3} />
       ) : (

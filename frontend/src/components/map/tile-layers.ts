@@ -15,7 +15,8 @@ import {
   TILE_ZOOM,
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
-import { firstGroundLayerId, type MapPalette } from "./map-style";
+import { belowActivityTiles } from "./activity-tiles-layer";
+import type { MapPalette } from "./map-style";
 
 /** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
 export type TileMode = "tiles" | "both";
@@ -380,7 +381,7 @@ export function addTileLayers(
       paint: { "line-color": palette.square, "line-width": 2 },
     },
   ];
-  const groundId = firstGroundLayerId(map);
+  const groundId = belowActivityTiles(map);
   for (const layer of layers) map.addLayer(layer, GROUND_LAYERS.has(layer.id) ? groundId : beforeId);
 }
 

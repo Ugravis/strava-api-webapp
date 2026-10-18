@@ -62,9 +62,21 @@ export function tileCollection(zoom: TileZoom, x: number, y: number): FeatureCol
   return tilesCollection(zoom, [[x, y]]);
 }
 
-/** Tiles of one level, one polygon each. */
-export function tilesCollection(zoom: TileZoom, tiles: [number, number][]): FeatureCollection<Polygon> {
-  return { type: "FeatureCollection", features: tiles.map(([x, y]) => square(x, y, zoom)) };
+/** Tiles of one zoom, one polygon each, with `properties`. */
+export function tilesCollection(
+  zoom: number,
+  tiles: [number, number][],
+  properties: Record<string, unknown> = {},
+): FeatureCollection<Polygon> {
+  return {
+    type: "FeatureCollection",
+    features: tiles.map(([x, y]) => ({ ...square(x, y, zoom), properties })),
+  };
+}
+
+/** Center of the tile `(x, y)` at `zoom`, as `[lng, lat]`. */
+export function tileCenter(zoom: TileZoom, x: number, y: number): [number, number] {
+  return [lngOf(x + 0.5, zoom), latOf(y + 0.5, zoom)];
 }
 
 /** Bounds of tiles of one level; null without tiles. */

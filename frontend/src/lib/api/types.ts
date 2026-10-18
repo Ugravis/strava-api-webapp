@@ -193,12 +193,24 @@ export interface ActivityDetails {
   stravaId: string | null;
 }
 
+/** What an activity brought to one level of tiles when it was recorded. */
+export interface LevelGains {
+  /** Tiles no earlier activity had crossed, as `[x, y]` pairs. */
+  gained: [number, number][];
+  /** Growth of the largest cluster. */
+  maxCluster: number;
+  /** Tiles that became cluster tiles outside of the largest cluster. */
+  otherClusters: number;
+}
+
 /** Tiles crossed by one activity, as `[x, y]` pairs of each level. */
 export interface ActivityTiles {
   /** Large tiles (zoom 14). */
   tiles: [number, number][];
   /** Small tiles (zoom 17). */
   subtiles: [number, number][];
+  /** What the activity brought when it was recorded; null until computed. */
+  gains: { tiles: LevelGains; subtiles: LevelGains } | null;
 }
 
 /** A page of the activities that crossed a tile, the latest ones first. */

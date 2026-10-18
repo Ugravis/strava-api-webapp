@@ -361,7 +361,8 @@
       "error": "Impossible de charger le détail de cette tuile.",
       "activitiesError": "Impossible de charger les activités.",
       "retry": "Réessayer",
-      "viewActivity": "Voir l'activité"
+      "viewActivity": "Voir l'activité",
+      "notVisited": "Tu n'as pas encore visité cette tuile."
     },
     "panel": {
       "label": "Détails",
@@ -369,17 +370,25 @@
       "forward": "Suivant",
       "close": "Fermer le panneau",
       "collapse": "Replier le panneau",
-      "expand": "Déplier le panneau"
+      "expand": "Déplier le panneau",
+      "invalidLink": "Ce lien ne désigne aucune tuile ni activité."
     },
     "activityPanel": {
       "distance": "Distance",
       "movingTime": "Temps en mouvement",
       "elevation": "Dénivelé",
-      "tilesTitle": "Tuiles traversées",
       "tiles": "Tuiles",
       "subtiles": "Petites tuiles",
-      "legend": "En rose sur la carte",
-      "error": "Impossible de charger cette activité."
+      "legend": "Toutes ses tuiles en rose sur la carte",
+      "error": "Cette activité est introuvable ou n'a pas pu être chargée.",
+      "gainsTitle": "Gains",
+      "crossed": "{count, plural, one {{formatted} traversée} other {{formatted} traversées}}",
+      "newTiles": "Nouvelles",
+      "maxCluster": "Cluster principal",
+      "otherClusters": "Autres clusters",
+      "gainsPending": "Les gains de cette activité sont en cours de calcul.",
+      "legendGained": "Ses tuiles gagnées en rose sur la carte",
+      "gainedOnly": "Montrer uniquement les tuiles gagnées"
     },
     "activityFormat": {
       "hours": "{hours} h {minutes}",

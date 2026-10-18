@@ -15,7 +15,7 @@ interface ThemeTabsProps {
 }
 
 const PILL =
-  "h-8 flex-none rounded-full border border-border bg-card px-3.5 data-active:border-primary data-active:bg-primary data-active:text-primary-foreground dark:data-active:bg-primary dark:data-active:text-primary-foreground";
+  "h-8 flex-none rounded-full border border-border bg-card px-3.5 data-active:border-primary data-active:bg-primary data-active:text-primary-foreground data-active:hover:text-primary-foreground dark:data-active:bg-primary dark:data-active:text-primary-foreground dark:data-active:hover:text-primary-foreground";
 
 /** Pills narrowing the badges to a theme; scrolled sideways on narrow screens. */
 export function ThemeTabs({ themes, value, onValueChange }: ThemeTabsProps) {

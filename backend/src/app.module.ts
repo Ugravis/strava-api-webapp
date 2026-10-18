@@ -17,6 +17,7 @@ import mailConfig from './config/mail.config';
 import storageConfig from './config/storage.config';
 import stravaConfig from './config/strava.config';
 import { HealthController } from './health/health.controller';
+import { StationsModule } from './stations/stations.module';
 import { StravaModule } from './strava/strava.module';
 import { TilesModule } from './tiles/tiles.module';
 import { UsersModule } from './users/users.module';
@@ -47,6 +48,7 @@ import { UsersModule } from './users/users.module';
     DistancesModule,
     TilesModule,
     CountriesModule,
+    StationsModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),

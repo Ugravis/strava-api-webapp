@@ -32,6 +32,8 @@ export interface StaleGains {
 export interface LevelGainsResponse {
   /** Tiles no earlier activity had crossed, as `[x, y]` pairs. */
   gained: [number, number][];
+  /** Growth of the side of the largest square. */
+  maxSquare: number;
   /** Growth of the largest cluster. */
   maxCluster: number;
   /** Tiles that became cluster tiles outside of the largest cluster. */
@@ -49,6 +51,8 @@ interface GainRow {
   activity_id: string;
   gained_tiles: number[];
   gained_subtiles: number[];
+  max_square_tiles: number;
+  max_square_subtiles: number;
   max_cluster_tiles: number;
   other_cluster_tiles: number;
   max_cluster_subtiles: number;
@@ -62,20 +66,29 @@ const pairs = (flat: number[]): [number, number][] =>
     flat[2 * i + 1],
   ]);
 
+/** Counters of a row, besides the gained tiles. */
+const COUNTERS = [
+  'max_square_tiles',
+  'max_cluster_tiles',
+  'other_cluster_tiles',
+  'max_square_subtiles',
+  'max_cluster_subtiles',
+  'other_cluster_subtiles',
+] as const;
+const COLUMNS = ['gained_tiles', 'gained_subtiles', ...COUNTERS].join(', ');
+
 function levelResponse(
   gained: number[],
+  maxSquare: number,
   maxCluster: number,
   otherClusters: number,
 ): LevelGainsResponse {
-  return { gained: pairs(gained), maxCluster, otherClusters };
+  return { gained: pairs(gained), maxSquare, maxCluster, otherClusters };
 }
 
 function sameRow(a: GainRow, b: GainRow): boolean {
   return (
-    a.max_cluster_tiles === b.max_cluster_tiles &&
-    a.other_cluster_tiles === b.other_cluster_tiles &&
-    a.max_cluster_subtiles === b.max_cluster_subtiles &&
-    a.other_cluster_subtiles === b.other_cluster_subtiles &&
+    COUNTERS.every((counter) => a[counter] === b[counter]) &&
     a.gained_tiles.length === b.gained_tiles.length &&
     a.gained_subtiles.length === b.gained_subtiles.length &&
     a.gained_tiles.every((value, i) => value === b.gained_tiles[i]) &&
@@ -148,15 +161,15 @@ export class ActivityGainsService {
       activity_id: ids[i],
       gained_tiles: level(tiles),
       gained_subtiles: level(subtiles),
+      max_square_tiles: tiles.maxSquare,
+      max_square_subtiles: subtiles.maxSquare,
       max_cluster_tiles: tiles.maxCluster,
       other_cluster_tiles: tiles.otherClusters,
       max_cluster_subtiles: subtiles.maxCluster,
       other_cluster_subtiles: subtiles.otherClusters,
     }));
     const stored: GainRow[] = await this.dataSource.query(
-      `SELECT activity_id, gained_tiles, gained_subtiles, max_cluster_tiles,
-         other_cluster_tiles, max_cluster_subtiles, other_cluster_subtiles
-       FROM activity_gains WHERE user_id = $1`,
+      `SELECT activity_id, ${COLUMNS} FROM activity_gains WHERE user_id = $1`,
       [userId],
     );
     const byId = new Map(stored.map((row) => [row.activity_id, row]));
@@ -167,23 +180,17 @@ export class ActivityGainsService {
     await this.dataSource.transaction(async (manager) => {
       if (changed.length > 0) {
         await manager.query(
-          `INSERT INTO activity_gains (activity_id, user_id, gained_tiles, gained_subtiles,
-             max_cluster_tiles, other_cluster_tiles, max_cluster_subtiles, other_cluster_subtiles)
-           SELECT r.activity_id, $1, r.gained_tiles, r.gained_subtiles, r.max_cluster_tiles,
-             r.other_cluster_tiles, r.max_cluster_subtiles, r.other_cluster_subtiles
+          `INSERT INTO activity_gains (activity_id, user_id, ${COLUMNS})
+           SELECT r.activity_id, $1, ${COLUMNS}
            FROM jsonb_to_recordset($2::jsonb) AS r(
              activity_id uuid, gained_tiles integer[], gained_subtiles integer[],
-             max_cluster_tiles integer, other_cluster_tiles integer,
-             max_cluster_subtiles integer, other_cluster_subtiles integer)
+             ${COUNTERS.map((counter) => `${counter} integer`).join(', ')})
            -- An activity deleted meanwhile has no gains.
            WHERE EXISTS (SELECT 1 FROM activities a WHERE a.id = r.activity_id)
            ON CONFLICT (activity_id) DO UPDATE SET
-             gained_tiles = EXCLUDED.gained_tiles,
-             gained_subtiles = EXCLUDED.gained_subtiles,
-             max_cluster_tiles = EXCLUDED.max_cluster_tiles,
-             other_cluster_tiles = EXCLUDED.other_cluster_tiles,
-             max_cluster_subtiles = EXCLUDED.max_cluster_subtiles,
-             other_cluster_subtiles = EXCLUDED.other_cluster_subtiles`,
+             ${['gained_tiles', 'gained_subtiles', ...COUNTERS]
+               .map((column) => `${column} = EXCLUDED.${column}`)
+               .join(', ')}`,
           [userId, JSON.stringify(changed)],
         );
       }
@@ -207,20 +214,21 @@ export class ActivityGainsService {
     activityId: string,
   ): Promise<ActivityGainsResponse | null> {
     const [row]: GainRow[] = await this.dataSource.query(
-      `SELECT activity_id, gained_tiles, gained_subtiles, max_cluster_tiles,
-         other_cluster_tiles, max_cluster_subtiles, other_cluster_subtiles
-       FROM activity_gains WHERE activity_id = $1 AND user_id = $2`,
+      `SELECT activity_id, ${COLUMNS} FROM activity_gains
+       WHERE activity_id = $1 AND user_id = $2`,
       [activityId, userId],
     );
     if (!row) return null;
     return {
       tiles: levelResponse(
         row.gained_tiles,
+        row.max_square_tiles,
         row.max_cluster_tiles,
         row.other_cluster_tiles,
       ),
       subtiles: levelResponse(
         row.gained_subtiles,
+        row.max_square_subtiles,
         row.max_cluster_subtiles,
         row.other_cluster_subtiles,
       ),

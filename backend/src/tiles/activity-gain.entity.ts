@@ -35,6 +35,13 @@ export class ActivityGain {
   @Column({ name: 'gained_subtiles', type: 'integer', array: true })
   gainedSubtiles!: number[];
 
+  /** Growth of the side of the largest square of large tiles. */
+  @Column({ name: 'max_square_tiles', type: 'integer' })
+  maxSquareTiles!: number;
+
+  @Column({ name: 'max_square_subtiles', type: 'integer' })
+  maxSquareSubtiles!: number;
+
   /** Growth of the largest cluster of large tiles. */
   @Column({ name: 'max_cluster_tiles', type: 'integer' })
   maxClusterTiles!: number;

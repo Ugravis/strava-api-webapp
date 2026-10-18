@@ -18,6 +18,8 @@ const NEIGHBORS: TilePoint[] = [
 export interface LevelGains {
   /** Tiles no earlier activity had crossed. */
   gained: TilePoint[];
+  /** Growth of the side of the largest square. */
+  maxSquare: number;
   /** Growth of the largest cluster. */
   maxCluster: number;
   /** Tiles that became cluster tiles outside of the largest cluster. */
@@ -32,18 +34,21 @@ export interface ActivityGains {
 }
 
 /**
- * Visited tiles of one level and their clusters, as activities are added in
- * the order they were recorded. Tiles are only ever added: the cluster
- * tiles, visited tiles whose four neighbors are visited too, are grouped
- * with a union-find, which keeps the largest cluster at each step.
+ * Visited tiles of one level, their largest square and their clusters, as
+ * activities are added in the order they were recorded. Tiles are only ever
+ * added: the largest square only grows, around the new tiles, and the
+ * cluster tiles, visited tiles whose four neighbors are visited too, are
+ * grouped with a union-find, which keeps the largest cluster at each step.
  */
-export class ClusterHistory {
+export class TileHistory {
   private readonly visited = new Set<number>();
   /** Cluster tiles, each with its parent in its group. */
   private readonly parent = new Map<number, number>();
   private readonly size = new Map<number, number>();
   private maxSize = 0;
   private maxRoot = -1;
+  /** Side of the largest square. */
+  private maxSquare = 0;
 
   /** Adds the tiles of the next activity and returns what it brought. */
   add(points: TilePoint[]): LevelGains {
@@ -65,9 +70,81 @@ export class ClusterHistory {
     const maxRoot = this.maxRoot >= 0 ? this.find(this.maxRoot) : -1;
     return {
       gained,
+      maxSquare: this.growSquare(gained),
       maxCluster: this.maxSize - maxBefore,
       otherClusters: joined.filter((key) => this.find(key) !== maxRoot).length,
     };
+  }
+
+  /**
+   * Enlarges the largest square while a larger one exists. Any new square
+   * holds a new tile: a new tile with fewer visited tiles in its row or
+   * column than the side tried is skipped at once, the others are looked
+   * around.
+   */
+  private growSquare(gained: TilePoint[]): number {
+    const before = this.maxSquare;
+    for (let side = before + 1; ; side++) {
+      const found = gained.some(
+        ([x, y]) =>
+          this.run(x, y, 1, 0, side) >= side &&
+          this.run(x, y, 0, 1, side) >= side &&
+          this.hasSquareAround(x, y, side),
+      );
+      if (!found) break;
+      this.maxSquare = side;
+    }
+    return this.maxSquare - before;
+  }
+
+  /** Visited tiles in a row through `(x, y)` along `(dx, dy)`, counting it, up to `limit`. */
+  private run(
+    x: number,
+    y: number,
+    dx: number,
+    dy: number,
+    limit: number,
+  ): number {
+    let count = 1;
+    for (
+      let step = 1;
+      count < limit && this.visited.has(keyOf(x + step * dx, y + step * dy));
+      step++
+    )
+      count++;
+    for (
+      let step = 1;
+      count < limit && this.visited.has(keyOf(x - step * dx, y - step * dy));
+      step++
+    )
+      count++;
+    return count;
+  }
+
+  /**
+   * Whether a square of `side` visited tiles lies within `side - 1` tiles of
+   * `(x, y)`, by dynamic programming on the side of the square ending at each
+   * tile of that window.
+   */
+  private hasSquareAround(x: number, y: number, side: number): boolean {
+    const width = 2 * side - 1;
+    const left = x - side + 1;
+    const top = y - side + 1;
+    const sides = new Int32Array(width * width);
+    for (let j = 0; j < width; j++) {
+      for (let i = 0; i < width; i++) {
+        if (!this.visited.has(keyOf(left + i, top + j))) continue;
+        const at = j * width + i;
+        const best =
+          i > 0 && j > 0
+            ? 1 +
+              Math.min(sides[at - 1], sides[at - width], sides[at - width - 1])
+            : 1;
+        if (best >= side) return true;
+        sides[at] = best;
+      }
+    }
+    return false;
   }
 
   /** Makes `(x, y)` a cluster tile if it just became one, and groups it with its neighbors. */
@@ -150,8 +227,8 @@ function subtilePoints({ xs, ys, masks }: ActivityCells): TilePoint[] {
 
 /** What each activity brought, the activities given in the order they were recorded. */
 export function activityGains(activities: ActivityCells[]): ActivityGains[] {
-  const tiles = new ClusterHistory();
-  const subtiles = new ClusterHistory();
+  const tiles = new TileHistory();
+  const subtiles = new TileHistory();
   return activities.map((cells) => ({
     // A large tile without any small tile crossed is not visited, as in the metrics.
     tiles: tiles.add(

@@ -1,4 +1,4 @@
-import { activityGains, ClusterHistory } from './activity-gains';
+import { activityGains, TileHistory } from './activity-gains';
 import type { TilePoint } from './tile-metrics';
 
 /** The tiles of a `width × height` block whose top-left tile is `(x, y)`. */
@@ -15,9 +15,9 @@ function block(
   return points;
 }
 
-describe('ClusterHistory', () => {
+describe('TileHistory', () => {
   it('counts the tiles no earlier activity crossed', () => {
-    const history = new ClusterHistory();
+    const history = new TileHistory();
     expect(history.add(block(0, 0, 2, 1)).gained).toEqual([
       [0, 0],
       [1, 0],
@@ -26,7 +26,7 @@ describe('ClusterHistory', () => {
   });
 
   it('grows the largest cluster with the tiles completed', () => {
-    const history = new ClusterHistory();
+    const history = new TileHistory();
     expect(history.add(block(0, 0, 3, 3))).toMatchObject({
       maxCluster: 1,
       otherClusters: 0,
@@ -39,7 +39,7 @@ describe('ClusterHistory', () => {
   });
 
   it('counts the cluster tiles outside of the largest cluster', () => {
-    const history = new ClusterHistory();
+    const history = new TileHistory();
     history.add(block(0, 0, 4, 3));
     expect(history.add(block(10, 0, 3, 3))).toMatchObject({
       maxCluster: 0,
@@ -48,7 +48,7 @@ describe('ClusterHistory', () => {
   });
 
   it('counts the clusters merged into the largest one', () => {
-    const history = new ClusterHistory();
+    const history = new TileHistory();
     history.add(block(0, 0, 4, 3));
     history.add(block(5, 0, 3, 3));
     // Filling the gap joins both blocks: one cluster of 6 tiles, from 2.
@@ -56,6 +56,24 @@ describe('ClusterHistory', () => {
       maxCluster: 4,
       otherClusters: 0,
     });
+  });
+});
+
+describe('TileHistory largest square', () => {
+  it('grows the side of the largest square', () => {
+    const history = new TileHistory();
+    expect(history.add(block(0, 0, 2, 2)).maxSquare).toBe(2);
+    expect(history.add(block(2, 0, 1, 3)).maxSquare).toBe(0);
+    // Completing the bottom row makes a 3 × 3 square.
+    expect(history.add(block(0, 2, 2, 1)).maxSquare).toBe(1);
+  });
+
+  it('ignores the squares elsewhere than the largest one', () => {
+    const history = new TileHistory();
+    history.add(block(0, 0, 4, 4));
+    expect(history.add(block(10, 10, 3, 3)).maxSquare).toBe(0);
+    expect(history.add(block(4, 0, 1, 5)).maxSquare).toBe(0);
+    expect(history.add(block(0, 4, 4, 1)).maxSquare).toBe(1);
   });
 });
 

@@ -37,6 +37,8 @@ interface HistoryBandProps {
 }
 
 const MODES: HistoryMode[] = ["gained", "state"];
+/** A section of the band, separated from the others by a line, like those of the band of the key figures. */
+const SECTION = "flex items-center px-4 py-3 md:px-6";
 
 /** Local midnight of `day`, for formatting. */
 function dateOf(day: string): Date {
@@ -92,9 +94,9 @@ export function HistoryBand({
   return (
     <section
       aria-label={t("label")}
-      className="flex shrink-0 flex-col gap-3 border-t bg-background px-4 py-3 md:flex-row md:items-center md:gap-6 md:px-6"
+      className="flex shrink-0 flex-col divide-y border-t bg-background md:flex-row md:divide-x md:divide-y-0"
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className={cn(SECTION, "justify-between gap-2")}>
         <ToggleGroup
           aria-label={t("mode")}
           variant="outline"
@@ -118,7 +120,7 @@ export function HistoryBand({
         </Button>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className={cn(SECTION, "min-w-0 flex-1 flex-col items-stretch gap-2")}>
         <div className="flex items-center gap-1 text-xs font-medium">
           <span>
             {t.rich(mode === "gained" ? "since" : "at", {
@@ -168,7 +170,6 @@ export function HistoryBand({
           value={[lastStep - shownStep]}
           disabled={stepCount <= 1}
           ticks
-          range={mode === "gained" ? "end" : "start"}
           rangeClassName="bg-blue-600 dark:bg-blue-500"
           thumbLabel={t("slider")}
           getAriaValueText={(_, value) => stepLabel(HISTORY_STEPS[lastStep - value])}
@@ -183,7 +184,7 @@ export function HistoryBand({
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className={cn(SECTION, "gap-6")}>
         <Stat value={counted(summary?.tiles ?? 0)} label={t(`counts.${mode}.tiles`)} colorKey={colorKey(false)} />
         {subtiles && <Stat value={counted(summary?.subtiles ?? 0)} label={t(`counts.${mode}.subtiles`)} colorKey={colorKey(true)} />}
         <div role="status" className="flex min-w-0 items-center text-xs text-muted-foreground">

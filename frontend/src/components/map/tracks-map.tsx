@@ -36,9 +36,9 @@ const ActivityMap = dynamic(() => import("./activity-map").then((module) => modu
 const NO_LINES: TrackLine[] = [];
 
 /**
- * The map, with nothing over it but its zoom buttons, the band of its key
- * figures below, and over it the band of the history tool when open; both
- * bands fold together.
+ * The map, with nothing over it but its zoom buttons and, along its bottom,
+ * the band of its key figures and above it the band of the history tool
+ * when open; both bands fold together.
  */
 export function TracksMap() {
   const t = useTranslations("map");
@@ -76,8 +76,8 @@ export function TracksMap() {
   );
 
   return (
-    <div className="flex min-h-[60svh] flex-1 flex-col">
-      <div className="relative flex-1 overflow-hidden">
+    <div className="relative min-h-[60svh] flex-1 overflow-hidden">
+      <div className="absolute inset-0">
         {/* Drawn at once: the tracks, read from the browser, arrive later. */}
         <ActivityMap
           lines={tracks.lines ?? NO_LINES}

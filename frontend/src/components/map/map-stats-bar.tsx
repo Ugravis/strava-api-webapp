@@ -32,8 +32,8 @@ interface MapStatsBarProps {
  * Band under the map: the key figures of each layer, with the keys of their
  * colors, the checkboxes of the optional layers, and the buttons of the
  * tools. On narrow screens, the sections scroll sideways; on larger ones,
- * the layers share the width in equal columns, their content centered, the
- * tools at the end.
+ * the tools come first, then the layers share the width in equal columns,
+ * their content centered, the tracks last.
  */
 export function MapStatsBar({
   tracks,
@@ -48,13 +48,9 @@ export function MapStatsBar({
   return (
     <section
       aria-label={t("label")}
-      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[repeat(3,minmax(0,1fr))_auto] md:overflow-visible"
+      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[auto_repeat(3,minmax(0,1fr))] md:overflow-visible"
     >
-      <TracksSection
-        tracks={tracks}
-        checked={layers.tracks}
-        onCheckedChange={(checked) => onLayersChange({ ...layers, tracks: checked })}
-      />
+      <ToolsSection historyOpen={historyOpen} onHistoryOpenChange={onHistoryOpenChange} />
       <TilesSection level="tiles" summary={summary?.tiles} />
       <TilesSection
         level="subtiles"
@@ -62,7 +58,11 @@ export function MapStatsBar({
         checked={layers.subtiles}
         onCheckedChange={(checked) => onLayersChange({ ...layers, subtiles: checked })}
       />
-      <ToolsSection historyOpen={historyOpen} onHistoryOpenChange={onHistoryOpenChange} />
+      <TracksSection
+        tracks={tracks}
+        checked={layers.tracks}
+        onCheckedChange={(checked) => onLayersChange({ ...layers, tracks: checked })}
+      />
     </section>
   );
 }

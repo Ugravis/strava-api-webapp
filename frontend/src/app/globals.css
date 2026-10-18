@@ -143,6 +143,11 @@
 .map-with-panel[data-panel="open"] .maplibregl-ctrl-bottom-right {
   right: var(--map-panel-width);
 }
+/* The bands cover the bottom of the map: its bottom controls stay above them. */
+.map-with-panel .maplibregl-ctrl-bottom-left,
+.map-with-panel .maplibregl-ctrl-bottom-right {
+  bottom: var(--map-bands-height, 0px);
+}
 
 /*
  * Map controls in the colors of the app, in both themes. Outside the layers

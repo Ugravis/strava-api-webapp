@@ -22,6 +22,7 @@ import {
 import { activityTrack, addActivityTrackLayer, setActivityTrack, setActivityTrackVisible } from "./activity-track-layer";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
 import { type MapHistory, setHistory } from "./history-layer";
+import { BANDS_HEIGHT_VAR } from "./map-bands";
 import { MapSidePanel } from "./map-side-panel";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
 import {
@@ -225,7 +226,11 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, h
     if (!framedRef.current) {
       const bounds = boundsOf(lines);
       if (bounds) {
-        map.fitBounds(bounds, { padding: 40, maxZoom: 13, duration: 0 });
+        map.fitBounds(bounds, {
+          padding: { top: 40, left: 40, right: 40, bottom: 40 + bandsHeightOf(containerRef.current) },
+          maxZoom: 13,
+          duration: 0,
+        });
         framedRef.current = true;
       }
     }
@@ -315,7 +320,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, h
     map.easeTo({
       center: tileCenter(shown.zoom, shown.x, shown.y),
       zoom: CENTER_ZOOMS[shown.zoom],
-      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, 0],
+      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, -bandsHeightOf(containerRef.current) / 2],
     });
   }, [shown]);
 
@@ -345,7 +350,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, h
     map.fitBounds([bounds.west, bounds.south, bounds.east, bounds.north], {
       padding: {
         top: ACTIVITY_PADDING,
-        bottom: ACTIVITY_PADDING,
+        bottom: ACTIVITY_PADDING + bandsHeightOf(containerRef.current),
         left: ACTIVITY_PADDING,
         right: ACTIVITY_PADDING + panelWidthOf(panelRef.current, collapsedRef.current),
       },
@@ -432,6 +437,11 @@ function drawHistory(
       if (past) showTiles();
     },
   });
+}
+
+/** Height of the bands over the bottom of the map, as set by `MapBands`. */
+function bandsHeightOf(container: HTMLElement | null): number {
+  return container ? parseFloat(getComputedStyle(container).getPropertyValue(BANDS_HEIGHT_VAR)) || 0 : 0;
 }
 
 /** Width of the panel over the map: none when folded or closed. */

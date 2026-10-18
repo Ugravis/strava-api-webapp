@@ -1,4 +1,12 @@
-import { Controller, Delete, Get, HttpCode, Param, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Put,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '../users/user.entity';
 import { BadgeParamsDto } from './badge-params.dto';
@@ -7,6 +15,7 @@ import {
   DistancesService,
   type DistancesOverview,
 } from './distances.service';
+import { ReorderPinsDto } from './reorder-pins.dto';
 
 /** Compares the cumulated distances of the user to known distances. */
 @Controller('distances')
@@ -43,5 +52,15 @@ export class DistancesController {
     @Param() { id }: BadgeParamsDto,
   ): Promise<void> {
     return this.distances.unpin(user.id, id);
+  }
+
+  /** Ranks the pinned badges of the user in the given order. */
+  @Put('pins')
+  @HttpCode(204)
+  reorderPins(
+    @CurrentUser() user: User,
+    @Body() { badgeIds }: ReorderPinsDto,
+  ): Promise<void> {
+    return this.distances.reorderPins(user.id, badgeIds);
   }
 }

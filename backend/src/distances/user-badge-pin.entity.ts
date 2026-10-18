@@ -1,4 +1,5 @@
 import {
+  Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
@@ -25,7 +26,10 @@ export class UserBadgePin {
   @JoinColumn({ name: 'badge_id' })
   badge?: Badge;
 
-  /** Pinned badges are listed by pin date. */
+  /** Rank among the pinned badges of the user, chosen by the user. */
+  @Column({ type: 'integer' })
+  position!: number;
+
   @CreateDateColumn({ name: 'pinned_at', type: 'timestamptz' })
   pinnedAt!: Date;
 }

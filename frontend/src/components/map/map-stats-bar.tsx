@@ -1,6 +1,6 @@
 "use client";
 
-import { HistoryIcon, LoaderCircleIcon } from "lucide-react";
+import { HistoryIcon, LoaderCircleIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { type ReactNode, useEffect } from "react";
@@ -26,6 +26,9 @@ interface MapStatsBarProps {
   /** Whether the band of the history tool is open. */
   historyOpen: boolean;
   onHistoryOpenChange: (open: boolean) => void;
+  /** Whether the sector tool is in use: its search or its band open. */
+  sectorOpen: boolean;
+  onSectorOpenChange: (open: boolean) => void;
 }
 
 /**
@@ -42,6 +45,8 @@ export function MapStatsBar({
   onLayersChange,
   historyOpen,
   onHistoryOpenChange,
+  sectorOpen,
+  onSectorOpenChange,
 }: MapStatsBarProps) {
   const t = useTranslations("map.stats");
 
@@ -50,7 +55,12 @@ export function MapStatsBar({
       aria-label={t("label")}
       className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[auto_repeat(2,minmax(0,1fr))_auto] md:overflow-visible"
     >
-      <ToolsSection historyOpen={historyOpen} onHistoryOpenChange={onHistoryOpenChange} />
+      <ToolsSection
+        historyOpen={historyOpen}
+        onHistoryOpenChange={onHistoryOpenChange}
+        sectorOpen={sectorOpen}
+        onSectorOpenChange={onSectorOpenChange}
+      />
       <TilesSection level="tiles" summary={summary?.tiles} />
       <TilesSection
         level="subtiles"
@@ -220,19 +230,27 @@ function TracksSection({
   );
 }
 
-/** Buttons opening the tools of the map, each in a band over this one. */
+/** Buttons opening the tools of the map, one above the other, each in a band over this one. */
 function ToolsSection({
   historyOpen,
   onHistoryOpenChange,
-}: Pick<MapStatsBarProps, "historyOpen" | "onHistoryOpenChange">) {
+  sectorOpen,
+  onSectorOpenChange,
+}: Pick<MapStatsBarProps, "historyOpen" | "onHistoryOpenChange" | "sectorOpen" | "onSectorOpenChange">) {
   const t = useTranslations("map");
 
   return (
     <StatsSection title={t("stats.tools")}>
-      <Toggle variant="outline" size="sm" pressed={historyOpen} onPressedChange={onHistoryOpenChange}>
-        <HistoryIcon />
-        {t("history.open")}
-      </Toggle>
+      <div className="flex flex-col gap-1.5 *:justify-start">
+        <Toggle variant="outline" size="sm" pressed={historyOpen} onPressedChange={onHistoryOpenChange}>
+          <HistoryIcon />
+          {t("history.open")}
+        </Toggle>
+        <Toggle variant="outline" size="sm" pressed={sectorOpen} onPressedChange={onSectorOpenChange}>
+          <SearchIcon />
+          {t("sector.open")}
+        </Toggle>
+      </div>
     </StatsSection>
   );
 }

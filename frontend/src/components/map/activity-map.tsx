@@ -24,6 +24,7 @@ import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./coun
 import { type MapHistory, setHistory } from "./history-layer";
 import { BANDS_HEIGHT_VAR } from "./map-bands";
 import { MapSidePanel } from "./map-side-panel";
+import { type MapSector, setSector } from "./sector-layer";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
 import {
   addTileLayers,
@@ -63,16 +64,30 @@ interface ActivityMapProps {
   showTracks: boolean;
   /** What the history tool draws; null while it is closed. */
   history: MapHistory | null;
+  /** The sector picked with its tool; null while it is closed. */
+  sector: MapSector | null;
+  /** Incremented to frame the sector, once its bounds are known. */
+  sectorFrame: number;
   label: string;
 }
 
-/** Margin around an activity framed on the map, in pixels. */
+/** Margin around an activity or a sector framed on the map, in pixels. */
 const ACTIVITY_PADDING = 48;
 /** Zoom of the map centered on a tile of each level: it spans about a fifth of a large screen. */
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, summary, countries, tileMode, showTracks, history: mapHistory, label }: ActivityMapProps) {
+export function ActivityMap({
+  lines,
+  summary,
+  countries,
+  tileMode,
+  showTracks,
+  history: mapHistory,
+  sector,
+  sectorFrame,
+  label,
+}: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -86,6 +101,9 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, h
   const modeRef = useRef(tileMode);
   const showTracksRef = useRef(showTracks);
   const mapHistoryRef = useRef(mapHistory);
+  const sectorRef = useRef(sector);
+  // The last request to frame the sector served.
+  const sectorFramedRef = useRef(0);
   // Whether a past state is shown in place of today's tiles: only once it is loaded.
   const pastRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
@@ -173,6 +191,8 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, h
       pastRef.current = false;
       setTileMode(map, modeRef.current);
       drawHistory(map, mapHistoryRef.current, modeRef.current, paletteRef.current, pastRef);
+      // Last: over every other layer.
+      setSector(map, sectorRef.current, paletteRef.current);
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
     // The tracks arrive after the map: once the user has moved it, they no
@@ -278,6 +298,29 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, h
       drawHistory(mapRef.current, mapHistory, modeRef.current, paletteRef.current, pastRef);
     }
   }, [mapHistory]);
+
+  useEffect(() => {
+    sectorRef.current = sector;
+    // Before the style is loaded, the layers get the sector on load.
+    if (mapRef.current && styleReadyRef.current) setSector(mapRef.current, sector, paletteRef.current);
+  }, [sector]);
+
+  const sectorBounds = sector?.bounds;
+  useEffect(() => {
+    // Framed once per request, beside the panel and above the bands.
+    const map = mapRef.current;
+    if (!map || !sectorBounds || sectorFrame === sectorFramedRef.current) return;
+    sectorFramedRef.current = sectorFrame;
+    framedRef.current = true;
+    map.fitBounds(sectorBounds, {
+      padding: {
+        top: ACTIVITY_PADDING,
+        bottom: ACTIVITY_PADDING + bandsHeightOf(containerRef.current),
+        left: ACTIVITY_PADDING,
+        right: ACTIVITY_PADDING + panelWidthOf(panelRef.current, collapsedRef.current),
+      },
+    });
+  }, [sectorBounds, sectorFrame]);
 
   useEffect(() => {
     collapsedRef.current = collapsed;

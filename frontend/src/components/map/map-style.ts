@@ -102,6 +102,10 @@ export interface MapPalette {
   country: string;
   countryOpacity: number;
   countryBorder: string;
+  /** Veil over the map outside the sector picked: its colors fade towards it. */
+  outside: string;
+  outsideOpacity: number;
+  sectorBorder: string;
 }
 
 const LIGHT: MapPalette = {
@@ -149,6 +153,9 @@ const LIGHT: MapPalette = {
   country: "#e8d4ae",
   countryOpacity: 0.85,
   countryBorder: "#a8906a",
+  outside: "#f3f2f0",
+  outsideOpacity: 0.65,
+  sectorBorder: "#2a1f12",
 };
 
 const DARK: MapPalette = {
@@ -197,6 +204,9 @@ const DARK: MapPalette = {
   country: "#3b3226",
   countryOpacity: 0.85,
   countryBorder: "#6f6658",
+  outside: "#121211",
+  outsideOpacity: 0.65,
+  sectorBorder: "#ece6dc",
 };
 
 /** Both palettes, for the keys drawn by the page in CSS, whatever the theme resolved. */

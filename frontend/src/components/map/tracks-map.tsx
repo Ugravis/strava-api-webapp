@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
 import { useCountries } from "@/hooks/use-countries";
+import { useCountrySector } from "@/hooks/use-country-sector";
 import { useTileHistory } from "@/hooks/use-tile-history";
 import { useTileSummary } from "@/hooks/use-tile-summary";
 import {
@@ -25,6 +26,9 @@ import type { MapHistory } from "./history-layer";
 import { ALL_MAP_LAYERS, type MapLayers, tileModeOf } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
 import { MapStatsBar } from "./map-stats-bar";
+import { SectorBand } from "./sector-band";
+import type { MapSector } from "./sector-layer";
+import { SectorSearchDialog } from "./sector-search-dialog";
 
 // MapLibre needs the browser (WebGL): it is neither prerendered nor shipped
 // with the other pages.
@@ -35,10 +39,13 @@ const ActivityMap = dynamic(() => import("./activity-map").then((module) => modu
 
 const NO_LINES: TrackLine[] = [];
 
+/** Tools of the map, each with its band: one at a time, their drawings would mix. */
+type MapTool = "history" | "sector";
+
 /**
  * The map, with nothing over it but its zoom buttons and, along its bottom,
- * the band of its key figures and above it the band of the history tool
- * when open; both bands fold together.
+ * the band of its key figures and above it the band of the tool open, the
+ * history or the sector; both bands fold together.
  */
 export function TracksMap() {
   const t = useTranslations("map");
@@ -55,7 +62,21 @@ export function TracksMap() {
     [completion],
   );
   const [layers, setLayers] = useState<MapLayers>(ALL_MAP_LAYERS);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [tool, setTool] = useState<MapTool | null>(null);
+  const historyOpen = tool === "history";
+  // The sector tool opens on its search; a sector picked opens its band.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sectorCode, setSectorCode] = useState<string | null>(null);
+  // Incremented to frame the sector: when picked, and on demand.
+  const [sectorFrame, setSectorFrame] = useState(0);
+  const shownSector = tool === "sector" ? sectorCode : null;
+  const { sector, error: sectorError } = useCountrySector(shownSector, summary?.version ?? null);
+  const sectorShapeVersion = sector?.shapeVersion ?? null;
+  const sectorBounds = sector?.bounds ?? null;
+  const mapSector = useMemo<MapSector | null>(
+    () => (shownSector ? { code: shownSector, shapeVersion: sectorShapeVersion, bounds: sectorBounds } : null),
+    [shownSector, sectorShapeVersion, sectorBounds],
+  );
   const [today] = useState(() => dayOf(new Date()));
   const [historySettings, setHistorySettings] = useState<HistorySettings>(() => ({
     mode: "gained",
@@ -86,6 +107,8 @@ export function TracksMap() {
           tileMode={tileModeOf(layers)}
           showTracks={layers.tracks}
           history={mapHistory}
+          sector={mapSector}
+          sectorFrame={sectorFrame}
           label={t("label")}
         />
       </div>
@@ -94,7 +117,7 @@ export function TracksMap() {
           <HistoryBand
             settings={shownSettings}
             onSettingsChange={setHistorySettings}
-            onClose={() => setHistoryOpen(false)}
+            onClose={() => setTool(null)}
             summary={history.summary}
             loading={history.loading}
             error={history.error}
@@ -103,15 +126,43 @@ export function TracksMap() {
             subtiles={layers.subtiles}
           />
         )}
+        {shownSector && (
+          <SectorBand
+            code={shownSector}
+            sector={sector}
+            error={sectorError}
+            subtiles={layers.subtiles}
+            onSearch={() => setSearchOpen(true)}
+            onRecenter={() => setSectorFrame((count) => count + 1)}
+            onClose={() => setTool(null)}
+          />
+        )}
         <MapStatsBar
           tracks={tracks}
           summary={summary}
           layers={layers}
           onLayersChange={setLayers}
           historyOpen={historyOpen}
-          onHistoryOpenChange={setHistoryOpen}
+          onHistoryOpenChange={(open) => setTool(open ? "history" : null)}
+          sectorOpen={shownSector !== null || searchOpen}
+          onSectorOpenChange={(open) => {
+            setSearchOpen(open);
+            if (!open && tool === "sector") setTool(null);
+          }}
         />
       </MapBands>
+      <SectorSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        visited={completion?.countries ?? null}
+        current={shownSector}
+        onPick={(code) => {
+          setSectorCode(code);
+          setTool("sector");
+          setSearchOpen(false);
+          setSectorFrame((count) => count + 1);
+        }}
+      />
     </div>
   );
 }

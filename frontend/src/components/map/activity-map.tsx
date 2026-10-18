@@ -21,6 +21,8 @@ import {
 } from "./activity-tiles-layer";
 import { activityTrack, addActivityTrackLayer, setActivityTrack, setActivityTrackVisible } from "./activity-track-layer";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
+import { type MapHistory, setHistory } from "./history-layer";
+import { BANDS_HEIGHT_VAR } from "./map-bands";
 import { MapSidePanel } from "./map-side-panel";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
 import {
@@ -59,6 +61,8 @@ interface ActivityMapProps {
   countries: VisitedCountries;
   tileMode: TileMode;
   showTracks: boolean;
+  /** What the history tool draws; null while it is closed. */
+  history: MapHistory | null;
   label: string;
 }
 
@@ -68,7 +72,7 @@ const ACTIVITY_PADDING = 48;
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
 
 /** Vector map drawing every activity track and the tiles they crossed. */
-export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
+export function ActivityMap({ lines, summary, countries, tileMode, showTracks, history: mapHistory, label }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -81,6 +85,9 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const styleReadyRef = useRef(false);
   const modeRef = useRef(tileMode);
   const showTracksRef = useRef(showTracks);
+  const mapHistoryRef = useRef(mapHistory);
+  // Whether a past state is shown in place of today's tiles: only once it is loaded.
+  const pastRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
   const paletteRef = useRef(palette);
 
@@ -163,7 +170,9 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
         paletteRef.current,
         firstLabel,
       );
+      pastRef.current = false;
       setTileMode(map, modeRef.current);
+      drawHistory(map, mapHistoryRef.current, modeRef.current, paletteRef.current, pastRef);
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
     // The tracks arrive after the map: once the user has moved it, they no
@@ -217,7 +226,11 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     if (!framedRef.current) {
       const bounds = boundsOf(lines);
       if (bounds) {
-        map.fitBounds(bounds, { padding: 40, maxZoom: 13, duration: 0 });
+        map.fitBounds(bounds, {
+          padding: { top: 40, left: 40, right: 40, bottom: 40 + bandsHeightOf(containerRef.current) },
+          maxZoom: 13,
+          duration: 0,
+        });
         framedRef.current = true;
       }
     }
@@ -231,7 +244,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     // First version of the tiles: the layers go below the tracks.
     const beforeId = map.getLayer(TRACK_CASING_LAYER_ID) ? TRACK_CASING_LAYER_ID : firstLabelId(map);
     addTileLayers(map, tilesRef.current, paletteRef.current, beforeId);
-    setTileMode(map, modeRef.current);
+    setTileMode(map, modeRef.current, pastRef.current);
   }, [summary]);
 
   useEffect(() => {
@@ -244,7 +257,8 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     modeRef.current = tileMode;
     // Layers not added yet get the mode once the style is loaded.
     if (!mapRef.current) return;
-    setTileMode(mapRef.current, tileMode);
+    setTileMode(mapRef.current, tileMode, pastRef.current);
+    if (styleReadyRef.current) drawHistory(mapRef.current, mapHistoryRef.current, tileMode, paletteRef.current, pastRef);
     // The tile under the pointer may belong to the other level.
     hoveredRef.current = null;
     mapRef.current.getCanvas().style.cursor = "";
@@ -256,6 +270,14 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     // A layer not added yet is shown or hidden once the style is loaded.
     if (mapRef.current) setTracksVisible(mapRef.current, showTracks);
   }, [showTracks]);
+
+  useEffect(() => {
+    mapHistoryRef.current = mapHistory;
+    // Before the style is loaded, the layers get the history on load.
+    if (mapRef.current && styleReadyRef.current) {
+      drawHistory(mapRef.current, mapHistory, modeRef.current, paletteRef.current, pastRef);
+    }
+  }, [mapHistory]);
 
   useEffect(() => {
     collapsedRef.current = collapsed;
@@ -298,7 +320,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     map.easeTo({
       center: tileCenter(shown.zoom, shown.x, shown.y),
       zoom: CENTER_ZOOMS[shown.zoom],
-      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, 0],
+      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, -bandsHeightOf(containerRef.current) / 2],
     });
   }, [shown]);
 
@@ -328,7 +350,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     map.fitBounds([bounds.west, bounds.south, bounds.east, bounds.north], {
       padding: {
         top: ACTIVITY_PADDING,
-        bottom: ACTIVITY_PADDING,
+        bottom: ACTIVITY_PADDING + bandsHeightOf(containerRef.current),
         left: ACTIVITY_PADDING,
         right: ACTIVITY_PADDING + panelWidthOf(panelRef.current, collapsedRef.current),
       },
@@ -388,6 +410,38 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
  */
 function setBaseStyle(map: MapLibreMap, palette: MapPalette): void {
   map.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
+}
+
+/**
+ * Draws the history, or hides it. In the state mode, the history replaces
+ * today's tiles once fully shown; otherwise they come back as it fades in.
+ * `pastRef` follows what is shown.
+ */
+function drawHistory(
+  map: MapLibreMap,
+  history: MapHistory | null,
+  mode: TileMode,
+  palette: MapPalette,
+  pastRef: { current: boolean },
+): void {
+  const past = history?.mode === "state";
+  const showTiles = () => {
+    pastRef.current = past;
+    setTileMode(map, mode, past);
+  };
+  setHistory(map, history, palette, mode === "both", firstLabelId(map), {
+    onFadeIn: () => {
+      if (!past) showTiles();
+    },
+    onShown: () => {
+      if (past) showTiles();
+    },
+  });
+}
+
+/** Height of the bands over the bottom of the map, as set by `MapBands`. */
+function bandsHeightOf(container: HTMLElement | null): number {
+  return container ? parseFloat(getComputedStyle(container).getPropertyValue(BANDS_HEIGHT_VAR)) || 0 : 0;
 }
 
 /** Width of the panel over the map: none when folded or closed. */

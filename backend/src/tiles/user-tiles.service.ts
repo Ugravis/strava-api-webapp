@@ -10,6 +10,15 @@ import {
 import type { StoredLevelMetrics, StoredMetrics } from './tile-metrics';
 import { encodePng, rasterIndices, type Rgba } from './subtile-raster';
 import type { PackedCells, PackedMetrics } from './tile-metrics-packing';
+import {
+  groupingLevel,
+  layerSql,
+  marginOf,
+  rectanglesSql,
+  SUBTILES_PER_SIDE,
+  tileRange,
+  VECTOR_OUTLINE_MIN_ZOOM,
+} from './map-tile-sql';
 
 /** Tiles of a user and their metrics, as stored. */
 export interface TilesSummary {
@@ -83,29 +92,6 @@ const RASTER_CLUSTERS_MIN_ZOOM = 7;
  */
 const TILES_FORMAT = 8;
 /**
- * Zoomed out, the large tiles are grouped by ancestor, at most at
- * `zoom + 9`, one pixel of a 512 pixels map tile: finer, the area would
- * look like a thin lace. Below zoom 6, the first grouping, at zoom 13, two
- * pixels at zoom 5, comes before it.
- */
-const VECTOR_GROUPING_LEVELS = 9;
-const FIRST_GROUPING_ZOOM = 6;
-
-/** Level at which the large tiles of a map tile at `zoom` are grouped. */
-function groupingLevel(zoom: number): number {
-  const ceiling = zoom < FIRST_GROUPING_ZOOM ? TILE_ZOOM - 1 : TILE_ZOOM;
-  return Math.min(ceiling, zoom + VECTOR_GROUPING_LEVELS);
-}
-const MVT_EXTENT = 4096;
-/** The outline of the visited area is served from this zoom, where the map draws it. */
-const VECTOR_OUTLINE_MIN_ZOOM = 10;
-/** Margin of the vector tiles: the areas go beyond the tile, their outlines are not cut at its edges. */
-const MVT_BUFFER = 64;
-/** Half of the Web Mercator world, in meters. */
-const WORLD_HALF_M = 20037508.342789244;
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
-
-/**
  * Layers of the vector tiles: the visited large tiles merged into one area,
  * its outline, the area of the largest cluster, that of the other clusters,
  * and at the deepest zoom the small tiles, only to pick them on the map.
@@ -117,50 +103,6 @@ export const VECTOR_LAYERS = {
   tileClusters: 'tile_clusters',
   subtiles: 'subtiles',
 } as const;
-
-/** Range of large tiles covered by the map tile `(zoom, x, y)`, extended by `margin` large tiles. */
-function tileRange(zoom: number, x: number, y: number, margin = 0) {
-  const span = 2 ** (TILE_ZOOM - zoom);
-  return {
-    minX: x * span - margin,
-    maxX: (x + 1) * span - 1 + margin,
-    minY: y * span - margin,
-    maxY: (y + 1) * span - 1 + margin,
-  };
-}
-
-/**
- * Rectangles covering the cells of `source` (columns `x`, `y`, at `level`):
- * the contiguous cells of a row, then the identical runs of consecutive
- * rows. As geometries in Web Mercator.
- */
-function rectanglesSql(source: string, level: number): string {
-  const size = (2 * WORLD_HALF_M) / 2 ** level;
-  return `SELECT ST_MakeEnvelope(
-      ${-WORLD_HALF_M} + x0 * ${size}, ${WORLD_HALF_M} - (y1 + 1) * ${size},
-      ${-WORLD_HALF_M} + (x1 + 1) * ${size}, ${WORLD_HALF_M} - y0 * ${size}, 3857) AS geom
-    FROM (
-      SELECT x0, x1, min(y) AS y0, max(y) AS y1 FROM (
-        SELECT x0, x1, y, y - row_number() OVER (PARTITION BY x0, x1 ORDER BY y) AS block
-        FROM (
-          SELECT y, min(x) AS x0, max(x) AS x1 FROM (
-            SELECT x, y, x - row_number() OVER (PARTITION BY y ORDER BY x) AS run
-            FROM ${source}
-          ) cells GROUP BY y, run
-        ) runs
-      ) blocks GROUP BY x0, x1, block
-    ) rectangles`;
-}
-
-/** One vector tile layer holding `geometry`, an expression over the CTE `bounds`; empty without it. */
-function layerSql(name: string, geometry: string): string {
-  return `COALESCE((
-    SELECT ST_AsMVT(features, '${name}', ${MVT_EXTENT}, 'geom') FROM (
-      SELECT ST_AsMVTGeom(${geometry}, bounds.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
-      FROM bounds
-    ) features WHERE geom IS NOT NULL
-  ), ''::bytea)`;
-}
 
 /**
  * Read side of the tiles: `user_tiles`, the union of the tiles of the
@@ -399,12 +341,7 @@ export class UserTilesService {
     x: number,
     y: number,
   ): Promise<string> {
-    const { minX, maxX, minY, maxY } = tileRange(
-      zoom,
-      x,
-      y,
-      this.marginOf(zoom),
-    );
+    const { minX, maxX, minY, maxY } = tileRange(zoom, x, y, marginOf(zoom));
     const [row]: { count: number; seq: string }[] = await this.dataSource.query(
       `SELECT count(*)::int AS count, COALESCE(max(changed_seq), 0)::text AS seq
        FROM user_tiles
@@ -412,14 +349,6 @@ export class UserTilesService {
       [userId, minX, maxX, minY, maxY],
     );
     return `"${TILES_FORMAT}-${row.count}-${row.seq}"`;
-  }
-
-  /** Large tiles read around a map tile, so that its areas reach its buffer. */
-  private marginOf(zoom: number): number {
-    const level = groupingLevel(zoom);
-    const cellsPerSide = 2 ** (level - zoom);
-    const margin = Math.ceil((cellsPerSide * MVT_BUFFER) / MVT_EXTENT) + 1;
-    return margin << (TILE_ZOOM - level);
   }
 
   /**
@@ -437,12 +366,7 @@ export class UserTilesService {
   ): Promise<Buffer> {
     const level = groupingLevel(zoom);
     const shift = TILE_ZOOM - level;
-    const { minX, maxX, minY, maxY } = tileRange(
-      zoom,
-      x,
-      y,
-      this.marginOf(zoom),
-    );
+    const { minX, maxX, minY, maxY } = tileRange(zoom, x, y, marginOf(zoom));
     const withSubtiles = zoom === TILES_MAX_ZOOM;
     const own = tileRange(zoom, x, y);
     const [row]: { tile: Buffer }[] = await this.dataSource.query(

@@ -22,8 +22,9 @@ interface MapSidePanelProps {
 }
 
 /**
- * Panel along the right edge of the map, browsing tiles and activities like
- * a small browser. Folded, only its handle stays, to unfold it.
+ * Panel along the right edge of the map, above the bands over its bottom,
+ * browsing tiles and activities like a small browser. Folded, only its
+ * handle stays, to unfold it.
  */
 export function MapSidePanel({
   ref,
@@ -44,7 +45,7 @@ export function MapSidePanel({
       ref={ref}
       aria-label={t("label")}
       className={cn(
-        "absolute inset-y-0 right-0 z-10 flex w-(--map-panel-width) transition-transform duration-200 ease-out motion-reduce:transition-none",
+        "absolute top-0 right-0 bottom-(--map-bands-height,0px) z-10 flex w-(--map-panel-width) transition-transform duration-200 ease-out motion-reduce:transition-none",
         collapsed && "translate-x-full",
       )}
     >

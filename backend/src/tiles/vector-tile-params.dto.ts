@@ -1,5 +1,7 @@
 import { Type } from 'class-transformer';
 import {
+  IsDate,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -7,6 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { HISTORY_MODES, type HistoryMode } from './tile-history.service';
 import { RASTER_MIN_ZOOM, TILES_MAX_ZOOM } from './user-tiles.service';
 
 export class VectorTileParamsDto {
@@ -69,4 +72,21 @@ export class RasterTileQueryDto {
   @IsString()
   @Matches(RGBA_HEX)
   clusters?: string;
+}
+
+/** The history of the tiles at a date: the tiles gained since, or the map as it was then. */
+export class TileHistoryQueryDto {
+  @IsIn(HISTORY_MODES)
+  mode!: HistoryMode;
+
+  @Type(() => Date)
+  @IsDate()
+  date!: Date;
+}
+
+/** The history of the small tiles at a date, drawn in `color` (`rrggbbaa`). */
+export class TileHistoryRasterQueryDto extends TileHistoryQueryDto {
+  @IsString()
+  @Matches(RGBA_HEX)
+  color!: string;
 }

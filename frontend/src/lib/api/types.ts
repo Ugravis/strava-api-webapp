@@ -247,3 +247,20 @@ export interface CountriesCompletion {
   /** Changes with the shapes of the countries drawn on the map; null without shapes. */
   shapesVersion: string | null;
 }
+
+/** Which tiles the history shows: those first visited since a date, or the map as it was at that date. */
+export type HistoryMode = "gained" | "state";
+
+/** Tiles of the history at a date. */
+export interface TileHistorySummary {
+  /** Version of the tiles whose first visits are known: the map tiles of the history change with it. Null until known. */
+  version: string | null;
+  /** False while the first visits of the latest tiles are being computed. */
+  upToDate: boolean;
+  /** Start of the first activity that crossed a tile, ISO 8601; null without tiles. */
+  firstVisitAt: string | null;
+  /** Large tiles (zoom 14) gained since the date, or visited before it. */
+  tiles: number;
+  /** Small tiles (zoom 17) gained since the date, or visited before it. */
+  subtiles: number;
+}

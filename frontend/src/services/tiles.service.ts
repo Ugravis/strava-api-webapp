@@ -1,5 +1,13 @@
 import { apiRequest } from "@/lib/api/client";
-import type { ActivityTiles, TileActivitiesPage, TileStats, TilesSummary, TileVisits } from "@/lib/api/types";
+import type {
+  ActivityTiles,
+  HistoryMode,
+  TileActivitiesPage,
+  TileHistorySummary,
+  TileStats,
+  TilesSummary,
+  TileVisits,
+} from "@/lib/api/types";
 
 export const tilesService = {
   getSummary: () => apiRequest<TilesSummary>("/tiles/summary"),
@@ -15,4 +23,7 @@ export const tilesService = {
     if (cursor) query.set("cursor", cursor);
     return apiRequest<TileActivitiesPage>(`/tiles/${zoom}/${x}/${y}/activities?${query}`);
   },
+
+  getHistory: (mode: HistoryMode, date: string) =>
+    apiRequest<TileHistorySummary>(`/tiles/history?${new URLSearchParams({ mode, date })}`),
 };

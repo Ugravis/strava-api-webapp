@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { ActivityGains, LevelGains } from './activity-gains';
+import { SUBTILE_ZOOM, TILE_ZOOM } from './tile-grid';
+
+/** Small tiles per side of a large tile, whose bits are laid out row by row. */
+const SUBTILE_SHIFT = SUBTILE_ZOOM - TILE_ZOOM;
+const SUBTILE_SIDE = 2 ** SUBTILE_SHIFT;
 
 /** Changes this recent are left to settle: an import saves many activities in a row. */
 const SETTLE_DELAY = "interval '2 seconds'";
@@ -147,9 +152,9 @@ export class ActivityGainsService {
   }
 
   /**
-   * Stores the gains replayed from the tiles at `version`. Only the
-   * activities whose gains change are written: adding the latest activity
-   * writes one row.
+   * Stores the gains replayed from the tiles at `version`, and the first
+   * visits of their small tiles. Only the activities whose gains change are
+   * written: adding the latest activity writes one row.
    */
   async save(
     { userId, version }: StaleGains,
@@ -192,6 +197,25 @@ export class ActivityGainsService {
                .map((column) => `${column} = EXCLUDED.${column}`)
                .join(', ')}`,
           [userId, JSON.stringify(changed)],
+        );
+        await manager.query(
+          `DELETE FROM tile_first_visits WHERE activity_id = ANY($1::uuid[])`,
+          [changed.map((row) => row.activity_id)],
+        );
+        await manager.query(
+          `INSERT INTO tile_first_visits (activity_id, user_id, x, y, visited_at, mask)
+           SELECT g.activity_id, g.user_id, s.x >> ${SUBTILE_SHIFT}, s.y >> ${SUBTILE_SHIFT},
+             a.started_at, bit_or(1::bigint << (
+               (s.y & ${SUBTILE_SIDE - 1}) * ${SUBTILE_SIDE} + (s.x & ${SUBTILE_SIDE - 1})))
+           FROM activity_gains g
+           JOIN activities a ON a.id = g.activity_id
+           CROSS JOIN LATERAL (
+             SELECT g.gained_subtiles[2 * i - 1] AS x, g.gained_subtiles[2 * i] AS y
+             FROM generate_series(1, cardinality(g.gained_subtiles) / 2) AS i
+           ) s
+           WHERE g.activity_id = ANY($1::uuid[])
+           GROUP BY g.activity_id, g.user_id, 3, 4, a.started_at`,
+          [changed.map((row) => row.activity_id)],
         );
       }
       // Activities left without tiles brought nothing.

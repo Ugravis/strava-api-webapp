@@ -9,9 +9,9 @@ import {
 import { User } from '../users/user.entity';
 import { Badge } from './badge.entity';
 
-/** A badge pinned by a user, shown first among their badges. */
-@Entity('user_badge_pins')
-export class UserBadgePin {
+/** A favorite badge of a user, shown first among their badges. */
+@Entity('user_favorite_badges')
+export class UserFavoriteBadge {
   @PrimaryColumn({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
@@ -26,10 +26,10 @@ export class UserBadgePin {
   @JoinColumn({ name: 'badge_id' })
   badge?: Badge;
 
-  /** Rank among the pinned badges of the user, chosen by the user. */
+  /** Rank among the favorites of the user, chosen by the user. */
   @Column({ type: 'integer' })
   position!: number;
 
-  @CreateDateColumn({ name: 'pinned_at', type: 'timestamptz' })
-  pinnedAt!: Date;
+  @CreateDateColumn({ name: 'added_at', type: 'timestamptz' })
+  addedAt!: Date;
 }

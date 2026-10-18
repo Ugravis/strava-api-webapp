@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
+import { BadgeTheme } from './badge-theme.entity';
 import type { DistanceFamily } from './distance-families';
 
 /**
@@ -24,6 +32,14 @@ export class Badge {
   /** Display description, in French. */
   @Column({ type: 'varchar', length: 300 })
   description!: string;
+
+  /** Theme of the badge, if any. */
+  @Column({ name: 'theme_id', type: 'varchar', length: 32, nullable: true })
+  themeId!: string | null;
+
+  @ManyToOne(() => BadgeTheme, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'theme_id' })
+  theme?: BadgeTheme;
 
   /** Icon key, resolved by the clients; unknown keys get a generic icon. */
   @Column({ type: 'varchar', length: 40 })

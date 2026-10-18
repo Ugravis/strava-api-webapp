@@ -15,7 +15,7 @@ import {
   DistancesService,
   type DistancesOverview,
 } from './distances.service';
-import { ReorderPinsDto } from './reorder-pins.dto';
+import { ReorderFavoritesDto } from './reorder-favorites.dto';
 
 /** Compares the cumulated distances of the user to known distances. */
 @Controller('distances')
@@ -36,31 +36,31 @@ export class DistancesController {
     return this.distances.details(user.id, id);
   }
 
-  @Put('badges/:id/pin')
+  @Put('badges/:id/favorite')
   @HttpCode(204)
-  pin(
+  addFavorite(
     @CurrentUser() user: User,
     @Param() { id }: BadgeParamsDto,
   ): Promise<void> {
-    return this.distances.pin(user.id, id);
+    return this.distances.addFavorite(user.id, id);
   }
 
-  @Delete('badges/:id/pin')
+  @Delete('badges/:id/favorite')
   @HttpCode(204)
-  unpin(
+  removeFavorite(
     @CurrentUser() user: User,
     @Param() { id }: BadgeParamsDto,
   ): Promise<void> {
-    return this.distances.unpin(user.id, id);
+    return this.distances.removeFavorite(user.id, id);
   }
 
-  /** Ranks the pinned badges of the user in the given order. */
-  @Put('pins')
+  /** Ranks the favorite badges of the user in the given order. */
+  @Put('favorites')
   @HttpCode(204)
-  reorderPins(
+  reorderFavorites(
     @CurrentUser() user: User,
-    @Body() { badgeIds }: ReorderPinsDto,
+    @Body() { badgeIds }: ReorderFavoritesDto,
   ): Promise<void> {
-    return this.distances.reorderPins(user.id, badgeIds);
+    return this.distances.reorderFavorites(user.id, badgeIds);
   }
 }

@@ -1,7 +1,7 @@
 import { ArrayMaxSize, IsArray, IsString, Matches } from 'class-validator';
 
-export class ReorderPinsDto {
-  /** Pinned badges in their new order. */
+export class ReorderFavoritesDto {
+  /** Favorite badges in their new order. */
   @IsArray()
   @ArrayMaxSize(500)
   @IsString({ each: true })

@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { Badge } from './badge.entity';
+import { BadgeTheme } from './badge-theme.entity';
 import { DISTANCE_FAMILIES, type DistanceFamily } from './distance-families';
 import {
   badgeCompletions,
@@ -15,18 +16,20 @@ import {
   type BadgeProgress,
   type FamilyTimeline,
 } from './distance-progress';
-import { pinOrder } from './pin-order';
-import { UserBadgePin } from './user-badge-pin.entity';
+import { favoriteOrder } from './favorite-order';
+import { UserFavoriteBadge } from './user-favorite-badge.entity';
 
-export type BadgeView = Omit<Badge, 'createdAt' | 'position'> &
+export type BadgeView = Omit<Badge, 'createdAt' | 'position' | 'theme'> &
   BadgeProgress & {
-    /** Rank among the pinned badges, from 1; null when not pinned. */
-    pinPosition: number | null;
+    /** Rank among the favorites, from 1; null when not a favorite. */
+    favoritePosition: number | null;
   };
 
 export interface DistancesOverview {
   /** Cumulated distance per family, in meters. */
   totals: Record<DistanceFamily, number>;
+  /** Themes having badges, in display order. */
+  themes: Pick<BadgeTheme, 'id' | 'name'>[];
   /** Every badge, in display order. */
   badges: BadgeView[];
 }
@@ -48,17 +51,21 @@ export class DistancesService {
   constructor(
     private readonly activities: ActivitiesService,
     @InjectRepository(Badge) private readonly badges: Repository<Badge>,
-    @InjectRepository(UserBadgePin)
-    private readonly pins: Repository<UserBadgePin>,
+    @InjectRepository(BadgeTheme)
+    private readonly themes: Repository<BadgeTheme>,
+    @InjectRepository(UserFavoriteBadge)
+    private readonly favorites: Repository<UserFavoriteBadge>,
     private readonly dataSource: DataSource,
   ) {}
 
   async overview(userId: string): Promise<DistancesOverview> {
-    const [badges, pins, timelines] = await Promise.all([
+    const [badges, themes, favorites, timelines] = await Promise.all([
       this.badges.find({ order: { position: 'ASC', id: 'ASC' } }),
-      this.pinPositions(userId),
+      this.themes.find({ order: { position: 'ASC', id: 'ASC' } }),
+      this.favoritePositions(userId),
       this.timelines(userId),
     ]);
+    const usedThemes = new Set(badges.map((badge) => badge.themeId));
     return {
       totals: Object.fromEntries(
         DISTANCE_FAMILIES.map((family) => [
@@ -66,20 +73,27 @@ export class DistancesService {
           timelineTotal(timelines[family]),
         ]),
       ) as Record<DistanceFamily, number>,
+      themes: themes
+        .filter((theme) => usedThemes.has(theme.id))
+        .map(({ id, name }) => ({ id, name })),
       badges: badges.map((badge) =>
-        this.view(badge, timelines[badge.family], pins.get(badge.id) ?? null),
+        this.view(
+          badge,
+          timelines[badge.family],
+          favorites.get(badge.id) ?? null,
+        ),
       ),
     };
   }
 
   async details(userId: string, badgeId: string): Promise<BadgeDetails> {
-    const [badge, pins, timelines] = await Promise.all([
+    const [badge, favorites, timelines] = await Promise.all([
       this.findBadge(badgeId),
-      this.pinPositions(userId),
+      this.favoritePositions(userId),
       this.timelines(userId),
     ]);
     const timeline = timelines[badge.family];
-    const view = this.view(badge, timeline, pins.get(badge.id) ?? null);
+    const view = this.view(badge, timeline, favorites.get(badge.id) ?? null);
     return {
       ...view,
       familyTotalM: timelineTotal(timeline),
@@ -89,44 +103,44 @@ export class DistancesService {
     };
   }
 
-  /** Pins a badge after the others; pinning it again keeps its rank. */
-  async pin(userId: string, badgeId: string): Promise<void> {
+  /** Adds a badge to the favorites, last; adding it again keeps its rank. */
+  async addFavorite(userId: string, badgeId: string): Promise<void> {
     await this.findBadge(badgeId);
-    await this.pins.query(
-      `INSERT INTO user_badge_pins (user_id, badge_id, position)
+    await this.favorites.query(
+      `INSERT INTO user_favorite_badges (user_id, badge_id, position)
        SELECT $1, $2, COALESCE(MAX(position), 0) + 1
-       FROM user_badge_pins WHERE user_id = $1
+       FROM user_favorite_badges WHERE user_id = $1
        ON CONFLICT DO NOTHING`,
       [userId, badgeId],
     );
   }
 
+  async removeFavorite(userId: string, badgeId: string): Promise<void> {
+    await this.favorites.delete({ userId, badgeId });
+  }
+
   /**
-   * Ranks the pinned badges in the given order. Badges not pinned are
-   * ignored, and pinned badges left out keep their order after the others.
+   * Ranks the favorites in the given order. Badges not in the favorites are
+   * ignored, and favorites left out keep their order after the others.
    */
-  async reorderPins(userId: string, badgeIds: string[]): Promise<void> {
+  async reorderFavorites(userId: string, badgeIds: string[]): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      const pins = await manager.find(UserBadgePin, {
+      const favorites = await manager.find(UserFavoriteBadge, {
         where: { userId },
         order: { position: 'ASC' },
         lock: { mode: 'pessimistic_write' },
       });
-      const order = pinOrder(
-        pins.map((pin) => pin.badgeId),
+      const order = favoriteOrder(
+        favorites.map((favorite) => favorite.badgeId),
         badgeIds,
       );
       await manager.query(
-        `UPDATE user_badge_pins p SET position = o.position
+        `UPDATE user_favorite_badges f SET position = o.position
          FROM unnest($2::varchar[]) WITH ORDINALITY AS o(badge_id, position)
-         WHERE p.user_id = $1 AND p.badge_id = o.badge_id`,
+         WHERE f.user_id = $1 AND f.badge_id = o.badge_id`,
         [userId, order],
       );
     });
-  }
-
-  async unpin(userId: string, badgeId: string): Promise<void> {
-    await this.pins.delete({ userId, badgeId });
   }
 
   private async findBadge(id: string): Promise<Badge> {
@@ -137,13 +151,17 @@ export class DistancesService {
     return badge;
   }
 
-  /** Ranks of the pinned badges, from 1 without gaps. */
-  private async pinPositions(userId: string): Promise<Map<string, number>> {
-    const pins = await this.pins.find({
+  /** Ranks of the favorite badges, from 1 without gaps. */
+  private async favoritePositions(
+    userId: string,
+  ): Promise<Map<string, number>> {
+    const favorites = await this.favorites.find({
       where: { userId },
-      order: { position: 'ASC', pinnedAt: 'ASC' },
+      order: { position: 'ASC', addedAt: 'ASC' },
     });
-    return new Map(pins.map((pin, index) => [pin.badgeId, index + 1]));
+    return new Map(
+      favorites.map((favorite, index) => [favorite.badgeId, index + 1]),
+    );
   }
 
   private async timelines(
@@ -155,9 +173,9 @@ export class DistancesService {
   private view(
     badge: Badge,
     timeline: FamilyTimeline,
-    pinPosition: number | null,
+    favoritePosition: number | null,
   ): BadgeView {
-    const { id, family, distanceM, name, description, icon } = badge;
+    const { id, family, distanceM, name, description, icon, themeId } = badge;
     return {
       id,
       family,
@@ -165,8 +183,9 @@ export class DistancesService {
       name,
       description,
       icon,
+      themeId,
       ...badgeProgress(badge, timeline),
-      pinPosition,
+      favoritePosition,
     };
   }
 }

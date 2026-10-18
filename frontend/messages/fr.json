@@ -305,6 +305,7 @@
     "error": "Impossible de récupérer tes tracés pour le moment.",
     "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
     "retry": "Réessayer",
+    "invalidLink": "Certains réglages de ce lien sont invalides : ils ont été ignorés.",
     "stats": {
       "label": "Chiffres clés de la carte",
       "tracks": "Tracés",

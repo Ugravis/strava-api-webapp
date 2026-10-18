@@ -114,8 +114,8 @@ export function ActivityMap({
   const [fromAddress] = useState(() => entryFromSearch(window.location.search));
   const history = usePanelHistory(sameEntry, fromAddress.entry);
   const entry = history.current;
-  // Opened on a tile or an activity, the map does not frame the tracks.
-  const framedRef = useRef(fromAddress.entry !== null);
+  // Opened on a tile, an activity or a sector, the map does not frame the tracks.
+  const framedRef = useRef(fromAddress.entry !== null || sectorFrame > 0);
   const [collapsed, setCollapsed] = useState(false);
   const collapsedRef = useRef(collapsed);
   const panelRef = useRef<HTMLElement>(null);

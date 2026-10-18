@@ -83,6 +83,11 @@ export function searchWithEntry(search: string, entry: PanelEntry | null): strin
   params.delete(PARAMS.activity);
   if (entry?.kind === "tile") params.set(PARAMS.tile, tilePath(shownTile(entry)));
   if (entry?.kind === "activity") params.set(PARAMS.activity, entry.activityId);
+  return searchOf(params);
+}
+
+/** The search part of an address, `?` included, or nothing without parameters. */
+export function searchOf(params: URLSearchParams): string {
   const query = params.toString();
   // The slashes of the tile stay readable.
   return query ? `?${query.replaceAll("%2F", "/")}` : "";

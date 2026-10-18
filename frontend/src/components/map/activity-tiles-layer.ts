@@ -16,8 +16,14 @@ const PIXELS_LEVELS = 8;
 /** The small tiles appear where they span two pixels. */
 const SUBTILE_MIN_ZOOM = SUBTILE_ZOOM - PIXELS_LEVELS;
 
+const SUBTILE_LAYER_ID = "activity-subtiles-fill";
+
 /** Lowest layer of the activity: the tiles of the user, added later, go below it. */
 export const ACTIVITY_GROUND_LAYER_ID = "activity-tiles-fill-9";
+/** Layers of the large tiles, one per grouping level, then the tiles themselves. */
+const TILE_LAYER_IDS = [...GROUPING_LEVELS, TILE_ZOOM].map((level) =>
+  level === GROUPING_LEVELS[0] ? ACTIVITY_GROUND_LAYER_ID : `activity-tiles-fill-${level}`,
+);
 
 /** Where the ground layers of the user go: below the activity shown, whenever they are added. */
 export function belowActivityTiles(map: MapLibreMap): string | undefined {
@@ -75,7 +81,12 @@ function levelZooms(level: number): { minzoom?: number; maxzoom?: number } {
  * tiles of the user and below the roads, water and names: opaque, they
  * replace the other tiles where they lie, as if they were the only ones.
  */
-export function addActivityTileLayers(map: MapLibreMap, data: ActivityTileData, palette: MapPalette): void {
+export function addActivityTileLayers(
+  map: MapLibreMap,
+  data: ActivityTileData,
+  levels: ActivityLevels,
+  palette: MapPalette,
+): void {
   if (map.getSource(SOURCES.tiles)) return;
   // Without simplification, no tile is dropped zoomed out.
   map.addSource(SOURCES.tiles, { type: "geojson", data: data.tiles, tolerance: 0 });
@@ -83,8 +94,8 @@ export function addActivityTileLayers(map: MapLibreMap, data: ActivityTileData, 
   // Without antialiasing, the edges shared by two tiles leave no seam.
   const layers: LayerSpecification[] = [
     ...[...GROUPING_LEVELS, TILE_ZOOM].map(
-      (level): LayerSpecification => ({
-        id: level === GROUPING_LEVELS[0] ? ACTIVITY_GROUND_LAYER_ID : `activity-tiles-fill-${level}`,
+      (level, i): LayerSpecification => ({
+        id: TILE_LAYER_IDS[i],
         type: "fill",
         source: SOURCES.tiles,
         filter: ["==", ["get", "level"], level],
@@ -93,7 +104,7 @@ export function addActivityTileLayers(map: MapLibreMap, data: ActivityTileData, 
       }),
     ),
     {
-      id: "activity-subtiles-fill",
+      id: SUBTILE_LAYER_ID,
       type: "fill",
       source: SOURCES.subtiles,
       minzoom: SUBTILE_MIN_ZOOM,
@@ -102,6 +113,22 @@ export function addActivityTileLayers(map: MapLibreMap, data: ActivityTileData, 
   ];
   const groundId = firstGroundLayerId(map);
   for (const layer of layers) map.addLayer(layer, groundId);
+  setActivityLevels(map, levels);
+}
+
+/** Levels of the activity drawn on the map. */
+export interface ActivityLevels {
+  tiles: boolean;
+  subtiles: boolean;
+}
+
+/** Shows or hides each level of the tiles of the activity; layers not added yet are ignored. */
+export function setActivityLevels(map: MapLibreMap, { tiles, subtiles }: ActivityLevels): void {
+  const show = (id: string, visible: boolean) => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  };
+  for (const id of TILE_LAYER_IDS) show(id, tiles);
+  show(SUBTILE_LAYER_ID, subtiles);
 }
 
 /** Draws the tiles of another activity, or none; ignored until the layers are added. */

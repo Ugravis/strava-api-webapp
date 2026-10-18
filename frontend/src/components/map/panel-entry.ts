@@ -1,18 +1,44 @@
-import { SUBTILE_ZOOM, TILE_ZOOM } from "@/lib/tiles/tile-geometry";
+import { SUBTILE_ZOOM, TILE_ZOOM, type TileZoom } from "@/lib/tiles/tile-geometry";
 import { sameTile, type TileRef } from "./tile-highlight";
 
+/**
+ * A place picked on the map: the large tile and, when known, the small tile
+ * under the pointer, and the level shown, `zoom` of one of them.
+ */
+export interface TilePick {
+  tile: TileRef;
+  /** Unknown when only the large tile was named, by the address of the page. */
+  subtile: TileRef | null;
+  zoom: TileZoom;
+}
+
 /** What the side panel shows: a tile picked on the map, or an activity opened from it. */
-export type PanelEntry = { kind: "tile"; tile: TileRef } | { kind: "activity"; activityId: string };
+export type PanelEntry = ({ kind: "tile" } & TilePick) | { kind: "activity"; activityId: string };
+
+/** The tile of the level shown. */
+export function shownTile(pick: TilePick): TileRef {
+  return pick.zoom === SUBTILE_ZOOM && pick.subtile ? pick.subtile : pick.tile;
+}
 
 export function sameEntry(a: PanelEntry, b: PanelEntry): boolean {
   return a.kind === "tile"
-    ? b.kind === "tile" && sameTile(a.tile, b.tile)
+    ? b.kind === "tile" && sameTile(shownTile(a), shownTile(b))
     : b.kind === "activity" && a.activityId === b.activityId;
 }
 
+/** `zoom/x/y` of a tile. */
+const tilePath = ({ zoom, x, y }: TileRef) => `${zoom}/${x}/${y}`;
+
 /** Identifies an entry, e.g. as the key of its content. */
 export function entryKey(entry: PanelEntry): string {
-  return entry.kind === "tile" ? `${entry.tile.zoom}/${entry.tile.x}/${entry.tile.y}` : entry.activityId;
+  return entry.kind === "tile" ? tilePath(shownTile(entry)) : entry.activityId;
+}
+
+/** The pick of a tile named alone: a small tile with its large tile, a large tile without small tile. */
+export function pickOf(tile: TileRef): TilePick {
+  if (tile.zoom === TILE_ZOOM) return { tile, subtile: null, zoom: TILE_ZOOM };
+  const shift = SUBTILE_ZOOM - TILE_ZOOM;
+  return { tile: { zoom: TILE_ZOOM, x: tile.x >> shift, y: tile.y >> shift }, subtile: tile, zoom: SUBTILE_ZOOM };
 }
 
 /** Search parameters of the entry shown: `?tile=zoom/x/y` or `?activity=id`. */
@@ -45,7 +71,7 @@ export function entryFromSearch(search: string): { entry: PanelEntry | null; inv
   }
   const parsed = tile !== null ? parseTile(tile) : null;
   return {
-    entry: parsed && { kind: "tile", tile: parsed },
+    entry: parsed && { kind: "tile", ...pickOf(parsed) },
     invalid: activity !== null || (tile !== null && !parsed),
   };
 }
@@ -55,7 +81,7 @@ export function searchWithEntry(search: string, entry: PanelEntry | null): strin
   const params = new URLSearchParams(search);
   params.delete(PARAMS.tile);
   params.delete(PARAMS.activity);
-  if (entry?.kind === "tile") params.set(PARAMS.tile, entryKey(entry));
+  if (entry?.kind === "tile") params.set(PARAMS.tile, tilePath(shownTile(entry)));
   if (entry?.kind === "activity") params.set(PARAMS.activity, entry.activityId);
   const query = params.toString();
   // The slashes of the tile stay readable.

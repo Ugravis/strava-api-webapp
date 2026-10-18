@@ -22,6 +22,18 @@ export function useActivityFormat() {
           ? t("hours", { hours, minutes: String(minutes).padStart(2, "0") })
           : t("minutes", { minutes });
       },
+      /** Average speed over the moving time, in km/h. */
+      speed: (meters: number, seconds: number) =>
+        format.number(seconds > 0 ? (meters / seconds) * 3.6 : 0, {
+          style: "unit",
+          unit: "kilometer-per-hour",
+          maximumFractionDigits: 1,
+        }),
+      /** Average pace over the moving time, as minutes and seconds per kilometer. */
+      pace: (meters: number, seconds: number) => {
+        const perKm = meters > 0 ? Math.round((seconds / meters) * 1000) : 0;
+        return t("pace", { minutes: Math.floor(perKm / 60), seconds: String(perKm % 60).padStart(2, "0") });
+      },
       elevation: (meters: number) =>
         format.number(meters, { style: "unit", unit: "meter", maximumFractionDigits: 0 }),
       date: (value: string) => format.dateTime(new Date(value), { dateStyle: "medium" }),
@@ -29,6 +41,11 @@ export function useActivityFormat() {
     [t, tSport, format],
   );
 }
+
+/** Sports on foot, whose speed reads as a pace. */
+const FOOT_SPORTS = new Set(["run", "trail_run", "virtual_run", "walk", "hike"]);
+
+export const isFootSport = (sportType: string) => FOOT_SPORTS.has(sportType);
 
 /** Address of an activity on Strava. */
 export const stravaActivityUrl = (id: string) => `https://www.strava.com/activities/${id}`;

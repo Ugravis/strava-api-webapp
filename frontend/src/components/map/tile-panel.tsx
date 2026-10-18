@@ -27,7 +27,8 @@ export function TilePanel({ tile: { zoom, x, y }, onOpenActivity }: TilePanelPro
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-2">
-        <h2 className="font-heading text-base font-medium">{zoom === TILE_ZOOM ? t("tile") : t("subtile")}</h2>
+        {/* Named by the tabs above. */}
+        <h2 className="sr-only">{zoom === TILE_ZOOM ? t("tile") : t("subtile")}</h2>
         <p className="text-muted-foreground">{t("description")}</p>
         {details && (details.inMaxSquare || details.inMaxCluster || details.clustered) && (
           <div className="flex flex-wrap gap-1">

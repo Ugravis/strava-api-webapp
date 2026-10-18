@@ -379,7 +379,6 @@
       "elevation": "Dénivelé",
       "tiles": "Tuiles",
       "subtiles": "Petites tuiles",
-      "legend": "Toutes ses tuiles en rose sur la carte",
       "error": "Cette activité est introuvable ou n'a pas pu être chargée.",
       "gainsTitle": "Gains",
       "crossed": "{count, plural, one {{formatted} traversée} other {{formatted} traversées}}",
@@ -387,13 +386,24 @@
       "maxCluster": "Cluster principal",
       "otherClusters": "Autres clusters",
       "gainsPending": "Les gains de cette activité sont en cours de calcul.",
-      "legendGained": "Ses tuiles gagnées en rose sur la carte",
-      "gainedOnly": "Montrer uniquement les tuiles gagnées"
+      "gainedOnly": "Uniquement les tuiles gagnées",
+      "elapsedTime": "Temps écoulé",
+      "averageSpeed": "Vitesse moyenne",
+      "pace": "Allure moyenne",
+      "pauses": "Temps de pause",
+      "maxSquare": "Grand carré",
+      "mapTitle": "Sur la carte",
+      "showTiles": "Grandes tuiles",
+      "showSubtiles": "Petites tuiles",
+      "showTrack": "Trace",
+      "noTrack": "Trace indisponible sur cet appareil",
+      "nothingGained": "Aucune tuile gagnée par cette activité"
     },
     "activityFormat": {
       "hours": "{hours} h {minutes}",
       "minutes": "{minutes} min",
-      "viewOnStrava": "Voir sur Strava"
+      "viewOnStrava": "Voir sur Strava",
+      "pace": "{minutes}:{seconds} /km"
     }
   }
 }

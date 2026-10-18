@@ -197,6 +197,8 @@ export interface ActivityDetails {
 export interface LevelGains {
   /** Tiles no earlier activity had crossed, as `[x, y]` pairs. */
   gained: [number, number][];
+  /** Growth of the side of the largest square. */
+  maxSquare: number;
   /** Growth of the largest cluster. */
   maxCluster: number;
   /** Tiles that became cluster tiles outside of the largest cluster. */

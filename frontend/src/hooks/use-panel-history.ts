@@ -29,6 +29,16 @@ export function usePanelHistory<T>(same: (a: T, b: T) => boolean, initial: T | n
       }),
     [same],
   );
+  /** Replaces the current entry, e.g. by another view of it, without adding to the history. */
+  const replace = useCallback(
+    (entry: T) =>
+      setHistory((history) =>
+        history.index < 0
+          ? history
+          : { ...history, entries: history.entries.map((current, i) => (i === history.index ? entry : current)) },
+      ),
+    [],
+  );
   const back = useCallback(
     () => setHistory((history) => (history.index > 0 ? { ...history, index: history.index - 1 } : history)),
     [],
@@ -47,6 +57,7 @@ export function usePanelHistory<T>(same: (a: T, b: T) => boolean, initial: T | n
     canGoBack: index > 0,
     canGoForward: index < entries.length - 1,
     push,
+    replace,
     back,
     forward,
     clear,

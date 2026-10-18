@@ -3,8 +3,13 @@ import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { tileCollection, type TileZoom } from "@/lib/tiles/tile-geometry";
 import type { MapPalette } from "./map-style";
 
-const SOURCE_ID = "tile-highlight";
-const LAYER_ID = "tile-highlight-line";
+/** The tile under the pointer, a click opens it; the tile shown in the panel. */
+const OUTLINES = {
+  hovered: { source: "tile-hover", layer: "tile-hover-line", opacity: 0.35, width: 1 },
+  selected: { source: "tile-selected", layer: "tile-selected-line", opacity: 0.85, width: 2 },
+} as const;
+
+type Outline = keyof typeof OUTLINES;
 
 /** A tile of one of the two levels. */
 export interface TileRef {
@@ -15,7 +20,7 @@ export interface TileRef {
 
 const EMPTY: FeatureCollection<Polygon> = { type: "FeatureCollection", features: [] };
 
-function highlightData(tile: TileRef | null): FeatureCollection<Polygon> {
+function outlineData(tile: TileRef | null): FeatureCollection<Polygon> {
   return tile ? tileCollection(tile.zoom, tile.x, tile.y) : EMPTY;
 }
 
@@ -25,31 +30,35 @@ export function sameTile(a: TileRef | null, b: TileRef | null): boolean {
 }
 
 /**
- * Adds the outline of the highlighted tile below `beforeId`, typically the
- * first label layer: over the tiles and the tracks, it marks the tile a
- * click opens.
+ * Adds the outlines of the hovered and selected tiles below `beforeId`,
+ * typically the first label layer, over the tiles and the tracks. The
+ * hovered one stays discreet: it only suggests the click.
  */
-export function addTileHighlight(
+export function addTileOutlines(
   map: MapLibreMap,
-  tile: TileRef | null,
+  tiles: Record<Outline, TileRef | null>,
   palette: MapPalette,
   beforeId: string | undefined,
 ): void {
-  if (map.getSource(SOURCE_ID)) return;
-  map.addSource(SOURCE_ID, { type: "geojson", data: highlightData(tile) });
-  map.addLayer(
-    {
-      id: LAYER_ID,
-      type: "line",
-      source: SOURCE_ID,
-      // Discreet: it suggests the click without hiding the tile.
-      paint: { "line-color": palette.highlight, "line-opacity": 0.55, "line-width": 1.5 },
-    },
-    beforeId,
-  );
+  for (const [name, { source, layer, opacity, width }] of Object.entries(OUTLINES) as [
+    Outline,
+    (typeof OUTLINES)[Outline],
+  ][]) {
+    if (map.getSource(source)) continue;
+    map.addSource(source, { type: "geojson", data: outlineData(tiles[name]) });
+    map.addLayer(
+      {
+        id: layer,
+        type: "line",
+        source,
+        paint: { "line-color": palette.highlight, "line-opacity": opacity, "line-width": width },
+      },
+      beforeId,
+    );
+  }
 }
 
-/** Outlines `tile`, or nothing; ignored until the layer is added. */
-export function setTileHighlight(map: MapLibreMap, tile: TileRef | null): void {
-  map.getSource<GeoJSONSource>(SOURCE_ID)?.setData(highlightData(tile));
+/** Outlines `tile` as hovered or selected, or nothing; ignored until the layers are added. */
+export function setTileOutline(map: MapLibreMap, outline: Outline, tile: TileRef | null): void {
+  map.getSource<GeoJSONSource>(OUTLINES[outline].source)?.setData(outlineData(tile));
 }

@@ -12,8 +12,14 @@ import { usePanelHistory } from "@/hooks/use-panel-history";
 import type { TilesSummary } from "@/lib/api/types";
 import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
 import { ActivityPanel } from "./activity-panel";
-import { activityTileData, addActivityTileLayers, NO_ACTIVITY_TILES, setActivityTiles } from "./activity-tiles-layer";
-import { activityTrack, addActivityTrackLayer, setActivityTrack } from "./activity-track-layer";
+import {
+  activityTileData,
+  addActivityTileLayers,
+  NO_ACTIVITY_TILES,
+  setActivityLevels,
+  setActivityTiles,
+} from "./activity-tiles-layer";
+import { activityTrack, addActivityTrackLayer, setActivityTrack, setActivityTrackVisible } from "./activity-track-layer";
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
 import { MapSidePanel } from "./map-side-panel";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
@@ -28,9 +34,10 @@ import {
   updateGrids,
   visitedTileNear,
 } from "./tile-layers";
-import { addTileHighlight, sameTile, setTileHighlight, type TileRef } from "./tile-highlight";
-import { TilePanel } from "./tile-panel";
-import { entryFromSearch, entryKey, sameEntry, searchWithEntry } from "./panel-entry";
+import { addTileOutlines, sameTile, setTileOutline, type TileRef } from "./tile-highlight";
+import { TilePickPanel } from "./tile-pick-panel";
+import { entryFromSearch, entryKey, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
+import { type ActivityView, defaultActivityView, hasGains } from "./activity-view";
 import {
   addTrackLayer,
   boundsOf,
@@ -57,8 +64,8 @@ interface ActivityMapProps {
 
 /** Margin around an activity framed on the map, in pixels. */
 const ACTIVITY_PADDING = 48;
-/** A tile centered on the map is shown at least at the zoom where it can be picked, and a little closer. */
-const CENTER_MIN_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 11, [SUBTILE_ZOOM]: 14 };
+/** Zoom of the map centered on a tile of each level: it spans about a fifth of a large screen. */
+const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({ lines, summary, countries, tileMode, showTracks, label }: ActivityMapProps) {
@@ -82,7 +89,6 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const [fromAddress] = useState(() => entryFromSearch(window.location.search));
   const history = usePanelHistory(sameEntry, fromAddress.entry);
   const entry = history.current;
-  const [gainedOnly, setGainedOnly] = useState(false);
   // Opened on a tile or an activity, the map does not frame the tracks.
   const framedRef = useRef(fromAddress.entry !== null);
   const [collapsed, setCollapsed] = useState(false);
@@ -92,18 +98,24 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   const hoveredRef = useRef<TileRef | null>(null);
   const shownRef = useRef<TileRef | null>(null);
   // The click handler of the map is registered once: it calls the latest one.
-  const pickRef = useRef<(tile: TileRef) => void>(() => {});
-  // The tile just picked on the map: unlike a tile reached otherwise, the camera stays.
+  const pickRef = useRef<(pick: TilePick) => void>(() => {});
+  // The tile just picked on the map or in the tabs: unlike a tile reached otherwise, the camera stays.
   const pickedRef = useRef<TileRef | null>(null);
   const activityId = entry?.kind === "activity" ? entry.activityId : null;
   const { tiles: activityTiles } = useActivityTiles(activityId);
+  // Each activity opens with the default view, the small tiles as on the map.
+  const [changedView, setChangedView] = useState<{ activityId: string; view: ActivityView } | null>(null);
+  const defaultView = useMemo(() => defaultActivityView(tileMode === "both"), [tileMode]);
+  const activityView = changedView && changedView.activityId === activityId ? changedView.view : defaultView;
+  const activityViewRef = useRef(activityView);
   const activityData = useMemo(() => {
     if (!activityTiles) return NO_ACTIVITY_TILES;
     const { gains } = activityTiles;
-    return gainedOnly && gains
+    // Without any tile gained, the activity shows all of its tiles.
+    return activityView.gainedOnly && hasGains(activityTiles) && gains
       ? activityTileData(gains.tiles.gained, gains.subtiles.gained)
       : activityTileData(activityTiles.tiles, activityTiles.subtiles);
-  }, [activityTiles, gainedOnly]);
+  }, [activityTiles, activityView.gainedOnly]);
   const activityDataRef = useRef(activityData);
   const activityLine = useMemo(
     () => (activityId ? lines.find((line) => line.activityId === activityId) : undefined),
@@ -142,9 +154,15 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       setVisitedCountries(map, countriesRef.current, paletteRef.current);
       addTileLayers(map, tilesRef.current, paletteRef.current, firstLabel);
       addTrackLayer(map, tracksRef.current, paletteRef.current, showTracksRef.current, firstLabel);
-      addActivityTileLayers(map, activityDataRef.current, paletteRef.current);
-      addActivityTrackLayer(map, activityTrackRef.current, paletteRef.current, firstLabel);
-      addTileHighlight(map, shownRef.current ?? hoveredRef.current, paletteRef.current, firstLabel);
+      const view = activityViewRef.current;
+      addActivityTileLayers(map, activityDataRef.current, view, paletteRef.current);
+      addActivityTrackLayer(map, activityTrackRef.current, view.track, paletteRef.current, firstLabel);
+      addTileOutlines(
+        map,
+        { hovered: hoveredRef.current, selected: shownRef.current },
+        paletteRef.current,
+        firstLabel,
+      );
       setTileMode(map, modeRef.current);
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
@@ -155,8 +173,8 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     });
     // A click beside the tiles keeps the panel: only its button closes it.
     map.on("click", (event) => {
-      const tile = pickTile(map, modeRef.current, event.point);
-      if (tile) pickRef.current(tile);
+      const pick = pickTile(map, modeRef.current, event.point);
+      if (pick) pickRef.current(pick);
     });
     // The tile under the pointer is outlined: a click opens it. Looked for
     // once per frame, and not while the map moves under the pointer.
@@ -166,11 +184,12 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
       if (sameTile(tile, hoveredRef.current)) return;
       hoveredRef.current = tile;
       map.getCanvas().style.cursor = tile ? "pointer" : "";
-      setTileHighlight(map, shownRef.current ?? tile);
+      setTileOutline(map, "hovered", tile);
     };
     const pickHovered = () => {
       frame = 0;
-      hover(pointer && !map.isMoving() ? pickTile(map, modeRef.current, pointer) : null);
+      const pick = pointer && !map.isMoving() ? pickTile(map, modeRef.current, pointer) : null;
+      hover(pick && shownTile(pick));
     };
     map.on("mousemove", (event) => {
       pointer = event.point;
@@ -229,7 +248,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     // The tile under the pointer may belong to the other level.
     hoveredRef.current = null;
     mapRef.current.getCanvas().style.cursor = "";
-    setTileHighlight(mapRef.current, shownRef.current);
+    setTileOutline(mapRef.current, "hovered", null);
   }, [tileMode]);
 
   useEffect(() => {
@@ -243,14 +262,14 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
   }, [collapsed]);
 
   useEffect(() => {
-    pickRef.current = (tile) => {
-      pickedRef.current = tile;
-      history.push({ kind: "tile", tile });
+    pickRef.current = (pick) => {
+      pickedRef.current = shownTile(pick);
+      history.push({ kind: "tile", ...pick });
       setCollapsed(false);
     };
   });
 
-  const shown = entry?.kind === "tile" ? entry.tile : null;
+  const shown = entry?.kind === "tile" ? shownTile(entry) : null;
 
   useEffect(() => {
     if (fromAddress.invalid) toast.error(t("invalidLink"));
@@ -269,7 +288,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     const map = mapRef.current;
     if (!map) return;
     // The selected tile stays outlined while the panel shows it.
-    setTileHighlight(map, shown ?? hoveredRef.current);
+    setTileOutline(map, "selected", shown);
     if (!shown) return;
     // Reached by the arrows or the address, the tile is centered beside the panel.
     if (shown === pickedRef.current) {
@@ -278,7 +297,7 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     }
     map.easeTo({
       center: tileCenter(shown.zoom, shown.x, shown.y),
-      zoom: Math.max(map.getZoom(), CENTER_MIN_ZOOMS[shown.zoom]),
+      zoom: CENTER_ZOOMS[shown.zoom],
       offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, 0],
     });
   }, [shown]);
@@ -287,6 +306,14 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
     activityDataRef.current = activityData;
     if (mapRef.current) setActivityTiles(mapRef.current, activityData);
   }, [activityData]);
+
+  useEffect(() => {
+    activityViewRef.current = activityView;
+    const map = mapRef.current;
+    if (!map) return;
+    setActivityLevels(map, activityView);
+    setActivityTrackVisible(map, activityView.track);
+  }, [activityView]);
 
   useEffect(() => {
     activityTrackRef.current = activityTrack(activityLine);
@@ -329,9 +356,14 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
           }}
         >
           {entry.kind === "tile" ? (
-            <TilePanel
-              key={entryKey(entry)}
-              tile={entry.tile}
+            <TilePickPanel
+              pick={entry}
+              onZoomChange={(zoom) => {
+                const pick = { ...entry, zoom };
+                // Another level of the same place: the camera stays.
+                pickedRef.current = shownTile(pick);
+                history.replace(pick);
+              }}
               onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
             />
           ) : (
@@ -339,8 +371,9 @@ export function ActivityMap({ lines, summary, countries, tileMode, showTracks, l
               key={entry.activityId}
               activityId={entry.activityId}
               tiles={activityTiles}
-              gainedOnly={gainedOnly}
-              onGainedOnlyChange={setGainedOnly}
+              hasTrack={activityLine !== undefined}
+              view={activityView}
+              onViewChange={(view) => setChangedView({ activityId: entry.activityId, view })}
             />
           )}
         </MapSidePanel>
@@ -369,13 +402,17 @@ function firstLabelId(map: MapLibreMap): string | undefined {
 
 /**
  * The visited tile under the pointer or a few pixels from it, at the level
- * shown, from the tiles drawn; null where nothing can be picked. In the
- * combined view, an unvisited small tile falls back to its large tile.
+ * shown, from the tiles drawn, with the large and small tiles at that place;
+ * null where nothing can be picked. In the combined view, an unvisited small
+ * tile falls back to its large tile.
  */
-function pickTile(map: MapLibreMap, mode: TileMode, point: { x: number; y: number }): TileRef | null {
+function pickTile(map: MapLibreMap, mode: TileMode, point: { x: number; y: number }): TilePick | null {
   const found = visitedTileNear(map, point, clickableZooms(mode, map.getZoom()));
   if (!found) return null;
   const { lng, lat } = map.unproject([found.point.x, found.point.y]);
-  const [x, y] = tileAt(lng, lat, found.zoom);
-  return { zoom: found.zoom, x, y };
+  const tileOf = (zoom: TileZoom): TileRef => {
+    const [x, y] = tileAt(lng, lat, zoom);
+    return { zoom, x, y };
+  };
+  return { tile: tileOf(TILE_ZOOM), subtile: tileOf(SUBTILE_ZOOM), zoom: found.zoom };
 }

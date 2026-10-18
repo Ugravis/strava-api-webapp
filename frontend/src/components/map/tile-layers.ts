@@ -55,8 +55,8 @@ const TILE_GRID_MIN_ZOOM = 11;
 const SUBTILE_GRID_MIN_ZOOM = 14;
 /** The small tiles fade in from this zoom, where the backend starts serving their images. */
 const SUBTILE_MIN_ZOOM = 5;
-/** The large tiles can be picked from this zoom, where they span about 16 pixels; below, nothing is picked. */
-const TILE_CLICK_MIN_ZOOM = 10;
+/** The large tiles can be picked from this zoom, where they span about 8 pixels; below, nothing is picked. */
+const TILE_CLICK_MIN_ZOOM = 8;
 /** The small tiles can be picked from this zoom, where they span about 8 pixels; below, a click picks the large tile. */
 const SUBTILE_CLICK_MIN_ZOOM = 12;
 /**

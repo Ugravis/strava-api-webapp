@@ -4,6 +4,7 @@ import type { TrackLine } from "@/hooks/use-activity-tracks";
 import type { MapPalette } from "./map-style";
 
 const SOURCE_ID = "activity-track";
+const LAYER_IDS = ["activity-track-casing", "activity-track-line"] as const;
 
 export type ActivityTrack = FeatureCollection<LineString>;
 
@@ -28,6 +29,7 @@ function width(extra = 0): ExpressionSpecification {
 export function addActivityTrackLayer(
   map: MapLibreMap,
   data: ActivityTrack,
+  visible: boolean,
   palette: MapPalette,
   beforeId: string | undefined,
 ): void {
@@ -36,7 +38,7 @@ export function addActivityTrackLayer(
   const layout = { "line-cap": "round", "line-join": "round" } as const;
   map.addLayer(
     {
-      id: "activity-track-casing",
+      id: LAYER_IDS[0],
       type: "line",
       source: SOURCE_ID,
       layout,
@@ -46,7 +48,7 @@ export function addActivityTrackLayer(
   );
   map.addLayer(
     {
-      id: "activity-track-line",
+      id: LAYER_IDS[1],
       type: "line",
       source: SOURCE_ID,
       layout,
@@ -54,6 +56,14 @@ export function addActivityTrackLayer(
     },
     beforeId,
   );
+  setActivityTrackVisible(map, visible);
+}
+
+/** Shows or hides the track of the activity; ignored until the layers are added. */
+export function setActivityTrackVisible(map: MapLibreMap, visible: boolean): void {
+  for (const id of LAYER_IDS) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
 }
 
 /** Draws the track of another activity, or none; ignored until the layers are added. */

@@ -111,3 +111,14 @@ export function TrackKey({ className }: { className?: string }) {
     />
   );
 }
+
+/** Tiles gained over a period: the opaque pink of the gains, deeper on the small tiles. */
+export function GainedKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      style={themed({ fill: subtiles ? "activitySubtile" : "activityTile" })}
+      className={cn(SWATCH, "border border-foreground/15 bg-(--fill) dark:bg-(--fill-dark)", className)}
+    />
+  );
+}

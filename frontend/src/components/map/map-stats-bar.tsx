@@ -1,18 +1,19 @@
 "use client";
 
-import { CircleAlertIcon, LoaderCircleIcon, RefreshCwIcon } from "lucide-react";
+import { CircleAlertIcon, HistoryIcon, LoaderCircleIcon, RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Toggle } from "@/components/ui/toggle";
 import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 import type { TileLevelSummary, TilesSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ClusterKey, OtherClusterKey, SquareKey, TileKey, TrackKey } from "./map-keys";
 import type { MapLayers } from "./map-layers";
+import { Stat, ValueSkeleton } from "./map-stat";
 
 type TracksState = Pick<ActivityTracksState, "lines" | "status" | "progress" | "errorCode" | "retry">;
 
@@ -22,21 +23,32 @@ interface MapStatsBarProps {
   summary: TilesSummary | null;
   layers: MapLayers;
   onLayersChange: (layers: MapLayers) => void;
+  /** Whether the band of the history tool is open. */
+  historyOpen: boolean;
+  onHistoryOpenChange: (open: boolean) => void;
 }
 
 /**
  * Band under the map: the key figures of each layer, with the keys of their
- * colors, and the checkboxes of the optional layers. On narrow screens, the
- * sections scroll sideways; on larger ones, they share the width in equal
- * columns, their content centered.
+ * colors, the checkboxes of the optional layers, and the buttons of the
+ * tools. On narrow screens, the sections scroll sideways; on larger ones,
+ * the layers share the width in equal columns, their content centered, the
+ * tools at the end.
  */
-export function MapStatsBar({ tracks, summary, layers, onLayersChange }: MapStatsBarProps) {
+export function MapStatsBar({
+  tracks,
+  summary,
+  layers,
+  onLayersChange,
+  historyOpen,
+  onHistoryOpenChange,
+}: MapStatsBarProps) {
   const t = useTranslations("map.stats");
 
   return (
     <section
       aria-label={t("label")}
-      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-3 md:overflow-visible"
+      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[repeat(3,minmax(0,1fr))_auto] md:overflow-visible"
     >
       <TracksSection
         tracks={tracks}
@@ -50,6 +62,7 @@ export function MapStatsBar({ tracks, summary, layers, onLayersChange }: MapStat
         checked={layers.subtiles}
         onCheckedChange={(checked) => onLayersChange({ ...layers, subtiles: checked })}
       />
+      <ToolsSection historyOpen={historyOpen} onHistoryOpenChange={onHistoryOpenChange} />
     </section>
   );
 }
@@ -92,21 +105,6 @@ function StatsSection({ title, checked, onCheckedChange, columns = false, childr
     </div>
   );
 }
-
-/** A key figure, its label and the key of its color. */
-function Stat({ value, label, colorKey }: { value: ReactNode; label: string; colorKey: ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5 md:items-center">
-      <span className="text-base leading-tight font-semibold tabular-nums">{value}</span>
-      <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
-        {colorKey}
-        {label}
-      </span>
-    </div>
-  );
-}
-
-const ValueSkeleton = () => <Skeleton className="h-5 w-12" />;
 
 function TilesSection({
   level,
@@ -209,6 +207,23 @@ function TracksSection({
           )
         )}
       </div>
+    </StatsSection>
+  );
+}
+
+/** Buttons opening the tools of the map, each in a band over this one. */
+function ToolsSection({
+  historyOpen,
+  onHistoryOpenChange,
+}: Pick<MapStatsBarProps, "historyOpen" | "onHistoryOpenChange">) {
+  const t = useTranslations("map");
+
+  return (
+    <StatsSection title={t("stats.tools")}>
+      <Toggle variant="outline" size="sm" pressed={historyOpen} onPressedChange={onHistoryOpenChange}>
+        <HistoryIcon />
+        {t("history.open")}
+      </Toggle>
     </StatsSection>
   );
 }

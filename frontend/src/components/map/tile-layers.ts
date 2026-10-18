@@ -15,7 +15,7 @@ import {
   TILE_ZOOM,
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
-import { belowActivityTiles } from "./activity-tiles-layer";
+import { belowHistory } from "./history-layer";
 import type { MapPalette } from "./map-style";
 
 /** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
@@ -109,6 +109,8 @@ const VISIBLE_LAYERS: Record<TileMode, string[]> = {
   tiles: [...LEVEL_LAYERS.tiles, "tile-grid-line"],
   both: [...ALL_LAYERS],
 };
+/** While the map shows its state at a past date, only the grids of today's tiles stay. */
+const PAST_LAYERS = new Set(["tile-grid-line", "subtile-grid-line"]);
 
 /**
  * Zooms over which the large tiles take the color of the largest cluster:
@@ -125,7 +127,7 @@ const STRONG_FILL_ZOOM = 7;
  * are the point of the map, lighter as the streets appear, then in the color
  * of the largest cluster once zoomed in.
  */
-function tilePaint(palette: MapPalette): { "fill-color": ExpressionSpecification; "fill-opacity": ExpressionSpecification } {
+export function tilePaint(palette: MapPalette): { "fill-color": ExpressionSpecification; "fill-opacity": ExpressionSpecification } {
   const [from, to] = CLUSTER_MERGE_ZOOMS;
   return {
     "fill-color": ["interpolate", ["linear"], ["zoom"], from, palette.tile, to, palette.cluster],
@@ -144,7 +146,7 @@ function tilePaint(palette: MapPalette): { "fill-color": ExpressionSpecification
 }
 
 /** Opacity of the images of the small tiles: fading in, then lighter once the large tiles are pale. */
-function subtileOpacity(): ExpressionSpecification {
+export function subtileOpacity(): ExpressionSpecification {
   const [from, to] = CLUSTER_MERGE_ZOOMS;
   return ["interpolate", ["linear"], ["zoom"], SUBTILE_MIN_ZOOM, 0, SUBTILE_MIN_ZOOM + FADE_ZOOMS, 1, from, 1, to, MERGED_SUBTILE_OPACITY];
 }
@@ -198,7 +200,7 @@ export function tileData(summary: TilesSummary | null): TileData {
 }
 
 /** `#rrggbb` and an opacity as `rrggbbaa`. */
-function rgba(color: string, alpha: number): string {
+export function rgba(color: string, alpha: number): string {
   return `${color.slice(1)}${Math.round(alpha * 255)
     .toString(16)
     .padStart(2, "0")}`;
@@ -381,7 +383,7 @@ export function addTileLayers(
       paint: { "line-color": palette.square, "line-width": 2 },
     },
   ];
-  const groundId = belowActivityTiles(map);
+  const groundId = belowHistory(map);
   for (const layer of layers) map.addLayer(layer, GROUND_LAYERS.has(layer.id) ? groundId : beforeId);
 }
 
@@ -402,8 +404,9 @@ export function setTileData(map: MapLibreMap, data: TileData): boolean {
   return true;
 }
 
-export function setTileMode(map: MapLibreMap, mode: TileMode): void {
-  const visible = new Set(VISIBLE_LAYERS[mode]);
+/** Shows the levels of `mode`; only their grids while the map shows a past state (`past`). */
+export function setTileMode(map: MapLibreMap, mode: TileMode, past = false): void {
+  const visible = new Set(VISIBLE_LAYERS[mode].filter((id) => !past || PAST_LAYERS.has(id)));
   for (const id of ALL_LAYERS) {
     if (map.getLayer(id)) {
       map.setLayoutProperty(id, "visibility", visible.has(id) ? "visible" : "none");

@@ -122,3 +122,28 @@ export function GainedKey({ subtiles = false, className }: { subtiles?: boolean;
     />
   );
 }
+
+/** Visited station: a violet dot in its ring. */
+export function StationKey({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      style={themed({ fill: "station", ring: "stationCasing" })}
+      className={cn(
+        "inline-block size-2.5 shrink-0 rounded-full bg-(--fill) ring-1 ring-foreground/20 dark:bg-(--fill-dark)",
+        className,
+      )}
+    />
+  );
+}
+
+/** Railway unlocked between two visited stations: a violet line. */
+export function RailKey({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      style={themed({ line: "railLink" })}
+      className={cn("inline-block h-1 w-3 shrink-0 rounded-full bg-(--line) dark:bg-(--line-dark)", className)}
+    />
+  );
+}

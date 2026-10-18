@@ -17,7 +17,9 @@ const OUTSIDE_SOURCE_LAYER = "outside";
 const BORDER_SOURCE_LAYER = "border";
 /** The backend serves the shapes down to this zoom; the map stretches them beyond. */
 const SHAPES_MAX_ZOOM = 10;
-const FILL_ID = "sector-outside-fill";
+/** The veil of the sector: the layers drawn over the map go below it. */
+export const SECTOR_VEIL_LAYER_ID = "sector-outside-fill";
+const FILL_ID = SECTOR_VEIL_LAYER_ID;
 const LINE_ID = "sector-border-line";
 
 /** The version is part of the URL: the browser caches each shape. */

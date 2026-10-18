@@ -8,10 +8,16 @@ interface DistanceFamilySectionProps {
   totalM: number;
   badges: DistanceBadge[];
   onOpen: (badgeId: string) => void;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  highlightedId: string | null;
 }
 
+/** Rows shown while folded: 4 on phones, 3 from `sm`, 2 from `md`, twelve badges each time. */
+const FOLDED_ROWS = { 3: 4, 4: 3, 6: 2 } as const;
+
 /** Badges of a family of sports, with the distance it accumulates. */
-export function DistanceFamilySection({ family, totalM, badges, onOpen }: DistanceFamilySectionProps) {
+export function DistanceFamilySection({ family, totalM, badges, ...grid }: DistanceFamilySectionProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const headingId = `distances-${family}`;
@@ -30,7 +36,7 @@ export function DistanceFamilySection({ family, totalM, badges, onOpen }: Distan
           </CardAction>
         </CardHeader>
         <CardContent>
-          <BadgeGrid badges={badges} onOpen={onOpen} />
+          <BadgeGrid badges={badges} rows={FOLDED_ROWS} showFavorite anchors {...grid} />
         </CardContent>
       </Card>
     </section>

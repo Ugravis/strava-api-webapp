@@ -280,16 +280,21 @@
       "hike": "Randonnée et marche",
       "ride": "Vélo"
     },
-    "pinned": "épinglé",
-    "pinnedSection": {
-      "title": "Épinglés",
-      "empty": "Épingle tes badges préférés depuis leur fiche pour les retrouver ici.",
+    "favorite": "favori",
+    "favoritesSection": {
+      "title": "Favoris",
+      "empty": "Ajoute tes badges préférés aux favoris depuis leur fiche pour les retrouver ici.",
       "reorder": "Réorganiser",
       "done": "Terminé",
-      "reorderHint": "Déplace tes badges avec les flèches : ils s'affichent dans cet ordre.",
-      "moveBefore": "Déplacer {name} avant",
-      "moveAfter": "Déplacer {name} après",
-      "reorderError": "Impossible de modifier l'ordre de tes badges pour le moment."
+      "reorderHint": "Fais glisser tes favoris pour choisir leur ordre.",
+      "reorderError": "Impossible de modifier l'ordre de tes favoris pour le moment.",
+      "drag": {
+        "instructions": "Pour déplacer un favori, appuie sur Espace ou Entrée, utilise les flèches, puis appuie de nouveau sur Espace ou Entrée pour le poser, ou sur Échap pour annuler.",
+        "start": "{name} saisi, en position {rank}.",
+        "over": "{name} déplacé en position {rank}.",
+        "end": "{name} posé en position {rank}.",
+        "cancel": "Déplacement de {name} annulé."
+      }
     },
     "dialog": {
       "close": "Fermer",
@@ -297,9 +302,6 @@
       "firstIteration": "Première itération",
       "iteration": "Itération n° {number}",
       "covered": "{covered} sur {distance}",
-      "pin": "Épingler",
-      "unpin": "Désépingler",
-      "pinError": "Impossible de modifier tes badges épinglés pour le moment.",
       "facts": {
         "completions": "Accompli",
         "completionsValue": "{count, plural, =0 {Pas encore} one {# fois} other {# fois}}",
@@ -317,7 +319,21 @@
         "iteration": "n° {number}",
         "openOnMap": "Itération n° {number} : voir {name} sur la carte",
         "error": "Impossible de charger l'historique pour le moment."
-      }
+      },
+      "addFavorite": "Ajouter aux favoris",
+      "removeFavorite": "Retirer des favoris",
+      "favoriteError": "Impossible de modifier tes favoris pour le moment."
+    },
+    "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
+    "showLess": "Afficher moins",
+    "search": {
+      "label": "Rechercher un badge",
+      "placeholder": "Rechercher un badge…",
+      "empty": "Aucun badge ne correspond."
+    },
+    "themes": {
+      "label": "Thèmes",
+      "all": "Tous"
     }
   },
   "map": {

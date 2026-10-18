@@ -65,6 +65,12 @@ export interface ActivityStats {
 /** Groups of sports compared to landmarks; `all` counts every activity. */
 export type DistanceFamily = "all" | "run" | "hike" | "ride";
 
+/** A theme gathering badges across families, e.g. astronomy. */
+export interface BadgeTheme {
+  id: string;
+  name: string;
+}
+
 /** A known distance compared to the cumulated distance of a family, with the progress of the user. */
 export interface DistanceBadge {
   id: string;
@@ -74,6 +80,8 @@ export interface DistanceBadge {
   description: string;
   /** Icon key; unknown keys get a generic icon. */
   icon: string;
+  /** Theme of the badge, among those of the overview; null without theme. */
+  themeId: string | null;
   /** Number of times the whole distance was covered. */
   completions: number;
   /** Share of the current iteration already covered, in [0, 1). */
@@ -82,13 +90,15 @@ export interface DistanceBadge {
   firstCompletedAt: string | null;
   /** Start of the activity that completed the latest iteration. */
   lastCompletedAt: string | null;
-  /** Rank among the pinned badges, from 1; null when not pinned. */
-  pinPosition: number | null;
+  /** Rank among the favorites, from 1; null when not a favorite. */
+  favoritePosition: number | null;
 }
 
 export interface DistancesOverview {
   /** Cumulated distance per family, in meters. */
   totals: Record<DistanceFamily, number>;
+  /** Themes having badges, in display order. */
+  themes: BadgeTheme[];
   /** Every badge, in display order. */
   badges: DistanceBadge[];
 }

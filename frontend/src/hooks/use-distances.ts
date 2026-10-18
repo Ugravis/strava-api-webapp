@@ -9,25 +9,25 @@ export interface DistancesState {
   overview: DistancesOverview | null;
   error: boolean;
   refresh: () => Promise<void>;
-  /** Pins a badge after the others, or unpins it, at once; back as it was and rejects if the server refuses. */
-  setPinned: (badge: DistanceBadge, pinned: boolean) => Promise<void>;
-  /** Ranks the pinned badges in the given order, at once; back as it was and rejects if the server refuses. */
-  reorderPins: (badgeIds: string[]) => Promise<void>;
+  /** Adds a badge to the favorites, last, or removes it, at once; back as it was and rejects if the server refuses. */
+  setFavorite: (badge: DistanceBadge, favorite: boolean) => Promise<void>;
+  /** Ranks the favorites in the given order, at once; back as it was and rejects if the server refuses. */
+  reorderFavorites: (badgeIds: string[]) => Promise<void>;
 }
 
-type PinPositions = Map<string, number | null>;
+type FavoritePositions = Map<string, number | null>;
 
-const pinPositionsOf = (overview: DistancesOverview | null): PinPositions =>
-  new Map((overview?.badges ?? []).map((badge) => [badge.id, badge.pinPosition]));
+const favoritePositionsOf = (overview: DistancesOverview | null): FavoritePositions =>
+  new Map((overview?.badges ?? []).map((badge) => [badge.id, badge.favoritePosition]));
 
 /** Ranks from 1, in the order of `ids`. */
-const rankedFrom = (ids: string[]): PinPositions => new Map(ids.map((id, index) => [id, index + 1]));
+const rankedFrom = (ids: string[]): FavoritePositions => new Map(ids.map((id, index) => [id, index + 1]));
 
-/** Pinned badges of the user, in their order. */
-export function pinnedBadges(badges: DistanceBadge[]): DistanceBadge[] {
+/** Favorite badges of the user, in their order. */
+export function favoriteBadges(badges: DistanceBadge[]): DistanceBadge[] {
   return badges
-    .filter((badge) => badge.pinPosition !== null)
-    .sort((a, b) => (a.pinPosition ?? 0) - (b.pinPosition ?? 0));
+    .filter((badge) => badge.favoritePosition !== null)
+    .sort((a, b) => (a.favoritePosition ?? 0) - (b.favoritePosition ?? 0));
 }
 
 /** Badges of the current user: cumulated distances compared to known distances. */
@@ -62,51 +62,51 @@ export function useDistances(): DistancesState {
     };
   }, []);
 
-  /** Shows the given ranks; badges left out are not pinned. */
-  const showPins = useCallback((positions: PinPositions) => {
+  /** Shows the given ranks; badges left out are not favorites. */
+  const showFavorites = useCallback((positions: FavoritePositions) => {
     setOverview((current) =>
       current
         ? {
             ...current,
             badges: current.badges.map((badge) => ({
               ...badge,
-              pinPosition: positions.get(badge.id) ?? null,
+              favoritePosition: positions.get(badge.id) ?? null,
             })),
           }
         : current,
     );
   }, []);
 
-  const setPinned = useCallback(
-    async (badge: DistanceBadge, pinned: boolean) => {
-      const previous = pinPositionsOf(overview);
-      const ids = pinnedBadges(overview?.badges ?? [])
+  const setFavorite = useCallback(
+    async (badge: DistanceBadge, favorite: boolean) => {
+      const previous = favoritePositionsOf(overview);
+      const ids = favoriteBadges(overview?.badges ?? [])
         .map(({ id }) => id)
         .filter((id) => id !== badge.id);
-      showPins(rankedFrom(pinned ? [...ids, badge.id] : ids));
+      showFavorites(rankedFrom(favorite ? [...ids, badge.id] : ids));
       try {
-        await (pinned ? distancesService.pin(badge.id) : distancesService.unpin(badge.id));
+        await (favorite ? distancesService.addFavorite(badge.id) : distancesService.removeFavorite(badge.id));
       } catch (failure) {
-        showPins(previous);
+        showFavorites(previous);
         throw failure;
       }
     },
-    [overview, showPins],
+    [overview, showFavorites],
   );
 
-  const reorderPins = useCallback(
+  const reorderFavorites = useCallback(
     async (badgeIds: string[]) => {
-      const previous = pinPositionsOf(overview);
-      showPins(rankedFrom(badgeIds));
+      const previous = favoritePositionsOf(overview);
+      showFavorites(rankedFrom(badgeIds));
       try {
-        await distancesService.reorderPins(badgeIds);
+        await distancesService.reorderFavorites(badgeIds);
       } catch (failure) {
-        showPins(previous);
+        showFavorites(previous);
         throw failure;
       }
     },
-    [overview, showPins],
+    [overview, showFavorites],
   );
 
-  return { overview, error, refresh, setPinned, reorderPins };
+  return { overview, error, refresh, setFavorite, reorderFavorites };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { PinIcon } from "lucide-react";
+import { StarIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { DistanceBadge } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -13,9 +13,8 @@ export interface BadgeMedalProps {
   badge: DistanceBadge;
   /** Rank in its group, to stagger the filling of the rings. */
   index: number;
-  size?: "default" | "lg";
-  /** Marks the badge when pinned. */
-  showPin?: boolean;
+  /** Marks the badge when a favorite. */
+  showFavorite?: boolean;
   /** Marks the family of sports, where badges of several families mix. */
   showFamily?: boolean;
   className?: string;
@@ -26,7 +25,7 @@ const STAGGER_MS = 60;
 const MAX_DELAY_MS = 600;
 
 /** Icon of a badge ringed by the progress of its current iteration, with its completions. */
-export function BadgeMedal({ badge, index, size = "default", showPin, showFamily, className }: BadgeMedalProps) {
+export function BadgeMedal({ badge, index, showFavorite, showFamily, className }: BadgeMedalProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const achieved = badge.completions > 0;
@@ -41,7 +40,7 @@ export function BadgeMedal({ badge, index, size = "default", showPin, showFamily
       label={t("progressLabel", { name: badge.name, percent })}
       indicatorClassName={tier.stroke}
       delayMs={Math.min(index * STAGGER_MS, MAX_DELAY_MS)}
-      className={cn(size === "lg" ? "w-16 sm:w-18" : "w-12 sm:w-14", className)}
+      className={cn("w-12 sm:w-14", className)}
     >
       <div
         className={cn(
@@ -59,14 +58,14 @@ export function BadgeMedal({ badge, index, size = "default", showPin, showFamily
           ×{format.number(badge.completions)}
         </span>
       )}
-      {showPin && badge.pinPosition !== null && (
+      {showFavorite && badge.favoritePosition !== null && (
         <span className={cn(corner, "-top-1 -left-1")} aria-hidden>
-          <PinIcon className="size-3" />
+          <StarIcon className="size-3 fill-amber-400 text-amber-500" />
         </span>
       )}
       {showFamily && (
-        <span className={cn(corner, "-bottom-0.5 -left-1 size-6")} title={t(`families.${badge.family}`)} aria-hidden>
-          <FamilyIcon family={badge.family} className="size-3.5" />
+        <span className={cn(corner, "-bottom-0.5 -left-1")} title={t(`families.${badge.family}`)} aria-hidden>
+          <FamilyIcon family={badge.family} className="size-3" />
         </span>
       )}
     </ProgressRing>

@@ -1,6 +1,6 @@
 "use client";
 
-import { PinIcon, PinOffIcon, XIcon } from "lucide-react";
+import { StarIcon, StarOffIcon, XIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -28,19 +28,22 @@ interface BadgeDialogProps {
   badge: DistanceBadge | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPinnedChange: (badge: DistanceBadge, pinned: boolean) => Promise<void>;
+  onFavoriteChange: (badge: DistanceBadge, favorite: boolean) => Promise<void>;
+  /** Element focused once closed; by default the one focused before opening. */
+  finalFocus?: () => HTMLElement | null;
 }
 
 /** Details of a badge, centered over the page. */
-export function BadgeDialog({ badge, open, onOpenChange, onPinnedChange }: BadgeDialogProps) {
+export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, finalFocus }: BadgeDialogProps) {
   return (
     <Dialog open={open && badge !== null} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
+        finalFocus={finalFocus ? () => finalFocus() ?? true : undefined}
         // One column no wider than the dialog: long activity names get truncated instead of widening it.
         className="max-h-[calc(100dvh-2rem)] grid-cols-1 gap-0 overflow-x-hidden overflow-y-auto p-0 sm:max-w-md"
       >
-        {badge && <BadgeDialogBody key={badge.id} badge={badge} onPinnedChange={onPinnedChange} />}
+        {badge && <BadgeDialogBody key={badge.id} badge={badge} onFavoriteChange={onFavoriteChange} />}
       </DialogContent>
     </Dialog>
   );
@@ -48,18 +51,18 @@ export function BadgeDialog({ badge, open, onOpenChange, onPinnedChange }: Badge
 
 function BadgeDialogBody({
   badge,
-  onPinnedChange,
-}: Pick<BadgeDialogProps, "onPinnedChange"> & { badge: DistanceBadge }) {
+  onFavoriteChange,
+}: Pick<BadgeDialogProps, "onFavoriteChange"> & { badge: DistanceBadge }) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const { details, error } = useBadgeDetails(badge.id);
   const [pending, setPending] = useState(false);
-  const pinned = badge.pinPosition !== null;
+  const favorite = badge.favoritePosition !== null;
 
-  const togglePin = () => {
+  const toggleFavorite = () => {
     setPending(true);
-    onPinnedChange(badge, !pinned)
-      .catch(() => toast.error(t("dialog.pinError")))
+    onFavoriteChange(badge, !favorite)
+      .catch(() => toast.error(t("dialog.favoriteError")))
       .finally(() => setPending(false));
   };
 
@@ -97,9 +100,9 @@ function BadgeDialogBody({
         {badge.completions > 0 && <BadgeHistory details={details} error={error} />}
       </div>
       <DialogFooter className="mx-0 mb-0">
-        <Button variant={pinned ? "outline" : "default"} onClick={togglePin} disabled={pending} aria-pressed={pinned}>
-          {pinned ? <PinOffIcon data-icon="inline-start" /> : <PinIcon data-icon="inline-start" />}
-          {pinned ? t("dialog.unpin") : t("dialog.pin")}
+        <Button variant={favorite ? "outline" : "default"} onClick={toggleFavorite} disabled={pending} aria-pressed={favorite}>
+          {favorite ? <StarOffIcon data-icon="inline-start" /> : <StarIcon data-icon="inline-start" />}
+          {favorite ? t("dialog.removeFavorite") : t("dialog.addFavorite")}
         </Button>
       </DialogFooter>
     </>

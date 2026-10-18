@@ -6,8 +6,8 @@ const badgePath = (id: string) => `/distances/badges/${encodeURIComponent(id)}`;
 export const distancesService = {
   getOverview: () => apiRequest<DistancesOverview>("/distances"),
   getBadge: (id: string) => apiRequest<DistanceBadgeDetails>(badgePath(id)),
-  pin: (id: string) => apiRequest(`${badgePath(id)}/pin`, { method: "PUT" }),
-  unpin: (id: string) => apiRequest(`${badgePath(id)}/pin`, { method: "DELETE" }),
-  reorderPins: (badgeIds: string[]) =>
-    apiRequest("/distances/pins", { method: "PUT", body: { json: { badgeIds } } }),
+  addFavorite: (id: string) => apiRequest(`${badgePath(id)}/favorite`, { method: "PUT" }),
+  removeFavorite: (id: string) => apiRequest(`${badgePath(id)}/favorite`, { method: "DELETE" }),
+  reorderFavorites: (badgeIds: string[]) =>
+    apiRequest("/distances/favorites", { method: "PUT", body: { json: { badgeIds } } }),
 };

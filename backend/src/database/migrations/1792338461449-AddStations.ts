@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddStations1792323940179 implements MigrationInterface {
-  name = 'AddStations1792323940179';
+export class AddStations1792338461449 implements MigrationInterface {
+  name = 'AddStations1792338461449';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -29,19 +29,13 @@ export class AddStations1792323940179 implements MigrationInterface {
       `CREATE UNIQUE INDEX "IDX_b66449e68cad45776911c64e0f" ON "rail_links"  ("station_a", "station_b") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "rail_ways" ("osm_id" bigint NOT NULL, "nodes" bigint array NOT NULL, "geom" geometry(LineString,4326) NOT NULL, CONSTRAINT "PK_b845fc382b084ef9d3edc0857f1" PRIMARY KEY ("osm_id"))`,
+      `CREATE TABLE "rail_link_countries" ("link_id" integer NOT NULL, "country_code" character(2) NOT NULL, "length_m" real NOT NULL, CONSTRAINT "PK_3c6e07218f556abf9f496c7f12b" PRIMARY KEY ("link_id", "country_code"))`,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_1cd837e9e7e2b04a64470be6d4" ON "rail_ways" USING gist ("geom") `,
+      `CREATE INDEX "IDX_902fe2150bf098670bb9b94524" ON "rail_link_countries"  ("country_code") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "rail_regions" ("x" integer NOT NULL, "y" integer NOT NULL, "status" character varying(8) NOT NULL DEFAULT 'pending', "requested_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "fetched_at" TIMESTAMP WITH TIME ZONE, "osm_timestamp" TIMESTAMP WITH TIME ZONE, "attempts" integer NOT NULL DEFAULT '0', "retry_at" TIMESTAMP WITH TIME ZONE, "error" text, CONSTRAINT "PK_2e90b6470899f04619e8c2c623b" PRIMARY KEY ("x", "y"))`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_b9b071522871924d98794f5039" ON "rail_regions"  ("status", "requested_at") `,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "station_link_states" ("place_id" integer NOT NULL, "checked_at" TIMESTAMP WITH TIME ZONE, "linked_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_06b79905bdc96ed3df1f3462801" PRIMARY KEY ("place_id"))`,
+      `CREATE TABLE "railway_imports" ("id" SERIAL NOT NULL, "source" text NOT NULL, "report" jsonb NOT NULL, "imported_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_a35e86b1d7c2204b619029ad597" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `ALTER TABLE "rail_links" ADD CONSTRAINT "FK_6ddfa9609b93523d7d944222a46" FOREIGN KEY ("station_a") REFERENCES "places"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
@@ -50,13 +44,19 @@ export class AddStations1792323940179 implements MigrationInterface {
       `ALTER TABLE "rail_links" ADD CONSTRAINT "FK_6f96779aa206aa26dbad297160f" FOREIGN KEY ("station_b") REFERENCES "places"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE "station_link_states" ADD CONSTRAINT "FK_06b79905bdc96ed3df1f3462801" FOREIGN KEY ("place_id") REFERENCES "places"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+      `ALTER TABLE "rail_link_countries" ADD CONSTRAINT "FK_fa91e9ac68f267bb1cc48e05c64" FOREIGN KEY ("link_id") REFERENCES "rail_links"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "rail_link_countries" ADD CONSTRAINT "FK_902fe2150bf098670bb9b945247" FOREIGN KEY ("country_code") REFERENCES "countries"("code") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "station_link_states" DROP CONSTRAINT "FK_06b79905bdc96ed3df1f3462801"`,
+      `ALTER TABLE "rail_link_countries" DROP CONSTRAINT "FK_902fe2150bf098670bb9b945247"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "rail_link_countries" DROP CONSTRAINT "FK_fa91e9ac68f267bb1cc48e05c64"`,
     );
     await queryRunner.query(
       `ALTER TABLE "rail_links" DROP CONSTRAINT "FK_6f96779aa206aa26dbad297160f"`,
@@ -64,15 +64,11 @@ export class AddStations1792323940179 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "rail_links" DROP CONSTRAINT "FK_6ddfa9609b93523d7d944222a46"`,
     );
-    await queryRunner.query(`DROP TABLE "station_link_states"`);
+    await queryRunner.query(`DROP TABLE "railway_imports"`);
     await queryRunner.query(
-      `DROP INDEX "public"."IDX_b9b071522871924d98794f5039"`,
+      `DROP INDEX "public"."IDX_902fe2150bf098670bb9b94524"`,
     );
-    await queryRunner.query(`DROP TABLE "rail_regions"`);
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_1cd837e9e7e2b04a64470be6d4"`,
-    );
-    await queryRunner.query(`DROP TABLE "rail_ways"`);
+    await queryRunner.query(`DROP TABLE "rail_link_countries"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_b66449e68cad45776911c64e0f"`,
     );

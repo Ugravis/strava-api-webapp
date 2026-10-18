@@ -1,25 +1,18 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Place } from './place.entity';
+import { RailLinkCountry } from './rail-link-country.entity';
 import { RailLink } from './rail-link.entity';
-import { RailRegion } from './rail-region.entity';
-import { RailWay } from './rail-way.entity';
-import { StationLinkState } from './station-link-state.entity';
+import { RailwayImport } from './railway-import.entity';
 import { StationsController } from './stations.controller';
 import { StationsService } from './stations.service';
-import { StationsWorker } from './stations.worker';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Place,
-      StationLinkState,
-      RailRegion,
-      RailWay,
-      RailLink,
-    ]),
+    TypeOrmModule.forFeature([Place, RailLink, RailLinkCountry, RailwayImport]),
   ],
   controllers: [StationsController],
-  providers: [StationsService, StationsWorker],
+  providers: [StationsService],
+  exports: [StationsService],
 })
 export class StationsModule {}

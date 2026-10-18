@@ -10,7 +10,7 @@ import {
 import { Place } from './place.entity';
 
 /**
- * Two stations connected by the railway without any station between them,
+ * Two stations connected by passenger tracks without any station between them,
  * and the tracks joining them. Shared by every user: a link is unlocked
  * once its two stations are visited.
  */

@@ -15,6 +15,10 @@ import {
   CountriesService,
   type CountrySector,
 } from './countries.service';
+import {
+  type CountryRailway,
+  StationsService,
+} from '../stations/stations.service';
 import { CountriesWorker } from './countries.worker';
 import {
   CountryCodeParamsDto,
@@ -31,6 +35,7 @@ export class CountriesController {
   constructor(
     private readonly countries: CountriesService,
     private readonly worker: CountriesWorker,
+    private readonly stations: StationsService,
   ) {}
 
   /**
@@ -74,22 +79,26 @@ export class CountriesController {
 
   /**
    * A country as a sector of the map: the tiles of the user in it, its
-   * totals, the first and latest visits of the user, and the bounds of its
-   * main landmass. A country without totals is computed in the background.
+   * totals, the first and latest visits of the user, the bounds of its
+   * main landmass, and its railway network with the part the user
+   * unlocked. A country without totals is computed in the background.
    */
   @Get(':code/sector')
   async sector(
     @CurrentUser() user: User,
     @Param() { code }: CountryCodeParamsDto,
-  ): Promise<CountrySector> {
-    const sector = await this.countries.sector(user.id, code);
+  ): Promise<CountrySector & { railway: CountryRailway | null }> {
+    const [sector, railway] = await Promise.all([
+      this.countries.sector(user.id, code),
+      this.stations.countryRailway(user.id, code),
+    ]);
     if (!sector) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such country');
     }
     if (sector.shapeVersion === null) {
       this.worker.wake();
     }
-    return sector;
+    return { ...sector, railway };
   }
 
   /**

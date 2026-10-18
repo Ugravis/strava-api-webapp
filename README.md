@@ -211,6 +211,42 @@ self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes
   about 400 ms for Canada zoomed out). Cached by the browser until the shape changes.
 - The completion uses every tile of the user, hidden areas included: visible to the owner only.
 
+## Train stations
+
+The map can show the train stations of the world and unlock the railway between those the user
+visited. A station is visited once the small tile holding it is: the distance from which it is
+validated depends on where it lies in its tile. Two stations are linked when the railway connects
+them without any other station between them; a link is unlocked once both are visited.
+
+- **Stations**: `pnpm stations:import` reads every `railway=station` and `railway=halt` node of
+  OpenStreetMap served by trains (no metro, tram, light rail, monorail, funicular nor miniature
+  railway) through the public [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API)
+  (ODbL, no key), by bands of 45° of longitude: about 110,000 stations, 5 MB, 25 minutes. Stored
+  in `places` (generic, `kind = station`) with their small tile (`x`, `y`, `bit`). Run it once
+  after setting up the database, then monthly; the links around the stations moved, added or
+  removed are found again. The OSM planet (80 GB) and the Overture Maps transportation theme
+  (about 35 GB read to filter the rails) were too large.
+- **Railway, on demand**: a background worker requests the region (tile at zoom 9, about 50 km)
+  of each station visited by a user, then fetches its tracks from Overpass, 1 km beyond its
+  edges: `railway=rail|preserved|narrow_gauge` ways without yards, sidings and spurs, nor
+  industrial, military and test lines, without their tags (`out skel geom`, a few MB per region).
+  Stored in `rail_ways` with their nodes; a region is fetched again after 90 days. Requests are
+  spaced by 5 s, retried on 429 and 502 to 504, and capped at 500 MB a day (half of the usage
+  policy of the public instance).
+- **Links**: the worker walks the tracks from each visited station (`rail-graph.ts`), shortest
+  paths first, and stops at each station met: those are its neighbors. A station is snapped to
+  the nearest track within 400 m and to the other tracks at most 60 m farther (the parallel tracks
+  of its line, not another line passing by). A walk reaching a region not fetched requests it and
+  is tried again later; it gives up beyond 300 km. Links are stored once in `rail_links`, shared by
+  every user; `station_link_states` follows the stations visited and their walks.
+- **Map**: `GET /api/stations` gives the stations visited by the user, their first visit
+  (`tile_first_visits`), the links between them, and how many still wait for their links.
+  `GET /api/stations/vector/:zoom/:x/:y` serves every station as a vector tile (zoom 6 to 14),
+  cached by the browser until the next import. `GET /api/stations/:id` gives a station, whether
+  the user visited it, and its neighbors.
+- No location data of the user is stored: a station is visited by joining `places` with
+  `user_tiles`.
+
 ## Development tools
 
 In development, a floating button at the bottom right of the app pages (next to the Next.js
@@ -234,6 +270,7 @@ delete `backend/src/dev`, `frontend/src/components/dev` and their two references
 | `pnpm test`             | Run unit tests                                          |
 | `pnpm build`            | Build all packages                                      |
 | `pnpm countries:import` | Import the country boundaries from Overture Maps        |
+| `pnpm stations:import`  | Import the train stations from OpenStreetMap            |
 | `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
 The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.

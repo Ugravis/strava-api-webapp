@@ -440,6 +440,31 @@
       "editDay": "Changer la date, actuellement le {day}",
       "today": "Aujourd'hui"
     },
+    "sector": {
+      "open": "Secteur",
+      "label": "Secteur",
+      "close": "Fermer le secteur",
+      "change": "Changer",
+      "recenter": "Recentrer",
+      "tiles": "Grandes tuiles",
+      "subtiles": "Petites tuiles",
+      "computingTotal": "… (calcul)",
+      "firstVisit": "Première visite",
+      "lastVisit": "Dernière visite",
+      "never": "Jamais",
+      "computing": "Calcul de la forme du secteur, ce qui peut prendre plusieurs minutes pour un grand pays…",
+      "error": "Impossible de charger le secteur.",
+      "search": {
+        "title": "Rechercher un secteur",
+        "description": "Choisis un pays pour centrer la carte dessus.",
+        "placeholder": "Rechercher un pays…",
+        "visited": "Pays visités",
+        "others": "Autres pays",
+        "all": "Pays",
+        "empty": "Aucun pays trouvé.",
+        "error": "Impossible de charger la liste des pays."
+      }
+    },
     "bands": {
       "collapse": "Replier le bandeau",
       "expand": "Déplier le bandeau"

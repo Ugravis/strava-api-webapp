@@ -34,16 +34,60 @@ export interface CountriesCompletion {
   shapesVersion: string | null;
 }
 
+/** A country seen as a sector of the map, for one user. */
+export interface CountrySector {
+  /** ISO 3166-1 alpha-2 code. */
+  code: string;
+  /** Large tiles (zoom 14). */
+  tiles: LevelCompletion;
+  /** Small tiles (zoom 17). */
+  subtiles: LevelCompletion;
+  /** Start of the first activity that gained a small tile in it; null without any. */
+  firstVisitAt: string | null;
+  /** Start of the latest activity that crossed it; null without any. */
+  lastVisitAt: string | null;
+  /** Main landmass, `[west, south, east, north]` in degrees; null without land. */
+  bounds: [number, number, number, number] | null;
+  /**
+   * Changes whenever the tile shape is computed: the vector tiles of the
+   * area outside the sector can be cached until it changes. Null while it
+   * is being computed.
+   */
+  shapeVersion: string | null;
+}
+
 /** Large tiles of the user, with their small tiles. */
 const USER_CELLS = 'SELECT x, y, mask FROM user_tiles WHERE user_id = $1';
 
 /** Layers of the shape tiles: the merged areas and their outer borders. */
 const SHAPES_AREA_LAYER = 'visited';
 const SHAPES_BORDER_LAYER = 'borders';
+/** Layers of the sector tiles: the area outside the sector and its border. */
+const SECTOR_OUTSIDE_LAYER = 'outside';
+const SECTOR_BORDER_LAYER = 'border';
+/**
+ * Distance between two parts of a country still counted as one landmass, in
+ * meters: the parts of the subdivided land touch, up to rounding.
+ */
+const LANDMASS_GAP_M = 1;
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 /** Snapping grid of the tile shapes, in meters: tile edges computed at different zooms meet exactly. */
 const SHAPE_GRID_M = 1;
+/** Large tiles touching the country `$2`, with their small tiles touching it. */
+const COUNTRY_ZONE =
+  'SELECT x, y, mask FROM tile_countries WHERE country_code = $2';
+/**
+ * Below this number of large tiles of the user in a country, its latest
+ * visit is found from the activities crossing them rather than from the
+ * latest activities of the user.
+ */
+const LAST_VISIT_JOIN_MAX_TILES = 2_000;
+/** `focus_bounds` as `[west, south, east, north]` in degrees, null when not computed. */
+const BOUNDS_IN_DEGREES = `CASE WHEN focus_bounds IS NOT NULL THEN (
+  SELECT json_build_array(ST_XMin(b), ST_YMin(b), ST_XMax(b), ST_YMax(b))
+  FROM ST_Transform(focus_bounds, 4326) AS b
+) END`;
 
 /**
  * Countries touched by the tiles. A tile belongs to every country it
@@ -125,12 +169,20 @@ export class CountriesService {
     });
   }
 
-  /** A country touched by a located tile whose totals are not computed yet. */
+  /**
+   * A country whose totals are not computed yet: first those touched by a
+   * located tile, then those looked at as a sector, the latest first.
+   */
   async nextCountryWithoutTotals(): Promise<string | null> {
     const [row]: { code: string }[] = await this.dataSource.query(
-      `SELECT c.code FROM countries c
-       WHERE c.total_tiles IS NULL
-         AND EXISTS (SELECT 1 FROM tile_countries t WHERE t.country_code = c.code)
+      `SELECT code FROM (
+         SELECT c.code, c.requested_at,
+           EXISTS (SELECT 1 FROM tile_countries t WHERE t.country_code = c.code) AS visited
+         FROM countries c
+         WHERE c.total_tiles IS NULL
+       ) c
+       WHERE visited OR requested_at IS NOT NULL
+       ORDER BY visited DESC, requested_at DESC
        LIMIT 1`,
     );
     return row?.code ?? null;
@@ -259,6 +311,197 @@ export class CountriesService {
       pendingTiles: state.pending,
       shapesVersion: computed.length > 0 ? String(Math.max(...computed)) : null,
     };
+  }
+
+  /** Codes of every country, visited or not. */
+  async codes(): Promise<string[]> {
+    const rows: { code: string }[] = await this.dataSource.query(
+      'SELECT code FROM countries ORDER BY code',
+    );
+    return rows.map((row) => row.code);
+  }
+
+  /**
+   * A country as a sector for the user: their tiles in it and its totals,
+   * their first and latest visits, and the bounds of its main landmass,
+   * computed once. Without totals, the country is requested from the
+   * worker. Null for an unknown country.
+   */
+  async sector(userId: string, code: string): Promise<CountrySector | null> {
+    const [country]: {
+      total_tiles: number | null;
+      total_subtiles: string | null;
+      computed_at: string | null;
+      bounds: [number, number, number, number] | null;
+    }[] = await this.dataSource.query(
+      `SELECT total_tiles, total_subtiles,
+         floor(extract(epoch FROM computed_at) * 1000)::bigint::text AS computed_at,
+         ${BOUNDS_IN_DEGREES} AS bounds
+       FROM countries WHERE code = $1`,
+      [code],
+    );
+    if (!country) {
+      return null;
+    }
+    const bounds = country.bounds ?? (await this.computeFocusBounds(code));
+    if (country.total_tiles === null) {
+      await this.dataSource.query(
+        'UPDATE countries SET requested_at = now() WHERE code = $1',
+        [code],
+      );
+    }
+    const [visits]: {
+      tiles: number;
+      subtiles: number;
+      first_visit_at: Date | null;
+    }[] = await this.dataSource.query(
+      `WITH zone AS (${COUNTRY_ZONE}),
+       cells AS (
+         SELECT u.x, u.y, u.mask & z.mask AS mask
+         FROM user_tiles u JOIN zone z USING (x, y)
+         WHERE u.user_id = $1
+       )
+       SELECT
+         (SELECT count(*)::int FROM cells) AS tiles,
+         (SELECT coalesce(sum(bit_count(mask::bit(64))), 0)::int FROM cells) AS subtiles,
+         (SELECT min(f.visited_at) FROM tile_first_visits f JOIN zone z USING (x, y)
+          WHERE f.user_id = $1 AND f.mask & z.mask <> 0) AS first_visit_at`,
+      [userId, code],
+    );
+    const lastVisitAt =
+      visits.tiles > 0
+        ? await this.lastVisit(userId, code, visits.tiles)
+        : null;
+    return {
+      code,
+      tiles: { visited: visits.tiles, total: country.total_tiles },
+      subtiles: {
+        visited: visits.subtiles,
+        total:
+          country.total_subtiles === null
+            ? null
+            : Number(country.total_subtiles),
+      },
+      firstVisitAt: visits.first_visit_at?.toISOString() ?? null,
+      lastVisitAt: lastVisitAt?.toISOString() ?? null,
+      bounds,
+      shapeVersion: country.computed_at,
+    };
+  }
+
+  /**
+   * Start of the latest activity of the user crossing a country. In a
+   * country with few tiles of the user, from the activities crossing them;
+   * otherwise from the latest activities of the user, until one crosses it,
+   * which is soon in a country visited often.
+   */
+  private async lastVisit(
+    userId: string,
+    code: string,
+    tiles: number,
+  ): Promise<Date | null> {
+    const [row]: { started_at: Date | null }[] =
+      tiles < LAST_VISIT_JOIN_MAX_TILES
+        ? await this.dataSource.query(
+            `SELECT max(a.started_at) AS started_at
+             FROM activity_tiles t
+             JOIN (${COUNTRY_ZONE}) z USING (x, y)
+             JOIN activities a ON a.id = t.activity_id
+             WHERE t.user_id = $1 AND t.mask & z.mask <> 0`,
+            [userId, code],
+          )
+        : await this.dataSource.query(
+            `SELECT a.started_at FROM activities a
+             WHERE a.user_id = $1 AND EXISTS (
+               SELECT 1 FROM activity_tiles t
+               JOIN tile_countries z
+                 ON z.x = t.x AND z.y = t.y AND z.country_code = $2
+               WHERE t.activity_id = a.id AND t.mask & z.mask <> 0
+             )
+             ORDER BY a.started_at DESC LIMIT 1`,
+            [userId, code],
+          );
+    return row?.started_at ?? null;
+  }
+
+  /**
+   * Bounds of the largest landmass of a country, made of its parts touching
+   * one another: a country with territories overseas is framed on its
+   * mainland. Stored for the next requests.
+   */
+  private async computeFocusBounds(
+    code: string,
+  ): Promise<[number, number, number, number] | null> {
+    const [row]: { bounds: [number, number, number, number] | null }[] =
+      await this.dataSource.query(
+        `WITH parts AS (
+           SELECT geom,
+             ST_ClusterDBSCAN(geom, eps := ${LANDMASS_GAP_M}, minpoints := 1) OVER () AS landmass
+           FROM country_parts WHERE country_code = $1
+         ),
+         main AS (
+           SELECT ST_SetSRID(ST_Extent(geom)::geometry, 3857) AS box
+           FROM parts GROUP BY landmass
+           ORDER BY sum(ST_Area(geom)) DESC LIMIT 1
+         ),
+         updated AS (
+           UPDATE countries c SET focus_bounds = main.box
+           FROM main WHERE c.code = $1
+           RETURNING c.focus_bounds
+         )
+         SELECT ${BOUNDS_IN_DEGREES} AS bounds FROM updated`,
+        [code],
+      );
+    return row?.bounds ?? null;
+  }
+
+  /**
+   * Vector tile of the area outside the tile shape of a country, and of the
+   * border of that shape. Geography only, empty while the shape is not
+   * computed.
+   */
+  async sectorTile(
+    zoom: number,
+    x: number,
+    y: number,
+    code: string,
+  ): Promise<Buffer> {
+    // The difference is taken in the coordinates of the tile, once the shape
+    // is simplified to them: cheap even for the largest countries zoomed
+    // out. Its rings are then oriented as `ST_AsMVTGeom` does, its y axis
+    // pointing down. Clipped beyond the buffer of the tile, like the shapes.
+    const box = `ST_MakeEnvelope(${-MVT_BUFFER}, ${-MVT_BUFFER}, ${MVT_EXTENT + MVT_BUFFER}, ${MVT_EXTENT + MVT_BUFFER}, 3857)`;
+    const [row]: { tile: Buffer | null }[] = await this.dataSource.query(
+      `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
+       clip AS (
+         SELECT ST_Expand(envelope,
+           (ST_XMax(envelope) - ST_XMin(envelope)) * ${(2 * MVT_BUFFER) / MVT_EXTENT}) AS box
+         FROM bounds
+       ),
+       shape AS (
+         SELECT CASE WHEN c.tile_shape && clip.box THEN ST_AsMVTGeom(
+           ST_ClipByBox2D(c.tile_shape, clip.box), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true)
+         END AS geom
+         FROM countries c, clip, bounds b
+         WHERE c.code = $4 AND c.tile_shape IS NOT NULL
+       ),
+       outside AS (
+         SELECT ST_ForcePolygonCCW(
+           CASE WHEN geom IS NULL THEN ${box} ELSE ST_Difference(${box}, geom) END
+         ) AS geom
+         FROM shape
+       ),
+       border AS (
+         SELECT ST_Boundary(geom) AS geom FROM shape WHERE geom IS NOT NULL
+       )
+       SELECT
+         (SELECT ST_AsMVT(outside, '${SECTOR_OUTSIDE_LAYER}', ${MVT_EXTENT}, 'geom')
+          FROM outside WHERE NOT ST_IsEmpty(geom))
+         || (SELECT ST_AsMVT(border, '${SECTOR_BORDER_LAYER}', ${MVT_EXTENT}, 'geom')
+          FROM border) AS tile`,
+      [zoom, x, y, code],
+    );
+    return row.tile ?? Buffer.alloc(0);
   }
 
   /**

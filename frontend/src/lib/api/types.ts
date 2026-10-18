@@ -248,6 +248,24 @@ export interface CountriesCompletion {
   shapesVersion: string | null;
 }
 
+/** A country seen as a sector of the map: the tiles of the user in it and its visits. */
+export interface CountrySector {
+  /** ISO 3166-1 alpha-2 code. */
+  code: string;
+  /** Large tiles (zoom 14). */
+  tiles: CountryLevelCompletion;
+  /** Small tiles (zoom 17). */
+  subtiles: CountryLevelCompletion;
+  /** Start of the first activity that gained a small tile in it, ISO 8601; null without any. */
+  firstVisitAt: string | null;
+  /** Start of the latest activity that crossed it, ISO 8601; null without any. */
+  lastVisitAt: string | null;
+  /** Main landmass, `[west, south, east, north]` in degrees; null without land. */
+  bounds: [number, number, number, number] | null;
+  /** Changes with its tile shape, which dims the rest of the map; null while it is being computed. */
+  shapeVersion: string | null;
+}
+
 /** Which tiles the history shows: those first visited since a date, or the map as it was at that date. */
 export type HistoryMode = "gained" | "state";
 

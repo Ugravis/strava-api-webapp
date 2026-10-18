@@ -33,6 +33,27 @@ export class Country {
   })
   tileShape!: string | null;
 
+  /**
+   * Bounding box of the main landmass of the country, in Web Mercator: the
+   * map frames it rather than every territory overseas. Computed when the
+   * country is first shown as a sector.
+   */
+  @Column({
+    name: 'focus_bounds',
+    type: 'geometry',
+    spatialFeatureType: 'Polygon',
+    srid: 3857,
+    nullable: true,
+  })
+  focusBounds!: string | null;
+
+  /**
+   * Last time a user looked at the country as a sector while its totals
+   * were missing: the worker computes them, after the visited countries.
+   */
+  @Column({ name: 'requested_at', type: 'timestamptz', nullable: true })
+  requestedAt!: Date | null;
+
   /** When the totals and the tile shape were computed. */
   @Column({ name: 'computed_at', type: 'timestamptz', nullable: true })
   computedAt!: Date | null;

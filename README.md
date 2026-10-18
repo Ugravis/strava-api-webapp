@@ -180,8 +180,8 @@ self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes
   `country_parts` (Web Mercator). It takes about 5 minutes and reads about 300 MB. Run it once
   after setting up the database; `pnpm db:reset` runs it too (`pnpm db:reset --skip-countries` to
   skip it). Without it, no country is shown.
-  The release is pinned in `overture-countries.ts`. `country_parts` is only read by the worker,
-  never by a user request.
+  The release is pinned in `overture-countries.ts`. `country_parts` is read by the worker, and
+  once per country by a user request, for the bounds of its main landmass (see Sectors).
 - **Location**: a background worker locates each visited large tile once: for every country it
   touches, `tile_countries` stores the mask of its small tiles touching it. Between two complete
   scans (at startup, then hourly), it only looks at the tiles saved recently. These tables only
@@ -198,6 +198,17 @@ self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes
   not visited follow the tiles. Geography only, cached by the browser for each set of countries
   until the shape of one of them is computed (`shapesVersion`). Copies of the water layers of the base map
   (sea, lakes, rivers) are drawn over the area, so that the water keeps the same color everywhere.
+- **Sectors**: the sector tool of the map picks any country (`GET /api/countries/codes`).
+  `GET /api/countries/:code/sector` gives the tiles of the user in it out of its totals, their
+  first visit (`tile_first_visits`) and latest visit, and the bounds of its main landmass: its
+  parts touching one another are clustered (`ST_ClusterDBSCAN`) and the largest cluster is kept,
+  so that France is framed without its overseas regions. Computed once (about 1 s for the largest
+  countries) and stored in `countries.focus_bounds`. A country without totals is marked
+  `requested_at` and the worker computes it after the visited countries (about 20 s for
+  Mongolia, 40 s for Kazakhstan). `GET /api/countries/:code/outside/:zoom/:x/:y` serves the area
+  outside its tile shape and its border, as a vector tile, to dim the rest of the map; the
+  difference is taken in tile coordinates, after the simplification of `ST_AsMVTGeom` (at most
+  about 400 ms for Canada zoomed out). Cached by the browser until the shape changes.
 - The completion uses every tile of the user, hidden areas included: visible to the owner only.
 
 ## Development tools

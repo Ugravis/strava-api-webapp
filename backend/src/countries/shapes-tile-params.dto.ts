@@ -46,3 +46,17 @@ export class ShapesTileQueryDto {
   @IsString()
   v?: string;
 }
+
+export class CountryCodeParamsDto {
+  /** ISO 3166-1 alpha-2 code. */
+  @IsString()
+  @Matches(/^[A-Z]{2}$/)
+  code!: string;
+}
+
+/** A tile of the area outside a sector, with the code of its country. */
+export class SectorTileParamsDto extends ShapesTileParamsDto {
+  @IsString()
+  @Matches(/^[A-Z]{2}$/)
+  code!: string;
+}

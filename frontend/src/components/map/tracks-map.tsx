@@ -1,8 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
 import { useCountries } from "@/hooks/use-countries";
@@ -21,11 +23,13 @@ import {
 } from "@/lib/tiles/history-period";
 import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { HistoryBand } from "./history-band";
+import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";
 import type { MapHistory } from "./history-layer";
-import { ALL_MAP_LAYERS, type MapLayers, tileModeOf } from "./map-layers";
+import { type MapLayers, tileModeOf } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
 import { MapStatsBar } from "./map-stats-bar";
+import { entryFromSearch } from "./panel-entry";
 import { SectorBand } from "./sector-band";
 import type { MapSector } from "./sector-layer";
 import { SectorSearchDialog } from "./sector-search-dialog";
@@ -49,6 +53,14 @@ type MapTool = "history" | "sector";
  */
 export function TracksMap() {
   const t = useTranslations("map");
+  const searchParams = useSearchParams();
+  const [today] = useState(() => dayOf(new Date()));
+  // The address of the page may name the layers and the tool open: the map opens with them.
+  const [fromAddress] = useState(() => {
+    const search = searchParams.toString();
+    return { ...addressFromSearch(search, today), focused: entryFromSearch(search).entry !== null };
+  });
+  const initialTool = fromAddress.address.tool;
   const tracks = useActivityTracks();
   const { summary } = useTileSummary();
   // Fetched again when new tracks arrive, and while new tiles are located.
@@ -61,14 +73,15 @@ export function TracksMap() {
         : NO_COUNTRIES,
     [completion],
   );
-  const [layers, setLayers] = useState<MapLayers>(ALL_MAP_LAYERS);
-  const [tool, setTool] = useState<MapTool | null>(null);
+  const [layers, setLayers] = useState<MapLayers>(fromAddress.address.layers);
+  const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
   // The sector tool opens on its search; a sector picked opens its band.
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sectorCode, setSectorCode] = useState<string | null>(null);
-  // Incremented to frame the sector: when picked, and on demand.
-  const [sectorFrame, setSectorFrame] = useState(0);
+  const [sectorCode, setSectorCode] = useState<string | null>(initialTool?.kind === "sector" ? initialTool.code : null);
+  // Incremented to frame the sector: when picked, and on demand. Named by the
+  // address with a tile or an activity, it leaves the camera on them.
+  const [sectorFrame, setSectorFrame] = useState(initialTool?.kind === "sector" && !fromAddress.focused ? 1 : 0);
   const shownSector = tool === "sector" ? sectorCode : null;
   const { sector, error: sectorError } = useCountrySector(shownSector, summary?.version ?? null);
   const sectorShapeVersion = sector?.shapeVersion ?? null;
@@ -77,11 +90,11 @@ export function TracksMap() {
     () => (shownSector ? { code: shownSector, shapeVersion: sectorShapeVersion, bounds: sectorBounds } : null),
     [shownSector, sectorShapeVersion, sectorBounds],
   );
-  const [today] = useState(() => dayOf(new Date()));
-  const [historySettings, setHistorySettings] = useState<HistorySettings>(() => ({
-    mode: "gained",
-    date: dayAtStep(DEFAULT_STEP_INDEX, HISTORY_STEPS.length, today),
-  }));
+  const [historySettings, setHistorySettings] = useState<HistorySettings>(() =>
+    initialTool?.kind === "history"
+      ? initialTool.settings
+      : { mode: "gained", date: dayAtStep(DEFAULT_STEP_INDEX, HISTORY_STEPS.length, today) },
+  );
   // The steps reach back to the first visit, known with the first answer.
   const [firstVisitAt, setFirstVisitAt] = useState<string | null>(null);
   const stepCount = availableSteps(firstVisitAt, today);
@@ -95,6 +108,24 @@ export function TracksMap() {
     () => (historyOpen && historyVersion !== null ? { mode: shownSettings.mode, instant, version: historyVersion } : null),
     [historyOpen, historyVersion, shownSettings.mode, instant],
   );
+
+  useEffect(() => {
+    if (fromAddress.invalid) toast.error(t("invalidLink"));
+  }, [fromAddress, t]);
+
+  useEffect(() => {
+    // The address follows the map, without adding to the history of the browser.
+    // The other parameters, those of the panel, are kept.
+    const addressed: AddressedTool | null = historyOpen
+      ? { kind: "history", settings: shownSettings }
+      : shownSector
+        ? { kind: "sector", code: shownSector }
+        : null;
+    const search = searchWithAddress(window.location.search, { layers, tool: addressed });
+    if (search !== window.location.search) {
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}`);
+    }
+  }, [layers, historyOpen, shownSettings, shownSector]);
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden">

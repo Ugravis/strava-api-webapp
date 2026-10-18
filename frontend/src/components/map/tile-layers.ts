@@ -15,7 +15,8 @@ import {
   TILE_ZOOM,
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
-import { firstGroundLayerId, type MapPalette } from "./map-style";
+import { belowActivityTiles } from "./activity-tiles-layer";
+import type { MapPalette } from "./map-style";
 
 /** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
 export type TileMode = "tiles" | "both";
@@ -54,8 +55,10 @@ const TILE_GRID_MIN_ZOOM = 11;
 const SUBTILE_GRID_MIN_ZOOM = 14;
 /** The small tiles fade in from this zoom, where the backend starts serving their images. */
 const SUBTILE_MIN_ZOOM = 5;
-/** The small tiles can be picked from this zoom, where they span about 16 pixels; below, a click picks the large tile. */
-const SUBTILE_CLICK_MIN_ZOOM = 13;
+/** The large tiles can be picked from this zoom, where they span about 8 pixels; below, nothing is picked. */
+const TILE_CLICK_MIN_ZOOM = 8;
+/** The small tiles can be picked from this zoom, where they span about 8 pixels; below, a click picks the large tile. */
+const SUBTILE_CLICK_MIN_ZOOM = 12;
 /**
  * The other clusters of large tiles fade in from this zoom, once a country
  * like France fills the screen. Those of small tiles are drawn in their
@@ -96,7 +99,7 @@ const GROUND_LAYERS = new Set([
 ]);
 
 /** Layers whose fill shows a visited tile, small tiles first: they react to the pointer. */
-export const CLICKABLE_LAYERS = ["visited-subtiles-fill", "visited-tiles-fill"];
+const CLICKABLE_LAYERS = ["visited-subtiles-fill", "visited-tiles-fill"];
 const LAYER_ZOOMS: Record<string, TileZoom> = {
   "visited-subtiles-fill": SUBTILE_ZOOM,
   "visited-tiles-fill": TILE_ZOOM,
@@ -221,8 +224,9 @@ const drawnVersions = new WeakMap<MapLibreMap, string>();
 /** Colors of the images of each map, those of its theme. */
 const drawnPalettes = new WeakMap<MapLibreMap, MapPalette>();
 
-/** Levels of the tile under the pointer, the most detailed first. */
+/** Levels of the tile under the pointer, the most detailed first; none while the tiles are too small to aim at. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
+  if (mapZoom < TILE_CLICK_MIN_ZOOM) return [];
   return mode === "both" && mapZoom >= SUBTILE_CLICK_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
 }
 
@@ -377,7 +381,7 @@ export function addTileLayers(
       paint: { "line-color": palette.square, "line-width": 2 },
     },
   ];
-  const groundId = firstGroundLayerId(map);
+  const groundId = belowActivityTiles(map);
   for (const layer of layers) map.addLayer(layer, GROUND_LAYERS.has(layer.id) ? groundId : beforeId);
 }
 

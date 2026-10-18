@@ -3,6 +3,10 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, type EntityManager } from 'typeorm';
 import type { StreamReason } from './activity-tile-state.entity';
 import {
+  encodeTileActivitiesCursor,
+  type TileActivitiesCursor,
+} from './tile-activities-cursor';
+import {
   fromSignedMask,
   SUBTILE_ZOOM,
   TILE_ZOOM,
@@ -27,17 +31,35 @@ export interface TileVisits {
   activities: number;
   firstVisitedAt: string | null;
   lastVisitedAt: string | null;
-  /** The latest ones first. */
-  recent: {
-    id: string;
-    name: string;
-    sportType: string;
-    startedAt: string;
-  }[];
 }
 
-/** Activities listed in the details of a tile. */
-const RECENT_VISITS = 5;
+/** An activity that crossed a tile. */
+export interface TileActivity {
+  id: string;
+  name: string;
+  sportType: string;
+  startedAt: string;
+  distanceM: number;
+  movingTimeS: number;
+  elevationGainM: number | null;
+  /** Identifier of the activity on Strava, to link to it. */
+  stravaId: string | null;
+}
+
+/** A page of the activities that crossed a tile, the latest ones first. */
+export interface TileActivitiesPage {
+  items: TileActivity[];
+  /** Cursor of the next page; null on the last one. */
+  next: string | null;
+}
+
+/** Tiles crossed by one activity, as `[x, y]` pairs of each level. */
+export interface ActivityTileSets {
+  /** Large tiles (zoom 14). */
+  tiles: [number, number][];
+  /** Small tiles (zoom 17). */
+  subtiles: [number, number][];
+}
 
 export interface TileProgress {
   activities: number;
@@ -45,6 +67,26 @@ export interface TileProgress {
   computed: number;
   /** Activities awaiting their full track to refine their tiles. */
   refining: number;
+}
+
+/** Activities of `$1` crossing the large tile `($2, $3)` within the small tiles `$4`. */
+const TILE_ACTIVITIES_FILTER = `FROM activity_tiles t JOIN activities a ON a.id = t.activity_id
+       WHERE t.user_id = $1 AND t.x = $2 AND t.y = $3 AND t.mask & $4 <> 0`;
+
+/** Parameters of `TILE_ACTIVITIES_FILTER` for the tile `(x, y)` at `zoom`. */
+function tileFilterParams(
+  userId: string,
+  zoom: typeof TILE_ZOOM | typeof SUBTILE_ZOOM,
+  x: number,
+  y: number,
+): [string, number, number, string] {
+  const shift = SUBTILE_ZOOM - TILE_ZOOM;
+  const side = 2 ** shift;
+  const [tileX, tileY, bits] =
+    zoom === TILE_ZOOM
+      ? [x, y, -1n]
+      : [x >> shift, y >> shift, 1n << BigInt((y % side) * side + (x % side))];
+  return [userId, tileX, tileY, toSignedMask(bits)];
 }
 
 /** Delay before a claimed activity may be claimed again, should the process stop. */
@@ -243,51 +285,112 @@ export class TilesService {
     x: number,
     y: number,
   ): Promise<TileVisits> {
-    const shift = SUBTILE_ZOOM - TILE_ZOOM;
-    const side = 2 ** shift;
-    const [tileX, tileY, bits] =
-      zoom === TILE_ZOOM
-        ? [x, y, -1n]
-        : [
-            x >> shift,
-            y >> shift,
-            1n << BigInt((y % side) * side + (x % side)),
-          ];
-    const params = [userId, tileX, tileY, toSignedMask(bits)];
-    const filter = `FROM activity_tiles t JOIN activities a ON a.id = t.activity_id
-       WHERE t.user_id = $1 AND t.x = $2 AND t.y = $3 AND t.mask & $4 <> 0`;
     const [summary]: {
       activities: number;
       first: Date | null;
       last: Date | null;
     }[] = await this.dataSource.query(
       `SELECT count(*)::int AS activities, min(a.started_at) AS first, max(a.started_at) AS last
-       ${filter}`,
-      params,
-    );
-    const recent: {
-      id: string;
-      name: string;
-      sport_type: string;
-      started_at: Date;
-    }[] = await this.dataSource.query(
-      `SELECT a.id, a.name, a.sport_type, a.started_at
-       ${filter}
-       ORDER BY a.started_at DESC
-       LIMIT ${RECENT_VISITS}`,
-      params,
+       ${TILE_ACTIVITIES_FILTER}`,
+      tileFilterParams(userId, zoom, x, y),
     );
     return {
       activities: summary.activities,
       firstVisitedAt: summary.first?.toISOString() ?? null,
       lastVisitedAt: summary.last?.toISOString() ?? null,
-      recent: recent.map((row) => ({
+    };
+  }
+
+  /**
+   * A page of the activities that crossed the tile `(x, y)` at `zoom`, the
+   * latest ones first, after `cursor` if given.
+   */
+  async activities(
+    userId: string,
+    zoom: typeof TILE_ZOOM | typeof SUBTILE_ZOOM,
+    x: number,
+    y: number,
+    limit: number,
+    cursor: TileActivitiesCursor | null,
+  ): Promise<TileActivitiesPage> {
+    const params: unknown[] = tileFilterParams(userId, zoom, x, y);
+    let after = '';
+    if (cursor) {
+      params.push(cursor.startedAt, cursor.id);
+      after = 'AND (a.started_at, a.id) < ($5, $6)';
+    }
+    params.push(limit + 1);
+    const rows: {
+      id: string;
+      name: string;
+      sport_type: string;
+      started_at: Date;
+      distance_m: number;
+      moving_time_s: number;
+      elevation_gain_m: number | null;
+      strava_id: string | null;
+    }[] = await this.dataSource.query(
+      `SELECT a.id, a.name, a.sport_type, a.started_at, a.distance_m, a.moving_time_s, a.elevation_gain_m,
+              (SELECT s.external_id FROM activity_sources s
+               WHERE s.activity_id = a.id AND s.provider = 'strava' LIMIT 1) AS strava_id
+       ${TILE_ACTIVITIES_FILTER} ${after}
+       ORDER BY a.started_at DESC, a.id DESC
+       LIMIT $${params.length}`,
+      params,
+    );
+    // One row more than asked tells whether a next page exists.
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    return {
+      items: page.map((row) => ({
         id: row.id,
         name: row.name,
         sportType: row.sport_type,
         startedAt: row.started_at.toISOString(),
+        distanceM: row.distance_m,
+        movingTimeS: row.moving_time_s,
+        elevationGainM: row.elevation_gain_m,
+        stravaId: row.strava_id,
       })),
+      next:
+        rows.length > limit && last
+          ? encodeTileActivitiesCursor({
+              startedAt: last.started_at,
+              id: last.id,
+            })
+          : null,
     };
+  }
+
+  /** Tiles crossed by one activity of the user; null when the user has no such activity. */
+  async activityTiles(
+    userId: string,
+    activityId: string,
+  ): Promise<ActivityTileSets | null> {
+    const [activity]: unknown[] = await this.dataSource.query(
+      'SELECT 1 FROM activities WHERE id = $1 AND user_id = $2',
+      [activityId, userId],
+    );
+    if (!activity) return null;
+    const rows: { x: number; y: number; mask: string }[] =
+      await this.dataSource.query(
+        'SELECT x, y, mask FROM activity_tiles WHERE activity_id = $1 AND user_id = $2',
+        [activityId, userId],
+      );
+    const side = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
+    const subtiles: [number, number][] = [];
+    for (const row of rows) {
+      const mask = fromSignedMask(row.mask);
+      for (let bit = 0; bit < side * side; bit++) {
+        if ((mask >> BigInt(bit)) & 1n) {
+          subtiles.push([
+            row.x * side + (bit % side),
+            row.y * side + Math.floor(bit / side),
+          ]);
+        }
+      }
+    }
+    return { tiles: rows.map((row) => [row.x, row.y]), subtiles };
   }
 
   /**

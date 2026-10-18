@@ -161,9 +161,65 @@ export interface TileVisits {
   activities: number;
   firstVisitedAt: string | null;
   lastVisitedAt: string | null;
-  /** The latest ones first. */
-  recent: { id: string; name: string; sportType: string; startedAt: string }[];
   tile: TileDetails;
+}
+
+/** An activity that crossed a tile. */
+export interface TileActivity {
+  id: string;
+  name: string;
+  sportType: string;
+  startedAt: string;
+  distanceM: number;
+  movingTimeS: number;
+  elevationGainM: number | null;
+  /** Identifier of the activity on Strava, to link to it. */
+  stravaId: string | null;
+}
+
+/** An activity of the user, as shown on its own. */
+export interface ActivityDetails {
+  id: string;
+  name: string;
+  sportType: string;
+  startedAt: string;
+  /** IANA time zone of the start. */
+  timezone: string | null;
+  distanceM: number;
+  movingTimeS: number;
+  elapsedTimeS: number;
+  elevationGainM: number | null;
+  /** Identifier of the activity on Strava, to link to it. */
+  stravaId: string | null;
+}
+
+/** What an activity brought to one level of tiles when it was recorded. */
+export interface LevelGains {
+  /** Tiles no earlier activity had crossed, as `[x, y]` pairs. */
+  gained: [number, number][];
+  /** Growth of the side of the largest square. */
+  maxSquare: number;
+  /** Growth of the largest cluster. */
+  maxCluster: number;
+  /** Tiles that became cluster tiles outside of the largest cluster. */
+  otherClusters: number;
+}
+
+/** Tiles crossed by one activity, as `[x, y]` pairs of each level. */
+export interface ActivityTiles {
+  /** Large tiles (zoom 14). */
+  tiles: [number, number][];
+  /** Small tiles (zoom 17). */
+  subtiles: [number, number][];
+  /** What the activity brought when it was recorded; null until computed. */
+  gains: { tiles: LevelGains; subtiles: LevelGains } | null;
+}
+
+/** A page of the activities that crossed a tile, the latest ones first. */
+export interface TileActivitiesPage {
+  items: TileActivity[];
+  /** Cursor of the next page; null on the last one. */
+  next: string | null;
 }
 
 /** Tiles of one level touching a country, and those visited. */

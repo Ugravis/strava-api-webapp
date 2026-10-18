@@ -1,5 +1,6 @@
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
-import { firstGroundLayerId, type MapPalette } from "./map-style";
+import { belowActivityTiles } from "./activity-tiles-layer";
+import type { MapPalette } from "./map-style";
 import { TILE_FILL_LAYER_ID } from "./tile-layers";
 
 /** Countries visited by the user and the version of the shapes, from the completion. */
@@ -41,7 +42,7 @@ function addCountryLayers(
   palette: MapPalette,
 ): void {
   // Below the tiles when they are drawn first.
-  const beforeId = map.getLayer(TILE_FILL_LAYER_ID) ? TILE_FILL_LAYER_ID : firstGroundLayerId(map);
+  const beforeId = map.getLayer(TILE_FILL_LAYER_ID) ? TILE_FILL_LAYER_ID : belowActivityTiles(map);
   map.addSource(SOURCE_ID, {
     type: "vector",
     tiles: [tilesUrl(countries)],

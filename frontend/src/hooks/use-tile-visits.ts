@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { sharedRequest } from "@/lib/api/shared-request";
 import type { TileVisits } from "@/lib/api/types";
 import type { TileZoom } from "@/lib/tiles/tile-geometry";
 import { tilesService } from "@/services/tiles.service";
 
-/** Activities that crossed one tile. */
+const fetchVisits = sharedRequest(tilesService.getVisits);
+
+/** Details of one tile and a summary of the activities that crossed it. */
 export function useTileVisits(zoom: TileZoom, x: number, y: number): { visits: TileVisits | null; error: boolean } {
   const [state, setState] = useState<{ key: string; visits: TileVisits | null; error: boolean }>({
     key: "",
@@ -16,7 +19,7 @@ export function useTileVisits(zoom: TileZoom, x: number, y: number): { visits: T
 
   useEffect(() => {
     let cancelled = false;
-    tilesService.getVisits(zoom, x, y).then(
+    fetchVisits(key, zoom, x, y).then(
       (visits) => {
         if (!cancelled) setState({ key, visits, error: false });
       },

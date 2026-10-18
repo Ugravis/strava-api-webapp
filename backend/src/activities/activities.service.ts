@@ -36,6 +36,22 @@ export interface MappableActivity {
   startedAt: Date;
 }
 
+/** An activity of the user, as shown on its own. */
+export interface ActivityDetails {
+  id: string;
+  name: string;
+  sportType: SportType;
+  startedAt: string;
+  /** IANA time zone of the start. */
+  timezone: string | null;
+  distanceM: number;
+  movingTimeS: number;
+  elapsedTimeS: number;
+  elevationGainM: number | null;
+  /** Identifier of the activity on Strava, to link to it. */
+  stravaId: string | null;
+}
+
 /** Total distance of a user per sport type; absent sports have no activity. */
 export type DistanceBySportType = Partial<Record<SportType, number>>;
 
@@ -47,6 +63,32 @@ export class ActivitiesService {
     private readonly activities: Repository<Activity>,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
+
+  /** One activity of the user; null when the user has no such activity. */
+  async details(
+    userId: string,
+    activityId: string,
+  ): Promise<ActivityDetails | null> {
+    const activity = await this.activities.findOne({
+      where: { id: activityId, userId },
+      relations: { sources: true },
+    });
+    if (!activity) return null;
+    return {
+      id: activity.id,
+      name: activity.name,
+      sportType: activity.sportType,
+      startedAt: activity.startedAt.toISOString(),
+      timezone: activity.timezone,
+      distanceM: activity.distanceM,
+      movingTimeS: activity.movingTimeS,
+      elapsedTimeS: activity.elapsedTimeS,
+      elevationGainM: activity.elevationGainM,
+      stravaId:
+        activity.sources?.find((source) => source.provider === 'strava')
+          ?.externalId ?? null,
+    };
+  }
 
   /**
    * Creates or updates the activity known at `provider` as `externalId`.

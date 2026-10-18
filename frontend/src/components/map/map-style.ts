@@ -83,6 +83,17 @@ export interface MapPalette {
   /** Outline of the visited area: carries the contrast of the light fills. */
   tileOutline: string;
   square: string;
+  /** Outline of the tile under the pointer or selected: the color of the text, softened. */
+  highlight: string;
+  /**
+   * Tiles of the activity shown in the panel, opaque: they replace the
+   * other tiles where they lie, deeper on its small tiles.
+   */
+  activityTile: string;
+  activitySubtile: string;
+  /** Track of the activity shown in the panel, over a white casing. */
+  activityTrack: string;
+  activityTrackCasing: string;
   grid: string;
   track: string;
   /** Faint edge of the tracks: their contrast over the land and the small tiles. */
@@ -127,6 +138,11 @@ const LIGHT: MapPalette = {
   otherSubtileClustersOpacity: 0.75,
   tileOutline: "#14532d",
   square: "#db2777",
+  highlight: "#1c1917",
+  activityTile: "#f472b6",
+  activitySubtile: "#9d174d",
+  activityTrack: "#be185d",
+  activityTrackCasing: "#ffffff",
   grid: "#5b4a35",
   track: "#be185d",
   trackCasing: "#4a0d2e",
@@ -170,6 +186,11 @@ const DARK: MapPalette = {
   otherSubtileClusters: "#68e796",
   otherSubtileClustersOpacity: 0.75,
   square: "#f472b6",
+  highlight: "#fafaf9",
+  activityTile: "#9d174d",
+  activitySubtile: "#f9a8d4",
+  activityTrack: "#ec4899",
+  activityTrackCasing: "#ffffff",
   grid: "#a8a29e",
   track: "#fb7185",
   trackCasing: "#1a0f14",

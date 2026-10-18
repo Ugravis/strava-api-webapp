@@ -57,6 +57,41 @@ export function maxSquareCollection(maxSquare: TileSquare | null, zoom: TileZoom
   };
 }
 
+/** One tile, as one polygon. */
+export function tileCollection(zoom: TileZoom, x: number, y: number): FeatureCollection<Polygon> {
+  return tilesCollection(zoom, [[x, y]]);
+}
+
+/** Tiles of one zoom, one polygon each, with `properties`. */
+export function tilesCollection(
+  zoom: number,
+  tiles: [number, number][],
+  properties: Record<string, unknown> = {},
+): FeatureCollection<Polygon> {
+  return {
+    type: "FeatureCollection",
+    features: tiles.map(([x, y]) => ({ ...square(x, y, zoom), properties })),
+  };
+}
+
+/** Center of the tile `(x, y)` at `zoom`, as `[lng, lat]`. */
+export function tileCenter(zoom: TileZoom, x: number, y: number): [number, number] {
+  return [lngOf(x + 0.5, zoom), latOf(y + 0.5, zoom)];
+}
+
+/** Bounds of tiles of one level; null without tiles. */
+export function tilesBounds(zoom: TileZoom, tiles: [number, number][]): Bounds | null {
+  if (tiles.length === 0) return null;
+  const xs = tiles.map(([x]) => x);
+  const ys = tiles.map(([, y]) => y);
+  return {
+    west: lngOf(Math.min(...xs), zoom),
+    east: lngOf(Math.max(...xs) + 1, zoom),
+    north: latOf(Math.min(...ys), zoom),
+    south: latOf(Math.max(...ys) + 1, zoom),
+  };
+}
+
 /** The tile of `zoom` holding the position `(lng, lat)`. */
 export function tileAt(lng: number, lat: number, zoom: TileZoom): [number, number] {
   return [Math.floor(xOf(lng, zoom)), Math.floor(yOf(lat, zoom))];

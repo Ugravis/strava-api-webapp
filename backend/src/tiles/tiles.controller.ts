@@ -1,11 +1,29 @@
-import { Controller, Get, Param, Query, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import type { User } from '../users/user.entity';
-import { TileParamsDto } from './tile-params.dto';
-import { type TileVisits, TilesService } from './tiles.service';
+import {
+  type ActivityGainsResponse,
+  ActivityGainsService,
+} from './activity-gains.service';
+import { TileActivitiesQueryDto, TileParamsDto } from './tile-params.dto';
+import { decodeTileActivitiesCursor } from './tile-activities-cursor';
+import {
+  type ActivityTileSets,
+  type TileActivitiesPage,
+  type TileVisits,
+  TilesService,
+} from './tiles.service';
 import {
   type TileDetails,
   type TilesSummary,
@@ -36,6 +54,12 @@ export interface TileStats {
   subtiles: LevelStats;
 }
 
+/** Tiles crossed by one activity, and what it brought when it was recorded. */
+export interface ActivityTilesResponse extends ActivityTileSets {
+  /** Null until the gains of the user are replayed. */
+  gains: ActivityGainsResponse | null;
+}
+
 /** A tile and the activities that crossed it. */
 export interface TileVisitsResponse extends TileVisits {
   tile: TileDetails;
@@ -53,6 +77,7 @@ const VECTOR_THROTTLE = { default: { limit: 600, ttl: 60_000 } };
 export class TilesController {
   constructor(
     private readonly tiles: TilesService,
+    private readonly gains: ActivityGainsService,
     private readonly userTiles: UserTilesService,
   ) {}
 
@@ -149,7 +174,40 @@ export class TilesController {
     response.type(contentType).send(await render());
   }
 
-  /** Details of one tile and the activities that crossed it. */
+  /** Tiles crossed by one activity of the user. */
+  @Get('activity/:id')
+  async activityTiles(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ActivityTilesResponse> {
+    const [tiles, gains] = await Promise.all([
+      this.tiles.activityTiles(user.id, id),
+      this.gains.forActivity(user.id, id),
+    ]);
+    if (!tiles) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such activity');
+    }
+    return { ...tiles, gains };
+  }
+
+  /** The activities that crossed one tile, the latest ones first, one page at a time. */
+  @Get(':zoom/:x/:y/activities')
+  activities(
+    @CurrentUser() user: User,
+    @Param() { zoom, x, y }: TileParamsDto,
+    @Query() { limit, cursor }: TileActivitiesQueryDto,
+  ): Promise<TileActivitiesPage> {
+    return this.tiles.activities(
+      user.id,
+      zoom,
+      x,
+      y,
+      limit,
+      cursor ? decodeTileActivitiesCursor(cursor) : null,
+    );
+  }
+
+  /** Details of one tile and a summary of the activities that crossed it. */
   @Get(':zoom/:x/:y')
   async visits(
     @CurrentUser() user: User,

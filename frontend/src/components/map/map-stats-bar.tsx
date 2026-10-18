@@ -270,14 +270,6 @@ function StationsSection({
         label={t("railway")}
         colorKey={<RailKey />}
       />
-      {stations && stations.pendingStations > 0 && (
-        <div role="status" className="flex max-w-40 min-w-0 items-center text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin" aria-hidden />
-            {t("linksPending")}
-          </span>
-        </div>
-      )}
     </StatsSection>
   );
 }

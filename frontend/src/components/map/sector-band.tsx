@@ -4,10 +4,10 @@ import { CircleAlertIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from 
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import type { CountryLevelCompletion, CountrySector } from "@/lib/api/types";
+import type { CountryLevelCompletion, CountryRailway, CountrySector } from "@/lib/api/types";
 import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
 import { cn } from "@/lib/utils";
-import { TileKey } from "./map-keys";
+import { RailKey, TileKey } from "./map-keys";
 import { Stat, ValueSkeleton } from "./map-stat";
 
 interface SectorBandProps {
@@ -28,9 +28,10 @@ const SECTION = "flex items-center px-4 py-3 md:px-6";
 
 /**
  * Band of the sector tool, over the band of the key figures: the sector
- * picked, the tiles of the user in it out of its total, their first and
- * latest visits, and buttons to search for another sector or frame this one
- * again. Stacked on narrow screens, in a row on larger ones.
+ * picked, the tiles of the user in it out of its total, the railway
+ * unlocked out of its network, their first and latest visits, and buttons
+ * to search for another sector or frame this one again. Stacked on narrow
+ * screens, in a row on larger ones.
  */
 export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter, onClose }: SectorBandProps) {
   const t = useTranslations("map.sector");
@@ -106,6 +107,9 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
             colorKey={<TileKey subtiles />}
           />
         )}
+        {sector?.railway && (
+          <Stat value={<RailwayCompletion railway={sector.railway} />} label={t("railway")} colorKey={<RailKey />} />
+        )}
       </div>
 
       <div className={cn(SECTION, "gap-6")}>
@@ -122,6 +126,29 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
         {closeButton("hidden md:inline-flex")}
       </div>
     </section>
+  );
+}
+
+/** Kilometers of railway unlocked out of the network of the country, and the share. */
+function RailwayCompletion({ railway: { unlockedM, totalM } }: { railway: CountryRailway }): ReactNode {
+  const format = useFormatter();
+  const share = totalM > 0 ? unlockedM / totalM : 0;
+  const km = (meters: number) => format.number(meters / 1000, { maximumFractionDigits: 0 });
+  return (
+    <>
+      {km(unlockedM)}
+      <span className="text-xs font-normal text-muted-foreground">
+        {" / "}
+        {format.number(totalM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })}
+      </span>
+      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+        {format.number(share, {
+          style: "percent",
+          minimumFractionDigits: percentDecimals(share),
+          maximumFractionDigits: percentDecimals(share),
+        })}
+      </span>
+    </>
   );
 }
 

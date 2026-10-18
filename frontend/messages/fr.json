@@ -319,8 +319,7 @@
       "tools": "Outils",
       "stations": "Gares",
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
-      "railway": "Voies débloquées",
-      "linksPending": "Recherche des liaisons…"
+      "railway": "Voies débloquées"
     },
     "sports": {
       "run": "Course à pied",
@@ -468,7 +467,8 @@
         "all": "Pays",
         "empty": "Aucun pays trouvé.",
         "error": "Impossible de charger la liste des pays."
-      }
+      },
+      "railway": "Réseau ferré"
     },
     "bands": {
       "collapse": "Replier le bandeau",
@@ -483,8 +483,6 @@
       "firstVisit": "Première visite",
       "links": "Liaisons débloquées",
       "neighbors": "Gares voisines",
-      "linksPending": "Recherche des liaisons de cette gare…",
-      "linksUnknown": "Les gares voisines seront connues dès que cette gare aura été visitée.",
       "noNeighbors": "Aucune gare voisine trouvée sur le réseau ferré.",
       "linkUnlocked": "{distance} débloqués",
       "activities": "Activités",

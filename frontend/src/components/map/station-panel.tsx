@@ -48,7 +48,7 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
   if (error) return <p className="text-muted-foreground">{t("error")}</p>;
   if (!station) return <StationPanelSkeleton />;
 
-  const unlocked = station.neighbors?.filter((neighbor) => station.visited && neighbor.visited).length ?? 0;
+  const unlocked = station.visited ? station.neighbors.filter((neighbor) => neighbor.visited).length : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -60,19 +60,15 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
         <p className="text-muted-foreground">{station.visited ? t("visitedDescription") : t("notVisitedDescription")}</p>
       </header>
 
-      {(station.firstVisitAt || station.neighbors) && (
-        <dl className="grid grid-cols-3 gap-3">
-          {station.firstVisitAt && (
-            <PanelFigure
-              label={t("firstVisit")}
-              value={format.dateTime(new Date(station.firstVisitAt), { dateStyle: "medium" })}
-            />
-          )}
-          {station.neighbors && (
-            <PanelFigure label={t("links")} value={`${unlocked} / ${station.neighbors.length}`} />
-          )}
-        </dl>
-      )}
+      <dl className="grid grid-cols-3 gap-3">
+        {station.firstVisitAt && (
+          <PanelFigure
+            label={t("firstVisit")}
+            value={format.dateTime(new Date(station.firstVisitAt), { dateStyle: "medium" })}
+          />
+        )}
+        <PanelFigure label={t("links")} value={`${unlocked} / ${station.neighbors.length}`} />
+      </dl>
 
       <section className="flex flex-col gap-1">
         <h3 className="text-xs font-medium text-muted-foreground uppercase">{t("neighbors")}</h3>
@@ -113,9 +109,6 @@ function NeighborList({
   const t = useTranslations("map.stationPanel");
   const format = useFormatter();
 
-  if (!station.neighbors) {
-    return <p className="text-muted-foreground">{station.visited ? t("linksPending") : t("linksUnknown")}</p>;
-  }
   if (station.neighbors.length === 0) return <p className="text-muted-foreground">{t("noNeighbors")}</p>;
 
   const distance = ({ lengthM }: StationNeighbor) =>

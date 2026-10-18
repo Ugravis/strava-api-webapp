@@ -264,6 +264,8 @@ export interface CountrySector {
   bounds: [number, number, number, number] | null;
   /** Changes with its tile shape, which dims the rest of the map; null while it is being computed. */
   shapeVersion: string | null;
+  /** Its railway network; null when no link crosses it. */
+  railway: CountryRailway | null;
 }
 
 /** Which tiles the history shows: those first visited since a date, or the map as it was at that date. */
@@ -306,8 +308,6 @@ export interface UnlockedLink {
 export interface VisitedStations {
   stations: VisitedStation[];
   links: UnlockedLink[];
-  /** Visited stations whose links are still being found. */
-  pendingStations: number;
   /** Changes with each import of the stations: the vector tiles of all the stations follow it. Null without stations. */
   stationsVersion: string | null;
 }
@@ -333,6 +333,12 @@ export interface StationDetails {
   tile: { zoom: 17; x: number; y: number };
   visited: boolean;
   firstVisitAt: string | null;
-  /** Null while its links are being found. */
-  neighbors: StationNeighbor[] | null;
+  neighbors: StationNeighbor[];
+}
+
+/** The railway network of a country and the part the user unlocked. */
+export interface CountryRailway {
+  /** Length of the links between two stations the user visited, in the country. */
+  unlockedM: number;
+  totalM: number;
 }

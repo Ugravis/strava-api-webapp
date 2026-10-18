@@ -18,23 +18,24 @@ import {
 } from "lucide-react";
 import { createElement } from "react";
 
-const LANDMARK_ICONS: Record<string, LucideIcon> = {
-  earth_center: PickaxeIcon,
-  earth_circumference: EarthIcon,
-  earth_moon: MoonIcon,
-  paris_ring_road: CarIcon,
-  marathon: MedalIcon,
-  lake_geneva: WavesIcon,
-  gr20: MountainIcon,
-  camino_vezelay: ShellIcon,
-  hexatrek: HexagonIcon,
-  pacific_crest_trail: TreePineIcon,
-  tour_de_france: BikeIcon,
-  trans_siberian: TrainFrontIcon,
-  pan_american_highway: RouteIcon,
+/** Icons by the key the catalog of badges gives. */
+const BADGE_ICONS: Record<string, LucideIcon> = {
+  pickaxe: PickaxeIcon,
+  earth: EarthIcon,
+  moon: MoonIcon,
+  car: CarIcon,
+  medal: MedalIcon,
+  waves: WavesIcon,
+  mountain: MountainIcon,
+  shell: ShellIcon,
+  hexagon: HexagonIcon,
+  "tree-pine": TreePineIcon,
+  bike: BikeIcon,
+  "train-front": TrainFrontIcon,
+  route: RouteIcon,
 };
 
-/** Icon symbolizing a landmark; landmarks added by the server get a generic one. */
-export function LandmarkIcon({ id, ...props }: LucideProps & { id: string }) {
-  return createElement(LANDMARK_ICONS[id] ?? MilestoneIcon, props);
+/** Icon of a badge; keys unknown to this version of the app get a generic one. */
+export function BadgeIcon({ icon, ...props }: LucideProps & { icon: string }) {
+  return createElement(BADGE_ICONS[icon] ?? MilestoneIcon, props);
 }

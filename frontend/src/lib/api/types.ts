@@ -82,8 +82,8 @@ export interface DistanceBadge {
   firstCompletedAt: string | null;
   /** Start of the activity that completed the latest iteration. */
   lastCompletedAt: string | null;
-  /** Null when the badge is not pinned. */
-  pinnedAt: string | null;
+  /** Rank among the pinned badges, from 1; null when not pinned. */
+  pinPosition: number | null;
 }
 
 export interface DistancesOverview {

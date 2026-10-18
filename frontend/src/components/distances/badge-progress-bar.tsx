@@ -12,7 +12,7 @@ import { useRevealed } from "./use-revealed";
 export function BadgeProgressBar({ badge }: { badge: DistanceBadge }) {
   const t = useTranslations("distances.dialog");
   const format = useFormatter();
-  const revealed = useRevealed();
+  const [ref, revealed] = useRevealed<HTMLDivElement>();
   const tier = progressTier(badge.progress);
   // Rounded down: an unfinished iteration never shows 100 %.
   const share = Math.floor(badge.progress * 100) / 100;
@@ -21,6 +21,7 @@ export function BadgeProgressBar({ badge }: { badge: DistanceBadge }) {
 
   return (
     <ProgressPrimitive.Root
+      ref={ref}
       value={revealed ? share * 100 : 0}
       aria-label={t("progressLabel")}
       className="flex flex-col gap-1.5"

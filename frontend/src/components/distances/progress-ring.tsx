@@ -30,10 +30,11 @@ export function ProgressRing({
   children,
 }: ProgressRingProps) {
   const percent = Math.round(Math.min(Math.max(value, 0), 1) * 100);
-  const revealed = useRevealed();
+  const [ref, revealed] = useRevealed<HTMLDivElement>();
 
   return (
     <div
+      ref={ref}
       role="progressbar"
       aria-label={label}
       aria-valuemin={0}

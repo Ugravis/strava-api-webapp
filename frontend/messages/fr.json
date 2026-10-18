@@ -283,7 +283,13 @@
     "pinned": "épinglé",
     "pinnedSection": {
       "title": "Épinglés",
-      "empty": "Épingle tes badges préférés depuis leur fiche pour les retrouver ici."
+      "empty": "Épingle tes badges préférés depuis leur fiche pour les retrouver ici.",
+      "reorder": "Réorganiser",
+      "done": "Terminé",
+      "reorderHint": "Déplace tes badges avec les flèches : ils s'affichent dans cet ordre.",
+      "moveBefore": "Déplacer {name} avant",
+      "moveAfter": "Déplacer {name} après",
+      "reorderError": "Impossible de modifier l'ordre de tes badges pour le moment."
     },
     "dialog": {
       "close": "Fermer",

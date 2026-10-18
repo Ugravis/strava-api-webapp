@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
-import { useDistances } from "@/hooks/use-distances";
+import { pinnedBadges, useDistances } from "@/hooks/use-distances";
 import type { DistanceFamily } from "@/lib/api/types";
 import { BadgeDialog } from "./badge-dialog";
 import { DistanceFamilySection } from "./distance-family-section";
@@ -19,18 +19,12 @@ const FAMILIES: DistanceFamily[] = ["all", "run", "hike", "ride"];
 
 export function DistancesOverview() {
   const t = useTranslations("distances");
-  const { overview, error, refresh, setPinned } = useDistances();
+  const { overview, error, refresh, setPinned, reorderPins } = useDistances();
   // The badge stays set while the dialog closes, for its exit animation.
   const [openBadgeId, setOpenBadgeId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const pinned = useMemo(
-    () =>
-      (overview?.badges ?? [])
-        .filter((badge) => badge.pinnedAt !== null)
-        .sort((a, b) => (a.pinnedAt ?? "").localeCompare(b.pinnedAt ?? "")),
-    [overview],
-  );
+  const pinned = useMemo(() => pinnedBadges(overview?.badges ?? []), [overview]);
 
   const openBadge = (badgeId: string) => {
     setOpenBadgeId(badgeId);
@@ -66,7 +60,7 @@ export function DistancesOverview() {
           </AlertDescription>
         </Alert>
       )}
-      <PinnedBadgesSection badges={pinned} onOpen={openBadge} />
+      <PinnedBadgesSection badges={pinned} onOpen={openBadge} onReorder={reorderPins} />
       {FAMILIES.map((family) => (
         <DistanceFamilySection
           key={family}

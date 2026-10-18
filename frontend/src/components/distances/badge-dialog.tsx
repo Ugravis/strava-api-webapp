@@ -21,6 +21,7 @@ import { BadgeBanner } from "./badge-banner";
 import { BadgeFacts } from "./badge-facts";
 import { BadgeHistory } from "./badge-history";
 import { BadgeProgressBar } from "./badge-progress-bar";
+import { FamilyIcon } from "./family-icon";
 
 interface BadgeDialogProps {
   /** Kept while the dialog closes, for its exit animation. */
@@ -36,7 +37,8 @@ export function BadgeDialog({ badge, open, onOpenChange, onPinnedChange }: Badge
     <Dialog open={open && badge !== null} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-md"
+        // One column no wider than the dialog: long activity names get truncated instead of widening it.
+        className="max-h-[calc(100dvh-2rem)] grid-cols-1 gap-0 overflow-x-hidden overflow-y-auto p-0 sm:max-w-md"
       >
         {badge && <BadgeDialogBody key={badge.id} badge={badge} onPinnedChange={onPinnedChange} />}
       </DialogContent>
@@ -52,7 +54,7 @@ function BadgeDialogBody({
   const format = useFormatter();
   const { details, error } = useBadgeDetails(badge.id);
   const [pending, setPending] = useState(false);
-  const pinned = badge.pinnedAt !== null;
+  const pinned = badge.pinPosition !== null;
 
   const togglePin = () => {
     setPending(true);
@@ -79,7 +81,10 @@ function BadgeDialogBody({
       <div className="flex flex-col gap-5 p-4">
         <DialogHeader className="gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary">{t(`families.${badge.family}`)}</Badge>
+            <Badge variant="secondary">
+              <FamilyIcon family={badge.family} data-icon="inline-start" aria-hidden />
+              {t(`families.${badge.family}`)}
+            </Badge>
             <Badge variant="outline" className="tabular-nums">
               {format.number(badge.distanceM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 1 })}
             </Badge>

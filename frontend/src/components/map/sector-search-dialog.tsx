@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Command,
   CommandDialog,
@@ -46,6 +46,19 @@ export function SectorSearchDialog({ open, onOpenChange, onPick, visited, curren
   const locale = useLocale();
   const format = useFormatter();
   const { codes, error } = useCountryCodes(open);
+  // The popup opens at once: its rows, a few hundred, are rendered in the
+  // next frames, its skeleton shown meanwhile.
+  const [listReady, setListReady] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setListReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      setListReady(false);
+    };
+  }, [open]);
 
   const groups = useMemo(() => {
     if (!codes) return null;
@@ -94,6 +107,8 @@ export function SectorSearchDialog({ open, onOpenChange, onPick, visited, curren
       title={t("title")}
       description={t("description")}
       className="top-1/2 -translate-y-1/2 sm:max-w-md"
+      // A blur over the map would delay the opening of the popup.
+      overlayClassName="supports-backdrop-filter:backdrop-blur-none"
     >
       <Command
         // The name is searched, in the language of the page; the code too, typed in full.
@@ -104,7 +119,7 @@ export function SectorSearchDialog({ open, onOpenChange, onPick, visited, curren
         <CommandInput placeholder={t("placeholder")} />
         {/* Of a fixed height: the popup stays still while the list is filtered. */}
         <CommandList className="h-80 max-h-[50svh]">
-          {groups ? (
+          {groups && listReady ? (
             <>
               <CommandEmpty>{t("empty")}</CommandEmpty>
               {groups.visited.length > 0 && <CommandGroup heading={t("visited")}>{groups.visited.map(item)}</CommandGroup>}

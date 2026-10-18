@@ -2,12 +2,13 @@ import type { HistoryMode } from "@/lib/api/types";
 
 /** A step of the history slider, counting back from today. */
 export interface HistoryStep {
-  unit: "week" | "month" | "year";
+  unit: "day" | "week" | "month" | "year";
   count: number;
 }
 
-/** Steps of the slider, finer for the recent past. */
+/** Steps of the slider from today, finer for the recent past. */
 export const HISTORY_STEPS: readonly HistoryStep[] = [
+  { unit: "day", count: 0 },
   { unit: "week", count: 1 },
   { unit: "week", count: 2 },
   { unit: "month", count: 1 },
@@ -21,7 +22,7 @@ export const HISTORY_STEPS: readonly HistoryStep[] = [
 ];
 
 /** Step selected when the tool opens: one month. */
-export const DEFAULT_STEP_INDEX = 2;
+export const DEFAULT_STEP_INDEX = 3;
 
 /**
  * Day of the history: picked on the slider (`step`, an index of
@@ -55,8 +56,8 @@ function startOf(day: string): Date {
 /** Day `step` before `today`; a month or a year back from the 31st ends on the last day of the shorter month. */
 export function stepDay(step: HistoryStep, today: string): string {
   const date = startOf(today);
-  if (step.unit === "week") {
-    date.setDate(date.getDate() - 7 * step.count);
+  if (step.unit === "day" || step.unit === "week") {
+    date.setDate(date.getDate() - (step.unit === "week" ? 7 : 1) * step.count);
     return dayOf(date);
   }
   const months = step.unit === "month" ? step.count : 12 * step.count;

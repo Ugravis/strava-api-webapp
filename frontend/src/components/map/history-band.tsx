@@ -1,10 +1,9 @@
 "use client";
 
-import { CircleAlertIcon, LoaderCircleIcon, XIcon } from "lucide-react";
+import { CalendarIcon, CircleAlertIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { useId } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { HistoryMode, TileHistorySummary } from "@/lib/api/types";
@@ -64,7 +63,6 @@ export function HistoryBand({
 }: HistoryBandProps) {
   const t = useTranslations("map.history");
   const format = useFormatter();
-  const dateId = useId();
   const { mode, date } = settings;
   const stepLabel = (step: HistoryStep) => t(`steps.${step.unit}`, { count: step.count });
   const firstDay = summary?.firstVisitAt ? dayOf(new Date(summary.firstVisitAt)) : undefined;
@@ -76,6 +74,18 @@ export function HistoryBand({
       HISTORY_STEPS.slice(0, stepCount).findLastIndex((step) => stepDay(step, today) >= date.day),
     );
   const formattedDay = format.dateTime(dateOf(date.day), { dateStyle: "medium" });
+  const lastStep = Math.max(0, stepCount - 1);
+  const pickerRef = useRef<HTMLInputElement>(null);
+  const openPicker = () => {
+    const picker = pickerRef.current;
+    if (!picker) return;
+    try {
+      picker.showPicker();
+    } catch {
+      // Without a picker to open, the field takes the keyboard.
+      picker.focus();
+    }
+  };
   const counted = (value: number) => (summary ? <span className={cn(loading && "opacity-50")}>{format.number(value)}</span> : <ValueSkeleton />);
   const colorKey = (small: boolean) => (mode === "gained" ? <GainedKey subtiles={small} /> : <TileKey subtiles={small} />);
 
@@ -109,47 +119,67 @@ export function HistoryBand({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="font-medium">
-            {t(mode === "gained" ? "since" : "at", { date: formattedDay })}
-            {date.step !== null && <span className="text-muted-foreground"> · {t("ago", { period: stepLabel(HISTORY_STEPS[date.step]) })}</span>}
+        <div className="flex items-center gap-1 text-xs font-medium">
+          <span>
+            {t.rich(mode === "gained" ? "since" : "at", {
+              day: formattedDay,
+              date: (chunks) => (
+                <span className="relative inline-flex">
+                  <button
+                    type="button"
+                    onClick={openPicker}
+                    aria-label={t("editDay", { day: formattedDay })}
+                    className="inline-flex items-center gap-1 rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/50"
+                  >
+                    {chunks}
+                    <CalendarIcon className="size-3.5" aria-hidden />
+                  </button>
+                  {/* Opened by the button: its native picker, the day shown in the language of the page. */}
+                  <input
+                    ref={pickerRef}
+                    type="date"
+                    tabIndex={-1}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 opacity-0"
+                    value={date.day}
+                    min={firstDay}
+                    max={today}
+                    onChange={(event) => {
+                      const day = event.target.value;
+                      if (day && day <= today && (!firstDay || day >= firstDay)) {
+                        onSettingsChange({ ...settings, date: { step: null, day } });
+                      }
+                    }}
+                  />
+                </span>
+              ),
+            })}
           </span>
-          <label htmlFor={dateId} className="sr-only">
-            {t("day")}
-          </label>
-          <Input
-            id={dateId}
-            type="date"
-            className="h-7 w-auto shrink-0 px-2 text-xs md:text-xs"
-            value={date.day}
-            min={firstDay}
-            max={today}
-            onChange={(event) => {
-              // Out of range while the year is being typed: kept until it is complete.
-              const day = event.target.value;
-              if (day && day <= today && (!firstDay || day >= firstDay)) {
-                onSettingsChange({ ...settings, date: { step: null, day } });
-              }
-            }}
-          />
+          {date.step !== null && date.step > 0 && (
+            <span className="text-muted-foreground">· {t("ago", { period: stepLabel(HISTORY_STEPS[date.step]) })}</span>
+          )}
         </div>
+        {/* Today on the right, the past to the left. */}
         <Slider
-          className={cn(date.step === null && "opacity-60")}
+          className={cn("transition-opacity", date.step === null && "opacity-40 grayscale")}
           min={0}
-          max={Math.max(0, stepCount - 1)}
+          max={lastStep}
           step={1}
-          value={[shownStep]}
+          value={[lastStep - shownStep]}
           disabled={stepCount <= 1}
+          ticks
+          range={mode === "gained" ? "end" : "start"}
+          rangeClassName="bg-blue-600 dark:bg-blue-500"
           thumbLabel={t("slider")}
-          getAriaValueText={(_, value) => stepLabel(HISTORY_STEPS[value])}
+          getAriaValueText={(_, value) => stepLabel(HISTORY_STEPS[lastStep - value])}
           onValueChange={(value) => {
-            const index = Array.isArray(value) ? value[0] : value;
+            const index = lastStep - (Array.isArray(value) ? value[0] : value);
             if (index !== date.step) onSettingsChange({ ...settings, date: dayAtStep(index, stepCount, today) });
           }}
         />
         <div aria-hidden className="flex justify-between text-[0.7rem] text-muted-foreground">
-          <span>{stepLabel(HISTORY_STEPS[0])}</span>
-          {stepCount > 1 && <span>{stepLabel(HISTORY_STEPS[stepCount - 1])}</span>}
+          {stepCount > 1 && <span>{stepLabel(HISTORY_STEPS[lastStep])}</span>}
+          <span className="ml-auto">{t("today")}</span>
         </div>
       </div>
 

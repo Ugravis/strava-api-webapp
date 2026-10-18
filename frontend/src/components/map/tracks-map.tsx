@@ -20,6 +20,7 @@ import {
 } from "@/lib/tiles/history-period";
 import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { HistoryBand } from "./history-band";
+import { MapBands } from "./map-bands";
 import type { MapHistory } from "./history-layer";
 import { ALL_MAP_LAYERS, type MapLayers, tileModeOf } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
@@ -36,7 +37,8 @@ const NO_LINES: TrackLine[] = [];
 
 /**
  * The map, with nothing over it but its zoom buttons, the band of its key
- * figures below, and over it the band of the history tool when open.
+ * figures below, and over it the band of the history tool when open; both
+ * bands fold together.
  */
 export function TracksMap() {
   const t = useTranslations("map");
@@ -87,27 +89,29 @@ export function TracksMap() {
           label={t("label")}
         />
       </div>
-      {historyOpen && (
-        <HistoryBand
-          settings={shownSettings}
-          onSettingsChange={setHistorySettings}
-          onClose={() => setHistoryOpen(false)}
-          summary={history.summary}
-          loading={history.loading}
-          error={history.error}
-          stepCount={stepCount}
-          today={today}
-          subtiles={layers.subtiles}
+      <MapBands>
+        {historyOpen && (
+          <HistoryBand
+            settings={shownSettings}
+            onSettingsChange={setHistorySettings}
+            onClose={() => setHistoryOpen(false)}
+            summary={history.summary}
+            loading={history.loading}
+            error={history.error}
+            stepCount={stepCount}
+            today={today}
+            subtiles={layers.subtiles}
+          />
+        )}
+        <MapStatsBar
+          tracks={tracks}
+          summary={summary}
+          layers={layers}
+          onLayersChange={setLayers}
+          historyOpen={historyOpen}
+          onHistoryOpenChange={setHistoryOpen}
         />
-      )}
-      <MapStatsBar
-        tracks={tracks}
-        summary={summary}
-        layers={layers}
-        onLayersChange={setLayers}
-        historyOpen={historyOpen}
-        onHistoryOpenChange={setHistoryOpen}
-      />
+      </MapBands>
     </div>
   );
 }

@@ -21,7 +21,8 @@ const CHECKPOINT_MARGIN_MS = 10 * 60 * 1000;
 /**
  * In-process background worker locating the visited tiles in the countries,
  * then computing the tile totals of the countries visited for the first
- * time. Independent of the activity providers: no external request.
+ * time, and of those looked at as a sector. Independent of the activity
+ * providers: no external request.
  */
 @Injectable()
 export class CountriesWorker
@@ -31,6 +32,8 @@ export class CountriesWorker
   private timer: NodeJS.Timeout | null = null;
   private stopped = false;
   private current: Promise<void> = Promise.resolve();
+  /** Whether a tick is running: the next one is scheduled once it ends. */
+  private running = false;
   /** Tiles saved since then are scanned; null before the first complete scan. */
   private since: Date | null = null;
   private lastFullScan = 0;
@@ -49,14 +52,30 @@ export class CountriesWorker
     await this.current;
   }
 
+  /** Starts a tick now if the worker is waiting, e.g. for a country just requested. */
+  wake(): void {
+    if (this.running || this.stopped) {
+      return;
+    }
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+    this.schedule(0);
+  }
+
   private schedule(delayMs: number): void {
     if (this.stopped) {
       return;
     }
     this.timer = setTimeout(() => {
+      this.running = true;
       this.current = this.tick().then(
-        (didWork) => this.schedule(didWork ? 0 : POLL_INTERVAL_MS),
+        (didWork) => {
+          this.running = false;
+          this.schedule(didWork ? 0 : POLL_INTERVAL_MS);
+        },
         (error: unknown) => {
+          this.running = false;
           this.logger.error(`Countries worker tick failed: ${String(error)}`);
           this.schedule(POLL_INTERVAL_MS);
         },

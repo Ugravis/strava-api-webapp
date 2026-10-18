@@ -33,4 +33,11 @@ export class UserTileMetrics {
 
   @Column({ name: 'computed_at', type: 'timestamptz', nullable: true })
   computedAt!: Date | null;
+
+  /** Version of the tiles the gains of the activities were replayed from. */
+  @Column({ name: 'gains_version', type: 'bigint', nullable: true })
+  gainsVersion!: string | null;
+
+  @Column({ name: 'gains_computed_at', type: 'timestamptz', nullable: true })
+  gainsComputedAt!: Date | null;
 }

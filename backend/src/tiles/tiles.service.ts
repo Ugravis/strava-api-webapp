@@ -54,7 +54,7 @@ export interface TileActivitiesPage {
 }
 
 /** Tiles crossed by one activity, as `[x, y]` pairs of each level. */
-export interface ActivityTilesResponse {
+export interface ActivityTileSets {
   /** Large tiles (zoom 14). */
   tiles: [number, number][];
   /** Small tiles (zoom 17). */
@@ -366,7 +366,7 @@ export class TilesService {
   async activityTiles(
     userId: string,
     activityId: string,
-  ): Promise<ActivityTilesResponse | null> {
+  ): Promise<ActivityTileSets | null> {
     const [activity]: unknown[] = await this.dataSource.query(
       'SELECT 1 FROM activities WHERE id = $1 AND user_id = $2',
       [activityId, userId],

@@ -35,7 +35,7 @@ export function useOpenMapModule(): MapModule | null {
   );
 }
 
-/** Asks the map open on the page to select `module`, which is then shown on it. */
+/** Asks the map open on the page to open `module`, as the navigation does: selected and shown, see `withModuleOpened`. */
 export function requestMapModule(module: MapModule): void {
   window.dispatchEvent(new CustomEvent<MapModule>(MODULE_REQUEST_EVENT, { detail: module }));
 }

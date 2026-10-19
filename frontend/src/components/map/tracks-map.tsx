@@ -28,7 +28,14 @@ import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-
 import { MapBands } from "./map-bands";
 import { publishMapModule, useMapModuleRequests } from "./map-module-channel";
 import type { MapHistory } from "./history-layer";
-import { mapDimmed, type MapLayers, type MapModule, tileModeOf, tracksShown } from "./map-layers";
+import {
+  mapDimmed,
+  type MapLayers,
+  type MapModule,
+  tileModeOf,
+  tracksShown,
+  withModuleOpened,
+} from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
 import { MapStatsBar } from "./map-stats-bar";
 import { entryFromSearch } from "./panel-entry";
@@ -82,8 +89,12 @@ export function TracksMap() {
     setModule(selected);
     setLayers((current) => ({ ...current, [selected]: true }));
   }, []);
-  // The navigation shows the module selected, and selects another one on the map already open.
-  useMapModuleRequests(selectModule);
+  const openModule = useCallback((opened: MapModule) => {
+    setModule(opened);
+    setLayers((current) => withModuleOpened(current, opened));
+  }, []);
+  // The navigation shows the module selected, and opens another one on the map already open.
+  useMapModuleRequests(openModule);
   useEffect(() => {
     publishMapModule(module);
     return () => publishMapModule(null);

@@ -8,7 +8,14 @@ import {
   type HistorySettings,
   type HistoryStep,
 } from "@/lib/tiles/history-period";
-import { DEFAULT_MAP_LAYERS, DEFAULT_MAP_MODULE, MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
+import {
+  DEFAULT_MAP_LAYERS,
+  DEFAULT_MAP_MODULE,
+  MAP_MODULES,
+  type MapLayers,
+  type MapModule,
+  withModuleOpened,
+} from "./map-layers";
 import { searchOf } from "./panel-entry";
 
 /** The tool open on the map, with what it shows. */
@@ -75,9 +82,9 @@ function moduleOf(params: URLSearchParams): MapModule | null {
   return MAP_MODULES.find((candidate) => candidate === value) ?? null;
 }
 
-/** The search of the map opening on `module`, selected and shown, the rest by default. */
+/** The search of the map opened on `module` from the navigation, the rest by default. */
 export function searchOfModule(module: MapModule): string {
-  return searchWithAddress("", { layers: { ...DEFAULT_MAP_LAYERS, [module]: true }, module, tool: null });
+  return searchWithAddress("", { layers: withModuleOpened(DEFAULT_MAP_LAYERS, module), module, tool: null });
 }
 
 /**

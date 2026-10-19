@@ -7,6 +7,8 @@ import { routes } from "./routes";
 export interface QuickAccessProps {
   /** Called once a link is followed, e.g. to close the navigation on mobile. */
   onNavigate: () => void;
+  /** Classes of its buttons, drawn over the background of the unfolded entry. */
+  buttonClassName: string;
 }
 
 export interface NavigationItem {
@@ -14,7 +16,7 @@ export interface NavigationItem {
   /** Key in the `nav` translation namespace. */
   labelKey: "dashboard" | "map" | "distances" | "profile";
   icon: LucideIcon;
-  /** Links into the section, shown under its entry on hover and while in the section. */
+  /** Links into the section, unfolded under its entry on hover and while in the section, together in a box. */
   quickAccess?: ComponentType<QuickAccessProps>;
 }
 

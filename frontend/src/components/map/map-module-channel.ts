@@ -1,8 +1,39 @@
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { MapModule } from "./map-layers";
 
-/** Event asking the map open on the page to select a module, sent from outside it, such as the navigation. */
+/**
+ * Channel between the map open on the page and the rest of the app, such as
+ * the navigation: the map publishes the module selected in its band, and
+ * the others may ask it to select another one.
+ */
+
+/** Event asking the map open on the page to select a module. */
 const MODULE_REQUEST_EVENT = "map:module-request";
+
+/** Module selected on the map open on the page; null without a map. */
+let openModule: MapModule | null = null;
+const listeners = new Set<() => void>();
+
+/** Publishes the module selected on the map, or null once the map is gone. */
+export function publishMapModule(module: MapModule | null): void {
+  if (module === openModule) return;
+  openModule = module;
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** The module selected on the map open on the page; null without a map, as on the server. */
+export function useOpenMapModule(): MapModule | null {
+  return useSyncExternalStore(
+    subscribe,
+    () => openModule,
+    () => null,
+  );
+}
 
 /** Asks the map open on the page to select `module`, which is then shown on it. */
 export function requestMapModule(module: MapModule): void {

@@ -75,11 +75,6 @@ function moduleOf(params: URLSearchParams): MapModule | null {
   return MAP_MODULES.find((candidate) => candidate === value) ?? null;
 }
 
-/** The module selected in the band of the map at the address `search`. */
-export function moduleFromSearch(search: string): MapModule {
-  return moduleOf(new URLSearchParams(search)) ?? DEFAULT_MAP_MODULE;
-}
-
 /** The search of the map opening on `module`, selected and shown, the rest by default. */
 export function searchOfModule(module: MapModule): string {
   return searchWithAddress("", { layers: { ...DEFAULT_MAP_LAYERS, [module]: true }, module, tool: null });

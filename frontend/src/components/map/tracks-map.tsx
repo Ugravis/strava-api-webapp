@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
@@ -26,6 +26,7 @@ import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { HistoryBand } from "./history-band";
 import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";
+import { useMapModuleRequests } from "./map-module-requests";
 import type { MapHistory } from "./history-layer";
 import { mapDimmed, type MapLayers, type MapModule, tileModeOf, tracksShown } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
@@ -76,6 +77,13 @@ export function TracksMap() {
   );
   const [layers, setLayers] = useState<MapLayers>(fromAddress.address.layers);
   const [module, setModule] = useState<MapModule>(fromAddress.address.module);
+  const selectModule = useCallback((selected: MapModule) => {
+    // A module selected is shown on the map.
+    setModule(selected);
+    setLayers((current) => ({ ...current, [selected]: true }));
+  }, []);
+  // The navigation selects a module of the map already open.
+  useMapModuleRequests(selectModule);
   const { stations } = useStations(summary?.version ?? null);
   const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
@@ -181,11 +189,7 @@ export function TracksMap() {
           layers={layers}
           onLayersChange={setLayers}
           module={module}
-          onModuleSelect={(selected) => {
-            // A module selected is shown on the map.
-            setModule(selected);
-            setLayers((current) => ({ ...current, [selected]: true }));
-          }}
+          onModuleSelect={selectModule}
           historyOpen={historyOpen}
           onHistoryOpenChange={(open) => setTool(open ? "history" : null)}
           sectorOpen={shownSector !== null || searchOpen}

@@ -68,6 +68,23 @@ function parseLayer(value: string | null, fallback: boolean): boolean | null {
   return value === null ? fallback : value === HIDDEN ? false : value === SHOWN ? true : null;
 }
 
+/** The module named by `?module=`, the default without it; null when malformed. */
+function moduleOf(params: URLSearchParams): MapModule | null {
+  const value = params.get(PARAMS.module);
+  if (value === null) return DEFAULT_MAP_MODULE;
+  return MAP_MODULES.find((candidate) => candidate === value) ?? null;
+}
+
+/** The module selected in the band of the map at the address `search`. */
+export function moduleFromSearch(search: string): MapModule {
+  return moduleOf(new URLSearchParams(search)) ?? DEFAULT_MAP_MODULE;
+}
+
+/** The search of the map opening on `module`, selected and shown, the rest by default. */
+export function searchOfModule(module: MapModule): string {
+  return searchWithAddress("", { layers: { ...DEFAULT_MAP_LAYERS, [module]: true }, module, tool: null });
+}
+
 /**
  * The layers, the module and the tool given by the address of the page, `today` being
  * the local day, `yyyy-mm-dd`. `invalid` tells that a parameter was given but
@@ -89,9 +106,8 @@ export function addressFromSearch(search: string, today: string): { address: Map
     dimmed: layer("dimmed"),
   };
 
-  const moduleParam = params.get(PARAMS.module);
-  const selected = MAP_MODULES.find((candidate) => candidate === moduleParam) ?? DEFAULT_MAP_MODULE;
-  if (moduleParam !== null && selected !== moduleParam) invalid = true;
+  const selected = moduleOf(params);
+  if (params.has(PARAMS.module) && selected === null) invalid = true;
 
   const sector = params.get(PARAMS.sector);
   const history = params.get(PARAMS.history);
@@ -109,7 +125,7 @@ export function addressFromSearch(search: string, today: string): { address: Map
   if (code && mode) invalid = true;
   else if (code) tool = { kind: "sector", code };
   else if (mode) tool = { kind: "history", settings: { mode, date: day ?? defaultDay } };
-  return { address: { layers, module: selected, tool }, invalid };
+  return { address: { layers, module: selected ?? DEFAULT_MAP_MODULE, tool }, invalid };
 }
 
 /** The address of the page showing `address`, keeping its other parameters. */

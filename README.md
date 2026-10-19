@@ -211,6 +211,52 @@ self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes
   about 400 ms for Canada zoomed out). Cached by the browser until the shape changes.
 - The completion uses every tile of the user, hidden areas included: visible to the owner only.
 
+## Train stations
+
+The map can show the train stations of the world and unlock the railway between those the user
+visited. A station is visited once the small tile holding it is: the distance from which it is
+validated depends on where it lies in its tile. Two stations are linked when passenger tracks
+connect them without any other station between them; a link is unlocked once both are visited.
+
+- **Import**: `pnpm stations:import <file.osm.pbf>`, on the host (needs
+  [osmium](https://osmcode.org/osmium-tool/), `brew install osmium-tool`), from the OSM planet
+  or any extract. osmium keeps its railway once (stations, tracks, passenger train routes and
+  stop areas) in a `derived/` folder next to the file, reused while newer; the whole network is
+  then walked in memory and the result saved. On the planet (91 GB, on a USB disk), osmium reads
+  it four times, about 1 h 50; the rest takes about 5 minutes. Run it monthly with a new planet.
+- **Stations**: `railway=station|halt` nodes served by a passenger train route (`route=train`,
+  heritage and tourist trains included): a member of one, in a stop area with one of its stops,
+  or within 300 m of one of its stops or platforms. Where the routes are not mapped (most of Asia,
+  Eastern Europe, Africa), a station within 150 m of a passenger track that is neither a heritage
+  nor a tourist line is kept too. A metro, tram or light rail station is kept only when a train
+  route serves it directly (`train=yes` is not enough: the VAL of Lille carries it). Two kept
+  stations within 200 m are merged when their names match (equal, or one holding the other with
+  only generic words or abbreviations besides: `Brienz BRB`, `Gare de Lyon (RER)`) or a stop area
+  holds both; the station kept stands on the tracks of both points. Metro, tram, light rail, monorail, funicular
+  and miniature stations, and closed ones, are excluded; so are those no train serves, such as
+  park trains. Stored in `places` (generic, `kind = station`) with their small tile; they keep
+  their ids from one import to the next.
+- **Links** (`railway-network.ts`): only passenger tracks are walked (`railway=rail|narrow_gauge|
+  preserved`, without yards, sidings, spurs, industrial, military, test or freight-only lines,
+  unless part of a train route). A station stands on the nearest track within 400 m and on the
+  tracks at most 60 m farther; any other track within 150 m passes by it, and a walk along it
+  stops there without linking it (a bypass along a station). From each station, the walk stops
+  at the first station on each path, up to 300 km. A link longer than 1.5 times the straight
+  distance plus 5 km is rejected. A link is dropped when two kept links through a third station are
+  at most 10 % longer, the longest first: otherwise every station near the start of a high-speed
+  line would be linked to the station at its end. Stored in `rail_links`, and split by country in
+  `rail_link_countries` for the share of the network of a country (sector band).
+- **Report**: each import stores its report in `railway_imports`: stations kept (and how many
+  only through a nearby track) and excluded by reason, redundant links dropped, stations without a passenger track nearby, rejected detours, stations with many
+  neighbors, network per country. Shown in development at `/admin/railway`, with links to
+  OpenStreetMap.
+- **Map**: `GET /api/stations` gives the stations visited by the user, their first visit
+  (`tile_first_visits`) and the links between them. `GET /api/stations/vector/:zoom/:x/:y` serves
+  every station as a vector tile (zoom 6 to 14), cached by the browser until the next import.
+  `GET /api/stations/:id` gives a station, whether the user visited it, and its neighbors.
+- No location data of the user is stored: a station is visited by joining `places` with
+  `user_tiles`.
+
 ## Development tools
 
 In development, a floating button at the bottom right of the app pages (next to the Next.js
@@ -234,6 +280,7 @@ delete `backend/src/dev`, `frontend/src/components/dev` and their two references
 | `pnpm test`             | Run unit tests                                          |
 | `pnpm build`            | Build all packages                                      |
 | `pnpm countries:import` | Import the country boundaries from Overture Maps        |
+| `pnpm stations:import`  | Import the train stations and links from an OSM file    |
 | `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
 The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.

@@ -9,6 +9,7 @@ import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
 import { useCountries } from "@/hooks/use-countries";
 import { useCountrySector } from "@/hooks/use-country-sector";
+import { useStations } from "@/hooks/use-stations";
 import { useTileHistory } from "@/hooks/use-tile-history";
 import { useTileSummary } from "@/hooks/use-tile-summary";
 import {
@@ -74,6 +75,7 @@ export function TracksMap() {
     [completion],
   );
   const [layers, setLayers] = useState<MapLayers>(fromAddress.address.layers);
+  const { stations } = useStations(summary?.version ?? null);
   const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
   // The sector tool opens on its search; a sector picked opens its band.
@@ -140,6 +142,8 @@ export function TracksMap() {
           history={mapHistory}
           sector={mapSector}
           sectorFrame={sectorFrame}
+          stations={stations}
+          showStations={layers.stations}
           label={t("label")}
         />
       </div>
@@ -171,6 +175,7 @@ export function TracksMap() {
         <MapStatsBar
           tracks={tracks}
           summary={summary}
+          stations={stations}
           layers={layers}
           onLayersChange={setLayers}
           historyOpen={historyOpen}

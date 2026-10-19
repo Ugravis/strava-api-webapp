@@ -4,9 +4,11 @@ import type { TileMode } from "./tile-layers";
 export interface MapLayers {
   tracks: boolean;
   subtiles: boolean;
+  /** The train stations and the railway between the visited ones. */
+  stations: boolean;
 }
 
-export const ALL_MAP_LAYERS: MapLayers = { tracks: true, subtiles: true };
+export const DEFAULT_MAP_LAYERS: MapLayers = { tracks: true, subtiles: true, stations: false };
 
 /** Levels of tiles drawn for the layers chosen. */
 export function tileModeOf({ subtiles }: MapLayers): TileMode {

@@ -356,7 +356,10 @@
       "maxCluster": "Plus grand cluster",
       "otherClusters": "Autres clusters",
       "maxSquare": "Carré max",
-      "tools": "Outils"
+      "tools": "Outils",
+      "stations": "Gares",
+      "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
+      "railway": "Voies débloquées"
     },
     "sports": {
       "run": "Course à pied",
@@ -413,7 +416,7 @@
       "close": "Fermer le panneau",
       "collapse": "Replier le panneau",
       "expand": "Déplier le panneau",
-      "invalidLink": "Ce lien ne désigne aucune tuile ni activité."
+      "invalidLink": "Ce lien ne désigne aucune tuile, activité ni gare."
     },
     "activityPanel": {
       "distance": "Distance",
@@ -504,11 +507,28 @@
         "all": "Pays",
         "empty": "Aucun pays trouvé.",
         "error": "Impossible de charger la liste des pays."
-      }
+      },
+      "railway": "Réseau ferré"
     },
     "bands": {
       "collapse": "Replier le bandeau",
       "expand": "Déplier le bandeau"
+    },
+    "stationPanel": {
+      "unnamed": "Gare sans nom",
+      "visited": "Visitée",
+      "notVisited": "Pas encore visitée",
+      "visitedDescription": "Une de tes activités a traversé la petite tuile de cette gare.",
+      "notVisitedDescription": "Traverse la petite tuile de cette gare pour la débloquer.",
+      "firstVisit": "Première visite",
+      "links": "Liaisons débloquées",
+      "neighbors": "Gares voisines",
+      "noNeighbors": "Aucune gare voisine trouvée sur le réseau ferré.",
+      "linkUnlocked": "{distance} débloqués",
+      "activities": "Activités",
+      "viewTile": "Voir la petite tuile",
+      "error": "Impossible de charger cette gare.",
+      "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>"
     }
   }
 }

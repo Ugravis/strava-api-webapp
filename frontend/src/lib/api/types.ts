@@ -304,6 +304,8 @@ export interface CountrySector {
   bounds: [number, number, number, number] | null;
   /** Changes with its tile shape, which dims the rest of the map; null while it is being computed. */
   shapeVersion: string | null;
+  /** Its railway network; null when no link crosses it. */
+  railway: CountryRailway | null;
 }
 
 /** Which tiles the history shows: those first visited since a date, or the map as it was at that date. */
@@ -321,4 +323,62 @@ export interface TileHistorySummary {
   tiles: number;
   /** Small tiles (zoom 17) gained since the date, or visited before it. */
   subtiles: number;
+}
+
+/** A train station whose small tile the user visited. */
+export interface VisitedStation {
+  id: number;
+  name: string | null;
+  lon: number;
+  lat: number;
+  /** Start of the first activity crossing its small tile, ISO 8601; null until the first visits are replayed. */
+  firstVisitAt: string | null;
+}
+
+/** Two visited stations linked by the railway, without any station between them. */
+export interface UnlockedLink {
+  id: number;
+  stations: [number, number];
+  lengthM: number;
+  /** `[lon, lat]` along the tracks. */
+  coords: [number, number][];
+}
+
+/** Stations visited by the user and the links between them. */
+export interface VisitedStations {
+  stations: VisitedStation[];
+  links: UnlockedLink[];
+  /** Changes with each import of the stations: the vector tiles of all the stations follow it. Null without stations. */
+  stationsVersion: string | null;
+}
+
+/** A station next to another on the railway. */
+export interface StationNeighbor {
+  id: number;
+  name: string | null;
+  lon: number;
+  lat: number;
+  lengthM: number;
+  /** Whether the user visited it too, unlocking the link. */
+  visited: boolean;
+}
+
+/** A station, whether the user visited it, and its neighbors on the railway. */
+export interface StationDetails {
+  id: number;
+  name: string | null;
+  lon: number;
+  lat: number;
+  /** Small tile (zoom 17) holding the station: visiting it visits the station. */
+  tile: { zoom: 17; x: number; y: number };
+  visited: boolean;
+  firstVisitAt: string | null;
+  neighbors: StationNeighbor[];
+}
+
+/** The railway network of a country and the part the user unlocked. */
+export interface CountryRailway {
+  /** Length of the links between two stations the user visited, in the country. */
+  unlockedM: number;
+  totalM: number;
 }

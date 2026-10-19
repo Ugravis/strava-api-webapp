@@ -102,6 +102,13 @@ export interface MapPalette {
   country: string;
   countryOpacity: number;
   countryBorder: string;
+  /** Train stations visited and the railway between them, in violet, apart from the tiles and tracks. */
+  station: string;
+  /** Ring of the stations and casing of the railway: their contrast over the tiles and tracks. */
+  stationCasing: string;
+  /** Stations not visited yet: a quiet grey. */
+  stationUnvisited: string;
+  railLink: string;
   /** Veil over the map outside the sector picked: its colors fade towards it. */
   outside: string;
   outsideOpacity: number;
@@ -153,6 +160,10 @@ const LIGHT: MapPalette = {
   country: "#e8d4ae",
   countryOpacity: 0.85,
   countryBorder: "#a8906a",
+  station: "#6d28d9",
+  stationCasing: "#ffffff",
+  stationUnvisited: "#8c8780",
+  railLink: "#6d28d9",
   outside: "#f3f2f0",
   outsideOpacity: 0.65,
   sectorBorder: "#2a1f12",
@@ -204,6 +215,10 @@ const DARK: MapPalette = {
   country: "#3b3226",
   countryOpacity: 0.85,
   countryBorder: "#6f6658",
+  station: "#a78bfa",
+  stationCasing: "#1f1e1c",
+  stationUnvisited: "#7a756d",
+  railLink: "#a78bfa",
   outside: "#121211",
   outsideOpacity: 0.65,
   sectorBorder: "#ece6dc",

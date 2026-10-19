@@ -1,10 +1,12 @@
 import { type DynamicModule, Module } from '@nestjs/common';
+import { StationsModule } from '../stations/stations.module';
 import { StravaModule } from '../strava/strava.module';
 import { DevController } from './dev.controller';
 import { DevOverviewService } from './dev-overview.service';
 
 /**
- * Temporary development tools (database overview shown on the dashboard).
+ * Temporary development tools (database overview shown on the dashboard,
+ * report of the latest import of the stations).
  * Never loaded in production. To remove them: delete `src/dev`, its import
  * in `AppModule` and `frontend/src/components/dev`.
  */
@@ -16,7 +18,7 @@ export class DevModule {
     }
     return {
       module: DevModule,
-      imports: [StravaModule],
+      imports: [StravaModule, StationsModule],
       controllers: [DevController],
       providers: [DevOverviewService],
     };

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { usePanelHistory } from "@/hooks/use-panel-history";
-import type { TilesSummary } from "@/lib/api/types";
+import type { TilesSummary, VisitedStations } from "@/lib/api/types";
 import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
 import { ActivityPanel } from "./activity-panel";
 import {
@@ -39,7 +39,18 @@ import {
 } from "./tile-layers";
 import { addTileOutlines, sameTile, setTileOutline, type TileRef } from "./tile-highlight";
 import { TilePickPanel } from "./tile-pick-panel";
-import { entryFromSearch, entryKey, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
+import { entryFromSearch, entryKey, pickOf, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
+import { StationPanel } from "./station-panel";
+import {
+  addStationLayers,
+  setAllStations,
+  setSelectedStation,
+  setStationData,
+  setStationsVisible,
+  stationData,
+  stationNear,
+  type StationPick,
+} from "./stations-layer";
 import { type ActivityView, defaultActivityView, hasGains } from "./activity-view";
 import {
   addTrackLayer,
@@ -68,6 +79,9 @@ interface ActivityMapProps {
   sector: MapSector | null;
   /** Incremented to frame the sector, once its bounds are known. */
   sectorFrame: number;
+  /** Stations visited and the links between them; null while loading. */
+  stations: VisitedStations | null;
+  showStations: boolean;
   label: string;
 }
 
@@ -75,6 +89,8 @@ interface ActivityMapProps {
 const ACTIVITY_PADDING = 48;
 /** Zoom of the map centered on a tile of each level: it spans about a fifth of a large screen. */
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
+/** Zoom of the map centered on a station: its town and its neighbors around. */
+const STATION_ZOOM = 13;
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({
@@ -86,6 +102,8 @@ export function ActivityMap({
   history: mapHistory,
   sector,
   sectorFrame,
+  stations,
+  showStations,
   label,
 }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
@@ -108,6 +126,17 @@ export function ActivityMap({
   const pastRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
   const paletteRef = useRef(palette);
+  const showStationsRef = useRef(showStations);
+  // The stations as of the history when open: the visits are dated.
+  const stationsData = useMemo(() => stationData(stations, mapHistory), [stations, mapHistory]);
+  const stationsDataRef = useRef(stationsData);
+  const stationsVersion = stations?.stationsVersion ?? null;
+  const stationsVersionRef = useRef(stationsVersion);
+  // The station shown in the panel, ringed on the map.
+  const selectedStationRef = useRef<StationPick | null>(null);
+  // The station just picked on the map: unlike a station reached otherwise, the camera stays.
+  const pickedStationRef = useRef<number | null>(null);
+  const pickStationRef = useRef<(station: StationPick) => void>(() => {});
 
   const t = useTranslations("map.panel");
   // The address of the page may name a tile or an activity: the map opens on it.
@@ -188,6 +217,15 @@ export function ActivityMap({
         paletteRef.current,
         firstLabel,
       );
+      addStationLayers(
+        map,
+        stationsDataRef.current,
+        selectedStationRef.current,
+        paletteRef.current,
+        showStationsRef.current,
+        firstLabel,
+      );
+      setAllStations(map, stationsVersionRef.current, paletteRef.current, showStationsRef.current);
       pastRef.current = false;
       setTileMode(map, modeRef.current);
       drawHistory(map, mapHistoryRef.current, modeRef.current, paletteRef.current, pastRef);
@@ -202,6 +240,12 @@ export function ActivityMap({
     });
     // A click beside the tiles keeps the panel: only its button closes it.
     map.on("click", (event) => {
+      // The stations are drawn over the tiles: they are picked first.
+      const station = showStationsRef.current ? stationNear(map, event.point) : null;
+      if (station) {
+        pickStationRef.current(station);
+        return;
+      }
       const pick = pickTile(map, modeRef.current, event.point);
       if (pick) pickRef.current(pick);
     });
@@ -209,16 +253,19 @@ export function ActivityMap({
     // once per frame, and not while the map moves under the pointer.
     let pointer: { x: number; y: number } | null = null;
     let frame = 0;
-    const hover = (tile: TileRef | null) => {
+    const hover = (tile: TileRef | null, clickable = tile !== null) => {
+      map.getCanvas().style.cursor = clickable ? "pointer" : "";
       if (sameTile(tile, hoveredRef.current)) return;
       hoveredRef.current = tile;
-      map.getCanvas().style.cursor = tile ? "pointer" : "";
       setTileOutline(map, "hovered", tile);
     };
     const pickHovered = () => {
       frame = 0;
-      const pick = pointer && !map.isMoving() ? pickTile(map, modeRef.current, pointer) : null;
-      hover(pick && shownTile(pick));
+      const still = pointer !== null && !map.isMoving();
+      // Over a station, no tile is outlined: a click opens the station.
+      const station = still && showStationsRef.current ? stationNear(map, pointer!) : null;
+      const pick = still && !station ? pickTile(map, modeRef.current, pointer!) : null;
+      hover(pick && shownTile(pick), station !== null || pick !== null);
     };
     map.on("mousemove", (event) => {
       pointer = event.point;
@@ -300,6 +347,25 @@ export function ActivityMap({
   }, [mapHistory]);
 
   useEffect(() => {
+    stationsDataRef.current = stationsData;
+    if (mapRef.current) setStationData(mapRef.current, stationsData);
+  }, [stationsData]);
+
+  useEffect(() => {
+    stationsVersionRef.current = stationsVersion;
+    // Before the style is loaded, the layers get the version on load.
+    if (mapRef.current && styleReadyRef.current) {
+      setAllStations(mapRef.current, stationsVersion, paletteRef.current, showStationsRef.current);
+    }
+  }, [stationsVersion]);
+
+  useEffect(() => {
+    showStationsRef.current = showStations;
+    // Layers not added yet are shown or hidden once the style is loaded.
+    if (mapRef.current) setStationsVisible(mapRef.current, showStations);
+  }, [showStations]);
+
+  useEffect(() => {
     sectorRef.current = sector;
     // Before the style is loaded, the layers get the sector on load.
     if (mapRef.current && styleReadyRef.current) setSector(mapRef.current, sector, paletteRef.current);
@@ -332,7 +398,38 @@ export function ActivityMap({
       history.push({ kind: "tile", ...pick });
       setCollapsed(false);
     };
+    pickStationRef.current = (station) => {
+      pickedStationRef.current = station.id;
+      history.push({ kind: "station", stationId: station.id });
+      setCollapsed(false);
+    };
   });
+
+  const stationId = entry?.kind === "station" ? entry.stationId : null;
+
+  useEffect(() => {
+    // The ring follows the station shown, once it is located.
+    if (stationId !== null && selectedStationRef.current?.id === stationId) return;
+    selectedStationRef.current = null;
+    if (mapRef.current) setSelectedStation(mapRef.current, null);
+  }, [stationId]);
+
+  /** Rings the station shown and, unless just picked on the map, centers it beside the panel. */
+  const locateStation = (station: StationPick) => {
+    selectedStationRef.current = station;
+    const map = mapRef.current;
+    if (!map) return;
+    setSelectedStation(map, station);
+    if (pickedStationRef.current === station.id) {
+      pickedStationRef.current = null;
+      return;
+    }
+    map.easeTo({
+      center: [station.lon, station.lat],
+      zoom: Math.max(map.getZoom(), STATION_ZOOM),
+      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, -bandsHeightOf(containerRef.current) / 2],
+    });
+  };
 
   const shown = entry?.kind === "tile" ? shownTile(entry) : null;
 
@@ -420,7 +517,16 @@ export function ActivityMap({
             setCollapsed(false);
           }}
         >
-          {entry.kind === "tile" ? (
+          {entry.kind === "station" ? (
+            <StationPanel
+              key={entry.stationId}
+              stationId={entry.stationId}
+              onLocated={locateStation}
+              onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
+              onOpenTile={(tile) => history.push({ kind: "tile", ...pickOf(tile) })}
+              onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
+            />
+          ) : entry.kind === "tile" ? (
             <TilePickPanel
               pick={entry}
               onZoomChange={(zoom) => {

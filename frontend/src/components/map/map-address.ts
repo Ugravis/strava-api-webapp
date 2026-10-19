@@ -8,7 +8,7 @@ import {
   type HistorySettings,
   type HistoryStep,
 } from "@/lib/tiles/history-period";
-import { ALL_MAP_LAYERS, type MapLayers } from "./map-layers";
+import { DEFAULT_MAP_LAYERS, type MapLayers } from "./map-layers";
 import { searchOf } from "./panel-entry";
 
 /** The tool open on the map, with what it shows. */
@@ -22,12 +22,24 @@ export interface MapAddress {
 
 /**
  * Search parameters of the map: `?sector=FR`, `?history=gained&date=3m` (a
- * step, or a day `yyyy-mm-dd`), and `tracks=0` or `subtiles=0` for a hidden
- * layer. Defaults are left out.
+ * step, or a day `yyyy-mm-dd`), `tracks=0` or `subtiles=0` for a hidden
+ * layer, and `stations=1` for a layer hidden by default, shown. Defaults
+ * are left out.
  */
-const PARAMS = { sector: "sector", history: "history", date: "date", tracks: "tracks", subtiles: "subtiles" } as const;
+const PARAMS = {
+  sector: "sector",
+  history: "history",
+  date: "date",
+  tracks: "tracks",
+  subtiles: "subtiles",
+  stations: "stations",
+} as const;
+
+const LAYER_NAMES = ["tracks", "subtiles", "stations"] as const satisfies readonly (keyof MapLayers &
+  keyof typeof PARAMS)[];
 
 const HIDDEN = "0";
+const SHOWN = "1";
 const MODES: readonly HistoryMode[] = ["gained", "state"];
 const COUNTRY_CODE = /^[A-Z]{2}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -46,9 +58,9 @@ function parseDay(value: string, today: string): HistoryDay | null {
   return real && value <= today ? { step: null, day: value } : null;
 }
 
-/** A layer shown unless `?name=0`; null when malformed. */
-function parseLayer(value: string | null): boolean | null {
-  return value === null ? true : value === HIDDEN ? false : null;
+/** A layer as `?name=0` or `?name=1`, `fallback` without the parameter; null when malformed. */
+function parseLayer(value: string | null, fallback: boolean): boolean | null {
+  return value === null ? fallback : value === HIDDEN ? false : value === SHOWN ? true : null;
 }
 
 /**
@@ -59,15 +71,12 @@ function parseLayer(value: string | null): boolean | null {
 export function addressFromSearch(search: string, today: string): { address: MapAddress; invalid: boolean } {
   const params = new URLSearchParams(search);
   let invalid = false;
-  const layer = (name: string, fallback: boolean) => {
-    const parsed = parseLayer(params.get(name));
+  const layer = (name: (typeof LAYER_NAMES)[number]) => {
+    const parsed = parseLayer(params.get(PARAMS[name]), DEFAULT_MAP_LAYERS[name]);
     if (parsed === null) invalid = true;
-    return parsed ?? fallback;
+    return parsed ?? DEFAULT_MAP_LAYERS[name];
   };
-  const layers: MapLayers = {
-    tracks: layer(PARAMS.tracks, ALL_MAP_LAYERS.tracks),
-    subtiles: layer(PARAMS.subtiles, ALL_MAP_LAYERS.subtiles),
-  };
+  const layers: MapLayers = { tracks: layer("tracks"), subtiles: layer("subtiles"), stations: layer("stations") };
 
   const sector = params.get(PARAMS.sector);
   const history = params.get(PARAMS.history);
@@ -99,7 +108,8 @@ export function searchWithAddress(search: string, { layers, tool }: MapAddress):
     if (date.step === null) params.set(PARAMS.date, date.day);
     else if (date.step !== DEFAULT_STEP_INDEX) params.set(PARAMS.date, stepKey(HISTORY_STEPS[date.step]));
   }
-  if (!layers.tracks) params.set(PARAMS.tracks, HIDDEN);
-  if (!layers.subtiles) params.set(PARAMS.subtiles, HIDDEN);
+  for (const name of LAYER_NAMES) {
+    if (layers[name] !== DEFAULT_MAP_LAYERS[name]) params.set(PARAMS[name], layers[name] ? SHOWN : HIDDEN);
+  }
   return searchOf(params);
 }

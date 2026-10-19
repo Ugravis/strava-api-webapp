@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StationsModule } from '../stations/stations.module';
 import { CountriesController } from './countries.controller';
 import { CountriesService } from './countries.service';
 import { CountriesWorker } from './countries.worker';
@@ -11,6 +12,7 @@ import { TileCountry } from './tile-country.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Country, CountryPart, TileCountry, LocatedTile]),
+    StationsModule,
   ],
   controllers: [CountriesController],
   providers: [CountriesService, CountriesWorker],

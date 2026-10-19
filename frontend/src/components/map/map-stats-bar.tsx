@@ -9,9 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Toggle } from "@/components/ui/toggle";
 import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
-import type { TileLevelSummary, TilesSummary } from "@/lib/api/types";
+import type { TileLevelSummary, TilesSummary, VisitedStations } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { ClusterKey, OtherClusterKey, SquareKey, TileKey, TrackKey } from "./map-keys";
+import { ClusterKey, OtherClusterKey, RailKey, SquareKey, StationKey, TileKey, TrackKey } from "./map-keys";
 import type { MapLayers } from "./map-layers";
 import { Stat, ValueSkeleton } from "./map-stat";
 
@@ -21,6 +21,8 @@ interface MapStatsBarProps {
   tracks: TracksState;
   /** Null while loading. */
   summary: TilesSummary | null;
+  /** Null while loading. */
+  stations: VisitedStations | null;
   layers: MapLayers;
   onLayersChange: (layers: MapLayers) => void;
   /** Whether the band of the history tool is open. */
@@ -35,12 +37,13 @@ interface MapStatsBarProps {
  * Band under the map: the key figures of each layer, with the keys of their
  * colors, the checkboxes of the optional layers, and the buttons of the
  * tools. On narrow screens, the sections scroll sideways; on larger ones,
- * the tools come first and the tracks last, both as narrow as their
- * content, the tiles sharing the rest in equal columns, centered.
+ * the tools come first and the tracks and stations last, as narrow as
+ * their content, the tiles sharing the rest in equal columns, centered.
  */
 export function MapStatsBar({
   tracks,
   summary,
+  stations,
   layers,
   onLayersChange,
   historyOpen,
@@ -53,7 +56,7 @@ export function MapStatsBar({
   return (
     <section
       aria-label={t("label")}
-      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[auto_repeat(2,minmax(0,1fr))_auto] md:overflow-visible"
+      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[auto_repeat(2,minmax(0,1fr))_auto_auto] md:overflow-visible"
     >
       <ToolsSection
         historyOpen={historyOpen}
@@ -72,6 +75,11 @@ export function MapStatsBar({
         tracks={tracks}
         checked={layers.tracks}
         onCheckedChange={(checked) => onLayersChange({ ...layers, tracks: checked })}
+      />
+      <StationsSection
+        stations={stations}
+        checked={layers.stations}
+        onCheckedChange={(checked) => onLayersChange({ ...layers, stations: checked })}
       />
     </section>
   );
@@ -226,6 +234,42 @@ function TracksSection({
           )
         )}
       </div>
+    </StatsSection>
+  );
+}
+
+/** The train stations visited and the kilometers of railway unlocked between them. */
+function StationsSection({
+  stations,
+  checked,
+  onCheckedChange,
+}: {
+  stations: VisitedStations | null;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  const t = useTranslations("map.stats");
+  const format = useFormatter();
+  const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
+
+  return (
+    <StatsSection title={t("stations")} checked={checked} onCheckedChange={onCheckedChange}>
+      <Stat
+        value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
+        label={t("stationCount", { count: stations?.stations.length ?? 0 })}
+        colorKey={<StationKey />}
+      />
+      <Stat
+        value={
+          stations ? (
+            format.number(railwayM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })
+          ) : (
+            <ValueSkeleton />
+          )
+        }
+        label={t("railway")}
+        colorKey={<RailKey />}
+      />
     </StatsSection>
   );
 }

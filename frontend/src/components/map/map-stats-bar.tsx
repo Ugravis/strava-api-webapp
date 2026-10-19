@@ -1,10 +1,19 @@
 "use client";
 
-import { HistoryIcon, LoaderCircleIcon, SearchIcon } from "lucide-react";
+import {
+  EyeIcon,
+  EyeOffIcon,
+  HistoryIcon,
+  LoaderCircleIcon,
+  type LucideIcon,
+  SearchIcon,
+  SunDimIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { type ReactNode, useEffect } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Toggle } from "@/components/ui/toggle";
 import { routes } from "@/config/routes";
@@ -12,7 +21,8 @@ import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 import type { TileLevelSummary, TilesSummary, VisitedStations } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ClusterKey, OtherClusterKey, RailKey, SquareKey, StationKey, TileKey, TrackKey } from "./map-keys";
-import type { MapLayers } from "./map-layers";
+import { MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
+import { MAP_MODULE_ICONS } from "./map-module-icons";
 import { Stat, ValueSkeleton } from "./map-stat";
 
 type TracksState = Pick<ActivityTracksState, "lines" | "status" | "progress" | "errorCode" | "retry">;
@@ -25,6 +35,10 @@ interface MapStatsBarProps {
   stations: VisitedStations | null;
   layers: MapLayers;
   onLayersChange: (layers: MapLayers) => void;
+  /** The module whose figures the band shows. */
+  module: MapModule;
+  /** Selects a module, which is then shown on the map. */
+  onModuleSelect: (module: MapModule) => void;
   /** Whether the band of the history tool is open. */
   historyOpen: boolean;
   onHistoryOpenChange: (open: boolean) => void;
@@ -34,11 +48,10 @@ interface MapStatsBarProps {
 }
 
 /**
- * Band under the map: the key figures of each layer, with the keys of their
- * colors, the checkboxes of the optional layers, and the buttons of the
- * tools. On narrow screens, the sections scroll sideways; on larger ones,
- * the tools come first and the tracks and stations last, as narrow as
- * their content, the tiles sharing the rest in equal columns, centered.
+ * Band under the map, from left to right: the tools, the modules, each
+ * selected or shown on the map by its button, and the figures of the module
+ * selected. On narrow screens, the tools and modules share a row above the
+ * figures, which scroll sideways.
  */
 export function MapStatsBar({
   tracks,
@@ -46,48 +59,173 @@ export function MapStatsBar({
   stations,
   layers,
   onLayersChange,
+  module,
+  onModuleSelect,
   historyOpen,
   onHistoryOpenChange,
   sectorOpen,
   onSectorOpenChange,
 }: MapStatsBarProps) {
-  const t = useTranslations("map.stats");
+  const t = useTranslations("map");
+  useTracksErrorToast(tracks);
 
   return (
-    <section
-      aria-label={t("label")}
-      className="flex shrink-0 snap-x snap-mandatory divide-x overflow-x-auto border-t bg-background scrollbar-none md:grid md:grid-cols-[auto_repeat(2,minmax(0,1fr))_auto_auto] md:overflow-visible"
-    >
-      <ToolsSection
-        historyOpen={historyOpen}
-        onHistoryOpenChange={onHistoryOpenChange}
-        sectorOpen={sectorOpen}
-        onSectorOpenChange={onSectorOpenChange}
-      />
-      <TilesSection level="tiles" summary={summary?.tiles} />
-      <TilesSection
-        level="subtiles"
-        summary={summary?.subtiles}
-        checked={layers.subtiles}
-        onCheckedChange={(checked) => onLayersChange({ ...layers, subtiles: checked })}
-      />
-      <TracksSection
-        tracks={tracks}
-        checked={layers.tracks}
-        onCheckedChange={(checked) => onLayersChange({ ...layers, tracks: checked })}
-      />
-      <StationsSection
-        stations={stations}
-        checked={layers.stations}
-        onCheckedChange={(checked) => onLayersChange({ ...layers, stations: checked })}
-      />
+    <section aria-label={t("stats.label")} className="flex shrink-0 flex-col border-t bg-background md:flex-row">
+      <div className="flex shrink-0 overflow-x-auto border-b scrollbar-none md:overflow-visible md:border-b-0 md:border-r">
+        <ControlsGroup title={t("stats.tools")}>
+          <ToolToggle icon={HistoryIcon} label={t("history.open")} pressed={historyOpen} onPressedChange={onHistoryOpenChange} />
+          <ToolToggle icon={SearchIcon} label={t("sector.open")} pressed={sectorOpen} onPressedChange={onSectorOpenChange} />
+        </ControlsGroup>
+        <ControlsGroup title={t("stats.modules")}>
+          {MAP_MODULES.map((candidate) => (
+            <ModuleButton
+              key={candidate}
+              module={candidate}
+              selected={candidate === module}
+              shown={layers[candidate]}
+              onSelect={() => onModuleSelect(candidate)}
+              onShownChange={(shown) => onLayersChange({ ...layers, [candidate]: shown })}
+            />
+          ))}
+        </ControlsGroup>
+      </div>
+      {/* Every module in the same cell, only the one selected visible: the band keeps the height of the tallest. */}
+      <div className="grid min-w-0 flex-1">
+        {MAP_MODULES.map((candidate) => (
+          <div
+            key={candidate}
+            role="group"
+            aria-label={t("modules.data", { module: candidate })}
+            className={cn(
+              "min-w-0 transition-opacity [grid-area:1/1]",
+              candidate !== module && "invisible",
+              !layers[candidate] && "opacity-60",
+            )}
+          >
+            {candidate === "tiles" ? (
+              <TilesModule tracks={tracks} summary={summary} layers={layers} onLayersChange={onLayersChange} />
+            ) : (
+              <StationsModule stations={stations} layers={layers} onLayersChange={onLayersChange} />
+            )}
+          </div>
+        ))}
+      </div>
     </section>
+  );
+}
+
+/**
+ * Tools or modules: a row of buttons without their title on narrow screens,
+ * a titled column from medium ones.
+ */
+function ControlsGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div
+      role="group"
+      aria-label={title}
+      className="flex shrink-0 items-center gap-1.5 px-3 py-2 not-last:border-r md:flex-col md:items-stretch md:gap-2 md:px-4 md:py-3"
+    >
+      <span aria-hidden className="hidden text-xs font-medium text-muted-foreground md:block">
+        {title}
+      </span>
+      <div className="flex gap-1.5 md:flex-col">{children}</div>
+    </div>
+  );
+}
+
+/** A tool, by its icon alone on narrow screens. */
+function ToolToggle({
+  icon: Icon,
+  label,
+  pressed,
+  onPressedChange,
+}: {
+  icon: LucideIcon;
+  label: string;
+  pressed: boolean;
+  onPressedChange: (pressed: boolean) => void;
+}) {
+  return (
+    <Toggle
+      variant="outline"
+      size="sm"
+      pressed={pressed}
+      onPressedChange={onPressedChange}
+      aria-label={label}
+      className="md:justify-start"
+    >
+      <Icon aria-hidden />
+      <span className="hidden sm:inline">{label}</span>
+    </Toggle>
+  );
+}
+
+/**
+ * Two actions in one button: its name selects the module, showing its
+ * figures in the band, and its eye shows or hides it on the map.
+ */
+function ModuleButton({
+  module,
+  selected,
+  shown,
+  onSelect,
+  onShownChange,
+}: {
+  module: MapModule;
+  selected: boolean;
+  shown: boolean;
+  onSelect: () => void;
+  onShownChange: (shown: boolean) => void;
+}) {
+  const t = useTranslations("map.modules");
+  const Icon = MAP_MODULE_ICONS[module];
+  const label = t(module);
+
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className={cn(
+        "flex h-7 shrink-0 items-stretch overflow-hidden rounded-[min(var(--radius-md),12px)] border border-input transition-colors",
+        selected && "border-foreground/30 bg-muted",
+      )}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-pressed={selected}
+        onClick={onSelect}
+        className={cn(
+          "h-auto flex-1 justify-start rounded-none border-0 active:not-aria-[haspopup]:translate-y-0",
+          selected && "hover:bg-foreground/5",
+          !shown && "text-muted-foreground",
+        )}
+      >
+        <Icon aria-hidden />
+        {label}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-pressed={shown}
+        aria-label={t(shown ? "hide" : "show", { module })}
+        title={t(shown ? "hide" : "show", { module })}
+        onClick={() => onShownChange(!shown)}
+        className={cn(
+          "h-auto rounded-none border-0 border-l border-l-input active:not-aria-[haspopup]:translate-y-0",
+          selected && "border-l-foreground/20 hover:bg-foreground/5",
+          !shown && "text-muted-foreground",
+        )}
+      >
+        {shown ? <EyeIcon aria-hidden /> : <EyeOffIcon aria-hidden />}
+      </Button>
+    </div>
   );
 }
 
 interface StatsSectionProps {
   title: string;
-  /** Without it, the layer is always drawn. */
+  /** Without it, the layer is drawn with its module. */
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   /** Figures in two columns from medium screens, rather than in a row: four do not fit a third of the band. */
@@ -95,7 +233,7 @@ interface StatsSectionProps {
   children: ReactNode;
 }
 
-/** One layer: its title, its checkbox if optional, and its figures, dimmed while hidden. */
+/** One layer of a module: its title, its checkbox if optional, and its figures, dimmed while hidden. */
 function StatsSection({ title, checked, onCheckedChange, columns = false, children }: StatsSectionProps) {
   const optional = checked !== undefined && onCheckedChange !== undefined;
   const dimmed = optional && !checked;
@@ -120,6 +258,34 @@ function StatsSection({ title, checked, onCheckedChange, columns = false, childr
       >
         {children}
       </div>
+    </div>
+  );
+}
+
+interface ModuleProps {
+  layers: MapLayers;
+  onLayersChange: (layers: MapLayers) => void;
+}
+
+/**
+ * The large tiles, the small tiles and the tracks, side by side; the tiles
+ * share the width in equal columns, the tracks as narrow as their content.
+ * An optional layer checked shows the module too.
+ */
+function TilesModule({ tracks, summary, layers, onLayersChange }: ModuleProps & { tracks: TracksState; summary: TilesSummary | null }) {
+  const check = (layer: "subtiles" | "tracks") => (checked: boolean) =>
+    onLayersChange({ ...layers, [layer]: checked, tiles: layers.tiles || checked });
+
+  return (
+    <div className="flex snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none md:grid md:grid-cols-[repeat(2,minmax(0,1fr))_auto] md:overflow-visible">
+      <TilesSection level="tiles" summary={summary?.tiles} />
+      <TilesSection
+        level="subtiles"
+        summary={summary?.subtiles}
+        checked={layers.subtiles}
+        onCheckedChange={check("subtiles")}
+      />
+      <TracksSection tracks={tracks} checked={layers.tracks} onCheckedChange={check("tracks")} />
     </div>
   );
 }
@@ -185,21 +351,14 @@ function TilesSection({
 /** One toast for the failures of the tracks, replaced rather than stacked. */
 const TRACKS_ERROR_TOAST = "tracks-error";
 
-function TracksSection({
-  tracks: { lines, status, progress, errorCode, retry },
-  checked,
-  onCheckedChange,
-}: {
-  tracks: TracksState;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
+/**
+ * Tells a failure of the tracks in a toast at the top of the screen, with a
+ * way to try again, whichever module is selected: the band stays compact.
+ */
+function useTracksErrorToast({ status, errorCode, retry }: TracksState): void {
   const t = useTranslations("map");
-  const format = useFormatter();
-  const syncing = status === "syncing" || status === "idle";
   const errorMessage = status === "error" ? t(errorCode === "TOO_MANY_REQUESTS" ? "rateLimited" : "error") : null;
 
-  // A failure is told in a toast at the top of the screen, with a way to try again: the band stays compact.
   useEffect(() => {
     if (!errorMessage) {
       toast.dismiss(TRACKS_ERROR_TOAST);
@@ -211,6 +370,20 @@ function TracksSection({
       action: { label: t("retry"), onClick: retry },
     });
   }, [errorMessage, retry, t]);
+}
+
+function TracksSection({
+  tracks: { lines, status, progress },
+  checked,
+  onCheckedChange,
+}: {
+  tracks: TracksState;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  const t = useTranslations("map");
+  const format = useFormatter();
+  const syncing = status === "syncing" || status === "idle";
 
   return (
     <StatsSection title={t("stats.tracks")} checked={checked} onCheckedChange={onCheckedChange}>
@@ -238,63 +411,45 @@ function TracksSection({
   );
 }
 
-/** The train stations visited and the kilometers of railway unlocked between them. */
-function StationsSection({
-  stations,
-  checked,
-  onCheckedChange,
-}: {
-  stations: VisitedStations | null;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
+/**
+ * The train stations visited and the kilometers of railway unlocked between
+ * them, with the dimming of the map below them, which shows the module too.
+ */
+function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { stations: VisitedStations | null }) {
   const t = useTranslations("map.stats");
   const format = useFormatter();
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
 
   return (
-    <StatsSection title={t("stations")} checked={checked} onCheckedChange={onCheckedChange}>
-      <Stat
-        value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
-        label={t("stationCount", { count: stations?.stations.length ?? 0 })}
-        colorKey={<StationKey />}
-      />
-      <Stat
-        value={
-          stations ? (
-            format.number(railwayM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })
-          ) : (
-            <ValueSkeleton />
-          )
-        }
-        label={t("railway")}
-        colorKey={<RailKey />}
-      />
-    </StatsSection>
-  );
-}
-
-/** Buttons opening the tools of the map, one above the other, each in a band over this one. */
-function ToolsSection({
-  historyOpen,
-  onHistoryOpenChange,
-  sectorOpen,
-  onSectorOpenChange,
-}: Pick<MapStatsBarProps, "historyOpen" | "onHistoryOpenChange" | "sectorOpen" | "onSectorOpenChange">) {
-  const t = useTranslations("map");
-
-  return (
-    <StatsSection title={t("stats.tools")}>
-      <div className="flex flex-col gap-1.5 *:justify-start">
-        <Toggle variant="outline" size="sm" pressed={historyOpen} onPressedChange={onHistoryOpenChange}>
-          <HistoryIcon />
-          {t("history.open")}
-        </Toggle>
-        <Toggle variant="outline" size="sm" pressed={sectorOpen} onPressedChange={onSectorOpenChange}>
-          <SearchIcon />
-          {t("sector.open")}
-        </Toggle>
-      </div>
-    </StatsSection>
+    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-center md:pr-6">
+      <StatsSection title={t("stations")}>
+        <Stat
+          value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
+          label={t("stationCount", { count: stations?.stations.length ?? 0 })}
+          colorKey={<StationKey />}
+        />
+        <Stat
+          value={
+            stations ? (
+              format.number(railwayM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })
+            ) : (
+              <ValueSkeleton />
+            )
+          }
+          label={t("railway")}
+          colorKey={<RailKey />}
+        />
+      </StatsSection>
+      <Toggle
+        variant="outline"
+        size="sm"
+        pressed={layers.dimmed}
+        onPressedChange={(dimmed) => onLayersChange({ ...layers, dimmed, stations: layers.stations || dimmed })}
+        className="shrink-0"
+      >
+        <SunDimIcon aria-hidden />
+        {t("dim")}
+      </Toggle>
+    </div>
   );
 }

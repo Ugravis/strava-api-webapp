@@ -18,8 +18,8 @@ import {
 import { belowHistory } from "./history-layer";
 import type { MapPalette } from "./map-style";
 
-/** Which levels of tiles the map shows: the large tiles always, the small ones on demand. */
-export type TileMode = "tiles" | "both";
+/** Which levels of tiles the map shows: none while the tiles module is hidden, the large tiles, or both levels. */
+export type TileMode = "none" | "tiles" | "both";
 
 /**
  * Tiles of the user, served as vector tiles by the backend. The browser
@@ -106,6 +106,7 @@ const LAYER_ZOOMS: Record<string, TileZoom> = {
 };
 
 const VISIBLE_LAYERS: Record<TileMode, string[]> = {
+  none: [],
   tiles: [...LEVEL_LAYERS.tiles, "tile-grid-line"],
   both: [...ALL_LAYERS],
 };
@@ -228,7 +229,7 @@ const drawnPalettes = new WeakMap<MapLibreMap, MapPalette>();
 
 /** Levels of the tile under the pointer, the most detailed first; none while the tiles are too small to aim at. */
 export function clickableZooms(mode: TileMode, mapZoom: number): TileZoom[] {
-  if (mapZoom < TILE_CLICK_MIN_ZOOM) return [];
+  if (mode === "none" || mapZoom < TILE_CLICK_MIN_ZOOM) return [];
   return mode === "both" && mapZoom >= SUBTILE_CLICK_MIN_ZOOM ? [SUBTILE_ZOOM, TILE_ZOOM] : [TILE_ZOOM];
 }
 
@@ -420,7 +421,7 @@ export function updateGrids(map: MapLibreMap, mode: TileMode): void {
   const bounds = map.getBounds();
   const area = { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() };
   const zoom = map.getZoom();
-  const tileGrid = zoom >= TILE_GRID_MIN_ZOOM ? gridCollection(area, TILE_ZOOM) : EMPTY_LINES;
+  const tileGrid = mode !== "none" && zoom >= TILE_GRID_MIN_ZOOM ? gridCollection(area, TILE_ZOOM) : EMPTY_LINES;
   const subtileGrid = mode === "both" && zoom >= SUBTILE_GRID_MIN_ZOOM ? gridCollection(area, SUBTILE_ZOOM) : EMPTY_LINES;
   map.getSource<GeoJSONSource>(SOURCES.tileGrid)?.setData(tileGrid);
   map.getSource<GeoJSONSource>(SOURCES.subtileGrid)?.setData(subtileGrid);

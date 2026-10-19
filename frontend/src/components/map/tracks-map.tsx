@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
@@ -26,8 +26,16 @@ import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { HistoryBand } from "./history-band";
 import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";
+import { publishMapModule, useMapModuleRequests } from "./map-module-channel";
 import type { MapHistory } from "./history-layer";
-import { type MapLayers, tileModeOf } from "./map-layers";
+import {
+  mapDimmed,
+  type MapLayers,
+  type MapModule,
+  tileModeOf,
+  tracksShown,
+  withModuleOpened,
+} from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
 import { MapStatsBar } from "./map-stats-bar";
 import { entryFromSearch } from "./panel-entry";
@@ -75,6 +83,22 @@ export function TracksMap() {
     [completion],
   );
   const [layers, setLayers] = useState<MapLayers>(fromAddress.address.layers);
+  const [module, setModule] = useState<MapModule>(fromAddress.address.module);
+  const selectModule = useCallback((selected: MapModule) => {
+    // A module selected is shown on the map.
+    setModule(selected);
+    setLayers((current) => ({ ...current, [selected]: true }));
+  }, []);
+  const openModule = useCallback((opened: MapModule) => {
+    setModule(opened);
+    setLayers((current) => withModuleOpened(current, opened));
+  }, []);
+  // The navigation shows the module selected, and opens another one on the map already open.
+  useMapModuleRequests(openModule);
+  useEffect(() => {
+    publishMapModule(module);
+    return () => publishMapModule(null);
+  }, [module]);
   const { stations } = useStations(summary?.version ?? null);
   const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
@@ -123,11 +147,11 @@ export function TracksMap() {
       : shownSector
         ? { kind: "sector", code: shownSector }
         : null;
-    const search = searchWithAddress(window.location.search, { layers, tool: addressed });
+    const search = searchWithAddress(window.location.search, { layers, module, tool: addressed });
     if (search !== window.location.search) {
       window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}`);
     }
-  }, [layers, historyOpen, shownSettings, shownSector]);
+  }, [layers, module, historyOpen, shownSettings, shownSector]);
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden">
@@ -138,12 +162,13 @@ export function TracksMap() {
           summary={summary}
           countries={countries}
           tileMode={tileModeOf(layers)}
-          showTracks={layers.tracks}
+          showTracks={tracksShown(layers)}
           history={mapHistory}
           sector={mapSector}
           sectorFrame={sectorFrame}
           stations={stations}
           showStations={layers.stations}
+          dimmed={mapDimmed(layers, module)}
           label={t("label")}
         />
       </div>
@@ -178,6 +203,8 @@ export function TracksMap() {
           stations={stations}
           layers={layers}
           onLayersChange={setLayers}
+          module={module}
+          onModuleSelect={selectModule}
           historyOpen={historyOpen}
           onHistoryOpenChange={(open) => setTool(open ? "history" : null)}
           sectorOpen={shownSector !== null || searchOpen}

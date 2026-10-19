@@ -1,16 +1,23 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DistanceFamily, LandmarkProgress } from "@/lib/api/types";
-import { LandmarkBadge } from "./landmark-badge";
+import type { DistanceBadge, DistanceFamily } from "@/lib/api/types";
+import { BadgeGrid } from "./badge-grid";
 
 interface DistanceFamilySectionProps {
   family: DistanceFamily;
   totalM: number;
-  landmarks: LandmarkProgress[];
+  badges: DistanceBadge[];
+  onOpen: (badgeId: string) => void;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  highlightedId: string | null;
 }
 
-/** Landmarks of a family of sports, with the distance it accumulates. */
-export function DistanceFamilySection({ family, totalM, landmarks }: DistanceFamilySectionProps) {
+/** Rows shown while folded: 4 on phones, 3 from `sm`, 2 from `md`, twelve badges each time. */
+const FOLDED_ROWS = { 3: 4, 4: 3, 6: 2 } as const;
+
+/** Badges of a family of sports, with the distance it accumulates. */
+export function DistanceFamilySection({ family, totalM, badges, ...grid }: DistanceFamilySectionProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const headingId = `distances-${family}`;
@@ -29,11 +36,7 @@ export function DistanceFamilySection({ family, totalM, landmarks }: DistanceFam
           </CardAction>
         </CardHeader>
         <CardContent>
-          <ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
-            {landmarks.map((landmark) => (
-              <LandmarkBadge key={landmark.id} landmark={landmark} />
-            ))}
-          </ul>
+          <BadgeGrid badges={badges} rows={FOLDED_ROWS} showFavorite anchors {...grid} />
         </CardContent>
       </Card>
     </section>

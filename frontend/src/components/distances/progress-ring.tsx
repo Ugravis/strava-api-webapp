@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useRevealed } from "./use-revealed";
 
 interface ProgressRingProps {
   /** Share completed, in [0, 1]. */
@@ -8,6 +11,8 @@ interface ProgressRingProps {
   className?: string;
   /** Color of the progress arc, e.g. `stroke-primary`. */
   indicatorClassName?: string;
+  /** Wait before the ring fills up, to stagger a group of rings. */
+  delayMs?: number;
   /** Content centered inside the ring. */
   children?: ReactNode;
 }
@@ -15,12 +20,21 @@ interface ProgressRingProps {
 const RADIUS = 46;
 const STROKE_WIDTH = 8;
 
-/** Circular progress bar drawn around its content. */
-export function ProgressRing({ value, label, className, indicatorClassName = "stroke-primary", children }: ProgressRingProps) {
+/** Circular progress bar drawn around its content, filling up from zero when it appears. */
+export function ProgressRing({
+  value,
+  label,
+  className,
+  indicatorClassName = "stroke-primary",
+  delayMs = 0,
+  children,
+}: ProgressRingProps) {
   const percent = Math.round(Math.min(Math.max(value, 0), 1) * 100);
+  const [ref, revealed] = useRevealed<HTMLDivElement>();
 
   return (
     <div
+      ref={ref}
       role="progressbar"
       aria-label={label}
       aria-valuemin={0}
@@ -40,8 +54,12 @@ export function ProgressRing({ value, label, className, indicatorClassName = "st
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray={100}
-            strokeDashoffset={100 - percent}
-            className={cn("transition-[stroke-dashoffset] duration-700 ease-out", indicatorClassName)}
+            strokeDashoffset={revealed ? 100 - percent : 100}
+            style={{ transitionDelay: `${delayMs}ms` }}
+            className={cn(
+              "transition-[stroke-dashoffset] duration-1000 ease-out motion-reduce:transition-none",
+              indicatorClassName,
+            )}
           />
         )}
       </svg>

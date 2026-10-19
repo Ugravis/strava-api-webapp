@@ -16,7 +16,7 @@ import { requestMapModule, useOpenMapModule } from "./map-module-channel";
  * that module; on the map, it is selected there, keeping the rest of the
  * map as it is.
  */
-export function MapModulesNav({ onNavigate, buttonClassName }: QuickAccessProps) {
+export function MapModulesNav({ onNavigate }: QuickAccessProps) {
   const t = useTranslations("map.modules");
   const current = useOpenMapModule();
 
@@ -31,7 +31,6 @@ export function MapModulesNav({ onNavigate, buttonClassName }: QuickAccessProps)
             <SidebarMenuButton
               isActive={active}
               tooltip={label}
-              className={buttonClassName}
               render={
                 <Link
                   href={`${routes.map}${searchOfModule(module)}`}

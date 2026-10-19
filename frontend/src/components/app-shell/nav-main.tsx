@@ -18,69 +18,76 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Buttons over the grey box of an unfolded entry: a deeper hover, and the active one deeper still. */
-const IN_BOX_BUTTON =
-  "hover:bg-sidebar-foreground/5 active:bg-sidebar-foreground/10 data-active:bg-sidebar-foreground/10";
+const noQuickAccessActive = () => false;
 
 export function NavMain({ items }: { items: NavigationItem[] }) {
-  const t = useTranslations("nav");
-  const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
-
   return (
     <SidebarGroup>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => {
-            const label = t(item.labelKey);
-            const active = isActive(pathname, item.href);
-            const QuickAccess = item.quickAccess;
-            // Kept unfolded in the section, and on mobile, where nothing hovers.
-            const unfolded = active || isMobile;
-            return (
-              <SidebarMenuItem
-                key={item.href}
-                className={cn(
-                  QuickAccess && "rounded-md transition-colors",
-                  QuickAccess &&
-                    (unfolded ? "bg-sidebar-accent" : "hover:bg-sidebar-accent focus-within:bg-sidebar-accent"),
-                )}
-              >
-                <SidebarMenuButton
-                  isActive={active}
-                  tooltip={label}
-                  className={cn(QuickAccess && IN_BOX_BUTTON)}
-                  render={
-                    <Link
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => setOpenMobile(false)}
-                    />
-                  }
-                >
-                  <item.icon />
-                  <span>{label}</span>
-                </SidebarMenuButton>
-                {QuickAccess && (
-                  // Unfolded on hover after a short delay, so that the pointer passing by does not move the entries below.
-                  <div
-                    className={cn(
-                      "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
-                      unfolded
-                        ? "grid-rows-[1fr]"
-                        : "grid-rows-[0fr] group-focus-within/menu-item:grid-rows-[1fr] group-hover/menu-item:grid-rows-[1fr] group-hover/menu-item:delay-150",
-                    )}
-                  >
-                    <div className="min-h-0 overflow-hidden">
-                      <QuickAccess onNavigate={() => setOpenMobile(false)} buttonClassName={IN_BOX_BUTTON} />
-                    </div>
-                  </div>
-                )}
-              </SidebarMenuItem>
-            );
-          })}
+          {items.map((item) => (
+            <NavEntry key={item.href} item={item} />
+          ))}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
+  );
+}
+
+/**
+ * An entry of the navigation, with its quick access unfolded under it, both
+ * on the background of a group. Only one entry is marked active: a link of
+ * the quick access rather than the entry.
+ */
+function NavEntry({ item }: { item: NavigationItem }) {
+  const t = useTranslations("nav");
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const useQuickAccessActive = item.useQuickAccessActive ?? noQuickAccessActive;
+  const quickAccessActive = useQuickAccessActive();
+  const label = t(item.labelKey);
+  const inSection = isActive(pathname, item.href);
+  const active = inSection && !quickAccessActive;
+  const QuickAccess = item.quickAccess;
+  // Kept unfolded in the section, and on mobile, where nothing hovers.
+  const unfolded = inSection || isMobile;
+
+  return (
+    <SidebarMenuItem
+      className={cn(
+        QuickAccess && "rounded-md transition-colors",
+        QuickAccess && (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group focus-within:bg-sidebar-group"),
+      )}
+    >
+      <SidebarMenuButton
+        isActive={active}
+        tooltip={label}
+        render={
+          <Link
+            href={item.href}
+            aria-current={inSection ? "page" : undefined}
+            onClick={() => setOpenMobile(false)}
+          />
+        }
+      >
+        <item.icon />
+        <span>{label}</span>
+      </SidebarMenuButton>
+      {QuickAccess && (
+        // Unfolded on hover after a short delay, so that the pointer passing by does not move the entries below.
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+            unfolded
+              ? "grid-rows-[1fr]"
+              : "grid-rows-[0fr] group-focus-within/menu-item:grid-rows-[1fr] group-hover/menu-item:grid-rows-[1fr] group-hover/menu-item:delay-150",
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <QuickAccess onNavigate={() => setOpenMobile(false)} />
+          </div>
+        </div>
+      )}
+    </SidebarMenuItem>
   );
 }

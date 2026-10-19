@@ -54,11 +54,11 @@ const SOURCES = {
 const TILE_GRID_MIN_ZOOM = 11;
 const SUBTILE_GRID_MIN_ZOOM = 14;
 /**
- * The small tiles fade in from this zoom, once a region fills the screen:
+ * The small tiles fade in from this zoom, once a large region fills the screen:
  * zoomed out further, the large tiles carry the map. The backend serves
  * their images from zoom 5.
  */
-export const SUBTILE_MIN_ZOOM = 7;
+export const SUBTILE_MIN_ZOOM = 6;
 /** The large tiles can be picked from this zoom, where they span about 8 pixels; below, nothing is picked. */
 const TILE_CLICK_MIN_ZOOM = 8;
 /** The small tiles can be picked from this zoom, where they span about 8 pixels; below, a click picks the large tile. */

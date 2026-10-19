@@ -252,6 +252,27 @@ export function fadeIn(minZoom: number, opacity: number, zooms = FADE_ZOOMS): Ex
 const WATERWAY_MIN_ZOOM = 8;
 const BUILDING_MIN_ZOOM = 13;
 
+/**
+ * Zoom from which each class of waterway arrives in the base map, after
+ * the rivers: each class fades in from it.
+ */
+const WATERWAY_CLASS_ZOOMS: Record<string, number> = { canal: 12, stream: 13, drain: 13, ditch: 13 };
+
+/** Opacity of the waterways: the rivers fade in from `WATERWAY_MIN_ZOOM`, the other classes once served. */
+function waterwayOpacity(): ExpressionSpecification {
+  const zooms = [...new Set([WATERWAY_MIN_ZOOM, ...Object.values(WATERWAY_CLASS_ZOOMS)])].sort((a, b) => a - b);
+  const stops = zooms.flatMap((from) => [from, from + FADE_ZOOMS]).filter((zoom, i, all) => all.indexOf(zoom) === i);
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    ...stops.flatMap((zoom) => {
+      const cases = Object.entries(WATERWAY_CLASS_ZOOMS).flatMap(([waterwayClass, from]) => [waterwayClass, ramp(zoom, from)]);
+      return [zoom, ["match", ["get", "class"], ...cases, ramp(zoom, WATERWAY_MIN_ZOOM)]];
+    }),
+  ] as ExpressionSpecification;
+}
+
 /** The wide rivers are areas of water: they fade in with the waterways, the seas and lakes stay. */
 function riverOpacity(): ExpressionSpecification {
   const isRiver: ExpressionSpecification = ["match", ["get", "class"], "river", 0, 1];
@@ -291,7 +312,7 @@ function basePaint(layer: LayerSpecification, base: BasePalette): Paint | null {
     case "line":
       switch (sourceLayer) {
         case "waterway":
-          return { "line-color": base.waterway, "line-opacity": fadeIn(WATERWAY_MIN_ZOOM, 1) };
+          return { "line-color": base.waterway, "line-opacity": waterwayOpacity() };
         case "boundary":
           return { "line-color": base.boundary };
         case "aeroway":
@@ -440,34 +461,22 @@ function adjustRoad(layer: LayerSpecification): LayerSpecification {
 const SUBDIVISION_LAYER_ID = "boundary_3";
 
 /**
- * Boundaries of the subdivisions of every country, more visible than in the
- * base style. The first level (regions, states, `admin_level` 3 and 4)
- * appears once the whole country is on screen; the second (departments,
- * counties, 5 and 6) as soon as the base map serves it, from zoom 9.
+ * Boundaries of the subdivisions of every country, thin solid lines. The
+ * first level (regions, states, `admin_level` 3 and 4) appears from zoom 5,
+ * a large country on screen: below, the base map draws it from Natural
+ * Earth, outdated (the French regions before 2016, for instance). The
+ * second level (departments, counties, 5 and 6) appears as soon as the base
+ * map serves it, from zoom 9.
  */
 const SUBDIVISIONS = [
-  {
-    id: "boundary_subdivision_1",
-    levels: [3, 4],
-    minzoom: 4,
-    opacity: 0.9,
-    width: [4, 1.1, 8, 1.8, 12, 2.6],
-    dasharray: [4, 2],
-  },
-  {
-    id: "boundary_subdivision_2",
-    levels: [5, 6],
-    minzoom: 9,
-    opacity: 0.85,
-    width: [9, 1.2, 12, 1.8],
-    dasharray: [3, 2],
-  },
+  { id: "boundary_subdivision_1", levels: [3, 4], minzoom: 5, opacity: 0.5, width: [5, 0.6, 8, 1, 12, 1.6] },
+  { id: "boundary_subdivision_2", levels: [5, 6], minzoom: 9, opacity: 0.35, width: [9, 0.5, 12, 1] },
 ] as const;
 
 /** The boundaries of the subdivisions, one layer per level, in the place of `layer`. */
 function subdivisionLayers(layer: LayerSpecification, base: BasePalette): LayerSpecification[] {
   if (layer.type !== "line") return [layer];
-  return SUBDIVISIONS.map(({ id, levels: [low, high], minzoom, opacity, width, dasharray }) => ({
+  return SUBDIVISIONS.map(({ id, levels: [low, high], minzoom, opacity, width }) => ({
     ...layer,
     id,
     minzoom,
@@ -482,7 +491,6 @@ function subdivisionLayers(layer: LayerSpecification, base: BasePalette): LayerS
     paint: {
       "line-color": base.boundary,
       "line-opacity": opacity,
-      "line-dasharray": [...dasharray],
       "line-width": ["interpolate", ["linear"], ["zoom"], ...width],
     },
   }));
@@ -560,9 +568,9 @@ function withZoomFades(layer: LayerSpecification): LayerSpecification {
 }
 
 /**
- * The base style in the colors of `palette`, its roads appearing later and
- * without casings, its boundaries of subdivisions more visible, and every
- * layer fading in and out with the zoom.
+ * The base style in the colors of `palette`: its roads appear later and
+ * without casings, its boundaries of subdivisions are thin solid lines, and
+ * every layer fades in and out with the zoom.
  */
 export function recolorStyle(style: StyleSpecification, { base }: MapPalette): StyleSpecification {
   return {

@@ -164,6 +164,25 @@ describe('RailwayNetwork', () => {
     expect(linksOf(data)).toEqual(['101-102']);
   });
 
+  it('draws a link up to its stations, beside the tracks', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    station(f, 101, 0.005, LAT + 100 * M);
+    station(f, 102, 0.035, LAT);
+    route(f, 1, [101, 102], [1]);
+
+    const [link] = new RailwayNetwork(dataOf(f)).linkAll().links;
+
+    expect(link.coords[0]).toEqual([0.005, LAT + 100 * M]);
+    expect(link.coords[1]).toEqual([0.005, LAT]);
+    expect(link.coords.at(-1)).toEqual([0.035, LAT]);
+    // Measured along the tracks only.
+    expect(link.lengthM).toBeCloseTo(
+      0.03 * 111_320 * Math.cos((45 * Math.PI) / 180),
+      0,
+    );
+  });
+
   it('counts a station near a stop of a route as served', () => {
     const f = empty();
     track(f, 1, 1, 0, 10, 'railway=rail');

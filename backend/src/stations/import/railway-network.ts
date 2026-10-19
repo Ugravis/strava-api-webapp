@@ -158,7 +158,12 @@ export class RailwayNetwork {
         }
       }
     }
-    const { links, redundant } = withoutRedundant([...best.values()]);
+    const { links, redundant } = withoutRedundant(
+      [...best.values()].map((link) => ({
+        ...link,
+        coords: this.reachingStations(link),
+      })),
+    );
     return {
       links,
       detours: [...detours.values()],
@@ -301,6 +306,23 @@ export class RailwayNetwork {
     });
     for (const vertex of touched) dist[vertex] = Infinity;
     return links;
+  }
+
+  /**
+   * The path of a link from one station to the other: the tracks stop where
+   * the stations stand on them, up to `SNAP_MAX_M` away, or at a point
+   * merged into them. Its length stays the one along the tracks.
+   */
+  private reachingStations({ a, b, coords }: NetworkLink): Point[] {
+    const start = this.stationPoints[a];
+    const end = this.stationPoints[b];
+    return [
+      ...(metersBetween(start, coords[0]) > VERTEX_STOP_M ? [start] : []),
+      ...coords,
+      ...(metersBetween(coords[coords.length - 1], end) > VERTEX_STOP_M
+        ? [end]
+        : []),
+    ];
   }
 
   /** The first stop met along a chain in a direction, but those of `from`. */

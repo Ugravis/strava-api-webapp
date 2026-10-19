@@ -357,9 +357,18 @@
       "otherClusters": "Autres clusters",
       "maxSquare": "Carré max",
       "tools": "Outils",
+      "modules": "Modules",
       "stations": "Gares",
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
-      "railway": "Voies débloquées"
+      "railway": "Voies débloquées",
+      "dim": "Atténuer la carte"
+    },
+    "modules": {
+      "tiles": "Tuiles",
+      "stations": "Gares",
+      "show": "{module, select, stations {Afficher les gares} other {Afficher les tuiles}} sur la carte",
+      "hide": "{module, select, stations {Masquer les gares} other {Masquer les tuiles}} sur la carte",
+      "data": "Chiffres {module, select, stations {des gares} other {des tuiles}}"
     },
     "sports": {
       "run": "Course à pied",

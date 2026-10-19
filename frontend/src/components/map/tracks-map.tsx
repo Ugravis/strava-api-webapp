@@ -27,7 +27,7 @@ import { HistoryBand } from "./history-band";
 import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";
 import type { MapHistory } from "./history-layer";
-import { type MapLayers, tileModeOf } from "./map-layers";
+import { mapDimmed, type MapLayers, type MapModule, tileModeOf, tracksShown } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
 import { MapStatsBar } from "./map-stats-bar";
 import { entryFromSearch } from "./panel-entry";
@@ -75,6 +75,7 @@ export function TracksMap() {
     [completion],
   );
   const [layers, setLayers] = useState<MapLayers>(fromAddress.address.layers);
+  const [module, setModule] = useState<MapModule>(fromAddress.address.module);
   const { stations } = useStations(summary?.version ?? null);
   const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
@@ -123,11 +124,11 @@ export function TracksMap() {
       : shownSector
         ? { kind: "sector", code: shownSector }
         : null;
-    const search = searchWithAddress(window.location.search, { layers, tool: addressed });
+    const search = searchWithAddress(window.location.search, { layers, module, tool: addressed });
     if (search !== window.location.search) {
       window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}`);
     }
-  }, [layers, historyOpen, shownSettings, shownSector]);
+  }, [layers, module, historyOpen, shownSettings, shownSector]);
 
   return (
     <div className="relative min-h-[60svh] flex-1 overflow-hidden">
@@ -138,12 +139,13 @@ export function TracksMap() {
           summary={summary}
           countries={countries}
           tileMode={tileModeOf(layers)}
-          showTracks={layers.tracks}
+          showTracks={tracksShown(layers)}
           history={mapHistory}
           sector={mapSector}
           sectorFrame={sectorFrame}
           stations={stations}
           showStations={layers.stations}
+          dimmed={mapDimmed(layers)}
           label={t("label")}
         />
       </div>
@@ -178,6 +180,12 @@ export function TracksMap() {
           stations={stations}
           layers={layers}
           onLayersChange={setLayers}
+          module={module}
+          onModuleSelect={(selected) => {
+            // A module selected is shown on the map.
+            setModule(selected);
+            setLayers((current) => ({ ...current, [selected]: true }));
+          }}
           historyOpen={historyOpen}
           onHistoryOpenChange={(open) => setTool(open ? "history" : null)}
           sectorOpen={shownSector !== null || searchOpen}

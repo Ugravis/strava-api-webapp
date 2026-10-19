@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { type TrackLine, useActivityTracks } from "@/hooks/use-activity-tracks";
 import { useCountries } from "@/hooks/use-countries";
+import { useCountryAt } from "@/hooks/use-country-at";
 import { useCountrySector } from "@/hooks/use-country-sector";
 import { useStations } from "@/hooks/use-stations";
 import { useTileHistory } from "@/hooks/use-tile-history";
@@ -54,6 +55,12 @@ const NO_LINES: TrackLine[] = [];
 
 /** Tools of the map, each with its band: one at a time, their drawings would mix. */
 type MapTool = "history" | "sector";
+
+/** Center of the visible map, numbered in the order the camera stopped there. */
+interface MapCenter {
+  point: [number, number];
+  version: number;
+}
 
 /**
  * The map, with nothing over it but its zoom buttons and, along its bottom,
@@ -102,13 +109,47 @@ export function TracksMap() {
   const { stations } = useStations(summary?.version ?? null);
   const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
-  // The sector tool opens on its search; a sector picked opens its band.
+  // The sector tool opens on the country at the center of the map, or on
+  // its search; the sector then follows the center, the last one kept at sea.
   const [searchOpen, setSearchOpen] = useState(false);
   const [sectorCode, setSectorCode] = useState<string | null>(initialTool?.kind === "sector" ? initialTool.code : null);
   // Incremented to frame the sector: when picked, and on demand. Named by the
   // address with a tile or an activity, it leaves the camera on them.
   const [sectorFrame, setSectorFrame] = useState(initialTool?.kind === "sector" && !fromAddress.focused ? 1 : 0);
-  const shownSector = tool === "sector" ? sectorCode : null;
+  const [center, setCenter] = useState<MapCenter | null>(null);
+  const onCenterChange = useCallback(
+    (point: [number, number]) => setCenter((current) => ({ point, version: (current?.version ?? 0) + 1 })),
+    [],
+  );
+  // A sector picked, or named by the address, stays until the camera moves:
+  // the centers up to this one are not looked up. The first one is that of
+  // the map loading, before the sector of the address is framed.
+  const [ignoredCenter, setIgnoredCenter] = useState(initialTool?.kind === "sector" ? 1 : 0);
+  // Opened from the center of the map, the band waits for its country rather than show the last sector.
+  const [awaitingCenter, setAwaitingCenter] = useState(false);
+  const lookedUp = tool === "sector" && center && center.version > ignoredCenter ? center.point : null;
+  const centerCountry = useCountryAt(lookedUp);
+  if (centerCountry) {
+    if (centerCountry.code !== null && centerCountry.code !== sectorCode) setSectorCode(centerCountry.code);
+    if (awaitingCenter) {
+      setAwaitingCenter(false);
+      // At sea, without a sector shown before: the search.
+      if (centerCountry.code === null && sectorCode === null) {
+        setTool(null);
+        setSearchOpen(true);
+      }
+    }
+  }
+  const openSectorAtCenter = () => {
+    setTool("sector");
+    setIgnoredCenter(0);
+    if (center) setAwaitingCenter(true);
+    else if (sectorCode === null) {
+      setTool(null);
+      setSearchOpen(true);
+    }
+  };
+  const shownSector = tool === "sector" && !awaitingCenter ? sectorCode : null;
   const { sector, error: sectorError } = useCountrySector(shownSector, summary?.version ?? null);
   const sectorShapeVersion = sector?.shapeVersion ?? null;
   const sectorBounds = sector?.bounds ?? null;
@@ -166,6 +207,7 @@ export function TracksMap() {
           history={mapHistory}
           sector={mapSector}
           sectorFrame={sectorFrame}
+          onCenterChange={onCenterChange}
           stations={stations}
           showStations={layers.stations}
           dimmed={mapDimmed(layers, module)}
@@ -207,11 +249,16 @@ export function TracksMap() {
           onModuleSelect={selectModule}
           historyOpen={historyOpen}
           onHistoryOpenChange={(open) => setTool(open ? "history" : null)}
-          sectorOpen={shownSector !== null || searchOpen}
+          sectorOpen={tool === "sector" || searchOpen}
           onSectorOpenChange={(open) => {
-            setSearchOpen(open);
-            if (!open && tool === "sector") setTool(null);
+            if (open) openSectorAtCenter();
+            else {
+              setTool(null);
+              setSearchOpen(false);
+              setAwaitingCenter(false);
+            }
           }}
+          onSectorSearch={() => setSearchOpen(true)}
         />
       </MapBands>
       <SectorSearchDialog
@@ -223,6 +270,8 @@ export function TracksMap() {
           setSectorCode(code);
           setTool("sector");
           setSearchOpen(false);
+          setAwaitingCenter(false);
+          setIgnoredCenter(center?.version ?? 0);
           setSectorFrame((count) => count + 1);
         }}
       />

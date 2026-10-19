@@ -4,10 +4,10 @@ import { CircleAlertIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from 
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import type { CountryLevelCompletion, CountryRailway, CountrySector } from "@/lib/api/types";
+import type { CountryLevelCompletion, CountryRailway, CountrySector, CountryStations } from "@/lib/api/types";
 import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
 import { cn } from "@/lib/utils";
-import { RailKey, TileKey } from "./map-keys";
+import { RailKey, StationKey, TileKey } from "./map-keys";
 import { Stat, ValueSkeleton } from "./map-stat";
 
 interface SectorBandProps {
@@ -28,8 +28,9 @@ const SECTION = "flex items-center px-4 py-3 md:px-6";
 
 /**
  * Band of the sector tool, over the band of the key figures: the sector
- * picked, the tiles of the user in it out of its total, the railway
- * unlocked out of its network, their first and latest visits, and buttons
+ * picked, the tiles of the user in it out of its total, the train stations
+ * visited and the railway unlocked out of its network, their first and
+ * latest visits, and buttons
  * to search for another sector or frame this one again. Stacked on narrow
  * screens, in a row on larger ones.
  */
@@ -94,7 +95,13 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
         </div>
       </div>
 
-      <div className={cn(SECTION, "gap-6 md:flex-1 md:justify-center")}>
+      {/* Scrolling sideways on narrow screens, where four figures do not fit. */}
+      <div
+        className={cn(
+          SECTION,
+          "gap-6 overflow-x-auto scrollbar-none *:shrink-0 md:flex-1 md:justify-center md:overflow-visible",
+        )}
+      >
         <Stat
           value={<Completion level={sector?.tiles} />}
           label={t("tiles")}
@@ -105,6 +112,14 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
             value={<Completion level={sector?.subtiles} />}
             label={t("subtiles")}
             colorKey={<TileKey subtiles />}
+          />
+        )}
+        {/* Hidden once loaded for a country without stations. */}
+        {(!sector || sector.stations) && (
+          <Stat
+            value={sector?.stations ? <StationsCompletion stations={sector.stations} /> : <ValueSkeleton />}
+            label={t("stations")}
+            colorKey={<StationKey />}
           />
         )}
         {sector?.railway && (
@@ -126,6 +141,28 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
         {closeButton("hidden md:inline-flex")}
       </div>
     </section>
+  );
+}
+
+/** Train stations visited out of those of the country, and the share. */
+function StationsCompletion({ stations: { visited, total } }: { stations: CountryStations }): ReactNode {
+  const format = useFormatter();
+  const share = visited / total;
+  return (
+    <>
+      {format.number(visited)}
+      <span className="text-xs font-normal text-muted-foreground">
+        {" / "}
+        {format.number(total)}
+      </span>
+      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+        {format.number(share, {
+          style: "percent",
+          minimumFractionDigits: percentDecimals(share),
+          maximumFractionDigits: percentDecimals(share),
+        })}
+      </span>
+    </>
   );
 }
 

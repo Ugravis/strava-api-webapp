@@ -305,6 +305,8 @@ export interface CountrySector {
   /** Changes with its tile shape, which dims the rest of the map; null while it is being computed. */
   shapeVersion: string | null;
   /** Its railway network; null when no link crosses it. */
+  /** Train stations of the country and those visited; null without any. */
+  stations: CountryStations | null;
   railway: CountryRailway | null;
 }
 
@@ -374,6 +376,12 @@ export interface StationDetails {
   visited: boolean;
   firstVisitAt: string | null;
   neighbors: StationNeighbor[];
+}
+
+/** The train stations of a country and those the user visited. */
+export interface CountryStations {
+  visited: number;
+  total: number;
 }
 
 /** The railway network of a country and the part the user unlocked. */

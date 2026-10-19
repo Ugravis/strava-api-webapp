@@ -517,6 +517,7 @@
         "empty": "Aucun pays trouvé.",
         "error": "Impossible de charger la liste des pays."
       },
+      "stations": "Gares",
       "railway": "Réseau ferré"
     },
     "bands": {

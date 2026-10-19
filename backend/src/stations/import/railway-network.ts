@@ -248,10 +248,8 @@ export class RailwayNetwork {
       if (stops) {
         let blocked = false;
         for (const stop of stops) {
-          if (stop.station === from) {
-            blocked ||= d > 0;
-            continue;
-          }
+          // The station never stops its own walk, even beside its tracks.
+          if (stop.station === from) continue;
           if (stop.link)
             arrive(stop.station, {
               lengthM: d,
@@ -278,16 +276,14 @@ export class RailwayNetwork {
             : [forward];
         for (const ascending of ends) {
           const length = this.chainLength[chain];
-          const stops = this.chainStops.get(chain);
-          const stop =
-            stops && (ascending ? stops[0] : stops[stops.length - 1]);
+          const stop = this.firstStop(chain, ascending, from);
           if (!stop) {
             reach(
               ascending ? this.chainTo[chain] : this.chainFrom[chain],
               d + length,
               chain,
             );
-          } else if (stop.link && stop.station !== from) {
+          } else if (stop.link) {
             const along = ascending ? stop.offset : length - stop.offset;
             arrive(stop.station, {
               lengthM: d + along,
@@ -309,6 +305,21 @@ export class RailwayNetwork {
     });
     for (const vertex of touched) dist[vertex] = Infinity;
     return links;
+  }
+
+  /** The first stop met along a chain in a direction, but those of `from`. */
+  private firstStop(
+    chain: number,
+    ascending: boolean,
+    from: number,
+  ): ChainStop | undefined {
+    const stops = this.chainStops.get(chain);
+    if (!stops) return undefined;
+    for (let i = 0; i < stops.length; i++) {
+      const stop = stops[ascending ? i : stops.length - 1 - i];
+      if (stop.station !== from) return stop;
+    }
+    return undefined;
   }
 
   /** The path to a station, from the start snap. */

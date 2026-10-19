@@ -186,6 +186,20 @@ describe('RailwayNetwork', () => {
     expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([null, null]);
   });
 
+  it('never stops a walk at its own station, beside its other tracks', () => {
+    const f = empty();
+    // The line leaves the station westward, turns and passes it again
+    // 100 m away, beyond the tracks it stands on, toward 102.
+    const west = track(f, 1, 1, 0, 3, 'railway=rail');
+    const east = track(f, 2, 11, 0.01, 8, 'railway=rail', LAT + 100 * M);
+    f.ways.push(`w3 Trailway=rail Nn${west[0]},n${east[0]}`);
+    station(f, 101, 0.02, LAT);
+    station(f, 102, 0.07, LAT + 100 * M);
+    route(f, 1, [101, 102], [1, 2, 3]);
+
+    expect(linksOf(dataOf(f))).toEqual(['101-102']);
+  });
+
   it('never walks a freight line, a siding or a yard', () => {
     const f = empty();
     // Two passenger branches joined only by a freight line.

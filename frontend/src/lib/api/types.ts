@@ -65,20 +65,60 @@ export interface ActivityStats {
 /** Groups of sports compared to landmarks; `all` counts every activity. */
 export type DistanceFamily = "all" | "run" | "hike" | "ride";
 
-export interface LandmarkProgress {
+/** A theme gathering badges across families, e.g. astronomy. */
+export interface BadgeTheme {
+  id: string;
+  name: string;
+}
+
+/** A known distance compared to the cumulated distance of a family, with the progress of the user. */
+export interface DistanceBadge {
   id: string;
   family: DistanceFamily;
   distanceM: number;
+  name: string;
+  description: string;
+  /** Icon key; unknown keys get a generic icon. */
+  icon: string;
+  /** Theme of the badge, among those of the overview; null without theme. */
+  themeId: string | null;
   /** Number of times the whole distance was covered. */
   completions: number;
   /** Share of the current iteration already covered, in [0, 1). */
   progress: number;
+  /** Start of the activity that completed the first iteration. */
+  firstCompletedAt: string | null;
+  /** Start of the activity that completed the latest iteration. */
+  lastCompletedAt: string | null;
+  /** Rank among the favorites, from 1; null when not a favorite. */
+  favoritePosition: number | null;
 }
 
 export interface DistancesOverview {
   /** Cumulated distance per family, in meters. */
   totals: Record<DistanceFamily, number>;
-  landmarks: LandmarkProgress[];
+  /** Themes having badges, in display order. */
+  themes: BadgeTheme[];
+  /** Every badge, in display order. */
+  badges: DistanceBadge[];
+}
+
+export interface BadgeCompletion {
+  /** Iteration completed, from 1. */
+  iteration: number;
+  /** The activity whose distance completed it. */
+  activity: { id: string; name: string; sportType: string; startedAt: string };
+}
+
+export interface DistanceBadgeDetails extends DistanceBadge {
+  /** Distance covered by the family of the badge, in meters. */
+  familyTotalM: number;
+  /** Distance left before the next iteration, in meters. */
+  remainingM: number;
+  /** At the pace of the last 90 days; null without recent activity. */
+  estimatedNextAt: string | null;
+  /** Every completed iteration, the latest first. */
+  history: BadgeCompletion[];
 }
 
 /** Activity expected to have a real-world track. */

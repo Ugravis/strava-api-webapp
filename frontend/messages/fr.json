@@ -280,20 +280,60 @@
       "hike": "Randonnée et marche",
       "ride": "Vélo"
     },
-    "landmarks": {
-      "earth_center": "Centre de la Terre",
-      "earth_circumference": "Tour du globe",
-      "earth_moon": "Terre-Lune",
-      "paris_ring_road": "Périphérique parisien",
-      "marathon": "Marathon",
-      "lake_geneva": "Tour du Léman",
-      "gr20": "GR20",
-      "camino_vezelay": "Compostelle depuis Vézelay",
-      "hexatrek": "HexaTrek",
-      "pacific_crest_trail": "Pacific Crest Trail",
-      "tour_de_france": "Tour de France",
-      "trans_siberian": "Transsibérien",
-      "pan_american_highway": "Route panaméricaine"
+    "favorite": "favori",
+    "favoritesSection": {
+      "title": "Favoris",
+      "empty": "Ajoute tes badges préférés aux favoris depuis leur fiche pour les retrouver ici.",
+      "reorder": "Réorganiser",
+      "done": "Terminé",
+      "reorderHint": "Fais glisser tes favoris pour choisir leur ordre.",
+      "reorderError": "Impossible de modifier l'ordre de tes favoris pour le moment.",
+      "drag": {
+        "instructions": "Pour déplacer un favori, appuie sur Espace ou Entrée, utilise les flèches, puis appuie de nouveau sur Espace ou Entrée pour le poser, ou sur Échap pour annuler.",
+        "start": "{name} saisi, en position {rank}.",
+        "over": "{name} déplacé en position {rank}.",
+        "end": "{name} posé en position {rank}.",
+        "cancel": "Déplacement de {name} annulé."
+      }
+    },
+    "dialog": {
+      "close": "Fermer",
+      "progressLabel": "Progression de l'itération en cours",
+      "firstIteration": "Première itération",
+      "iteration": "Itération n° {number}",
+      "covered": "{covered} sur {distance}",
+      "facts": {
+        "completions": "Accompli",
+        "completionsValue": "{count, plural, =0 {Pas encore} one {# fois} other {# fois}}",
+        "remaining": "Reste à parcourir",
+        "firstCompletedAt": "Première fois",
+        "lastCompletedAt": "Dernière fois",
+        "never": "Pas encore",
+        "estimatedNext": "Prochaine fois, au rythme actuel",
+        "estimateHint": "Estimation selon ta distance des 90 derniers jours",
+        "noRecentActivity": "Aucune activité depuis 90 jours",
+        "unavailable": "Indisponible"
+      },
+      "history": {
+        "title": "Historique",
+        "iteration": "n° {number}",
+        "openOnMap": "Itération n° {number} : voir {name} sur la carte",
+        "error": "Impossible de charger l'historique pour le moment."
+      },
+      "addFavorite": "Ajouter aux favoris",
+      "removeFavorite": "Retirer des favoris",
+      "favoriteError": "Impossible de modifier tes favoris pour le moment."
+    },
+    "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
+    "showLess": "Afficher moins",
+    "search": {
+      "label": "Rechercher un badge",
+      "placeholder": "Rechercher un badge…",
+      "empty": "Aucun badge ne correspond."
+    },
+    "themes": {
+      "label": "Thèmes",
+      "all": "Tous"
     }
   },
   "map": {

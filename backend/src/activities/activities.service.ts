@@ -52,8 +52,11 @@ export interface ActivityDetails {
   stravaId: string | null;
 }
 
-/** Total distance of a user per sport type; absent sports have no activity. */
-export type DistanceBySportType = Partial<Record<SportType, number>>;
+/** What the distance badges need of an activity: no location. */
+export type ActivityDistance = Pick<
+  Activity,
+  'id' | 'name' | 'sportType' | 'startedAt' | 'distanceM'
+>;
 
 /** Provider-agnostic storage of activities and of their provider sources. */
 @Injectable()
@@ -252,17 +255,21 @@ export class ActivitiesService {
     return new Map(rows.map((row) => [row.externalId, row.activityId]));
   }
 
-  async distanceBySportType(userId: string): Promise<DistanceBySportType> {
-    const rows = await this.activities
-      .createQueryBuilder('activity')
-      .select('activity.sport_type', 'sportType')
-      .addSelect('SUM(activity.distance_m)::float8', 'distanceM')
-      .where('activity.user_id = :userId', { userId })
-      .groupBy('activity.sport_type')
-      .getRawMany<{ sportType: SportType; distanceM: number }>();
-    return Object.fromEntries(
-      rows.map((row) => [row.sportType, row.distanceM]),
-    );
+  /**
+   * Every activity of a user, oldest first, as the distance badges need it.
+   */
+  distanceTimeline(userId: string): Promise<ActivityDistance[]> {
+    return this.activities.find({
+      select: {
+        id: true,
+        name: true,
+        sportType: true,
+        startedAt: true,
+        distanceM: true,
+      },
+      where: { userId },
+      order: { startedAt: 'ASC', id: 'ASC' },
+    });
   }
 
   /**

@@ -222,10 +222,13 @@ connect them without any other station between them; a link is unlocked once bot
   [osmium](https://osmcode.org/osmium-tool/), `brew install osmium-tool`), from the OSM planet
   or any extract. osmium keeps its railway once (stations, tracks, passenger train routes and
   stop areas) in a `derived/` folder next to the file, reused while newer; the whole network is
-  then walked in memory and the result saved. Run it monthly with a new planet.
+  then walked in memory and the result saved. On the planet (91 GB, on a USB disk), osmium reads
+  it four times, about 1 h 50; the rest takes about 5 minutes. Run it monthly with a new planet.
 - **Stations**: `railway=station|halt` nodes served by a passenger train route (`route=train`,
   heritage and tourist trains included): a member of one, in a stop area with one of its stops,
-  or within 300 m of one of its stops or platforms. Metro, tram, light rail, monorail, funicular
+  or within 300 m of one of its stops or platforms. Where the routes are not mapped (most of Asia,
+  Eastern Europe, Africa), a station within 150 m of a passenger track that is neither a heritage
+  nor a tourist line is kept too. Metro, tram, light rail, monorail, funicular
   and miniature stations, and closed ones, are excluded; so are those no train serves, such as
   park trains. Stored in `places` (generic, `kind = station`) with their small tile; they keep
   their ids from one import to the next.
@@ -235,10 +238,12 @@ connect them without any other station between them; a link is unlocked once bot
   tracks at most 60 m farther; any other track within 150 m passes by it, and a walk along it
   stops there without linking it (a bypass along a station). From each station, the walk stops
   at the first station on each path, up to 300 km. A link longer than 1.5 times the straight
-  distance plus 5 km is rejected. Stored in `rail_links`, and split by country in
+  distance plus 5 km is rejected. A link is dropped when two kept links through a third station are
+  at most 10 % longer, the longest first: otherwise every station near the start of a high-speed
+  line would be linked to the station at its end. Stored in `rail_links`, and split by country in
   `rail_link_countries` for the share of the network of a country (sector band).
-- **Report**: each import stores its report in `railway_imports`: stations kept and excluded by
-  reason, stations without a passenger track nearby, rejected detours, stations with many
+- **Report**: each import stores its report in `railway_imports`: stations kept (and how many
+  only through a nearby track) and excluded by reason, redundant links dropped, stations without a passenger track nearby, rejected detours, stations with many
   neighbors, network per country. Shown in development at `/admin/railway`, with links to
   OpenStreetMap.
 - **Map**: `GET /api/stations` gives the stations visited by the user, their first visit

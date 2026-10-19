@@ -16,7 +16,7 @@ import {
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
 import { belowHistory } from "./history-layer";
-import type { MapPalette } from "./map-style";
+import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
 
 /** Which levels of tiles the map shows: none while the tiles module is hidden, the large tiles, or both levels. */
 export type TileMode = "none" | "tiles" | "both";
@@ -53,8 +53,12 @@ const SOURCES = {
 /** The grids only appear once their cells are large enough to be aimed at, about 64 pixels. */
 const TILE_GRID_MIN_ZOOM = 11;
 const SUBTILE_GRID_MIN_ZOOM = 14;
-/** The small tiles fade in from this zoom, where the backend starts serving their images. */
-const SUBTILE_MIN_ZOOM = 5;
+/**
+ * The small tiles fade in from this zoom, once a region fills the screen:
+ * zoomed out further, the large tiles carry the map. The backend serves
+ * their images from zoom 5.
+ */
+export const SUBTILE_MIN_ZOOM = 7;
 /** The large tiles can be picked from this zoom, where they span about 8 pixels; below, nothing is picked. */
 const TILE_CLICK_MIN_ZOOM = 8;
 /** The small tiles can be picked from this zoom, where they span about 8 pixels; below, a click picks the large tile. */
@@ -70,8 +74,6 @@ const TILE_CLUSTERS_MIN_ZOOM = 5;
 const TILE_OUTLINE_MIN_ZOOM = TILE_GRID_MIN_ZOOM;
 /** Distances from the pointer, in pixels, where a click looks for a tile: a finger is not precise. */
 const CLICK_TOLERANCE_PX = [0, 6, 12];
-/** Zooms over which a layer fades in after its minimum zoom. */
-const FADE_ZOOMS = 1;
 
 const LEVEL_LAYERS = {
   tiles: ["visited-tiles-fill", "tile-clusters-fill", "tile-max-cluster-fill", "visited-tiles-outline", "tile-max-square-line"],
@@ -174,11 +176,6 @@ function otherClustersOpacity(opacity: number): ExpressionSpecification {
     to,
     0,
   ];
-}
-
-/** Opacity rising from 0 at `minZoom` to `opacity` `zooms` later: the layer appears smoothly. */
-export function fadeIn(minZoom: number, opacity: number, zooms = FADE_ZOOMS): ExpressionSpecification {
-  return ["interpolate", ["linear"], ["zoom"], minZoom, 0, minZoom + zooms, opacity];
 }
 
 /** What the map draws of the tiles: the tiles of a version, and the largest squares. */

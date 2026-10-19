@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
 import { belowActivityTiles } from "./activity-tiles-layer";
-import type { MapPalette } from "./map-style";
+import { fadeIn, type MapPalette } from "./map-style";
 import { TILE_FILL_LAYER_ID } from "./tile-layers";
 
 /** Countries visited by the user and the version of the shapes, from the completion. */
@@ -69,7 +69,7 @@ function addCountryLayers(
       minzoom: BORDER_MIN_ZOOM,
       paint: {
         "line-color": palette.countryBorder,
-        "line-opacity": ["interpolate", ["linear"], ["zoom"], BORDER_MIN_ZOOM, 0, BORDER_MIN_ZOOM + 1, 0.35],
+        "line-opacity": fadeIn(BORDER_MIN_ZOOM, 0.35),
         "line-width": 0.8,
       },
     },

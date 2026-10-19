@@ -8,7 +8,7 @@ import type {
 } from "maplibre-gl";
 import type { VisitedStations } from "@/lib/api/types";
 import type { MapHistory } from "./history-layer";
-import type { MapPalette } from "./map-style";
+import { FADE_ZOOMS, type MapPalette } from "./map-style";
 import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
 
 /** What the stations layer draws: the visited stations and the links unlocked between them. */
@@ -233,7 +233,8 @@ export function setAllStations(map: MapLibreMap, version: string | null, palette
       layout: { visibility: visibility(visible) },
       paint: {
         "circle-color": palette.stationUnvisited,
-        "circle-opacity": byZoom(0.6, 0.8, 0.9),
+        // Fading in from where the backend serves them, like every layer of the map.
+        "circle-opacity": ["interpolate", ["linear"], ["zoom"], ALL_MIN_ZOOM, 0, ALL_MIN_ZOOM + FADE_ZOOMS, 0.65, 10, 0.8, 14, 0.9],
         "circle-radius": byZoom(1.5, 2.5, 4),
         "circle-stroke-color": palette.stationCasing,
         "circle-stroke-opacity": byZoom(0, 0.6, 0.8),

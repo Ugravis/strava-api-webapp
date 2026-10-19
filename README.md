@@ -228,7 +228,11 @@ connect them without any other station between them; a link is unlocked once bot
   heritage and tourist trains included): a member of one, in a stop area with one of its stops,
   or within 300 m of one of its stops or platforms. Where the routes are not mapped (most of Asia,
   Eastern Europe, Africa), a station within 150 m of a passenger track that is neither a heritage
-  nor a tourist line is kept too. Metro, tram, light rail, monorail, funicular
+  nor a tourist line is kept too. A metro, tram or light rail station is kept only when a train
+  route serves it directly (`train=yes` is not enough: the VAL of Lille carries it). Two kept
+  stations within 200 m are merged when their names match (equal, or one holding the other with
+  only generic words or abbreviations besides: `Brienz BRB`, `Gare de Lyon (RER)`) or a stop area
+  holds both; the station kept stands on the tracks of both points. Metro, tram, light rail, monorail, funicular
   and miniature stations, and closed ones, are excluded; so are those no train serves, such as
   park trains. Stored in `places` (generic, `kind = station`) with their small tile; they keep
   their ids from one import to the next.

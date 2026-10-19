@@ -44,6 +44,7 @@ import { StationPanel } from "./station-panel";
 import {
   addStationLayers,
   setAllStations,
+  setMapDimmed,
   setSelectedStation,
   setStationData,
   setStationsVisible,
@@ -82,6 +83,8 @@ interface ActivityMapProps {
   /** Stations visited and the links between them; null while loading. */
   stations: VisitedStations | null;
   showStations: boolean;
+  /** Whether the base map and the tiles are dimmed below the stations. */
+  dimmed: boolean;
   label: string;
 }
 
@@ -104,6 +107,7 @@ export function ActivityMap({
   sectorFrame,
   stations,
   showStations,
+  dimmed,
   label,
 }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
@@ -127,6 +131,7 @@ export function ActivityMap({
   const palette = mapPalette(resolvedTheme);
   const paletteRef = useRef(palette);
   const showStationsRef = useRef(showStations);
+  const dimmedRef = useRef(dimmed);
   // The stations as of the history when open: the visits are dated.
   const stationsData = useMemo(() => stationData(stations, mapHistory), [stations, mapHistory]);
   const stationsDataRef = useRef(stationsData);
@@ -223,6 +228,7 @@ export function ActivityMap({
         selectedStationRef.current,
         paletteRef.current,
         showStationsRef.current,
+        dimmedRef.current,
         firstLabel,
       );
       setAllStations(map, stationsVersionRef.current, paletteRef.current, showStationsRef.current);
@@ -364,6 +370,12 @@ export function ActivityMap({
     // Layers not added yet are shown or hidden once the style is loaded.
     if (mapRef.current) setStationsVisible(mapRef.current, showStations);
   }, [showStations]);
+
+  useEffect(() => {
+    dimmedRef.current = dimmed;
+    // A layer not added yet is shown or hidden once the style is loaded.
+    if (mapRef.current) setMapDimmed(mapRef.current, dimmed);
+  }, [dimmed]);
 
   useEffect(() => {
     sectorRef.current = sector;

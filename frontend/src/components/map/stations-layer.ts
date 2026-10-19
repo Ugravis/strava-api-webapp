@@ -39,6 +39,11 @@ const LAYERS = {
   selected: "station-selected-ring",
 } as const;
 
+/** Veil over the base map, the tiles and the tracks, below the stations: they stand out. */
+const DIM_LAYER_ID = "stations-dim-veil";
+/** Opacity of the veil, in the color of the land: the map stays readable around the stations. */
+const DIM_OPACITY = 0.6;
+
 /** Layer of the vector tiles of every station, served by the backend. */
 const ALL_SOURCE_LAYER = "stations";
 /** The backend serves every station from this zoom, down to the deepest; the map stretches them beyond. */
@@ -121,10 +126,11 @@ function selectedData(station: StationPick | null): FeatureCollection<Point, { i
 const visibility = (visible: boolean) => (visible ? "visible" : "none");
 
 /**
- * Adds the stations layer: every station in grey, the railway unlocked
- * between the visited stations, below the labels like the tracks, then the
- * visited stations and the one selected, over the labels but below the veil
- * of the sector. Hidden layers load nothing.
+ * Adds the stations layer: the veil dimming the map when asked, every
+ * station in grey, the railway unlocked between the visited stations, below
+ * the labels like the tracks, then the visited stations and the one
+ * selected, over the labels but below the veil of the sector. Hidden layers
+ * load nothing.
  */
 export function addStationLayers(
   map: MapLibreMap,
@@ -132,11 +138,21 @@ export function addStationLayers(
   selected: StationPick | null,
   palette: MapPalette,
   visible: boolean,
+  dimmed: boolean,
   belowLabels: string | undefined,
 ): void {
   if (map.getSource(SOURCES.visited)) return;
   const top = map.getLayer(SECTOR_VEIL_LAYER_ID) ? SECTOR_VEIL_LAYER_ID : undefined;
   const layout = { visibility: visibility(visible) } as const;
+  map.addLayer(
+    {
+      id: DIM_LAYER_ID,
+      type: "background",
+      layout: { visibility: visibility(dimmed) },
+      paint: { "background-color": palette.base.land, "background-opacity": DIM_OPACITY },
+    },
+    belowLabels,
+  );
   map.addSource(SOURCES.links, { type: "geojson", data: data.links });
   map.addSource(SOURCES.visited, { type: "geojson", data: data.stations });
   map.addSource(SOURCES.selected, { type: "geojson", data: selectedData(selected) });
@@ -243,6 +259,11 @@ export function setStationsVisible(map: MapLibreMap, visible: boolean): void {
   for (const id of Object.values(LAYERS)) {
     if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility(visible));
   }
+}
+
+/** Dims the map below the stations, or not; ignored until the layers are added. */
+export function setMapDimmed(map: MapLibreMap, dimmed: boolean): void {
+  if (map.getLayer(DIM_LAYER_ID)) map.setLayoutProperty(DIM_LAYER_ID, "visibility", visibility(dimmed));
 }
 
 /** The station drawn under the pointer or a few pixels from it, visited ones first; null without any. */

@@ -321,6 +321,17 @@ export class CountriesService {
     return rows.map((row) => row.code);
   }
 
+  /** Code of the country holding the point, in degrees; null at sea. */
+  async countryAt(lon: number, lat: number): Promise<string | null> {
+    const [row]: { country_code: string }[] = await this.dataSource.query(
+      `SELECT country_code FROM country_parts
+       WHERE ST_Intersects(geom, ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 3857))
+       LIMIT 1`,
+      [lon, lat],
+    );
+    return row?.country_code ?? null;
+  }
+
   /**
    * A country as a sector for the user: their tiles in it and its totals,
    * their first and latest visits, and the bounds of its main landmass,

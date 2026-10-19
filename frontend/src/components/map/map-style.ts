@@ -462,15 +462,15 @@ const SUBDIVISION_LAYER_ID = "boundary_3";
 
 /**
  * Boundaries of the subdivisions of every country, thin solid lines. The
- * first level (regions, states, `admin_level` 3 and 4) appears from zoom 5,
- * a large country on screen: below, the base map draws it from Natural
- * Earth, outdated (the French regions before 2016, for instance). The
- * second level (departments, counties, 5 and 6) appears as soon as the base
- * map serves it, from zoom 9.
+ * first level (regions, states, `admin_level` 3 and 4) appears from zoom 4,
+ * the whole country on screen: up to zoom 5, the base map draws it from
+ * Natural Earth, outdated (the French regions before 2016, for instance),
+ * then from OpenStreetMap. The second level (departments, counties, 5 and
+ * 6) appears as soon as the base map serves it, from zoom 9.
  */
 const SUBDIVISIONS = [
-  { id: "boundary_subdivision_1", levels: [3, 4], minzoom: 5, opacity: 0.5, width: [5, 0.6, 8, 1, 12, 1.6] },
-  { id: "boundary_subdivision_2", levels: [5, 6], minzoom: 9, opacity: 0.35, width: [9, 0.5, 12, 1] },
+  { id: "boundary_subdivision_1", levels: [3, 4], minzoom: 4, opacity: 0.5, width: [4, 0.6, 8, 1, 12, 1.6] },
+  { id: "boundary_subdivision_2", levels: [5, 6], minzoom: 9, opacity: 0.55, width: [9, 0.7, 12, 1.3] },
 ] as const;
 
 /** The boundaries of the subdivisions, one layer per level, in the place of `layer`. */

@@ -6,6 +6,7 @@ import {
   isStopRole,
   isTrackWay,
   isTrainRoute,
+  servesStationsNearby,
   type StationExclusion,
   stationExclusion,
 } from './railway-rules';
@@ -14,6 +15,11 @@ import {
 const SCALE = 1e7;
 /** A station this close to a stop or platform of a passenger route is served by it. */
 export const SERVED_RADIUS_M = 300;
+/**
+ * A station served by no route but this close to a track that serves the
+ * stations nearby is kept: the routes are not mapped everywhere.
+ */
+export const SERVED_TRACK_RADIUS_M = 150;
 const METERS_PER_DEGREE = 111_320;
 
 /** `[lon, lat]`. */
@@ -26,6 +32,8 @@ export interface StationCandidate {
   point: Point;
   /** Null when kept as a train station. */
   exclusion: StationExclusion | null;
+  /** What shows a kept station is served: a train route, or a track beside it. */
+  servedBy: 'route' | 'track' | null;
 }
 
 /** Growable typed array. */
@@ -137,6 +145,8 @@ export class RailwayDataBuilder {
   private readonly trackNodes = new Column(int32(1 << 22), int32);
   /** Whether each track is open to passengers without being in a train route. */
   private readonly trackOpen = new Column(uint8(1 << 16), uint8);
+  /** Whether each track serves the stations beside it, without a route. */
+  private readonly trackServes = new Column(uint8(1 << 16), uint8);
   /** Another way referenced by a relation, such as a platform: its first node. */
   private readonly otherWays = new Map<number, number>();
   private readonly routeTracks = new Set<number>();
@@ -158,6 +168,7 @@ export class RailwayDataBuilder {
             name: object.tags!.name?.trim() || null,
             point: [object.lon, object.lat],
             exclusion: null,
+            servedBy: null,
             tags: object.tags!,
           });
         }
@@ -205,6 +216,7 @@ export class RailwayDataBuilder {
     this.trackIds.push(id);
     this.trackStarts.push(start);
     this.trackOpen.push(isPassengerTrack(tags!, false) ? 1 : 0);
+    this.trackServes.push(servesStationsNearby(tags!) ? 1 : 0);
   }
 
   finish(): RailwayData {
@@ -217,25 +229,27 @@ export class RailwayDataBuilder {
     for (let i = 0; i < count; i++) {
       if (this.routeTracks.has(osmIds[i])) passenger[i] = 1;
     }
+    const tracks = {
+      count,
+      osmIds,
+      starts,
+      nodes: this.trackNodes.values(),
+      passenger,
+    };
     return {
       nodes: this.nodes,
-      stations: this.classifyStations(),
-      tracks: {
-        count,
-        osmIds,
-        starts,
-        nodes: this.trackNodes.values(),
-        passenger,
-      },
+      stations: this.classifyStations(tracks),
+      tracks,
     };
   }
 
   /**
    * Keeps the candidates served by a passenger train route: a member of
    * one, in a stop area with one of its stops, or near one of its stops or
-   * platforms.
+   * platforms. Where no route serves a candidate, a track beside it that
+   * serves the stations nearby does.
    */
-  private classifyStations(): StationCandidate[] {
+  private classifyStations(tracks: Tracks): StationCandidate[] {
     const servedByArea = new Set<number>();
     for (const members of this.stopAreas) {
       if (members.some((member) => this.routeStops.has(member))) {
@@ -245,17 +259,74 @@ export class RailwayDataBuilder {
       }
     }
     const stopIndex = this.stopPointIndex();
-    return this.candidates.map(({ tags, ...candidate }) => {
-      const exclusion = stationExclusion(tags);
-      const served =
-        this.routeStations.has(candidate.osmId) ||
-        servedByArea.has(candidate.osmId) ||
-        stopIndex.hasPointNear(candidate.point, SERVED_RADIUS_M);
-      return {
-        ...candidate,
-        exclusion: exclusion ?? (served ? null : 'not_served'),
-      };
-    });
+    const stations = this.candidates.map(
+      ({ tags, ...candidate }): StationCandidate => {
+        const exclusion = stationExclusion(tags);
+        const served =
+          this.routeStations.has(candidate.osmId) ||
+          servedByArea.has(candidate.osmId) ||
+          stopIndex.hasPointNear(candidate.point, SERVED_RADIUS_M);
+        return {
+          ...candidate,
+          exclusion: exclusion ?? (served ? null : 'not_served'),
+          servedBy: exclusion === null && served ? 'route' : null,
+        };
+      },
+    );
+    const unserved = stations.filter(
+      (station) => station.exclusion === 'not_served',
+    );
+    for (const station of this.nearServingTracks(unserved, tracks)) {
+      station.exclusion = null;
+      station.servedBy = 'track';
+    }
+    return stations;
+  }
+
+  /** The stations within `SERVED_TRACK_RADIUS_M` of a track serving the stations nearby. */
+  private nearServingTracks(
+    stations: StationCandidate[],
+    tracks: Tracks,
+  ): Set<StationCandidate> {
+    const index = new Map<string, StationCandidate[]>();
+    for (const station of stations) {
+      const key = PointIndex.key(station.point[0], station.point[1]);
+      const cell = index.get(key);
+      if (cell) cell.push(station);
+      else index.set(key, [station]);
+    }
+    const near = new Set<StationCandidate>();
+    if (index.size === 0) return near;
+    const serves = this.trackServes.values();
+    for (let track = 0; track < tracks.count; track++) {
+      if (!serves[track]) continue;
+      for (
+        let position = tracks.starts[track];
+        position < tracks.starts[track + 1] - 1;
+        position++
+      ) {
+        const a = this.nodes.point(tracks.nodes[position]);
+        const b = this.nodes.point(tracks.nodes[position + 1]);
+        // Cells of about 1 km: the neighbor cells cover the radius.
+        const x0 = PointIndex.cell(Math.min(a[0], b[0])) - 1;
+        const x1 = PointIndex.cell(Math.max(a[0], b[0])) + 1;
+        const y0 = PointIndex.cell(Math.min(a[1], b[1])) - 1;
+        const y1 = PointIndex.cell(Math.max(a[1], b[1])) + 1;
+        for (let x = x0; x <= x1; x++) {
+          for (let y = y0; y <= y1; y++) {
+            for (const station of index.get(`${x}/${y}`) ?? []) {
+              if (
+                !near.has(station) &&
+                project(station.point, a, b).d <= SERVED_TRACK_RADIUS_M
+              ) {
+                near.add(station);
+              }
+            }
+          }
+        }
+      }
+    }
+    return near;
   }
 
   private stopPointIndex(): PointIndex {
@@ -300,7 +371,31 @@ export class PointIndex {
     return false;
   }
 
-  private static key(lon: number, lat: number): string {
-    return `${Math.floor(lon / PointIndex.CELL_DEG)}/${Math.floor(lat / PointIndex.CELL_DEG)}`;
+  static cell(degrees: number): number {
+    return Math.floor(degrees / PointIndex.CELL_DEG);
   }
+
+  static key(lon: number, lat: number): string {
+    return `${PointIndex.cell(lon)}/${PointIndex.cell(lat)}`;
+  }
+}
+
+/** Distance from `p` to the segment `a → b`, and share of the segment of the nearest point. */
+export function project(
+  p: Point,
+  a: Point,
+  b: Point,
+): { d: number; t: number } {
+  // Local plane around `p`, in meters: exact enough within a few hundred meters.
+  const kx = METERS_PER_DEGREE * Math.cos((p[1] * Math.PI) / 180);
+  const ax = (a[0] - p[0]) * kx;
+  const ay = (a[1] - p[1]) * METERS_PER_DEGREE;
+  const dx = (b[0] - p[0]) * kx - ax;
+  const dy = (b[1] - p[1]) * METERS_PER_DEGREE - ay;
+  const lengthSquared = dx * dx + dy * dy;
+  const t =
+    lengthSquared === 0
+      ? 0
+      : Math.min(1, Math.max(0, -(ax * dx + ay * dy) / lengthSquared));
+  return { d: Math.hypot(ax + dx * t, ay + dy * t), t };
 }

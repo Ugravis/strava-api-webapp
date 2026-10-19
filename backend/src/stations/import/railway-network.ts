@@ -1,4 +1,9 @@
-import type { NodeStore, Point, RailwayData } from './railway-data';
+import {
+  type NodeStore,
+  type Point,
+  project,
+  type RailwayData,
+} from './railway-data';
 
 /** A station farther than this from any passenger track is linked to none. */
 export const SNAP_MAX_M = 400;
@@ -22,6 +27,12 @@ export const WALK_MAX_M = 300_000;
  */
 export const DETOUR_RATIO = 1.5;
 export const DETOUR_SLACK_M = 5_000;
+/**
+ * A link is redundant when two other links through a third station are at
+ * most this many times longer: the stations near the end of a line without
+ * stops, such as a high-speed line, would otherwise all be linked along it.
+ */
+export const REDUNDANT_RATIO = 1.1;
 
 const METERS_PER_DEGREE = 111_320;
 /** Cells of the index of the stations, in degrees. */
@@ -42,6 +53,8 @@ export interface NetworkResult {
   detours: { a: number; b: number; lengthM: number; straightM: number }[];
   /** Kept stations without any passenger track within `SNAP_MAX_M`. */
   isolated: number[];
+  /** Links dropped as redundant, for the report. */
+  redundant: { a: number; b: number; lengthM: number; via: number }[];
 }
 
 /** A station on a chain, `offset` meters from its first vertex. */
@@ -149,10 +162,12 @@ export class RailwayNetwork {
         }
       }
     }
+    const { links, redundant } = withoutRedundant([...best.values()]);
     return {
-      links: [...best.values()],
+      links,
       detours: [...detours.values()],
       isolated: this.isolated,
+      redundant,
     };
   }
 
@@ -633,20 +648,49 @@ export class RailwayNetwork {
   }
 }
 
-/** Distance from `p` to the segment `a → b`, and share of the segment of the nearest point. */
-function project(p: Point, a: Point, b: Point): { d: number; t: number } {
-  // Local plane around `p`, in meters: exact enough within a few hundred meters.
-  const kx = METERS_PER_DEGREE * Math.cos((p[1] * Math.PI) / 180);
-  const ax = (a[0] - p[0]) * kx;
-  const ay = (a[1] - p[1]) * METERS_PER_DEGREE;
-  const dx = (b[0] - p[0]) * kx - ax;
-  const dy = (b[1] - p[1]) * METERS_PER_DEGREE - ay;
-  const lengthSquared = dx * dx + dy * dy;
-  const t =
-    lengthSquared === 0
-      ? 0
-      : Math.min(1, Math.max(0, -(ax * dx + ay * dy) / lengthSquared));
-  return { d: Math.hypot(ax + dx * t, ay + dy * t), t };
+/**
+ * Drops the links for which two shorter kept links through a third station
+ * are at most `REDUNDANT_RATIO` times longer, the longest first: the
+ * stations stay connected by the links kept.
+ */
+export function withoutRedundant(links: NetworkLink[]): {
+  links: NetworkLink[];
+  redundant: NetworkResult['redundant'];
+} {
+  const neighbors = new Map<number, Map<number, number>>();
+  const lengthOf = (a: number, b: number): number | undefined =>
+    neighbors.get(a)?.get(b);
+  for (const link of links) {
+    for (const [from, to] of [
+      [link.a, link.b],
+      [link.b, link.a],
+    ]) {
+      const own = neighbors.get(from);
+      if (own) own.set(to, link.lengthM);
+      else neighbors.set(from, new Map([[to, link.lengthM]]));
+    }
+  }
+  const kept: NetworkLink[] = [];
+  const redundant: NetworkResult['redundant'] = [];
+  for (const link of [...links].sort((p, q) => q.lengthM - p.lengthM)) {
+    let via = -1;
+    for (const [station, toA] of neighbors.get(link.a)!) {
+      if (station === link.b) continue;
+      const toB = lengthOf(station, link.b);
+      if (toB !== undefined && toA + toB <= link.lengthM * REDUNDANT_RATIO) {
+        via = station;
+        break;
+      }
+    }
+    if (via === -1) {
+      kept.push(link);
+      continue;
+    }
+    neighbors.get(link.a)!.delete(link.b);
+    neighbors.get(link.b)!.delete(link.a);
+    redundant.push({ a: link.a, b: link.b, lengthM: link.lengthM, via });
+  }
+  return { links: kept, redundant };
 }
 
 /** Binary heap of `[priority, value]`, the lowest priority first. */

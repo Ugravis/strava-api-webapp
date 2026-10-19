@@ -1,6 +1,6 @@
 import { parseOplLine } from './osm-opl';
 import { RailwayDataBuilder, type RailwayData } from './railway-data';
-import { RailwayNetwork } from './railway-network';
+import { RailwayNetwork, withoutRedundant } from './railway-network';
 
 /** About 786 m of longitude at latitude 45. */
 const STEP = 0.01;
@@ -116,21 +116,47 @@ describe('RailwayNetwork', () => {
   it('keeps only the stations served by a passenger train route', () => {
     const f = empty();
     track(f, 1, 1, 0, 10, 'railway=rail');
+    // A park train, on a tourist line no route serves.
+    track(f, 2, 51, 0, 5, 'railway=narrow_gauge,usage=tourism', LAT + 0.02);
     station(f, 101, 0.005, LAT);
-    // A park train halt, served by no route.
-    station(f, 102, 0.035, LAT);
+    station(f, 102, 0.015, LAT + 0.02);
     station(f, 103, 0.075, LAT);
     station(f, 104, 0.06, LAT, ',station=subway,subway=yes');
     route(f, 1, [101, 103], [1]);
     const data = dataOf(f);
 
-    expect(data.stations.map((s) => [s.osmId, s.exclusion])).toEqual([
-      [101, null],
-      [102, 'not_served'],
-      [103, null],
-      [104, 'not_train'],
+    expect(
+      data.stations.map((s) => [s.osmId, s.exclusion, s.servedBy]),
+    ).toEqual([
+      [101, null, 'route'],
+      [102, 'not_served', null],
+      [103, null, 'route'],
+      [104, 'not_train', null],
     ]);
     expect(linksOf(data)).toEqual(['101-103']);
+  });
+
+  it('keeps a station beside a passenger track where no route is mapped', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail,usage=main');
+    track(f, 2, 51, 0, 5, 'railway=preserved', LAT + 0.02);
+    station(f, 101, 0.005, LAT + 100 * M);
+    station(f, 102, 0.035, LAT);
+    // Too far from the track.
+    station(f, 103, 0.075, LAT + 300 * M);
+    // Beside a heritage line: only a route would show it is served.
+    station(f, 104, 0.015, LAT + 0.02);
+    const data = dataOf(f);
+
+    expect(
+      data.stations.map((s) => [s.osmId, s.exclusion, s.servedBy]),
+    ).toEqual([
+      [101, null, 'track'],
+      [102, null, 'track'],
+      [103, 'not_served', null],
+      [104, 'not_served', null],
+    ]);
+    expect(linksOf(data)).toEqual(['101-102']);
   });
 
   it('counts a station near a stop of a route as served', () => {
@@ -238,5 +264,47 @@ describe('RailwayNetwork', () => {
         .linkAll()
         .isolated.map((i) => data.stations[i].osmId),
     ).toEqual([101]);
+  });
+});
+
+describe('withoutRedundant', () => {
+  const link = (a: number, b: number, km: number) => ({
+    a,
+    b,
+    lengthM: km * 1000,
+    coords: [],
+  });
+
+  it('drops a link along two shorter links through a third station', () => {
+    // Stations 0 and 1 near the start of a line without stops to station 2.
+    const { links, redundant } = withoutRedundant([
+      link(0, 1, 5),
+      link(0, 2, 300),
+      link(1, 2, 296),
+    ]);
+
+    expect(links.map(({ a, b }) => `${a}-${b}`)).toEqual(['1-2', '0-1']);
+    expect(redundant).toEqual([{ a: 0, b: 2, lengthM: 300_000, via: 1 }]);
+  });
+
+  it('keeps a link far shorter than any path through another station', () => {
+    const { links } = withoutRedundant([
+      link(0, 1, 10),
+      link(1, 2, 10),
+      link(0, 2, 15),
+    ]);
+
+    expect(links).toHaveLength(3);
+  });
+
+  it('never drops both links of two stations close to each other', () => {
+    // 1 and 2 are 200 m apart, each 100 km from 0.
+    const { links } = withoutRedundant([
+      link(0, 1, 100),
+      link(0, 2, 100.1),
+      link(1, 2, 0.2),
+    ]);
+
+    expect(links.map(({ a, b }) => `${a}-${b}`)).toEqual(['0-1', '1-2']);
   });
 });

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { DataSource, EntityManager } from 'typeorm';
@@ -40,6 +40,8 @@ export interface RailwayImportReport {
   source: string;
   candidates: number;
   kept: number;
+  /** Kept stations served by no route, but beside a track serving the stations nearby. */
+  servedByTrack: number;
   excluded: Record<StationExclusion, number>;
   /** Examples of excluded stations, by reason. */
   excludedSamples: Record<StationExclusion, StationSample[]>;
@@ -55,6 +57,16 @@ export interface RailwayImportReport {
       b: StationSample;
       lengthKm: number;
       straightKm: number;
+    }[];
+  };
+  /** Links dropped as redundant with two links through a third station, the longest first. */
+  redundant: {
+    count: number;
+    samples: {
+      a: StationSample;
+      b: StationSample;
+      via: StationSample;
+      lengthKm: number;
     }[];
   };
   /** Stations with many neighbors, the most first. */
@@ -94,15 +106,20 @@ async function railwayExtract(source: string): Promise<string> {
     return extract;
   }
   console.log(`Extracting the railway of ${source} into ${extract}…`);
+  // Written aside then renamed: an interrupted extraction is never reused.
+  const partial = join(dir, `partial-${basename(source)}`);
   await run('osmium', [
     'tags-filter',
     source,
     ...OSMIUM_FILTERS,
     '-o',
-    extract,
+    partial,
+    '-f',
+    'pbf',
     '--overwrite',
     '--progress',
   ]);
+  renameSync(partial, extract);
   return extract;
 }
 
@@ -175,7 +192,7 @@ export async function importStations(
     Promise.resolve(new RailwayNetwork(data).linkAll()),
   );
   console.log(
-    `${result.links.length} links, ${result.detours.length} detours rejected`,
+    `${result.links.length} links, ${result.detours.length} detours rejected, ${result.redundant.length} redundant`,
   );
 
   const sample = (index: number): StationSample => {
@@ -214,19 +231,30 @@ export async function importStations(
 
   const countries: { code: string; stations: number; network_km: number }[] =
     await dataSource.query(
-      `SELECT c.code,
-       (SELECT count(*)::int FROM places p
-        JOIN country_parts cp ON cp.country_code = c.code AND ST_Intersects(cp.geom, ST_Transform(p.geom, 3857))
-        WHERE p.kind = 'station') AS stations,
-       round(coalesce((SELECT sum(length_m) FROM rail_link_countries r WHERE r.country_code = c.code), 0) / 1000)::int AS network_km
-     FROM countries c
-     WHERE EXISTS (SELECT 1 FROM rail_link_countries r WHERE r.country_code = c.code)
-     ORDER BY network_km DESC`,
+      `WITH stations AS (
+         -- One spatial join for all the countries, through the index of the parts.
+         SELECT cp.country_code AS code, count(DISTINCT p.id)::int AS stations
+         FROM places p
+         JOIN country_parts cp ON ST_Intersects(cp.geom, ST_Transform(p.geom, 3857))
+         WHERE p.kind = 'station'
+         GROUP BY cp.country_code
+       ), network AS (
+         SELECT country_code AS code, round(sum(length_m) / 1000)::int AS network_km
+         FROM rail_link_countries
+         GROUP BY country_code
+       )
+       SELECT n.code, coalesce(s.stations, 0) AS stations, n.network_km
+       FROM network n
+       LEFT JOIN stations s ON s.code = n.code
+       ORDER BY n.network_km DESC`,
     );
   const report: RailwayImportReport = {
     source: basename(source),
     candidates: data.stations.length,
     kept: kept.length,
+    servedByTrack: kept.filter(
+      (index) => data.stations[index].servedBy === 'track',
+    ).length,
     excluded,
     excludedSamples,
     isolated: {
@@ -237,6 +265,17 @@ export async function importStations(
     networkKm: Math.round(
       result.links.reduce((total, link) => total + link.lengthM, 0) / 1000,
     ),
+    redundant: {
+      count: result.redundant.length,
+      samples: result.redundant
+        .slice(0, REPORT_SAMPLES)
+        .map(({ a, b, via, lengthM }) => ({
+          a: sample(a),
+          b: sample(b),
+          via: sample(via),
+          lengthKm: Math.round(lengthM / 100) / 10,
+        })),
+    },
     detours: {
       count: result.detours.length,
       samples: [...result.detours]

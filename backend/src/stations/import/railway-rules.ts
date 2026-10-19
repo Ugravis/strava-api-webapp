@@ -98,3 +98,16 @@ export function isPassengerTrack(tags: Tags, inTrainRoute: boolean): boolean {
     tags.passenger === 'no'
   );
 }
+
+/**
+ * Whether a station beside a track is served by it although no train route
+ * says so: where the routes are not mapped, a passenger track that is
+ * neither a heritage nor a tourist line.
+ */
+export function servesStationsNearby(tags: Tags): boolean {
+  return (
+    isPassengerTrack(tags, false) &&
+    tags.railway !== 'preserved' &&
+    tags.usage !== 'tourism'
+  );
+}

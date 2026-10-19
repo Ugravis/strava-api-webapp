@@ -203,11 +203,14 @@ export async function importStations(
     not_train: [],
     closed: [],
     not_served: [],
+    merged: [],
   } as Record<StationExclusion, StationSample[]>;
-  const excluded = { not_train: 0, closed: 0, not_served: 0 } as Record<
-    StationExclusion,
-    number
-  >;
+  const excluded = {
+    not_train: 0,
+    closed: 0,
+    not_served: 0,
+    merged: 0,
+  } as Record<StationExclusion, number>;
   data.stations.forEach((station, index) => {
     if (!station.exclusion) return;
     excluded[station.exclusion]++;

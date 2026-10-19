@@ -1,5 +1,10 @@
 import { parseOplLine } from './osm-opl';
-import { RailwayDataBuilder, type RailwayData } from './railway-data';
+import {
+  namesMatch,
+  normalizedName,
+  RailwayDataBuilder,
+  type RailwayData,
+} from './railway-data';
 import { RailwayNetwork, withoutRedundant } from './railway-network';
 
 /** About 786 m of longitude at latitude 45. */
@@ -200,6 +205,71 @@ describe('RailwayNetwork', () => {
     expect(linksOf(dataOf(f))).toEqual(['101-102']);
   });
 
+  it('excludes a metro station tagged train=yes unless a train route serves it', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    station(f, 101, 0.005, LAT, ',station=subway,subway=yes,train=yes');
+    station(f, 102, 0.035, LAT, ',station=subway,subway=yes,train=yes');
+    station(f, 103, 0.075, LAT);
+    route(f, 1, [102, 103], [1]);
+
+    expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([
+      'not_train',
+      null,
+      null,
+    ]);
+  });
+
+  it('merges a station mapped twice into the one served by a route', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    f.nodes.push(
+      `n101 Trailway=station,name=Gare%20%Lille%20%Europe x0.035 y${LAT + 100 * M}`,
+    );
+    f.nodes.push(`n102 Trailway=station,name=Lille-Europe x0.035 y${LAT}`);
+    // Two stations 86 m apart, one name holding the other with a real word.
+    f.nodes.push(
+      `n103 Trailway=station,name=Catford%20%Bridge x0.034 y${LAT - 150 * M}`,
+    );
+    f.nodes.push(`n104 Trailway=station,name=Catford x0.035 y${LAT - 150 * M}`);
+    // A third, without a name, in the stop area of 102.
+    f.nodes.push(`n105 Trailway=halt x0.036 y${LAT}`);
+    f.relations.push(
+      `r2 Ttype=public_transport,public_transport=stop_area Mn102@,n105@`,
+    );
+    route(f, 1, [102], [1]);
+    const data = dataOf(f);
+    const indexOf = (id: number) =>
+      data.stations.findIndex((s) => s.osmId === id);
+
+    expect(
+      data.stations.map((s) => [s.osmId, s.exclusion, s.mergedInto]),
+    ).toEqual([
+      [101, 'merged', indexOf(102)],
+      [102, null, null],
+      [103, null, null],
+      [104, null, null],
+      [105, 'merged', indexOf(102)],
+    ]);
+  });
+
+  it('links a merged station along the tracks of each of its points', () => {
+    const f = empty();
+    // Two lines ending 150 m apart, each at its own node of the station.
+    track(f, 1, 1, 0, 4, 'railway=rail');
+    track(f, 2, 11, 0.03, 6, 'railway=rail', LAT + 150 * M);
+    f.nodes.push(`n101 Trailway=station,name=Troyes x0.03 y${LAT}`);
+    f.nodes.push(
+      `n102 Trailway=station,name=Gare%20%de%20%Troyes x0.03 y${LAT + 150 * M}`,
+    );
+    station(f, 103, 0.005, LAT);
+    station(f, 104, 0.07, LAT + 150 * M);
+    route(f, 1, [101, 103], [1]);
+    route(f, 2, [102, 104], [2]);
+
+    expect(linksOf(dataOf(f))).toEqual(['101-103', '101-104']);
+  });
+
   it('never walks a freight line, a siding or a yard', () => {
     const f = empty();
     // Two passenger branches joined only by a freight line.
@@ -320,5 +390,24 @@ describe('withoutRedundant', () => {
     ]);
 
     expect(links.map(({ a, b }) => `${a}-${b}`)).toEqual(['0-1', '1-2']);
+  });
+});
+
+describe('namesMatch', () => {
+  const match = (a: string, b: string) =>
+    namesMatch(normalizedName(a), normalizedName(b));
+
+  it('matches the same station named twice', () => {
+    expect(match('Lille-Europe', 'Gare Lille Europe')).toBe(true);
+    expect(match('Gare de Lyon', 'Gare de Lyon (RER)')).toBe(true);
+    expect(match('Brienz', 'Brienz BRB')).toBe(true);
+    expect(match('Venthône', 'Venthone')).toBe(true);
+    expect(match('Aéroport CDG 2 TGV', 'Aéroport CDG 2 TGV (RER)')).toBe(true);
+  });
+
+  it('tells apart two stations with a real word between them', () => {
+    expect(match('Catford', 'Catford Bridge')).toBe(false);
+    expect(match('Lille-Europe', 'Lille-Flandres')).toBe(false);
+    expect(match('Bourges', 'Saint-Germain-du-Puy')).toBe(false);
   });
 });

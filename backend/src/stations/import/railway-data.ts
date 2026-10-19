@@ -20,6 +20,11 @@ export const SERVED_RADIUS_M = 300;
  * stations nearby is kept: the routes are not mapped everywhere.
  */
 export const SERVED_TRACK_RADIUS_M = 150;
+/**
+ * Two kept stations this close are the same station mapped twice when
+ * their names match or a stop area holds both.
+ */
+export const MERGE_RADIUS_M = 200;
 const METERS_PER_DEGREE = 111_320;
 
 /** `[lon, lat]`. */
@@ -34,6 +39,8 @@ export interface StationCandidate {
   exclusion: StationExclusion | null;
   /** What shows a kept station is served: a train route, or a track beside it. */
   servedBy: 'route' | 'track' | null;
+  /** For a merged station: the index of the station it is merged into. */
+  mergedInto: number | null;
 }
 
 /** Growable typed array. */
@@ -169,6 +176,7 @@ export class RailwayDataBuilder {
             point: [object.lon, object.lat],
             exclusion: null,
             servedBy: null,
+            mergedInto: null,
             tags: object.tags!,
           });
         }
@@ -261,11 +269,15 @@ export class RailwayDataBuilder {
     const stopIndex = this.stopPointIndex();
     const stations = this.candidates.map(
       ({ tags, ...candidate }): StationCandidate => {
-        const exclusion = stationExclusion(tags);
-        const served =
+        const byRoute =
           this.routeStations.has(candidate.osmId) ||
-          servedByArea.has(candidate.osmId) ||
-          stopIndex.hasPointNear(candidate.point, SERVED_RADIUS_M);
+          servedByArea.has(candidate.osmId);
+        let exclusion = stationExclusion(tags);
+        // A metro station shared with the trains, such as a station of a
+        // suburban network tagged as both.
+        if (exclusion === 'not_train' && byRoute) exclusion = null;
+        const served =
+          byRoute || stopIndex.hasPointNear(candidate.point, SERVED_RADIUS_M);
         return {
           ...candidate,
           exclusion: exclusion ?? (served ? null : 'not_served'),
@@ -280,7 +292,84 @@ export class RailwayDataBuilder {
       station.exclusion = null;
       station.servedBy = 'track';
     }
+    this.mergeDuplicates(stations);
     return stations;
+  }
+
+  /**
+   * Merges the kept stations mapped twice: within `MERGE_RADIUS_M`, with
+   * the same name, one name holding the other (`Brienz`, `Brienz BRB`), or
+   * in the same stop area. The station kept is the one served by a route,
+   * then the one with the shortest name.
+   */
+  private mergeDuplicates(stations: StationCandidate[]): void {
+    const areasOf = new Map<number, number[]>();
+    this.stopAreas.forEach((members, area) => {
+      for (const member of members) {
+        if (member[0] !== 'n') continue;
+        const id = Number(member.slice(1));
+        const areas = areasOf.get(id);
+        if (areas) areas.push(area);
+        else areasOf.set(id, [area]);
+      }
+    });
+    const names = stations.map((station) => normalizedName(station.name));
+    const kept = stations.flatMap((station, index) =>
+      station.exclusion === null ? [index] : [],
+    );
+    const index = new Map<string, number[]>();
+    for (const station of kept) {
+      const key = PointIndex.key(...stations[station].point);
+      const cell = index.get(key);
+      if (cell) cell.push(station);
+      else index.set(key, [station]);
+    }
+    const parent = new Map<number, number>();
+    const root = (station: number): number => {
+      let current = station;
+      while (parent.has(current)) current = parent.get(current)!;
+      return current;
+    };
+    const rank = (station: number): [number, number, number] => [
+      stations[station].servedBy === 'route' ? 0 : 1,
+      names[station] === null ? Infinity : names[station].length,
+      stations[station].osmId,
+    ];
+    const before = (p: number, q: number): boolean => {
+      const [a, b] = [rank(p), rank(q)];
+      const i = a.findIndex((value, j) => value !== b[j]);
+      return i !== -1 && a[i] < b[i];
+    };
+    for (const a of kept) {
+      const [lon, lat] = stations[a].point;
+      const cx = PointIndex.cell(lon);
+      const cy = PointIndex.cell(lat);
+      for (let x = cx - 1; x <= cx + 1; x++) {
+        for (let y = cy - 1; y <= cy + 1; y++) {
+          for (const b of index.get(`${x}/${y}`) ?? []) {
+            if (b <= a) continue;
+            if (
+              metersBetween(stations[a].point, stations[b].point) >
+              MERGE_RADIUS_M
+            ) {
+              continue;
+            }
+            const sameArea = (areasOf.get(stations[a].osmId) ?? []).some(
+              (area) => (areasOf.get(stations[b].osmId) ?? []).includes(area),
+            );
+            if (!sameArea && !namesMatch(names[a], names[b])) continue;
+            const [ra, rb] = [root(a), root(b)];
+            if (ra === rb) continue;
+            if (before(ra, rb)) parent.set(rb, ra);
+            else parent.set(ra, rb);
+          }
+        }
+      }
+    }
+    for (const station of parent.keys()) {
+      stations[station].exclusion = 'merged';
+      stations[station].mergedInto = root(station);
+    }
   }
 
   /** The stations within `SERVED_TRACK_RADIUS_M` of a track serving the stations nearby. */
@@ -341,6 +430,58 @@ export class RailwayDataBuilder {
     }
     return index;
   }
+}
+
+export function metersBetween(
+  [lon1, lat1]: Point,
+  [lon2, lat2]: Point,
+): number {
+  const x = (lon2 - lon1) * Math.cos((((lat1 + lat2) / 2) * Math.PI) / 180);
+  return Math.hypot(x, lat2 - lat1) * METERS_PER_DEGREE;
+}
+
+/** A name without case, accents nor punctuation, or null. */
+export function normalizedName(name: string | null): string | null {
+  const normalized = (name ?? '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+  return normalized === '' ? null : normalized;
+}
+
+/** Words that name a station without telling it apart from another. */
+const GENERIC_WORDS = new Set([
+  'gare',
+  'station',
+  'halte',
+  'bahnhof',
+  'haltepunkt',
+  'stazione',
+  'estacion',
+  'estacao',
+  'railway',
+]);
+/** Up to this length, an extra word is taken as an abbreviation: RER, TGV, BRB, HzL… */
+const ABBREVIATION_MAX = 4;
+
+/**
+ * Whether two normalized names are the same station: equal, or one holding
+ * the other with only generic words or abbreviations besides (`Brienz` and
+ * `Brienz BRB`, but not `Catford` and `Catford Bridge`).
+ */
+export function namesMatch(a: string | null, b: string | null): boolean {
+  if (a === null || b === null) return false;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  const at = ` ${long} `.indexOf(` ${short} `);
+  if (at === -1) return false;
+  const rest = `${long.slice(0, at)} ${long.slice(at + short.length)}`
+    .split(' ')
+    .filter((word) => word !== '');
+  return rest.every(
+    (word) => word.length <= ABBREVIATION_MAX || GENERIC_WORDS.has(word),
+  );
 }
 
 /** Points in cells of about 1 km, to find those near a point. */

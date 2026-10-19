@@ -7,7 +7,9 @@ export type StationExclusion =
   /** Closed: tagged disused, abandoned or not served by trains. */
   | 'closed'
   /** No passenger train route serves it: a park train, a closed station still mapped… */
-  | 'not_served';
+  | 'not_served'
+  /** The same station as a kept one next to it, mapped twice: merged into it. */
+  | 'merged';
 
 const NOT_TRAIN_STATIONS = new Set([
   'subway',
@@ -31,8 +33,9 @@ export function isStationNode(tags: Tags | null): boolean {
 }
 
 /**
- * Why a candidate station is excluded whatever the routes, or null when it
- * may be kept once a passenger train route serves it.
+ * Why a candidate station is excluded, or null when it may be kept once a
+ * passenger train route serves it. A `not_train` station is kept only when
+ * a train route serves it directly.
  */
 export function stationExclusion(tags: Tags): StationExclusion | null {
   if (
@@ -43,10 +46,9 @@ export function stationExclusion(tags: Tags): StationExclusion | null {
     tags.monorail === 'yes' ||
     tags.funicular === 'yes'
   ) {
-    // A station shared by the metro and the trains stays a train station.
-    if (tags.train !== 'yes') {
-      return 'not_train';
-    }
+    // `train=yes` is not enough: metros such as the VAL of Lille carry it.
+    // A station shared with the trains is kept by its train routes.
+    return 'not_train';
   }
   if (
     tags.train === 'no' ||

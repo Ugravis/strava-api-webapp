@@ -1,4 +1,5 @@
 import {
+  metersBetween,
   type NodeStore,
   type Point,
   project,
@@ -83,11 +84,6 @@ interface Arrival {
   offset: number;
   /** For a station on a start chain: the start snap. */
   start: { chain: number; offset: number } | null;
-}
-
-function metersBetween([lon1, lat1]: Point, [lon2, lat2]: Point): number {
-  const x = (lon2 - lon1) * Math.cos((((lat1 + lat2) / 2) * Math.PI) / 180);
-  return Math.hypot(x, lat2 - lat1) * METERS_PER_DEGREE;
 }
 
 function cellKey(cx: number, cy: number): number {
@@ -442,17 +438,27 @@ export class RailwayNetwork {
     number,
     { station: number; segment: number; t: number; link: boolean }[]
   > {
+    // Each kept station stands where it is mapped, and where the stations
+    // merged into it are.
+    const points: { station: number; point: Point }[] = [
+      ...kept.map((station) => ({
+        station,
+        point: this.stationPoints[station],
+      })),
+      ...data.stations.flatMap(({ mergedInto, point }) =>
+        mergedInto === null ? [] : [{ station: mergedInto, point }],
+      ),
+    ];
     const cells = new Map<number, number[]>();
-    for (const station of kept) {
-      const [lon, lat] = this.stationPoints[station];
+    points.forEach(({ point: [lon, lat] }, index) => {
       const key = cellKey(
         Math.floor(lon / CELL_DEG),
         Math.floor(lat / CELL_DEG),
       );
       const cell = cells.get(key);
-      if (cell) cell.push(station);
-      else cells.set(key, [station]);
-    }
+      if (cell) cell.push(index);
+      else cells.set(key, [index]);
+    });
     // The nearest point of each track to each station within reach.
     const nearest = new Map<
       number,
@@ -479,8 +485,9 @@ export class RailwayNetwork {
         const y1 = Math.floor((Math.max(a[1], b[1]) + dLat) / CELL_DEG);
         for (let x = x0; x <= x1; x++) {
           for (let y = y0; y <= y1; y++) {
-            for (const station of cells.get(cellKey(x, y)) ?? []) {
-              const { d, t } = project(this.stationPoints[station], a, b);
+            for (const index of cells.get(cellKey(x, y)) ?? []) {
+              const { station, point } = points[index];
+              const { d, t } = project(point, a, b);
               if (d > SNAP_MAX_M) continue;
               let byTrack = nearest.get(station);
               if (!byTrack) {

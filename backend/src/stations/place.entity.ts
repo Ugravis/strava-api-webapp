@@ -1,4 +1,12 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Country } from '../countries/country.entity';
 
 /** Kinds of the places collected on the map. */
 export type PlaceKind = 'station';
@@ -34,6 +42,18 @@ export class Place {
     srid: 4326,
   })
   geom!: string;
+
+  /**
+   * Country holding the place, or the nearest one for a place on the coast;
+   * null far from every country.
+   */
+  @Index()
+  @Column({ name: 'country_code', type: 'char', length: 2, nullable: true })
+  countryCode!: string | null;
+
+  @ManyToOne(() => Country, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'country_code' })
+  country?: Country;
 
   /** Large tile (zoom 14) holding the place. */
   @Column({ type: 'integer' })

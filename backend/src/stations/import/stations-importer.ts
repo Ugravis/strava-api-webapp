@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { DataSource, EntityManager } from 'typeorm';
+import { LOCATE_PLACES } from '../place-countries';
 import { placeTile } from '../station-tile';
 import { parseOplLine } from './osm-opl';
 import { type RailwayData, RailwayDataBuilder } from './railway-data';
@@ -230,17 +231,18 @@ export async function importStations(
       await saveLinks(manager, data, result.links);
     }),
   );
-  await timed('countries', () => splitByCountry(dataSource));
+  await timed('countries', async () => {
+    await dataSource.query(LOCATE_PLACES);
+    await splitByCountry(dataSource);
+  });
 
   const countries: { code: string; stations: number; network_km: number }[] =
     await dataSource.query(
       `WITH stations AS (
-         -- One spatial join for all the countries, through the index of the parts.
-         SELECT cp.country_code AS code, count(DISTINCT p.id)::int AS stations
-         FROM places p
-         JOIN country_parts cp ON ST_Intersects(cp.geom, ST_Transform(p.geom, 3857))
-         WHERE p.kind = 'station'
-         GROUP BY cp.country_code
+         SELECT country_code AS code, count(*)::int AS stations
+         FROM places
+         WHERE kind = 'station' AND country_code IS NOT NULL
+         GROUP BY country_code
        ), network AS (
          SELECT country_code AS code, round(sum(length_m) / 1000)::int AS network_km
          FROM rail_link_countries

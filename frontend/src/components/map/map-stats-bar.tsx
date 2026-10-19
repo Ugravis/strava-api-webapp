@@ -3,13 +3,11 @@
 import {
   EyeIcon,
   EyeOffIcon,
-  Grid2x2Icon,
   HistoryIcon,
   LoaderCircleIcon,
   type LucideIcon,
   SearchIcon,
   SunDimIcon,
-  TrainFrontIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
@@ -24,6 +22,7 @@ import type { TileLevelSummary, TilesSummary, VisitedStations } from "@/lib/api/
 import { cn } from "@/lib/utils";
 import { ClusterKey, OtherClusterKey, RailKey, SquareKey, StationKey, TileKey, TrackKey } from "./map-keys";
 import { MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
+import { MAP_MODULE_ICONS } from "./map-module-icons";
 import { Stat, ValueSkeleton } from "./map-stat";
 
 type TracksState = Pick<ActivityTracksState, "lines" | "status" | "progress" | "errorCode" | "retry">;
@@ -47,8 +46,6 @@ interface MapStatsBarProps {
   sectorOpen: boolean;
   onSectorOpenChange: (open: boolean) => void;
 }
-
-const MODULE_ICONS: Record<MapModule, LucideIcon> = { tiles: Grid2x2Icon, stations: TrainFrontIcon };
 
 /**
  * Band under the map, from left to right: the tools, the modules, each
@@ -92,16 +89,26 @@ export function MapStatsBar({
           ))}
         </ControlsGroup>
       </div>
-      <div
-        role="group"
-        aria-label={t("modules.data", { module })}
-        className={cn("min-w-0 flex-1 transition-opacity", !layers[module] && "opacity-60")}
-      >
-        {module === "tiles" ? (
-          <TilesModule tracks={tracks} summary={summary} layers={layers} onLayersChange={onLayersChange} />
-        ) : (
-          <StationsModule stations={stations} layers={layers} onLayersChange={onLayersChange} />
-        )}
+      {/* Every module in the same cell, only the one selected visible: the band keeps the height of the tallest. */}
+      <div className="grid min-w-0 flex-1">
+        {MAP_MODULES.map((candidate) => (
+          <div
+            key={candidate}
+            role="group"
+            aria-label={t("modules.data", { module: candidate })}
+            className={cn(
+              "min-w-0 transition-opacity [grid-area:1/1]",
+              candidate !== module && "invisible",
+              !layers[candidate] && "opacity-60",
+            )}
+          >
+            {candidate === "tiles" ? (
+              <TilesModule tracks={tracks} summary={summary} layers={layers} onLayersChange={onLayersChange} />
+            ) : (
+              <StationsModule stations={stations} layers={layers} onLayersChange={onLayersChange} />
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -171,7 +178,7 @@ function ModuleButton({
   onShownChange: (shown: boolean) => void;
 }) {
   const t = useTranslations("map.modules");
-  const Icon = MODULE_ICONS[module];
+  const Icon = MAP_MODULE_ICONS[module];
   const label = t(module);
 
   return (
@@ -414,7 +421,7 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
 
   return (
-    <div className="flex items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-center md:pr-6">
+    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-center md:pr-6">
       <StatsSection title={t("stations")}>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}

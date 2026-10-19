@@ -311,18 +311,12 @@ export class RailwayNetwork {
   /**
    * The path of a link from one station to the other: the tracks stop where
    * the stations stand on them, up to `SNAP_MAX_M` away, or at a point
-   * merged into them. Its length stays the one along the tracks.
+   * merged into them, so each end curves from its station onto the tracks.
+   * Its length stays the one along the tracks.
    */
   private reachingStations({ a, b, coords }: NetworkLink): Point[] {
-    const start = this.stationPoints[a];
-    const end = this.stationPoints[b];
-    return [
-      ...(metersBetween(start, coords[0]) > VERTEX_STOP_M ? [start] : []),
-      ...coords,
-      ...(metersBetween(coords[coords.length - 1], end) > VERTEX_STOP_M
-        ? [end]
-        : []),
-    ];
+    const fromStart = joinStation(this.stationPoints[a], coords);
+    return joinStation(this.stationPoints[b], fromStart.reverse()).reverse();
   }
 
   /** The first stop met along a chain in a direction, but those of `from`. */
@@ -686,6 +680,82 @@ export class RailwayNetwork {
         this.adjacency[fill[this.chainTo[chain]]++] = chain;
     }
   }
+}
+
+/** Points of each curve joining a station to its tracks. */
+const JOIN_STEPS = 12;
+/** A curve joins the tracks this many times its distance from them away, along them… */
+const JOIN_ALONG_RATIO = 2;
+const JOIN_MIN_M = 60;
+/** …but never beyond this share of the link. */
+const JOIN_MAX_SHARE = 1 / 3;
+
+/**
+ * Replaces the start of a path along the tracks with a curve from the
+ * station, meeting the tracks along their direction, like a branch line.
+ */
+export function joinStation(station: Point, coords: Point[]): Point[] {
+  const gap = metersBetween(station, coords[0]);
+  if (gap <= VERTEX_STOP_M) return [...coords];
+  // Local plane around the station, in meters.
+  const kx = METERS_PER_DEGREE * Math.cos((station[1] * Math.PI) / 180);
+  const toPlane = ([lon, lat]: Point): Point => [
+    (lon - station[0]) * kx,
+    (lat - station[1]) * METERS_PER_DEGREE,
+  ];
+  const toPoint = ([x, y]: Point): Point => [
+    station[0] + x / kx,
+    station[1] + y / METERS_PER_DEGREE,
+  ];
+  const plane = coords.map(toPlane);
+  let total = 0;
+  for (let i = 1; i < plane.length; i++)
+    total += Math.hypot(
+      plane[i][0] - plane[i - 1][0],
+      plane[i][1] - plane[i - 1][1],
+    );
+  const along = Math.min(
+    Math.max(gap * JOIN_ALONG_RATIO, JOIN_MIN_M),
+    total * JOIN_MAX_SHARE,
+  );
+  // Where the curve meets the tracks, and their direction there.
+  let travelled = 0;
+  let i = 1;
+  let meet: Point = plane[0];
+  let direction: Point = [0, 0];
+  for (; i < plane.length; i++) {
+    const [x0, y0] = plane[i - 1];
+    const [x1, y1] = plane[i];
+    const length = Math.hypot(x1 - x0, y1 - y0);
+    if (length === 0) continue;
+    direction = [(x1 - x0) / length, (y1 - y0) / length];
+    if (travelled + length >= along) {
+      const t = (along - travelled) / length;
+      meet = [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+      break;
+    }
+    travelled += length;
+    meet = plane[i];
+  }
+  // Quadratic curve whose control point lies back along the tracks.
+  const reach = along / 2;
+  const control: Point = [
+    meet[0] - direction[0] * reach,
+    meet[1] - direction[1] * reach,
+  ];
+  const curve: Point[] = [];
+  for (let step = 0; step <= JOIN_STEPS; step++) {
+    const t = step / JOIN_STEPS;
+    const u = 1 - t;
+    curve.push(
+      toPoint([
+        2 * u * t * control[0] + t * t * meet[0],
+        2 * u * t * control[1] + t * t * meet[1],
+      ]),
+    );
+  }
+  curve[0] = station;
+  return [...curve, ...coords.slice(i)];
 }
 
 /**

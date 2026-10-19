@@ -164,7 +164,7 @@ describe('RailwayNetwork', () => {
     expect(linksOf(data)).toEqual(['101-102']);
   });
 
-  it('draws a link up to its stations, beside the tracks', () => {
+  it('draws a link up to its stations, curving from the tracks', () => {
     const f = empty();
     track(f, 1, 1, 0, 10, 'railway=rail');
     station(f, 101, 0.005, LAT + 100 * M);
@@ -174,8 +174,13 @@ describe('RailwayNetwork', () => {
     const [link] = new RailwayNetwork(dataOf(f)).linkAll().links;
 
     expect(link.coords[0]).toEqual([0.005, LAT + 100 * M]);
-    expect(link.coords[1]).toEqual([0.005, LAT]);
     expect(link.coords.at(-1)).toEqual([0.035, LAT]);
+    // A curve from the station meets the tracks 200 m farther, along them.
+    const met = link.coords.slice(12);
+    expect(met[0][0]).toBeCloseTo(0.005 + 200 / (111_320 * Math.SQRT1_2), 6);
+    for (const [, lat] of met) expect(lat).toBeCloseTo(LAT, 9);
+    const lats = link.coords.slice(0, 13).map(([, lat]) => lat);
+    expect(lats).toEqual([...lats].sort((p, q) => q - p));
     // Measured along the tracks only.
     expect(link.lengthM).toBeCloseTo(
       0.03 * 111_320 * Math.cos((45 * Math.PI) / 180),

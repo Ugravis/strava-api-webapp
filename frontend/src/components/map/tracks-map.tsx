@@ -26,7 +26,7 @@ import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
 import { HistoryBand } from "./history-band";
 import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";
-import { useMapModuleRequests } from "./map-module-requests";
+import { publishMapModule, useMapModuleRequests } from "./map-module-channel";
 import type { MapHistory } from "./history-layer";
 import { mapDimmed, type MapLayers, type MapModule, tileModeOf, tracksShown } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
@@ -82,8 +82,12 @@ export function TracksMap() {
     setModule(selected);
     setLayers((current) => ({ ...current, [selected]: true }));
   }, []);
-  // The navigation selects a module of the map already open.
+  // The navigation shows the module selected, and selects another one on the map already open.
   useMapModuleRequests(selectModule);
+  useEffect(() => {
+    publishMapModule(module);
+    return () => publishMapModule(null);
+  }, [module]);
   const { stations } = useStations(summary?.version ?? null);
   const [tool, setTool] = useState<MapTool | null>(initialTool?.kind ?? null);
   const historyOpen = tool === "history";
@@ -153,7 +157,7 @@ export function TracksMap() {
           sectorFrame={sectorFrame}
           stations={stations}
           showStations={layers.stations}
-          dimmed={mapDimmed(layers)}
+          dimmed={mapDimmed(layers, module)}
           label={t("label")}
         />
       </div>

@@ -14,7 +14,7 @@ export interface MapLayers {
   subtiles: boolean;
   /** The stations module: the train stations and the railway between the visited ones. */
   stations: boolean;
-  /** The base map and the tiles dimmed below the stations, while they are shown. */
+  /** The base map and the tiles dimmed below the stations, while they are shown and selected. */
   dimmed: boolean;
 }
 
@@ -28,5 +28,6 @@ export function tileModeOf({ tiles, subtiles }: MapLayers): TileMode {
 /** Whether the tracks are drawn: an optional layer of the tiles module. */
 export const tracksShown = ({ tiles, tracks }: MapLayers): boolean => tiles && tracks;
 
-/** Whether the map is dimmed: an option of the stations module. */
-export const mapDimmed = ({ stations, dimmed }: MapLayers): boolean => stations && dimmed;
+/** Whether the map is dimmed: an option of the stations module, applied while it is shown and selected. */
+export const mapDimmed = ({ stations, dimmed }: MapLayers, module: MapModule): boolean =>
+  module === "stations" && stations && dimmed;

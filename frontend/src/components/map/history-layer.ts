@@ -1,8 +1,8 @@
 import type { ExpressionSpecification, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
 import type { HistoryMode } from "@/lib/api/types";
 import { belowActivityTiles } from "./activity-tiles-layer";
-import type { MapPalette } from "./map-style";
-import { fadeIn, rgba, subtileOpacity } from "./tile-layers";
+import { fadeIn, type MapPalette } from "./map-style";
+import { rgba, SUBTILE_MIN_ZOOM, subtileOpacity } from "./tile-layers";
 
 /** What the history tool draws on the map. */
 export interface MapHistory {
@@ -16,8 +16,6 @@ export interface MapHistory {
 const SOURCE_LAYERS = { tiles: "tiles", tilesOutline: "tiles_outline" } as const;
 /** The backend serves the tiles down to this zoom; the map stretches them beyond. */
 const TILES_MAX_ZOOM = 12;
-/** The images of the small tiles are served from this zoom. */
-const SUBTILE_MIN_ZOOM = 5;
 /** The outline appears with the grid of the large tiles. */
 const OUTLINE_MIN_ZOOM = 11;
 /** Up to this zoom, the fill of the state is at its strongest; it lightens as the streets appear. */

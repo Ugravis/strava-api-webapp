@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Polygon } from "geojson";
 import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
 import { SUBTILE_ZOOM, TILE_ZOOM, tilesCollection } from "@/lib/tiles/tile-geometry";
-import { firstGroundLayerId, type MapPalette } from "./map-style";
+import { fadeIn, firstGroundLayerId, type MapPalette } from "./map-style";
 
 const SOURCES = { tiles: "activity-tiles", subtiles: "activity-subtiles" } as const;
 
@@ -13,7 +13,7 @@ const SOURCES = { tiles: "activity-tiles", subtiles: "activity-subtiles" } as co
  */
 const GROUPING_LEVELS = [9, 10, 11, 12, 13] as const;
 const PIXELS_LEVELS = 8;
-/** The small tiles appear where they span two pixels. */
+/** The small tiles fade in where they span two pixels. */
 const SUBTILE_MIN_ZOOM = SUBTILE_ZOOM - PIXELS_LEVELS;
 
 const SUBTILE_LAYER_ID = "activity-subtiles-fill";
@@ -108,7 +108,11 @@ export function addActivityTileLayers(
       type: "fill",
       source: SOURCES.subtiles,
       minzoom: SUBTILE_MIN_ZOOM,
-      paint: { "fill-color": palette.activitySubtile, "fill-antialias": false },
+      paint: {
+        "fill-color": palette.activitySubtile,
+        "fill-opacity": fadeIn(SUBTILE_MIN_ZOOM, 1),
+        "fill-antialias": false,
+      },
     },
   ];
   const groundId = firstGroundLayerId(map);

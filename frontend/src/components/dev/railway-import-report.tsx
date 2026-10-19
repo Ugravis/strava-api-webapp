@@ -21,12 +21,18 @@ interface Report {
   source: string;
   candidates: number;
   kept: number;
+  /** Absent from the reports of the imports before it. */
+  servedByTrack?: number;
   excluded: Record<Exclusion, number>;
   excludedSamples: Record<Exclusion, StationSample[]>;
   isolated: { count: number; samples: StationSample[] };
   links: number;
   networkKm: number;
   detours: { count: number; samples: { a: StationSample; b: StationSample; lengthKm: number; straightKm: number }[] };
+  redundant?: {
+    count: number;
+    samples: { a: StationSample; b: StationSample; via: StationSample; lengthKm: number }[];
+  };
   manyNeighbors: (StationSample & { neighbors: number })[];
   countries: { code: string; stations: number; networkKm: number }[];
   durationsS: Record<string, number>;
@@ -129,11 +135,13 @@ export function RailwayImportReport() {
         <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Figure label="Gares candidates" value={number(report.candidates)} />
           <Figure label="Gares gardées" value={number(report.kept)} />
+          <Figure label="Gardées sans ligne cartographiée" value={number(report.servedByTrack ?? 0)} />
           <Figure label="Gares exclues" value={number(excludedTotal)} />
           <Figure label="Gares sans voie voyageurs" value={number(report.isolated.count)} />
           <Figure label="Liaisons" value={number(report.links)} />
           <Figure label="Réseau" value={`${number(report.networkKm)} km`} />
           <Figure label="Détours refusés" value={number(report.detours.count)} />
+          <Figure label="Liaisons redondantes" value={number(report.redundant?.count ?? 0)} />
           <Figure
             label="Durées"
             value={Object.entries(report.durationsS)
@@ -144,10 +152,11 @@ export function RailwayImportReport() {
       </Card>
 
       <Tabs defaultValue="excluded">
-        <TabsList className="flex-wrap">
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="excluded">Exclues</TabsTrigger>
           <TabsTrigger value="neighbors">Beaucoup de voisines</TabsTrigger>
           <TabsTrigger value="detours">Détours refusés</TabsTrigger>
+          <TabsTrigger value="redundant">Redondantes</TabsTrigger>
           <TabsTrigger value="isolated">Sans voie</TabsTrigger>
           <TabsTrigger value="countries">Pays</TabsTrigger>
         </TabsList>
@@ -184,6 +193,18 @@ export function RailwayImportReport() {
               <StationLink key="b" station={b} />,
               `${lengthKm} km`,
               `${straightKm} km`,
+            ])}
+          />
+        </TabsContent>
+
+        <TabsContent value="redundant">
+          <Rows
+            head={["De", "À", "Longueur", "Remplacée via"]}
+            rows={(report.redundant?.samples ?? []).map(({ a, b, via, lengthKm }) => [
+              <StationLink key="a" station={a} />,
+              <StationLink key="b" station={b} />,
+              `${lengthKm} km`,
+              <StationLink key="via" station={via} />,
             ])}
           />
         </TabsContent>

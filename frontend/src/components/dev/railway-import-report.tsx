@@ -14,7 +14,7 @@ interface StationSample {
   lat: number;
 }
 
-type Exclusion = "not_train" | "closed" | "not_served";
+type Exclusion = "not_train" | "closed" | "not_served" | "merged";
 
 /** See `RailwayImportReport` in `backend/src/stations/import/stations-importer.ts`. */
 interface Report {
@@ -48,6 +48,7 @@ const EXCLUSIONS: Record<Exclusion, string> = {
   not_served: "Desservie par aucune ligne de voyageurs",
   closed: "Fermée",
   not_train: "Métro, tram, funiculaire…",
+  merged: "Fusionnée avec une gare voisine (doublon)",
 };
 
 const number = (value: number) => value.toLocaleString("fr-FR");
@@ -165,11 +166,11 @@ export function RailwayImportReport() {
           {(Object.keys(EXCLUSIONS) as Exclusion[]).map((reason) => (
             <section key={reason} className="flex flex-col gap-1">
               <h2 className="text-sm font-semibold">
-                {EXCLUSIONS[reason]} : {number(report.excluded[reason])}
+                {EXCLUSIONS[reason]} : {number(report.excluded[reason] ?? 0)}
               </h2>
               <Rows
                 head={["Gare", "Position"]}
-                rows={report.excludedSamples[reason].map((station) => [
+                rows={(report.excludedSamples[reason] ?? []).map((station) => [
                   <StationLink key="s" station={station} />,
                   `${station.lat.toFixed(4)}, ${station.lon.toFixed(4)}`,
                 ])}

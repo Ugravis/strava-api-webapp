@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
@@ -31,6 +31,7 @@ import {
   clickableZooms,
   setTileData,
   setTileMode,
+  TILE_CLICK_MIN_ZOOM,
   type TileData,
   tileData,
   type TileMode,
@@ -41,7 +42,8 @@ import { addTileOutlines, sameTile, setTileOutline, type TileRef } from "./tile-
 import { TilePickPanel } from "./tile-pick-panel";
 import { entryFromSearch, entryKey, pickOf, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
 import { StationPanel } from "./station-panel";
-import { TrainTraffic } from "./train-traffic";
+import { TrainPanel } from "./train-panel";
+import { TRAIN_FOLLOW_EVENT, TrainTraffic } from "./train-traffic";
 import {
   addStationLayers,
   setAllStations,
@@ -53,6 +55,7 @@ import {
   stationData,
   stationNear,
   type StationPick,
+  trainNear,
 } from "./stations-layer";
 import { type ActivityView, defaultActivityView, hasGains } from "./activity-view";
 import {
@@ -155,6 +158,7 @@ export function ActivityMap({
   // The station just picked on the map: unlike a station reached otherwise, the camera stays.
   const pickedStationRef = useRef<number | null>(null);
   const pickStationRef = useRef<(station: StationPick) => void>(() => {});
+  const pickTrainRef = useRef<(trainId: number) => void>(() => {});
 
   const t = useTranslations("map.panel");
   // The address of the page may name a tile or an activity: the map opens on it.
@@ -267,7 +271,7 @@ export function ActivityMap({
     };
     map.on("load", reportCenter);
     map.on("moveend", (event) => {
-      if (!(SECTOR_FRAME_EVENT in event)) reportCenter();
+      if (!(SECTOR_FRAME_EVENT in event) && !(TRAIN_FOLLOW_EVENT in event)) reportCenter();
     });
     // The tracks arrive after the map: once the user has moved it, they no
     // longer frame it.
@@ -277,6 +281,11 @@ export function ActivityMap({
     // A click beside the tiles keeps the panel: only its button closes it.
     map.on("click", (event) => {
       // The stations are drawn over the tiles: they are picked first.
+      const train = showStationsRef.current ? trainNear(map, event.point) : null;
+      if (train !== null) {
+        pickTrainRef.current(train);
+        return;
+      }
       const station = showStationsRef.current ? stationNear(map, event.point) : null;
       if (station) {
         pickStationRef.current(station);
@@ -289,8 +298,8 @@ export function ActivityMap({
     // once per frame, and not while the map moves under the pointer.
     let pointer: { x: number; y: number } | null = null;
     let frame = 0;
-    const hover = (tile: TileRef | null, station: StationPick | null = null) => {
-      map.getCanvas().style.cursor = tile || station ? "pointer" : "";
+    const hover = (tile: TileRef | null, station: StationPick | null = null, train = false) => {
+      map.getCanvas().style.cursor = tile || station || train ? "pointer" : "";
       if (station?.id !== hoveredStationRef.current?.id) {
         hoveredStationRef.current = station;
         setHoveredStation(map, station);
@@ -302,10 +311,12 @@ export function ActivityMap({
     const pickHovered = () => {
       frame = 0;
       const still = pointer !== null && !map.isMoving();
-      // Over a station, no tile is outlined: a click opens the station.
-      const station = still && showStationsRef.current ? stationNear(map, pointer!) : null;
-      const pick = still && !station ? pickTile(map, modeRef.current, pointer!) : null;
-      hover(pick && shownTile(pick), station);
+      const stations = still && showStationsRef.current;
+      const train = stations && trainNear(map, pointer!) !== null;
+      // Over a station, no tile is outlined: a click opens the station. Ringed from the zoom the tiles are.
+      const station = stations && !train && map.getZoom() >= TILE_CLICK_MIN_ZOOM ? stationNear(map, pointer!) : null;
+      const pick = still && !station && !train ? pickTile(map, modeRef.current, pointer!) : null;
+      hover(pick && shownTile(pick), station, train);
     };
     map.on("mousemove", (event) => {
       pointer = event.point;
@@ -315,10 +326,21 @@ export function ActivityMap({
       pointer = null;
       hover(null);
     });
-    map.on("movestart", () => hover(null));
-    map.on("moveend", pickHovered);
+    // The camera following a train keeps what the pointer is over.
+    map.on("movestart", (event) => {
+      if (!(TRAIN_FOLLOW_EVENT in event)) hover(null);
+    });
+    map.on("moveend", (event) => {
+      if (!(TRAIN_FOLLOW_EVENT in event)) pickHovered();
+    });
     mapRef.current = map;
-    trafficRef.current = new TrainTraffic(map, showStationsRef.current);
+    trafficRef.current = new TrainTraffic(map, showStationsRef.current, () => {
+      const { clientWidth, clientHeight } = map.getContainer();
+      return {
+        x: (clientWidth - panelWidthOf(panelRef.current, collapsedRef.current)) / 2,
+        y: (clientHeight - bandsHeightOf(containerRef.current)) / 2,
+      };
+    });
     trafficRef.current.setLinks(stationsDataRef.current.links);
     return () => {
       cancelAnimationFrame(frame);
@@ -463,9 +485,22 @@ export function ActivityMap({
       history.push({ kind: "station", stationId: station.id });
       setCollapsed(false);
     };
+    pickTrainRef.current = (trainId) => {
+      history.push({ kind: "train", trainId });
+      setCollapsed(false);
+    };
   });
 
   const stationId = entry?.kind === "station" ? entry.stationId : null;
+  const trainId = entry?.kind === "train" ? entry.trainId : null;
+
+  useEffect(() => {
+    // The train shown is marked and followed by the camera.
+    trafficRef.current?.select(trainId);
+  }, [trainId]);
+
+  const trainInfo = useCallback((id: number) => trafficRef.current?.info(id) ?? null, []);
+  const followTrain = useCallback((following: boolean) => trafficRef.current?.setFollowing(following), []);
 
   useEffect(() => {
     // The ring follows the station shown, once it is located.
@@ -577,7 +612,15 @@ export function ActivityMap({
             setCollapsed(false);
           }}
         >
-          {entry.kind === "station" ? (
+          {entry.kind === "train" ? (
+            <TrainPanel
+              key={entry.trainId}
+              trainId={entry.trainId}
+              getInfo={trainInfo}
+              onFollowChange={followTrain}
+              onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
+            />
+          ) : entry.kind === "station" ? (
             <StationPanel
               key={entry.stationId}
               stationId={entry.stationId}

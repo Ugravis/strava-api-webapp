@@ -12,11 +12,12 @@ export interface TilePick {
   zoom: TileZoom;
 }
 
-/** What the side panel shows: a tile picked on the map, an activity opened from it, or a train station. */
+/** What the side panel shows: a tile picked on the map, an activity opened from it, a train station or a train. */
 export type PanelEntry =
   | ({ kind: "tile" } & TilePick)
   | { kind: "activity"; activityId: string }
-  | { kind: "station"; stationId: number };
+  | { kind: "station"; stationId: number }
+  | { kind: "train"; trainId: number };
 
 /** The tile of the level shown. */
 export function shownTile(pick: TilePick): TileRef {
@@ -31,6 +32,8 @@ export function sameEntry(a: PanelEntry, b: PanelEntry): boolean {
       return b.kind === "activity" && a.activityId === b.activityId;
     case "station":
       return b.kind === "station" && a.stationId === b.stationId;
+    case "train":
+      return b.kind === "train" && a.trainId === b.trainId;
   }
 }
 
@@ -46,6 +49,8 @@ export function entryKey(entry: PanelEntry): string {
       return entry.activityId;
     case "station":
       return `station/${entry.stationId}`;
+    case "train":
+      return `train/${entry.trainId}`;
   }
 }
 
@@ -94,7 +99,7 @@ export function entryFromSearch(search: string): { entry: PanelEntry | null; inv
   return { entry: parsed && { kind: "tile", ...pickOf(parsed) }, invalid };
 }
 
-/** The address of the page showing `entry`, or nothing, keeping its other parameters. */
+/** The address of the page showing `entry`, or nothing, keeping its other parameters. A train, made up by the map, has none. */
 export function searchWithEntry(search: string, entry: PanelEntry | null): string {
   const params = new URLSearchParams(search);
   for (const name of Object.values(PARAMS)) params.delete(name);

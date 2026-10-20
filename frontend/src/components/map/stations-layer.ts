@@ -11,12 +11,26 @@ import type { MapHistory } from "./history-layer";
 import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
 import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
 import { addStationIcons, STATION_ICONS } from "./station-icons";
-import { TRAINS_MIN_ZOOM, TRAINS_SOURCE } from "./train-traffic";
+import { TRAIN_SIZE, TRAINS_MIN_ZOOM, TRAINS_SOURCE } from "./train-traffic";
 
 /** What the stations layer draws: the visited stations and the links unlocked between them. */
 export interface StationData {
   stations: FeatureCollection<Point, { id: number; name: string | null }>;
-  links: FeatureCollection<LineString>;
+  links: FeatureCollection<LineString, LinkProperties>;
+}
+
+/** A station at an end of a link. */
+export interface LinkEnd {
+  id: number;
+  name: string | null;
+  lon: number;
+  lat: number;
+}
+
+/** The stations at the first and last points of a link. */
+export interface LinkProperties {
+  start: LinkEnd;
+  end: LinkEnd;
 }
 
 /** A station under the pointer. */
@@ -38,6 +52,7 @@ const SOURCES = {
 const LAYERS = {
   unvisited: "stations-unvisited",
   linksCasing: "rail-links-casing",
+  ties: "rail-links-ties",
   links: "rail-links-line",
   visited: "stations-visited",
   trains: "station-trains-icon",
@@ -57,6 +72,8 @@ const ICONS_IN = fadeIn(ICON_MIN_ZOOM, 1);
 const DOTS_OUT: ExpressionSpecification = ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 1, ICON_MIN_ZOOM + FADE_ZOOMS, 0];
 const ICON_SIZE: ExpressionSpecification = ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 0.75, 16, 1.1];
 const NAME_FONT = ["Noto Sans Bold"];
+/** The links show their sleepers from this zoom, fading in: they look like rails. */
+const TIES_MIN_ZOOM = 13;
 
 /** Veil over the base map, the tiles and the tracks, below the stations: they stand out. */
 const DIM_LAYER_ID = "stations-dim-veil";
@@ -75,7 +92,7 @@ const EMPTY_POINTS: FeatureCollection<Point, { id: number; name: string | null }
   type: "FeatureCollection",
   features: [],
 };
-const EMPTY_LINES: FeatureCollection<LineString> = { type: "FeatureCollection", features: [] };
+const EMPTY_LINES: FeatureCollection<LineString, LinkProperties> = { type: "FeatureCollection", features: [] };
 export const NO_STATION_DATA: StationData = { stations: EMPTY_POINTS, links: EMPTY_LINES };
 
 /** Grows with the zoom, from a dot on a country to a marker on a town. */
@@ -103,10 +120,12 @@ function inHistory(firstVisitAt: string | null, history: MapHistory | null): boo
 export function stationData(visited: VisitedStations | null, history: MapHistory | null): StationData {
   if (!visited) return NO_STATION_DATA;
   const firstVisits = new Map<number, string | null>();
+  const ends = new Map<number, LinkEnd>();
   const features: StationData["stations"]["features"] = [];
   for (const station of visited.stations) {
     if (!inHistory(station.firstVisitAt, history)) continue;
     firstVisits.set(station.id, station.firstVisitAt);
+    ends.set(station.id, { id: station.id, name: station.name, lon: station.lon, lat: station.lat });
     features.push({
       type: "Feature",
       id: station.id,
@@ -120,10 +139,14 @@ export function stationData(visited: VisitedStations | null, history: MapHistory
     if (a === undefined || b === undefined) continue;
     const unlockedAt = a === null || b === null ? (a ?? b) : a > b ? a : b;
     if (!inHistory(unlockedAt, history)) continue;
+    const [first, second] = link.stations.map((id) => ends.get(id)!);
+    // The station nearest the first point starts the link.
+    const [lon, lat] = link.coords[0];
+    const startsAtFirst = Math.hypot(first.lon - lon, first.lat - lat) <= Math.hypot(second.lon - lon, second.lat - lat);
     links.push({
       type: "Feature",
       id: link.id,
-      properties: {},
+      properties: startsAtFirst ? { start: first, end: second } : { start: second, end: first },
       geometry: { type: "LineString", coordinates: link.coords },
     });
   }
@@ -197,6 +220,23 @@ export function addStationLayers(
     },
     belowLabels,
   );
+  // Short wide dashes across the line: the sleepers.
+  map.addLayer(
+    {
+      id: LAYERS.ties,
+      type: "line",
+      source: SOURCES.links,
+      minzoom: TIES_MIN_ZOOM,
+      layout: { ...layout, "line-join": "round" },
+      paint: {
+        "line-color": palette.railLink,
+        "line-opacity": fadeIn(TIES_MIN_ZOOM, 0.7),
+        "line-width": ["interpolate", ["linear"], ["zoom"], TIES_MIN_ZOOM, 6, 16, 9, 18, 14],
+        "line-dasharray": [0.18, 0.7],
+      },
+    },
+    belowLabels,
+  );
   map.addLayer(
     {
       id: LAYERS.links,
@@ -234,8 +274,8 @@ export function addStationLayers(
       minzoom: ICON_MIN_ZOOM,
       layout: {
         ...layout,
-        "icon-image": STATION_ICONS.train,
-        "icon-size": ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 0.9, 16, 1.4],
+        "icon-image": ["get", "image"],
+        "icon-size": TRAIN_SIZE,
         "icon-rotate": ["get", "bearing"],
         "icon-rotation-alignment": "map",
         "icon-allow-overlap": true,
@@ -404,6 +444,21 @@ export function setStationsVisible(map: MapLibreMap, visible: boolean): void {
 /** Dims the map below the stations, or not; ignored until the layers are added. */
 export function setMapDimmed(map: MapLibreMap, dimmed: boolean): void {
   if (map.getLayer(DIM_LAYER_ID)) map.setLayoutProperty(DIM_LAYER_ID, "visibility", visibility(dimmed));
+}
+
+/** Id of the train drawn under the pointer or a few pixels from it; null without any. */
+export function trainNear(map: MapLibreMap, point: { x: number; y: number }): number | null {
+  if (!map.getLayer(LAYERS.trains) || map.getLayoutProperty(LAYERS.trains, "visibility") === "none") return null;
+  if (map.getZoom() < TRAINS_MIN_ZOOM) return null;
+  const [feature] = map.queryRenderedFeatures(
+    [
+      [point.x - PICK_TOLERANCE_PX, point.y - PICK_TOLERANCE_PX],
+      [point.x + PICK_TOLERANCE_PX, point.y + PICK_TOLERANCE_PX],
+    ],
+    { layers: [LAYERS.trains] },
+  );
+  const id = Number(feature?.properties.train);
+  return Number.isSafeInteger(id) ? id : null;
 }
 
 /** The station drawn under the pointer or a few pixels from it, visited ones first; null without any. */

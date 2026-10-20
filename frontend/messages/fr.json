@@ -547,6 +547,35 @@
       "viewTile": "Voir la petite tuile",
       "error": "Impossible de charger cette gare.",
       "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>"
+    },
+    "trainPanel": {
+      "title": "{kind} {number}",
+      "kinds": {
+        "ter": "TER",
+        "intercites": "Intercités",
+        "tgv": "TGV",
+        "freight": "Fret"
+      },
+      "running": "En marche",
+      "dwelling": "À quai",
+      "onTime": "À l'heure",
+      "late": "Retard +{minutes} min",
+      "speed": "Vitesse",
+      "kmh": "{speed} km/h",
+      "remaining": "Prochain arrêt dans",
+      "vehicles": "Véhicules",
+      "passengers": "Voyageurs",
+      "cargo": "Chargement",
+      "goods": "Marchandises",
+      "onLink": "Trains sur la liaison",
+      "journey": "Trajet",
+      "from": "Provenance",
+      "to": "Destination",
+      "unnamed": "Gare sans nom",
+      "follow": "Suivre le train",
+      "following": "Suivi en cours",
+      "gone": "Ce train a quitté la carte.",
+      "disclaimer": "Train fictif : il circule sur tes liaisons débloquées, ses chiffres sont inventés."
     }
   }
 }

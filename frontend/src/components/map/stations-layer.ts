@@ -19,10 +19,18 @@ import {
   TRAINS_SOURCE,
 } from "./train-traffic";
 
+/** Whether a station or a link was gained in the period of the history: drawn in the pink of the gains. */
+interface Gained {
+  gained?: boolean;
+}
+
 /** What the stations layer draws: the visited stations and the links unlocked between them. */
 export interface StationData {
-  stations: FeatureCollection<Point, { id: number; name: string | null }>;
-  links: FeatureCollection<LineString, LinkProperties>;
+  stations: FeatureCollection<
+    Point,
+    { id: number; name: string | null } & Gained
+  >;
+  links: FeatureCollection<LineString, LinkProperties & Gained>;
 }
 
 /** A station at an end of a link. */
@@ -202,20 +210,50 @@ function rememberVisited(map: MapLibreMap, data: StationData): void {
   );
 }
 
-/** Whether a first visit counts for the history: the map as it was then, or what was gained since. */
+/** Whether a first visit falls in the period of the history; a visit not dated yet counts as an old one. */
+function isGained(
+  firstVisitAt: string | null,
+  history: MapHistory | null,
+): boolean {
+  return (
+    history !== null && firstVisitAt !== null && firstVisitAt >= history.instant
+  );
+}
+
+/** Whether a first visit counts for the history: the map as it was then, or all of it with the gains apart. */
 function inHistory(
   firstVisitAt: string | null,
   history: MapHistory | null,
 ): boolean {
-  if (!history) return true;
-  const gained = firstVisitAt !== null && firstVisitAt >= history.instant;
-  // A visit not dated yet counts as an old one.
-  return history.mode === "gained" ? gained : !gained;
+  return history?.mode !== "state" || !isGained(firstVisitAt, history);
+}
+
+/** The earlier features first: the gained ones are drawn over them. */
+function gainedLast<T extends { properties: Gained }>(features: T[]): T[] {
+  return features.sort(
+    (a, b) =>
+      Number(a.properties.gained ?? false) -
+      Number(b.properties.gained ?? false),
+  );
+}
+
+/** Color of a station or a link: the pink of the gains when gained in the period of the history. */
+function gainedColor(
+  color: string,
+  palette: MapPalette,
+): ExpressionSpecification {
+  return [
+    "case",
+    ["boolean", ["get", "gained"], false],
+    palette.activityTrack,
+    color,
+  ];
 }
 
 /**
  * The visited stations and the links between them, as of the history when
- * open: a link is unlocked by the later of the first visits of its stations.
+ * open, or all of them with the gains apart: a link is unlocked by the later
+ * of the first visits of its stations.
  */
 export function stationData(
   visited: VisitedStations | null,
@@ -237,7 +275,11 @@ export function stationData(
     features.push({
       type: "Feature",
       id: station.id,
-      properties: { id: station.id, name: station.name },
+      properties: {
+        id: station.id,
+        name: station.name,
+        gained: isGained(station.firstVisitAt, history),
+      },
       geometry: { type: "Point", coordinates: [station.lon, station.lat] },
     });
   }
@@ -256,15 +298,18 @@ export function stationData(
     links.push({
       type: "Feature",
       id: link.id,
-      properties: startsAtFirst
-        ? { start: first, end: second }
-        : { start: second, end: first },
+      properties: {
+        ...(startsAtFirst
+          ? { start: first, end: second }
+          : { start: second, end: first }),
+        gained: isGained(unlockedAt, history),
+      },
       geometry: { type: "LineString", coordinates: link.coords },
     });
   }
   return {
-    stations: { type: "FeatureCollection", features },
-    links: { type: "FeatureCollection", features: links },
+    stations: { type: "FeatureCollection", features: gainedLast(features) },
+    links: { type: "FeatureCollection", features: gainedLast(links) },
   };
 }
 
@@ -364,7 +409,7 @@ export function addStationLayers(
       minzoom: TIES_MIN_ZOOM,
       layout: { ...layout, "line-join": "round" },
       paint: {
-        "line-color": palette.railLink,
+        "line-color": gainedColor(palette.railLink, palette),
         "line-opacity": fadeIn(TIES_MIN_ZOOM, 0.7),
         "line-width": realScale([
           [TIES_MIN_ZOOM, 5],
@@ -383,7 +428,7 @@ export function addStationLayers(
       source: SOURCES.links,
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
-        "line-color": palette.railLink,
+        "line-color": gainedColor(palette.railLink, palette),
         "line-width": railWidth(1.2, 2, 3.5),
       },
     },
@@ -396,7 +441,7 @@ export function addStationLayers(
       source: SOURCES.visited,
       layout,
       paint: {
-        "circle-color": palette.station,
+        "circle-color": gainedColor(palette.station, palette),
         "circle-radius": byZoom(2.5, 4, 6),
         "circle-stroke-color": palette.stationCasing,
         "circle-stroke-width": byZoom(1, 1.5, 2),

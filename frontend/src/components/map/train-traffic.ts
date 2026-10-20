@@ -105,7 +105,7 @@ const MAX_TRAINS = 80;
 /** On each railway, one train for each such length of track, in metres, at most one by station and so many. */
 const RAILWAY_M_PER_TRAIN = 10_000;
 /** A railway shorter than this, in metres, has a single train. */
-const SHORT_RAILWAY_M = 15_000;
+const SHORT_RAILWAY_M = 8_000;
 const MAX_TRAINS_PER_RAILWAY = 14;
 /** About 30 frames a second: smooth enough for a train, half the work of the screen rate. */
 const FRAME_MS = 1000 / 30;
@@ -128,6 +128,8 @@ const WHISTLE_BEFORE_MS = 1800;
 const WHISTLE_CHANCE = 0.5;
 /** How often missing trains are put on the network, in milliseconds. */
 const SPAWN_EVERY_MS = 1000;
+/** Places drawn at random for a new train: it goes to the one farthest from the others, spread but not on a grid. */
+const SPAWN_CANDIDATES = 4;
 /** Gap between two vehicles, in CSS pixels before the size of the trains. */
 const COUPLING_PX = 1.2;
 /** Time constant of the camera catching up with the train it follows, in seconds. */
@@ -254,6 +256,17 @@ interface Step {
 interface Route {
   steps: Step[];
   length: number;
+}
+
+/** Where a new train would run, and how far it would be from the others, in metres. */
+interface Placement {
+  kind: TrainKind;
+  count: number;
+  path: Path;
+  stopsAt: Set<number>;
+  at: number;
+  span: number;
+  room: number;
 }
 
 /** What runs on a railway: its routes, and how many trains it should have. */
@@ -640,8 +653,10 @@ export class TrainTraffic {
   ) {
     this.visible = visible;
     map.on("moveend", this.onMoveEnd);
-    // Dragged by the user, the map stops following the train.
-    map.on("dragstart", this.stopFollowing);
+    // Grabbed by the user, the map stops following the train: following, each
+    // frame would cancel the drag before it starts.
+    map.on("mousedown", this.stopFollowing);
+    map.on("touchstart", this.stopFollowing);
     // A new style has an empty source: the trains are drawn again.
     map.on("style.load", this.redraw);
     document.addEventListener("visibilitychange", this.run);
@@ -726,7 +741,8 @@ export class TrainTraffic {
   destroy(): void {
     this.pause();
     this.map.off("moveend", this.onMoveEnd);
-    this.map.off("dragstart", this.stopFollowing);
+    this.map.off("mousedown", this.stopFollowing);
+    this.map.off("touchstart", this.stopFollowing);
     this.map.off("style.load", this.redraw);
     document.removeEventListener("visibilitychange", this.run);
   }
@@ -902,14 +918,23 @@ export class TrainTraffic {
     return toRoute(chain.steps.slice(first, first + links));
   }
 
-  /** Stations a train of `kind` stops at along `steps`: everywhere, at the ends and junctions only, or in between. */
-  private stopsFor(kind: TrainKind, steps: Step[]): Set<number> {
+  /**
+   * Stations a train of `kind` stops at along `steps`: everywhere, at the
+   * ends and junctions only, or in between. The only train of its railway
+   * stops everywhere: no station is left without one.
+   */
+  private stopsFor(
+    kind: TrainKind,
+    steps: Step[],
+    everywhere: boolean,
+  ): Set<number> {
     const stations = [startOf(steps[0]), ...steps.map(endOf)];
     const ends = [stations[0], stations[stations.length - 1]];
     const stops = new Set(ends.map((s) => s.id));
     for (const station of stations) {
       const junction = this.isJunction(station.id);
       if (
+        everywhere ||
         kind === "ter" ||
         kind === "local" ||
         (kind === "intercites" &&
@@ -960,13 +985,15 @@ export class TrainTraffic {
   }
 
   /**
-   * Puts a train on `line`: a random service and a kind fit for it, with as
-   * many cars as the route holds, somewhere on it heading either way, on
-   * free track.
+   * A place for a train on `line`: a random service and a kind fit for it,
+   * with as many cars as the route holds, somewhere on it heading either way,
+   * on free track; null when the track is taken. The only train of its
+   * railway runs the whole line.
    */
-  private spawn(line: number): void {
+  private place(line: number): Placement | null {
     const railway = this.railways[line];
-    const service = weighted(SERVICES) ?? "junction";
+    const alone = railway.target === 1;
+    const service = alone ? "line" : (weighted(SERVICES) ?? "junction");
     const route = this.routeOf(railway, service);
     let kind = kindFor(service, route.length);
     const metresPerPx =
@@ -980,18 +1007,41 @@ export class TrainTraffic {
           (TRAIN_PARTS[KINDS[k].part].length + COUPLING_PX),
       );
     if (fitting(kind) < KINDS[kind].cars[0]) kind = "local";
-    const { cars, number } = KINDS[kind];
+    const { cars } = KINDS[kind];
     const count = Math.min(randomInt(cars[0], cars[1]), fitting(kind));
-    if (count < cars[0]) return;
+    if (count < cars[0]) return null;
     const span = lengthPx(kind, count) * metresPerPx;
     const margin = Math.min(SAFETY_M, (route.length - span) / 2);
     const steps = Math.random() < 0.5 ? route.steps : reversed(route.steps);
-    const stopsAt = this.stopsFor(kind, steps);
+    const stopsAt = this.stopsFor(kind, steps, alone);
     const path = this.journey(steps, stopsAt);
     // Anywhere on the route, the whole train on it, on free track.
     const at = random(margin + span, path.length - margin);
     for (const [key] of this.blocks(path, at - span - margin, at + margin))
-      if (!this.free(key, null)) return;
+      if (!this.free(key, null)) return null;
+    return { kind, count, path, stopsAt, at, span, room: 0 };
+  }
+
+  /**
+   * Puts a train on `line`, on the best of a few random places: the one
+   * farthest from the other trains, which spreads them over the network.
+   */
+  private spawn(line: number): void {
+    const others = this.trains.map((t) => pointAt(t.path, t.at));
+    let best: Placement | null = null;
+    for (let i = 0; i < SPAWN_CANDIDATES; i++) {
+      const placement = this.place(line);
+      if (!placement) continue;
+      const position = pointAt(placement.path, placement.at);
+      placement.room = Math.min(
+        Infinity,
+        ...others.map((other) => metres(position, other)),
+      );
+      if (!best || placement.room > best.room) best = placement;
+    }
+    if (!best) return;
+    const { kind, count, path, stopsAt, at, span } = best;
+    const { number } = KINDS[kind];
     const isFreight = kind === "freight";
     const train: Train = {
       id: this.nextId++,

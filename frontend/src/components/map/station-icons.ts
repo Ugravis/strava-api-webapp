@@ -9,9 +9,19 @@ export const STATION_ICONS = {
   bubbleUnvisited: "station-name-bubble-unvisited",
 } as const;
 
-/** Vehicles of a train, seen from above pointing north, `length` long in CSS pixels; each has a selected variant. */
+/**
+ * Vehicles of a train, seen from above pointing north, `length` long in CSS
+ * pixels; each has a selected variant. Each kind of train has its own driving
+ * vehicle: the pointed nose of a TGV, the rounded front of a TER, the boxy
+ * locomotive of an Intercités, the hooded one of a freight train, the short
+ * railcar of a local shuttle.
+ */
 export const TRAIN_PARTS = {
-  loco: { image: "train-loco", length: 18 },
+  tgvCab: { image: "train-cab-tgv", length: 22 },
+  terCab: { image: "train-cab-ter", length: 18 },
+  intercitesCab: { image: "train-cab-intercites", length: 18 },
+  freightCab: { image: "train-cab-freight", length: 17 },
+  localCab: { image: "train-cab-local", length: 15 },
   car: { image: "train-car", length: 16 },
   wagon: { image: "train-wagon", length: 14 },
 } as const;
@@ -28,14 +38,20 @@ const GLYPH_SIZE = 11;
 /** Bubble: a rounded box over a tail pointing at the station. */
 const BUBBLE = { width: 28, box: 18, tail: 6, radius: 7 } as const;
 /** Width of the vehicles of a train, in CSS pixels. */
-const TRAIN_WIDTH = 8;
+export const TRAIN_WIDTH = 8;
+/** The vehicles are drawn much larger: they grow with the ground zoomed in and stay sharp. */
+const TRAIN_RATIO = 12;
 
-function canvas(width: number, height: number): CanvasRenderingContext2D {
+function canvas(
+  width: number,
+  height: number,
+  ratio = RATIO,
+): CanvasRenderingContext2D {
   const element = document.createElement("canvas");
-  element.width = width * RATIO;
-  element.height = height * RATIO;
+  element.width = width * ratio;
+  element.height = height * ratio;
   const context = element.getContext("2d")!;
-  context.scale(RATIO, RATIO);
+  context.scale(ratio, ratio);
   return context;
 }
 
@@ -100,36 +116,87 @@ function block(color: string, casing: string): ImageData {
   return image(c);
 }
 
-/** A vehicle of a train in `color`, outlined in `casing`: a locomotive with its cab at the front, a coach with its roof, a freight wagon with its ribs. */
+/** The outline of the front of a driving vehicle, from its left side to its right one: pointed, rounded or flat. */
+function cabFront(c: CanvasRenderingContext2D, part: TrainPart): void {
+  const right = TRAIN_WIDTH - 0.75;
+  if (part === "tgvCab") {
+    c.moveTo(0.75, 9);
+    c.bezierCurveTo(0.75, 3, 2.5, 0.75, TRAIN_WIDTH / 2, 0.75);
+    c.bezierCurveTo(TRAIN_WIDTH - 2.5, 0.75, right, 3, right, 9);
+    return;
+  }
+  const radius = part === "terCab" || part === "localCab" ? 3.5 : 1.2;
+  c.moveTo(0.75, 0.75 + radius);
+  c.arcTo(0.75, 0.75, 0.75 + radius, 0.75, radius);
+  c.arcTo(right, 0.75, right, 0.75 + radius, radius);
+}
+
+/**
+ * A vehicle of a train in `color`, outlined in `casing`: a driving vehicle
+ * with its cab at the front, a coach with its roof, a freight wagon with its
+ * ribs.
+ */
 function vehicle(part: TrainPart, color: string, casing: string): ImageData {
   const length = TRAIN_PARTS[part].length;
-  const c = canvas(TRAIN_WIDTH, length);
+  const c = canvas(TRAIN_WIDTH, length, TRAIN_RATIO);
   const inner = TRAIN_WIDTH - 1.5;
+  const bottom = length - 0.75;
   c.fillStyle = color;
   c.strokeStyle = casing;
   c.lineWidth = 1.2;
+  c.lineJoin = "round";
   c.beginPath();
-  c.roundRect(
-    0.75,
-    0.75,
-    inner,
-    length - 1.5,
-    part === "loco" ? [3.5, 3.5, 1.2, 1.2] : part === "car" ? 1.5 : 0.8,
-  );
+  if (part.endsWith("Cab")) {
+    cabFront(c, part);
+    c.arcTo(TRAIN_WIDTH - 0.75, bottom, 0.75, bottom, 1.2);
+    c.arcTo(0.75, bottom, 0.75, 0.75, 1.2);
+    c.closePath();
+  } else {
+    c.roundRect(0.75, 0.75, inner, length - 1.5, part === "car" ? 1.5 : 0.8);
+  }
   c.fill();
   c.stroke();
   c.fillStyle = casing;
-  if (part === "loco") {
-    // The windscreen at the front, the roof equipment behind it.
-    c.fillRect(2, 2.6, TRAIN_WIDTH - 4, 2);
-    c.fillRect(3, 8, TRAIN_WIDTH - 6, 6);
-  } else if (part === "car") {
-    // A line of roof vents.
-    for (let y = 3.5; y < length - 3; y += 3)
-      c.fillRect(3.2, y, TRAIN_WIDTH - 6.4, 1.2);
-  } else {
-    for (let y = 3; y < length - 2; y += 2.5)
-      c.fillRect(1.4, y, TRAIN_WIDTH - 2.8, 0.7);
+  switch (part) {
+    case "tgvCab":
+      // A narrow windscreen far back on the nose, the pantograph on the roof.
+      c.fillRect(2.2, 7, TRAIN_WIDTH - 4.4, 1.8);
+      c.fillRect(3.2, 13, TRAIN_WIDTH - 6.4, 6);
+      break;
+    case "terCab":
+      c.fillRect(1.8, 2.4, TRAIN_WIDTH - 3.6, 2.2);
+      for (let y = 8; y < length - 2; y += 3)
+        c.fillRect(3.2, y, TRAIN_WIDTH - 6.4, 1.2);
+      break;
+    case "intercitesCab":
+      // A cab at each end of the box, the two pantographs between.
+      c.fillRect(2, 2.2, TRAIN_WIDTH - 4, 1.6);
+      c.fillRect(2.6, 5.5, TRAIN_WIDTH - 5.2, 3);
+      c.fillRect(2.6, 10, TRAIN_WIDTH - 5.2, 3);
+      c.fillRect(2, length - 3.8, TRAIN_WIDTH - 4, 1.6);
+      break;
+    case "freightCab":
+      // A short cab, then the long hood and its louvres.
+      c.fillRect(2, 2.2, TRAIN_WIDTH - 4, 1.6);
+      for (let y = 6.5; y < length - 2; y += 1.8)
+        c.fillRect(2.4, y, TRAIN_WIDTH - 4.8, 0.7);
+      break;
+    case "localCab":
+      // The wide windscreen of a railcar, its exhaust on the roof.
+      c.fillRect(1.6, 2.4, TRAIN_WIDTH - 3.2, 2.6);
+      c.beginPath();
+      c.arc(TRAIN_WIDTH / 2, 9.5, 1.3, 0, 2 * Math.PI);
+      c.fill();
+      break;
+    case "car":
+      // A line of roof vents.
+      for (let y = 3.5; y < length - 3; y += 3)
+        c.fillRect(3.2, y, TRAIN_WIDTH - 6.4, 1.2);
+      break;
+    case "wagon":
+      for (let y = 3; y < length - 2; y += 2.5)
+        c.fillRect(1.4, y, TRAIN_WIDTH - 2.8, 0.7);
+      break;
   }
   return image(c);
 }
@@ -139,6 +206,8 @@ type ImageEntry = [
   data: ImageData,
   options: Parameters<MapLibreMap["addImage"]>[2],
 ];
+
+const VEHICLE_OPTIONS: ImageEntry[2] = { pixelRatio: TRAIN_RATIO };
 
 /** Adds the images of the stations layer to the style, replacing those of another palette. */
 export function addStationIcons(map: MapLibreMap, palette: MapPalette): void {
@@ -177,12 +246,12 @@ export function addStationIcons(map: MapLibreMap, palette: MapPalette): void {
         [
           TRAIN_PARTS[part].image,
           vehicle(part, palette.stationCasing, palette.station),
-          {},
+          VEHICLE_OPTIONS,
         ],
         [
           TRAIN_PARTS[part].image + SELECTED_SUFFIX,
           vehicle(part, palette.station, palette.stationCasing),
-          {},
+          VEHICLE_OPTIONS,
         ],
       ],
     ),

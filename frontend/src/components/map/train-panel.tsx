@@ -1,14 +1,15 @@
 "use client";
 
-import { ChevronRightIcon, CrosshairIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, CrosshairIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { REAL_TRAIN_SPEED, useTrainSpeed } from "@/lib/trains/train-speed";
 import { cn } from "@/lib/utils";
 import { PanelFigure } from "./panel-figure";
 import type { LinkEnd, StationPick } from "./stations-layer";
-import type { TrainInfo } from "./train-traffic";
+import type { TrainInfo, TrainStop } from "./train-traffic";
 
 /** The figures of a train change as it runs: read again a few times a second. */
 const REFRESH_MS = 500;
@@ -22,9 +23,10 @@ interface TrainPanelProps {
 }
 
 /**
- * Content of the panel for a train running on the map: where it comes from
- * and goes, how fast, and made-up figures such as its passengers. The camera
- * follows it until the map is dragged.
+ * Content of the panel for a train running on the map: where it comes from,
+ * stops next and ends, its stops with their times, how fast, and made-up
+ * figures such as its passengers. The camera follows it until the map is
+ * dragged.
  */
 export function TrainPanel({
   trainId,
@@ -35,6 +37,8 @@ export function TrainPanel({
   const t = useTranslations("map.trainPanel");
   const format = useFormatter();
   const [info, setInfo] = useState(() => getInfo(trainId));
+  const [itineraryOpen, setItineraryOpen] = useState(false);
+  const factor = useTrainSpeed();
 
   useEffect(() => {
     const timer = setInterval(() => setInfo(getInfo(trainId)), REFRESH_MS);
@@ -71,7 +75,11 @@ export function TrainPanel({
       <dl className="grid grid-cols-3 gap-3">
         <PanelFigure
           label={t("speed")}
-          value={t("kmh", { speed: info.speedKmh })}
+          value={
+            factor === REAL_TRAIN_SPEED
+              ? t("kmh", { speed: info.speedKmh })
+              : `${t("kmh", { speed: info.speedKmh })} ${t("speedFactor", { factor })}`
+          }
         />
         <PanelFigure label={t("remaining")} value={km(info.remainingM)} />
         <PanelFigure label={t("vehicles")} value={String(info.vehicles)} />
@@ -102,15 +110,51 @@ export function TrainPanel({
         <ul className="flex flex-col divide-y">
           <StationRow
             label={t("from")}
-            station={info.from}
+            station={info.origin}
             onOpenStation={onOpenStation}
           />
           <StationRow
-            label={t("to")}
-            station={info.to}
+            label={t("next")}
+            station={info.next}
+            onOpenStation={onOpenStation}
+          />
+          <StationRow
+            label={t("terminus")}
+            station={info.terminus}
             onOpenStation={onOpenStation}
           />
         </ul>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          aria-expanded={itineraryOpen}
+          aria-controls="train-itinerary"
+          onClick={() => setItineraryOpen(!itineraryOpen)}
+        >
+          <ChevronDownIcon
+            data-icon="inline-start"
+            className={cn(
+              "transition-transform",
+              !itineraryOpen && "-rotate-90",
+            )}
+            aria-hidden
+          />
+          {t("itinerary", { count: info.stops.length })}
+        </Button>
+        {itineraryOpen && (
+          <ol id="train-itinerary" className="flex flex-col">
+            {info.stops.map((stop, index) => (
+              <ItineraryStop
+                // A loop passes its first station again at its end.
+                key={`${stop.station.id}-${index}`}
+                stop={stop}
+                last={index === info.stops.length - 1}
+                onOpenStation={onOpenStation}
+              />
+            ))}
+          </ol>
+        )}
       </section>
 
       <Button
@@ -164,6 +208,70 @@ function StationRow({
           className="size-4 shrink-0 text-muted-foreground"
           aria-hidden
         />
+      </button>
+    </li>
+  );
+}
+
+/** A stop of the itinerary on its line: a dot filled once served, the time on the right. */
+function ItineraryStop({
+  stop,
+  last,
+  onOpenStation,
+}: {
+  stop: TrainStop;
+  last: boolean;
+  onOpenStation: (station: StationPick) => void;
+}) {
+  const t = useTranslations("map.trainPanel");
+  const format = useFormatter();
+  const { station, passed } = stop;
+  return (
+    <li className="relative">
+      {!last && (
+        <span
+          className={cn(
+            "absolute top-1/2 left-[0.3125rem] h-full w-0.5",
+            passed ? "bg-primary" : "bg-border",
+          )}
+          aria-hidden
+        />
+      )}
+      <button
+        type="button"
+        onClick={() =>
+          onOpenStation({ id: station.id, lon: station.lon, lat: station.lat })
+        }
+        className={cn(
+          "relative flex w-full items-center gap-2.5 py-1.5 text-left",
+          "hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+        )}
+      >
+        <span
+          className={cn(
+            "size-3 shrink-0 rounded-full border-2 border-primary",
+            passed ? "bg-primary" : "bg-background",
+          )}
+          aria-hidden
+        />
+        <span
+          className={cn(
+            "min-w-0 flex-1 truncate",
+            passed && "text-muted-foreground",
+          )}
+        >
+          {station.name ?? t("unnamed")}
+        </span>
+        <time
+          dateTime={new Date(stop.time).toISOString()}
+          title={passed ? t("passed") : t("estimated")}
+          className={cn(
+            "shrink-0 text-xs tabular-nums",
+            passed ? "text-muted-foreground" : "font-medium",
+          )}
+        >
+          {format.dateTime(stop.time, { hour: "2-digit", minute: "2-digit" })}
+        </time>
       </button>
     </li>
   );

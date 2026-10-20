@@ -16,7 +16,7 @@ import {
   horn,
   setTrainRolling,
 } from "@/lib/sound/train-sound";
-import { FADE_ZOOMS } from "./map-style";
+import { trainSpeed } from "@/lib/trains/train-speed";
 import {
   SELECTED_SUFFIX,
   TRAIN_BLOCK,
@@ -27,11 +27,10 @@ import type { LinkEnd, LinkProperties } from "./stations-layer";
 
 /** Source of the trains, drawn by the stations layer. */
 export const TRAINS_SOURCE = "station-trains";
-/** Zoom from which the trains fade in, as plain blocks. */
+/** Zoom from which the trains show, as plain blocks. */
 export const TRAINS_MIN_ZOOM = 9;
-/** Zoom from which each train shows its vehicles, cross-fading from its block over half a level. */
+/** Zoom from which each train shows its vehicles instead of its block. */
 export const TRAINS_DETAIL_ZOOM = 13;
-const DETAIL_BLEND_ZOOMS = 0.5;
 /** Marks the moves of the camera following a train: the handlers of the user's moves ignore them. */
 export const TRAIN_FOLLOW_EVENT = "trainFollow";
 
@@ -44,6 +43,10 @@ const MIN_TRAIN_SIZE = 1.1;
 /** Latitude of the real scale, mid France: a style expression cannot read the latitude. */
 const REFERENCE_LATITUDE = 46.5;
 const MAX_SCALE_ZOOM = 24;
+/** Distance between the two tracks of a line, centre to centre, in CSS pixels of the images of the trains. */
+const TRACK_SPACING_PX = 10;
+/** The two tracks part from one line between these zooms. */
+const TRACKS_SPLIT_ZOOMS = [12, 13] as const;
 
 function metresPerPixelAt(zoom: number, latitude: number): number {
   return (
@@ -63,48 +66,57 @@ export const REAL_SCALE_ZOOM = Math.log2(
     (512 * METRES_PER_IMAGE_PX),
 );
 
-/**
- * A size by zoom from `stops` (increasing zooms), up to the real scale, then
- * doubling with each zoom level as the ground does.
- */
-export function realScale(
-  stops: [zoom: number, value: number][],
-): ExpressionSpecification {
+type Stop = [zoom: number, value: number];
+
+/** The stops of `realScale(stops)`: those below the real scale, then doubling with each zoom level. */
+function realScaleStops(stops: Stop[]): Stop[] {
   const below = stops.filter(([zoom]) => zoom < REAL_SCALE_ZOOM);
   const [z0, v0] = below[below.length - 1];
   const next = stops.find(([zoom]) => zoom >= REAL_SCALE_ZOOM);
   const atScale = next
     ? v0 + ((next[1] - v0) * (REAL_SCALE_ZOOM - z0)) / (next[0] - z0)
     : v0;
-  const atMax = atScale * 2 ** (MAX_SCALE_ZOOM - REAL_SCALE_ZOOM);
+  return [
+    ...below,
+    [REAL_SCALE_ZOOM, atScale],
+    [MAX_SCALE_ZOOM, atScale * 2 ** (MAX_SCALE_ZOOM - REAL_SCALE_ZOOM)],
+  ];
+}
+
+/**
+ * A size by zoom from `stops` (increasing zooms), up to the real scale, then
+ * doubling with each zoom level as the ground does.
+ */
+export function realScale(stops: Stop[]): ExpressionSpecification {
   return [
     "interpolate",
     ["exponential", 2],
     ["zoom"],
-    ...below.flat(),
-    REAL_SCALE_ZOOM,
-    atScale,
-    MAX_SCALE_ZOOM,
-    atMax,
+    ...realScaleStops(stops).flat(),
   ] as ExpressionSpecification;
+}
+
+/** The value of `realScale(stops)` at `zoom`, as the style draws it. */
+export function realScaleAt(stops: Stop[], zoom: number): number {
+  const points = realScaleStops(stops);
+  if (zoom <= points[0][0]) return points[0][1];
+  for (let i = 1; i < points.length; i++) {
+    const [z1, v1] = points[i];
+    if (zoom > z1) continue;
+    const [z0, v0] = points[i - 1];
+    const t = (2 ** (zoom - z0) - 1) / (2 ** (z1 - z0) - 1);
+    return v0 + (v1 - v0) * t;
+  }
+  return points[points.length - 1][1];
 }
 
 /** Size of the images of the trains. */
 export const TRAIN_SIZE = realScale([[0, MIN_TRAIN_SIZE]]);
 
-/** Opacity of the trains: fading in zoomed out, the blocks giving way to the vehicles zoomed in. */
-export const TRAIN_OPACITY: ExpressionSpecification = [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  TRAINS_MIN_ZOOM,
-  0,
-  TRAINS_MIN_ZOOM + FADE_ZOOMS,
-  ["case", ["get", "block"], ["get", "opacity"], 0],
-  TRAINS_DETAIL_ZOOM - DETAIL_BLEND_ZOOMS,
-  ["case", ["get", "block"], ["get", "opacity"], 0],
-  TRAINS_DETAIL_ZOOM,
-  ["case", ["get", "block"], 0, ["get", "opacity"]],
+/** Distance between the two tracks of a line by zoom, centre to centre, in CSS pixels: none zoomed out. */
+export const TRACK_SPACING: Stop[] = [
+  [TRACKS_SPLIT_ZOOMS[0], 0],
+  [TRACKS_SPLIT_ZOOMS[1], TRACK_SPACING_PX * MIN_TRAIN_SIZE],
 ];
 
 /** Size of the trains at `zoom`, as drawn by `TRAIN_SIZE`. */
@@ -112,94 +124,117 @@ function sizeAt(zoom: number): number {
   return MIN_TRAIN_SIZE * 2 ** Math.max(0, zoom - REAL_SCALE_ZOOM);
 }
 
-/** At most this many trains on the whole network, seen or not. */
-const MAX_TRAINS = 40;
-/** One train for each such length of unlocked railway, in metres. */
-const NETWORK_M_PER_TRAIN = 20_000;
+/** At most this many trains on the whole network beyond the first of each railway. */
+const MAX_TRAINS = 80;
+/** On each railway, one more train for each such length of track, in metres, and at most so many. */
+const RAILWAY_M_PER_TRAIN = 10_000;
+const MAX_TRAINS_PER_RAILWAY = 14;
 /** About 30 frames a second: smooth enough for a train, half the work of the screen rate. */
 const FRAME_MS = 1000 / 30;
 /** Room kept free before and behind each train, in metres: two trains never touch. */
 const SAFETY_M = 300;
+/** Length of the blocks of signalling a track is cut into, in metres: a train holds whole blocks. */
+const BLOCK_M = 1000;
 /** Slowest speed while closing on a stop, in metres a second: a train always ends up there. */
 const CREEP_M_S = 2;
-/** Stop at a station, in milliseconds. */
+/** Stop at a station, in milliseconds of the trains' time. */
 const DWELL_MS = 5000;
-/** Stop before going back from a track taken, in milliseconds. */
+/** Stop at the end of the journey before the way back, in milliseconds of the trains' time. */
+const TERMINUS_DWELL_MS = 8000;
+/** Stop before going back from a track taken, in milliseconds of the trains' time. */
 const TURN_DWELL_MS = 2500;
-/** Wait for a track taken by another train before going back, in milliseconds. */
-const WAIT_MS = 6000;
+/** Wait for a track taken by another train before going back, in milliseconds of the trains' time. */
+const WAIT_MS = 20_000;
 /** How long before leaving the guard may blow the whistle, in milliseconds, and how often. */
 const WHISTLE_BEFORE_MS = 1800;
 const WHISTLE_CHANCE = 0.5;
-/** How often a missing train is put on the network, in milliseconds. */
+/** How often missing trains are put on the network, in milliseconds. */
 const SPAWN_EVERY_MS = 1000;
-/** Fade in of a new train, in milliseconds. */
-const FADE_MS = 800;
 /** Gap between two vehicles, in CSS pixels before the size of the trains. */
 const COUPLING_PX = 1.2;
 /** Time constant of the camera catching up with the train it follows, in seconds. */
 const FOLLOW_S = 0.35;
 /** Part of the view added around it where trains are still drawn: they enter it already there. */
 const VIEW_MARGIN = 0.2;
+/** Shortest journey of a TGV, in metres: shorter, a TER runs instead. */
+const TGV_MIN_M = 30_000;
+/** Chance of an Intercités stopping at a station that is neither an end nor a junction. */
+const INTERCITES_STOP_CHANCE = 0.4;
 
 interface KindSpec {
-  weight: number;
   kmh: number;
   /** Acceleration and braking, in metres a second squared. */
   accel: number;
-  /** Chance of stopping at a station on the way. */
-  stopChance: number;
+  /** The driving vehicle at each end. */
+  cab: TrainPart;
+  /** The vehicles between, at least and at most. */
   part: TrainPart;
-  /** Vehicles between the two driving ones, at least and at most. */
   cars: readonly [number, number];
   seatsPerCar: number;
   number: readonly [number, number];
 }
 
-/** Kinds of trains, picked at random with their weight. */
 const KINDS = {
   ter: {
-    weight: 5,
     kmh: 140,
     accel: 1.1,
-    stopChance: 1,
+    cab: "terCab",
     part: "car",
     cars: [1, 3],
     seatsPerCar: 70,
     number: [800_000, 899_999],
   },
   intercites: {
-    weight: 1.5,
     kmh: 180,
     accel: 0.9,
-    stopChance: 0.5,
+    cab: "intercitesCab",
     part: "car",
     cars: [2, 6],
     seatsPerCar: 80,
     number: [3_000, 4_999],
   },
   tgv: {
-    weight: 2,
     kmh: 300,
     accel: 0.8,
-    stopChance: 0.3,
+    cab: "tgvCab",
     part: "car",
     cars: [3, 8],
     seatsPerCar: 60,
     number: [6_000, 9_999],
   },
   freight: {
-    weight: 1.5,
     kmh: 100,
     accel: 0.4,
-    stopChance: 0,
+    cab: "freightCab",
     part: "wagon",
     cars: [2, 10],
     seatsPerCar: 0,
     number: [40_000, 69_999],
   },
+  local: {
+    kmh: 100,
+    accel: 1.2,
+    cab: "localCab",
+    part: "car",
+    cars: [1, 1],
+    seatsPerCar: 60,
+    number: [860_000, 869_999],
+  },
 } as const satisfies Record<string, KindSpec>;
 export type TrainKind = keyof typeof KINDS;
+
+/**
+ * What a train serves: a whole railway from one end to the other, the
+ * stretch between two junctions, or a few stations in a row.
+ */
+type Service = "line" | "junction" | "local";
+const SERVICES: Record<Service, number> = {
+  line: 0.4,
+  junction: 0.35,
+  local: 0.25,
+};
+/** Shortest and longest local service, in links. */
+const LOCAL_LINKS = [1, 3] as const;
 
 /** What a freight train may carry. */
 export const CARGOES = [
@@ -227,26 +262,45 @@ interface Edge {
   end: LinkEnd;
   /** The railway the link belongs to: links joined by their stations share one. */
   line: number;
+  /** Blocks of signalling each track is cut into. */
+  blocks: number;
+}
+
+/** A link of a route, in its direction of travel. */
+interface Step {
+  edge: Edge;
+  forward: boolean;
+}
+
+/** Links joined end to end through their stations. */
+interface Route {
+  steps: Step[];
+  length: number;
+}
+
+/** What runs on a railway: its routes, and how many trains it should have. */
+interface Railway {
+  /** From an end of the railway to a far end. */
+  lines: Route[];
+  /** Between two stations that are ends or junctions, through the others. */
+  chains: Route[];
+  target: number;
 }
 
 /** A link on the path of a train, in its direction of travel. */
-interface Leg {
-  edge: Edge;
-  forward: boolean;
+interface Leg extends Step {
   /** Distance along the path where the leg starts, in metres. */
   from: number;
   /** Whether the train stops at the station ending the leg. */
   stop: boolean;
 }
 
-/** The track ahead and just behind a train, legs joined end to end. */
+/** The journey of a train, legs joined end to end. */
 interface Path {
   legs: Leg[];
   coords: Position[];
   along: number[];
   length: number;
-  /** Whether the path ends at a dead end, where the train goes back. */
-  terminus: boolean;
 }
 
 /** A vehicle of a train; `reversed` when it runs backwards, as the driving vehicle at the rear. */
@@ -263,27 +317,32 @@ interface Train {
   id: number;
   kind: TrainKind;
   number: number;
+  line: number;
   path: Path;
+  /** Stations the train stops at, by id; it always stops at the end of its journey. */
+  stopsAt: Set<number>;
   /** Distance of the front of the train along its path, in metres. */
   at: number;
+  /** Legs whose station the train has reached. */
+  reached: number;
+  /** When the train left the start of its journey and reached the station ending each leg, in milliseconds since the epoch. */
+  departedAt: number;
+  times: number[];
   /** Track the train keeps for itself, in metres: its longest drawn length, at the detail zoom. */
   span: number;
   /** Speed, in metres a second: the same whatever the zoom. */
   speed: number;
   phase: Phase;
-  /** End of the stop, in milliseconds of `performance.now()`. */
+  /** End of the stop, in milliseconds of the trains' time. */
   dwellUntil: number;
-  /** The leg whose station the train stops at. */
-  stopLeg: Leg | null;
   whistled: boolean;
-  /** Since when the train waits for a track taken, in milliseconds; 0 while it does not. */
+  /** Since when the train waits for a track taken, in milliseconds of the trains' time; 0 while it does not. */
   waitingSince: number;
-  bornAt: number;
   /** From the front to the rear. */
   vehicles: Vehicle[];
   /** Where the block of the train is drawn zoomed out, and its heading. */
   block: { position: Position; bearing: number };
-  /** Tracks and stations the train holds, by key. */
+  /** Blocks of track the train holds, by key. */
   held: Set<string>;
   passengers: number;
   cargo: Cargo | null;
@@ -293,14 +352,25 @@ interface Train {
   seen: boolean;
 }
 
+/** A station where a train stops, with when it did or should. */
+export interface TrainStop {
+  station: LinkEnd;
+  /** Milliseconds since the epoch: when the train left it, reached it, or is expected there. */
+  time: number;
+  passed: boolean;
+}
+
 /** What the panel tells of a train. */
 export interface TrainInfo {
   id: number;
   kind: TrainKind;
   number: number;
-  /** The station the train comes from and the next one. */
-  from: LinkEnd;
-  to: LinkEnd;
+  /** Where the journey started, the next stop and where it ends. */
+  origin: LinkEnd;
+  next: LinkEnd;
+  terminus: LinkEnd;
+  /** From the origin to the terminus. */
+  stops: TrainStop[];
   vehicles: number;
   /** Null for a freight train. */
   passengers: number | null;
@@ -308,8 +378,9 @@ export interface TrainInfo {
   /** Null for a passenger train. */
   cargo: Cargo | null;
   tonnes: number | null;
+  /** Speed at the real pace of the trains. */
   speedKmh: number;
-  /** Distance left to the next station, in metres. */
+  /** Distance left to the next stop, in metres. */
   remainingM: number;
   /** Trains on the same railway, this one included. */
   onLine: number;
@@ -329,11 +400,26 @@ const randomInt = (min: number, max: number) =>
 const pick = <T>(items: readonly T[]): T =>
   items[Math.floor(Math.random() * items.length)];
 const cruise = (kind: TrainKind) => KINDS[kind].kmh / 3.6;
-const edgeKey = (edge: Edge) => `e${edge.index}`;
-const nodeKey = (station: LinkEnd) => `n${station.id}`;
-const startOf = (leg: Leg) => (leg.forward ? leg.edge.start : leg.edge.end);
-const endOf = (leg: Leg) => (leg.forward ? leg.edge.end : leg.edge.start);
+const startOf = (step: Step) =>
+  step.forward ? step.edge.start : step.edge.end;
+const endOf = (step: Step) => (step.forward ? step.edge.end : step.edge.start);
 const legEnd = (leg: Leg) => leg.from + leg.edge.length;
+/** A block of one track of a link: each way has its own track. */
+const blockKey = (step: Step, block: number) =>
+  `${step.edge.index}${step.forward ? "+" : "-"}${block}`;
+
+/** One of `weights`' keys, picked at random by its weight. */
+function weighted<K extends string>(
+  weights: Partial<Record<K, number>>,
+): K | null {
+  const entries = Object.entries(weights) as [K, number][];
+  let left = Math.random() * entries.reduce((sum, [, w]) => sum + w, 0);
+  for (const [key, weight] of entries) {
+    left -= weight;
+    if (left < 0) return key;
+  }
+  return null;
+}
 
 function metres(a: Position, b: Position): number {
   const dx = (b[0] - a[0]) * Math.cos((((a[1] + b[1]) / 2) * Math.PI) / 180);
@@ -350,19 +436,30 @@ function toEdge({
   const along = [0];
   for (let i = 1; i < coords.length; i++)
     along.push(along[i - 1] + metres(coords[i - 1], coords[i]));
+  const length = along[along.length - 1];
   return {
     index: 0,
     coords,
     along,
-    length: along[along.length - 1],
+    length,
     start: properties.start,
     end: properties.end,
     line: 0,
+    blocks: Math.max(1, Math.round(length / BLOCK_M)),
   };
 }
 
+function toRoute(steps: Step[]): Route {
+  return { steps, length: steps.reduce((sum, s) => sum + s.edge.length, 0) };
+}
+
+/** `route` the other way. */
+function reversed(steps: Step[]): Step[] {
+  return [...steps].reverse().map((s) => ({ ...s, forward: !s.forward }));
+}
+
 /** Joins `legs` end to end, setting where each starts. */
-function buildPath(legs: Leg[], terminus = false): Path {
+function buildPath(legs: Leg[]): Path {
   const coords: Position[] = [];
   const along: number[] = [];
   for (const leg of legs) {
@@ -384,7 +481,7 @@ function buildPath(legs: Leg[], terminus = false): Path {
       );
     }
   }
-  return { legs, coords, along, length: along[along.length - 1], terminus };
+  return { legs, coords, along, length: along[along.length - 1] };
 }
 
 /** The point `at` metres along `path`, clamped to its ends. */
@@ -409,34 +506,58 @@ function bearing(from: Position, to: Position): number {
   return (Math.atan2(dx, to[1] - from[1]) * 180) / Math.PI;
 }
 
+/** `point` moved `m` metres to the left of `heading`: trains run on the left-hand track, as in France. */
+function leftOf([lon, lat]: Position, heading: number, m: number): Position {
+  if (m === 0) return [lon, lat];
+  const angle = ((heading - 90) * Math.PI) / 180;
+  return [
+    lon +
+      (Math.sin(angle) * m) /
+        (METRES_PER_DEGREE * Math.cos((lat * Math.PI) / 180)),
+    lat + (Math.cos(angle) * m) / METRES_PER_DEGREE,
+  ];
+}
+
 function inside([lon, lat]: Position, bounds: Bounds): boolean {
   return (
     lon >= bounds[0] && lon <= bounds[2] && lat >= bounds[1] && lat <= bounds[3]
   );
 }
 
-function pickKind(): TrainKind {
-  const kinds = Object.keys(KINDS) as TrainKind[];
-  let left =
-    Math.random() * kinds.reduce((sum, kind) => sum + KINDS[kind].weight, 0);
-  for (const kind of kinds) {
-    left -= KINDS[kind].weight;
-    if (left < 0) return kind;
-  }
-  return "ter";
+/** The kind of a train on a `service` of `length` metres. */
+function kindFor(service: Service, length: number): TrainKind {
+  const weights: Partial<Record<TrainKind, number>> =
+    service === "line"
+      ? {
+          tgv: length >= TGV_MIN_M ? 2 : 0,
+          intercites: 1.5,
+          ter: 2,
+          freight: 1.2,
+        }
+      : service === "junction"
+        ? {
+            ter: 3,
+            intercites: length >= TGV_MIN_M ? 0.7 : 0,
+            freight: 1,
+            local: length < TGV_MIN_M / 2 ? 1.5 : 0.3,
+          }
+        : { local: 3, ter: 1 };
+  return weighted(weights) ?? "ter";
 }
 
 /** Length of a train of `kind` with `cars` between its driving vehicles, in CSS pixels before the size of the trains. */
 function lengthPx(kind: TrainKind, cars: number): number {
+  const { cab, part } = KINDS[kind];
   return (
-    2 * TRAIN_PARTS.loco.length +
-    cars * TRAIN_PARTS[KINDS[kind].part].length +
+    2 * TRAIN_PARTS[cab].length +
+    cars * TRAIN_PARTS[part].length +
     (cars + 1) * COUPLING_PX
   );
 }
 
 /** A driving vehicle at each end, the rear one backwards, and `cars` between. */
 function consist(kind: TrainKind, cars: number): Vehicle[] {
+  const { cab, part } = KINDS[kind];
   const vehicle = (part: TrainPart, reversed = false): Vehicle => ({
     part,
     reversed,
@@ -444,9 +565,9 @@ function consist(kind: TrainKind, cars: number): Vehicle[] {
     bearing: 0,
   });
   return [
-    vehicle("loco"),
-    ...Array.from({ length: cars }, () => vehicle(KINDS[kind].part)),
-    vehicle("loco", true),
+    vehicle(cab),
+    ...Array.from({ length: cars }, () => vehicle(part)),
+    vehicle(cab, true),
   ];
 }
 
@@ -464,26 +585,78 @@ function lookahead(kind: TrainKind): number {
   return cruise(kind) ** 2 / (2 * KINDS[kind].accel) + SAFETY_M + 50;
 }
 
+/** Time lost by `kind` stopping at a station and leaving again, beyond the dwell, in seconds. */
+function stopLossS(kind: TrainKind): number {
+  return cruise(kind) / KINDS[kind].accel;
+}
+
+/** A tiny binary heap of station ids by distance, for the shortest paths. */
+class Queue {
+  private items: [distance: number, id: number][] = [];
+
+  get size(): number {
+    return this.items.length;
+  }
+
+  push(distance: number, id: number): void {
+    const items = this.items;
+    items.push([distance, id]);
+    let i = items.length - 1;
+    while (i > 0) {
+      const parent = (i - 1) >> 1;
+      if (items[parent][0] <= items[i][0]) break;
+      [items[parent], items[i]] = [items[i], items[parent]];
+      i = parent;
+    }
+  }
+
+  pop(): [number, number] {
+    const items = this.items;
+    const top = items[0];
+    const last = items.pop()!;
+    if (items.length > 0) {
+      items[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1;
+        const r = l + 1;
+        let m = i;
+        if (l < items.length && items[l][0] < items[m][0]) m = l;
+        if (r < items.length && items[r][0] < items[m][0]) m = r;
+        if (m === i) break;
+        [items[m], items[i]] = [items[i], items[m]];
+        i = m;
+      }
+    }
+    return top;
+  }
+}
+
 /**
- * Trains running over the whole unlocked railway, from link to link through
- * the stations, whether in view or not: the user looks for them. Each holds
- * the tracks and stations it covers and needs to stop, so trains never
- * overlap; one waiting too long for a track goes back. The animation runs
- * with the stations shown, zoomed in enough and the tab visible, even while
- * the map moves. A train picked can be followed by the camera.
+ * Trains running over the unlocked railway, whether in view or not: the
+ * user looks for them. Each runs a service on its railway (a whole line, the
+ * stretch between two junctions or a few stations), stops where its kind
+ * does, then goes back. Each way has its own track, cut into blocks of
+ * signalling: a train holds those it covers and needs to stop, so trains
+ * never overlap; one waiting too long goes back. The trains' time runs at
+ * the speed picked by the user. The animation runs with the stations shown,
+ * zoomed in enough and the tab visible, even while the map moves. A train
+ * picked can be followed by the camera.
  */
 export class TrainTraffic {
   private edges: Edge[] = [];
   /** The links at each station, by station id. */
   private nodes = new Map<number, Edge[]>();
+  private railways: Railway[] = [];
   private trains: Train[] = [];
-  /** Train holding each track and station, by key. */
+  /** Train holding each block of track, by key. */
   private owners = new Map<string, number>();
-  private target = 0;
   private visible: boolean;
   private frame = 0;
   private lastFrame = 0;
   private lastSpawn = 0;
+  /** The trains' own time, in milliseconds: it runs faster or slower than the clock. */
+  private clock = 0;
   private nextId = 1;
   /** Whether the source is known empty: no data sent again while no train is seen. */
   private empty = false;
@@ -517,18 +690,16 @@ export class TrainTraffic {
         else this.nodes.set(station.id, [e]);
       }
     });
-    this.labelLines();
+    this.railways = this.labelLines().map((edges) => this.toRailway(edges));
+    this.shareTrains();
     this.trains = [];
     this.owners.clear();
-    const total = this.edges.reduce((sum, e) => sum + e.length, 0);
-    this.target = Math.min(MAX_TRAINS, Math.round(total / NETWORK_M_PER_TRAIN));
-    const now = performance.now();
-    for (
-      let attempt = 0;
-      attempt < this.target * 3 && this.trains.length < this.target;
-      attempt++
-    )
-      this.spawn(now);
+    this.railways.forEach((railway, line) => {
+      for (let attempt = 0; attempt < railway.target * 3; attempt++) {
+        if (this.count(line) >= railway.target) break;
+        this.spawn(line);
+      }
+    });
     this.run();
   }
 
@@ -553,24 +724,30 @@ export class TrainTraffic {
   info(id: number): TrainInfo | null {
     const train = this.trains.find((t) => t.id === id);
     if (!train) return null;
-    const leg = this.legAt(train);
+    const { legs } = train.path;
     const isFreight = train.kind === "freight";
+    const stops = this.itinerary(train);
+    const next = stops.find((s) => !s.passed) ?? stops[stops.length - 1];
+    const nextLeg = legs.findIndex(
+      (leg, i) => i >= train.reached && endOf(leg).id === next.station.id,
+    );
     return {
       id,
       kind: train.kind,
       number: train.number,
-      from: startOf(leg),
-      to: endOf(leg),
+      origin: startOf(legs[0]),
+      next: next.station,
+      terminus: endOf(legs[legs.length - 1]),
+      stops,
       vehicles: train.vehicles.length,
       passengers: isFreight ? null : train.passengers,
       seats: isFreight ? null : seats(train),
       cargo: train.cargo,
       tonnes: isFreight ? train.tonnes : null,
       speedKmh: Math.round(train.speed * 3.6),
-      remainingM: Math.max(0, legEnd(leg) - train.at),
-      onLine: this.trains.filter(
-        (t) => this.legAt(t).edge.line === leg.edge.line,
-      ).length,
+      remainingM:
+        nextLeg < 0 ? 0 : Math.max(0, legEnd(legs[nextLeg]) - train.at),
+      onLine: this.count(train.line),
       delayMin: train.delayMin,
       dwelling: train.phase !== "run",
       following: this.following && this.selected === id,
@@ -585,17 +762,19 @@ export class TrainTraffic {
     document.removeEventListener("visibilitychange", this.run);
   }
 
-  /** Numbers the railways: links joined through their stations share one. */
-  private labelLines(): void {
+  /** Numbers the railways, links joined through their stations sharing one: the links of each. */
+  private labelLines(): Edge[][] {
     const done = new Set<number>();
-    let line = 0;
+    const lines: Edge[][] = [];
     for (const first of this.edges) {
       if (done.has(first.index)) continue;
+      const line: Edge[] = [];
       const queue = [first];
       done.add(first.index);
       while (queue.length > 0) {
         const e = queue.pop()!;
-        e.line = line;
+        e.line = lines.length;
+        line.push(e);
         for (const station of [e.start, e.end]) {
           for (const next of this.nodes.get(station.id) ?? []) {
             if (done.has(next.index)) continue;
@@ -604,16 +783,200 @@ export class TrainTraffic {
           }
         }
       }
-      line++;
+      lines.push(line);
     }
+    return lines;
   }
 
-  /** The leg the front of `train` runs on: at a station, the one it arrived by. */
-  private legAt(train: Train): Leg {
-    const { legs } = train.path;
-    for (let i = legs.length - 1; i > 0; i--)
-      if (legs[i].from < train.at) return legs[i];
-    return legs[0];
+  /** Whether trains of a line branch or end at the station `id`: not one of two links. */
+  private isJunction(id: number): boolean {
+    return (this.nodes.get(id)?.length ?? 0) !== 2;
+  }
+
+  /**
+   * The routes of the railway of `edges`: the chains of links between its
+   * ends and junctions, and a few lines from an end to the farthest one.
+   */
+  private toRailway(edges: Edge[]): Railway {
+    const keys = [
+      ...new Set(
+        edges
+          .flatMap((e) => [e.start, e.end])
+          .filter((s) => this.isJunction(s.id)),
+      ),
+    ];
+    // A loop without ends: any station starts it.
+    if (keys.length === 0) keys.push(edges[0].start);
+    const chains: Route[] = [];
+    const walked = new Set<number>();
+    for (const key of keys) {
+      for (const first of this.nodes.get(key.id) ?? []) {
+        if (walked.has(first.index)) continue;
+        const steps: Step[] = [];
+        let edge = first;
+        let station = key;
+        for (;;) {
+          walked.add(edge.index);
+          const forward = edge.start.id === station.id;
+          steps.push({ edge, forward });
+          station = forward ? edge.end : edge.start;
+          if (this.isJunction(station.id) || station.id === key.id) break;
+          const next = this.nodes.get(station.id)!.find((e) => e !== edge);
+          if (!next || walked.has(next.index)) break;
+          edge = next;
+        }
+        chains.push(toRoute(steps));
+      }
+    }
+    // Ends first: a line runs from one to the other.
+    const ends = keys.filter((s) => (this.nodes.get(s.id)?.length ?? 0) === 1);
+    const starts = (ends.length >= 2 ? ends : keys).slice();
+    const lines: Route[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < 3 && starts.length > 0; i++) {
+      const start = starts.splice(
+        Math.floor(Math.random() * starts.length),
+        1,
+      )[0];
+      const line = this.farthest(start, ends.length >= 2 ? ends : keys);
+      if (!line) continue;
+      const a = startOf(line.steps[0]).id;
+      const b = endOf(line.steps[line.steps.length - 1]).id;
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      lines.push(line);
+    }
+    return {
+      lines: lines.length > 0 ? lines : chains,
+      chains,
+      target: 0,
+    };
+  }
+
+  /** The shortest route from `start` to the farthest of `targets`, through the links; null when none is reached. */
+  private farthest(start: LinkEnd, targets: LinkEnd[]): Route | null {
+    const distance = new Map<number, number>([[start.id, 0]]);
+    const via = new Map<number, Step>();
+    const queue = new Queue();
+    queue.push(0, start.id);
+    while (queue.size > 0) {
+      const [d, id] = queue.pop();
+      if (d > (distance.get(id) ?? Infinity)) continue;
+      for (const edge of this.nodes.get(id) ?? []) {
+        const forward = edge.start.id === id;
+        const other = (forward ? edge.end : edge.start).id;
+        const through = d + edge.length;
+        if (through >= (distance.get(other) ?? Infinity)) continue;
+        distance.set(other, through);
+        via.set(other, { edge, forward });
+        queue.push(through, other);
+      }
+    }
+    let end: LinkEnd | null = null;
+    for (const target of targets)
+      if (
+        target.id !== start.id &&
+        (distance.get(target.id) ?? 0) > (end ? distance.get(end.id)! : 0)
+      )
+        end = target;
+    if (!end) return null;
+    const steps: Step[] = [];
+    for (let id = end.id; id !== start.id;) {
+      const step = via.get(id)!;
+      steps.push(step);
+      id = startOf(step).id;
+    }
+    return toRoute(steps.reverse());
+  }
+
+  /** Trains each railway should have: one at least, more on longer ones, a few in all. */
+  private shareTrains(): void {
+    const extras = this.railways.map((railway) =>
+      Math.min(
+        MAX_TRAINS_PER_RAILWAY - 1,
+        Math.ceil(
+          railway.chains.reduce((sum, r) => sum + r.length, 0) /
+            RAILWAY_M_PER_TRAIN,
+        ),
+      ),
+    );
+    const total = extras.reduce((sum, n) => sum + n, 0);
+    const share = total > MAX_TRAINS ? MAX_TRAINS / total : 1;
+    this.railways.forEach((railway, i) => {
+      railway.target = 1 + Math.floor(extras[i] * share);
+    });
+  }
+
+  private count(line: number): number {
+    let n = 0;
+    for (const train of this.trains) if (train.line === line) n++;
+    return n;
+  }
+
+  /** A route of `service` on `railway`: a local service is a few links of a chain. */
+  private routeOf(railway: Railway, service: Service): Route {
+    if (service === "line") return pick(railway.lines);
+    const chain = pick(railway.chains);
+    if (service === "junction") return chain;
+    const links = Math.min(
+      chain.steps.length,
+      randomInt(LOCAL_LINKS[0], LOCAL_LINKS[1]),
+    );
+    const first = randomInt(0, chain.steps.length - links);
+    return toRoute(chain.steps.slice(first, first + links));
+  }
+
+  /** Stations a train of `kind` stops at along `steps`: everywhere, at the ends and junctions only, or in between. */
+  private stopsFor(kind: TrainKind, steps: Step[]): Set<number> {
+    const stations = [startOf(steps[0]), ...steps.map(endOf)];
+    const ends = [stations[0], stations[stations.length - 1]];
+    const stops = new Set(ends.map((s) => s.id));
+    for (const station of stations) {
+      const junction = this.isJunction(station.id);
+      if (
+        kind === "ter" ||
+        kind === "local" ||
+        (kind === "intercites" &&
+          (junction || Math.random() < INTERCITES_STOP_CHANCE)) ||
+        (kind === "tgv" && junction)
+      )
+        stops.add(station.id);
+    }
+    return stops;
+  }
+
+  /** The legs of a journey over `steps`, stopping at `stopsAt`. */
+  private journey(steps: Step[], stopsAt: Set<number>): Path {
+    return buildPath(
+      steps.map((step) => ({
+        ...step,
+        from: 0,
+        stop: stopsAt.has(endOf(step).id),
+      })),
+    );
+  }
+
+  /** Keys of the blocks of `path` from `low` to `high`, in the order of travel, with where each starts. */
+  private *blocks(
+    path: Path,
+    low: number,
+    high: number,
+  ): Generator<[key: string, start: number]> {
+    for (const leg of path.legs) {
+      if (legEnd(leg) < low) continue;
+      if (leg.from > high) return;
+      const { blocks, length } = leg.edge;
+      const size = length / blocks;
+      for (let i = 0; i < blocks; i++) {
+        // Backwards, the blocks of the edge come last first.
+        const block = leg.forward ? i : blocks - 1 - i;
+        const start = leg.from + i * size;
+        if (start + size < low) continue;
+        if (start > high) return;
+        yield [blockKey(leg, block), start];
+      }
+    }
   }
 
   private free(key: string, train: Train | null): boolean {
@@ -622,53 +985,56 @@ export class TrainTraffic {
   }
 
   /**
-   * Puts a train of a random kind on a free link long enough for it, at a
-   * random point, heading either way, with as many cars as fit.
+   * Puts a train on `line`: a random service and a kind fit for it, with as
+   * many cars as the route holds, somewhere on it heading either way, on
+   * free track.
    */
-  private spawn(now: number): void {
-    const kind = pickKind();
-    const { part, cars } = KINDS[kind];
-    const metresPerPx = (e: Edge) =>
-      MIN_TRAIN_SIZE * metresPerPixelAt(TRAINS_DETAIL_ZOOM, e.coords[0][1]);
-    const room = (e: Edge) => e.length - 2 * SAFETY_M;
-    const candidates = this.edges.filter(
-      (e) =>
-        this.free(edgeKey(e), null) &&
-        this.free(nodeKey(e.start), null) &&
-        this.free(nodeKey(e.end), null) &&
-        lengthPx(kind, 1) * metresPerPx(e) <= room(e),
-    );
-    if (candidates.length === 0) return;
-    let left = Math.random() * candidates.reduce((sum, e) => sum + e.length, 0);
-    const chosen =
-      candidates.find((e) => (left -= e.length) < 0) ??
-      candidates[candidates.length - 1];
-    const scale = metresPerPx(chosen);
-    const fitting = Math.floor(
-      (room(chosen) / scale - 2 * TRAIN_PARTS.loco.length - COUPLING_PX) /
-        (TRAIN_PARTS[part].length + COUPLING_PX),
-    );
-    const count = Math.max(1, Math.min(randomInt(cars[0], cars[1]), fitting));
-    const span = lengthPx(kind, count) * scale;
-    const path = buildPath([
-      { edge: chosen, forward: Math.random() < 0.5, from: 0, stop: false },
-    ]);
+  private spawn(line: number): void {
+    const railway = this.railways[line];
+    const service = weighted(SERVICES) ?? "junction";
+    const route = this.routeOf(railway, service);
+    let kind = kindFor(service, route.length);
+    const metresPerPx =
+      MIN_TRAIN_SIZE *
+      metresPerPixelAt(TRAINS_DETAIL_ZOOM, route.steps[0].edge.coords[0][1]);
+    const fitting = (k: TrainKind) =>
+      Math.floor(
+        (route.length / metresPerPx -
+          2 * TRAIN_PARTS[KINDS[k].cab].length -
+          COUPLING_PX) /
+          (TRAIN_PARTS[KINDS[k].part].length + COUPLING_PX),
+      );
+    if (fitting(kind) < KINDS[kind].cars[0]) kind = "local";
+    const { cars, number } = KINDS[kind];
+    const count = Math.min(randomInt(cars[0], cars[1]), fitting(kind));
+    if (count < cars[0]) return;
+    const span = lengthPx(kind, count) * metresPerPx;
+    const margin = Math.min(SAFETY_M, (route.length - span) / 2);
+    const steps = Math.random() < 0.5 ? route.steps : reversed(route.steps);
+    const stopsAt = this.stopsFor(kind, steps);
+    const path = this.journey(steps, stopsAt);
+    // Anywhere on the route, the whole train on it, on free track.
+    const at = random(margin + span, path.length - margin);
+    for (const [key] of this.blocks(path, at - span - margin, at + margin))
+      if (!this.free(key, null)) return;
     const isFreight = kind === "freight";
     const train: Train = {
       id: this.nextId++,
       kind,
-      number: randomInt(KINDS[kind].number[0], KINDS[kind].number[1]),
+      number: randomInt(number[0], number[1]),
+      line,
       path,
-      // Anywhere on the link, the whole train on it.
-      at: random(SAFETY_M + span, path.length - SAFETY_M),
+      stopsAt,
+      at,
+      reached: 0,
+      departedAt: 0,
+      times: [],
       span,
       speed: cruise(kind) * random(0.5, 1),
       phase: "run",
       dwellUntil: 0,
-      stopLeg: null,
       whistled: false,
       waitingSince: 0,
-      bornAt: now,
       vehicles: consist(kind, count),
       block: { position: [0, 0], bearing: 0 },
       held: new Set(),
@@ -679,9 +1045,60 @@ export class TrainTraffic {
       seen: false,
     };
     train.passengers = boarding(train);
+    this.backdate(train);
     this.trains.push(train);
-    this.extend(train);
     this.reserve(train);
+  }
+
+  /** Sets when `train`, already on its way, left and passed the stations behind it, as if it ran at cruise. */
+  private backdate(train: Train): void {
+    const { legs } = train.path;
+    train.reached = legs.findIndex((leg) => legEnd(leg) > train.at + 0.5);
+    if (train.reached < 0) train.reached = legs.length;
+    const v = cruise(train.kind);
+    const pace = 1000 / trainSpeed();
+    const now = Date.now();
+    let seconds = 0;
+    let at = train.at;
+    train.times = [];
+    for (let i = train.reached - 1; i >= 0; i--) {
+      seconds += (at - legEnd(legs[i])) / v;
+      at = legEnd(legs[i]);
+      train.times[i] = now - seconds * pace;
+      if (legs[i].stop) seconds += DWELL_MS / 1000 + stopLossS(train.kind);
+    }
+    train.departedAt = now - (seconds + at / v) * pace;
+  }
+
+  /** The stops of the journey of `train`, from its start to its end, with when it was or should be at each. */
+  private itinerary(train: Train): TrainStop[] {
+    const { legs } = train.path;
+    const v = cruise(train.kind);
+    const loss = stopLossS(train.kind) / 2;
+    const pace = 1000 / trainSpeed();
+    const now = Date.now();
+    const stops: TrainStop[] = [
+      { station: startOf(legs[0]), time: train.departedAt, passed: true },
+    ];
+    let seconds =
+      train.phase === "run"
+        ? 0
+        : Math.max(0, train.dwellUntil - this.clock) / 1000;
+    let at = train.at;
+    legs.forEach((leg, i) => {
+      const last = i === legs.length - 1;
+      if (!leg.stop && !last) return;
+      const station = endOf(leg);
+      if (i < train.reached) {
+        stops.push({ station, time: train.times[i], passed: true });
+        return;
+      }
+      seconds += Math.max(0, legEnd(leg) - at) / v + loss;
+      at = legEnd(leg);
+      stops.push({ station, time: now + seconds * pace, passed: false });
+      seconds += DWELL_MS / 1000 + loss;
+    });
+    return stops;
   }
 
   private active(): boolean {
@@ -719,82 +1136,25 @@ export class TrainTraffic {
     setTrainRolling(0);
   };
 
-  /** Adds links ahead of `train` to see as far as it needs to stop, through the stations, until a dead end. */
-  private extend(train: Train): void {
-    const need = train.at + lookahead(train.kind);
-    if (train.path.terminus || train.path.length >= need) return;
-    const legs = [...train.path.legs];
-    let length = train.path.length;
-    let terminus = false;
-    while (length < need) {
-      const last = legs[legs.length - 1];
-      const station = endOf(last);
-      const options = (this.nodes.get(station.id) ?? []).filter(
-        (e) => e !== last.edge,
-      );
-      if (options.length === 0) {
-        terminus = true;
-        break;
-      }
-      // A free track first: the train goes round the others.
-      const free = options.filter((e) => this.free(edgeKey(e), train));
-      const next = pick(free.length > 0 ? free : options);
-      last.stop = Math.random() < KINDS[train.kind].stopChance;
-      legs.push({
-        edge: next,
-        forward: next.start.id === station.id,
-        from: 0,
-        stop: false,
-      });
-      length += next.length;
-    }
-    train.path = buildPath(legs, terminus);
-  }
-
-  /** Drops the links left behind `train`: the path stays short. */
-  private trim(train: Train): void {
-    const { legs, terminus } = train.path;
-    let first = 0;
-    while (
-      first < legs.length - 1 &&
-      legEnd(legs[first]) < train.at - train.span - SAFETY_M
-    )
-      first++;
-    if (first === 0) return;
-    const offset = legs[first].from;
-    train.path = buildPath(legs.slice(first), terminus);
-    train.at -= offset;
-  }
-
   /**
-   * Holds the stations and tracks from behind `train` to as far as it needs
-   * to stop ahead, releasing those left behind. A station is taken with the
-   * track after it. Returns how far the train may go: before the first one
-   * held by another train.
+   * Holds the blocks from behind `train` to as far as it needs to stop
+   * ahead, on the track of its direction, releasing those left behind.
+   * Returns how far the train may go: before the first block held by
+   * another train.
    */
   private reserve(train: Train): number {
-    const { path } = train;
-    const low = train.at - train.span - SAFETY_M;
-    const high = train.at + lookahead(train.kind);
     const wanted = new Set<string>();
     let limit = Infinity;
-    for (const leg of path.legs) {
-      if (legEnd(leg) < low) continue;
-      if (leg.from > high) break;
-      const keys =
-        leg.from >= low
-          ? [nodeKey(startOf(leg)), edgeKey(leg.edge)]
-          : [edgeKey(leg.edge)];
-      if (!keys.every((key) => this.free(key, train))) {
-        limit = leg.from - SAFETY_M;
+    for (const [key, start] of this.blocks(
+      train.path,
+      train.at - train.span - SAFETY_M,
+      train.at + lookahead(train.kind),
+    )) {
+      if (!this.free(key, train)) {
+        limit = start - SAFETY_M;
         break;
       }
-      for (const key of keys) wanted.add(key);
-    }
-    const terminal = nodeKey(endOf(path.legs[path.legs.length - 1]));
-    if (limit === Infinity && path.terminus && path.length <= high) {
-      if (this.free(terminal, train)) wanted.add(terminal);
-      else limit = path.length - SAFETY_M;
+      wanted.add(key);
     }
     for (const key of train.held)
       if (!wanted.has(key) && this.owners.get(key) === train.id)
@@ -804,42 +1164,52 @@ export class TrainTraffic {
     return limit;
   }
 
-  /** The rear becomes the front, the vehicles turned around, on the path reversed. */
+  /**
+   * The rear becomes the front, the vehicles turned around, on the journey
+   * reversed: the train runs back, with a new number and new passengers.
+   */
   private turnAround(train: Train, length: number): void {
-    const legs = [...train.path.legs].reverse();
-    for (const leg of legs) {
-      leg.forward = !leg.forward;
-      leg.stop = false;
-    }
+    const steps = reversed(train.path.legs);
     const total = train.path.length;
-    train.path = buildPath(legs);
-    train.at = total - (train.at - length);
+    train.path = this.journey(steps, train.stopsAt);
+    train.at = Math.max(length, total - (train.at - length));
     train.vehicles.reverse();
     for (const vehicle of train.vehicles) vehicle.reversed = !vehicle.reversed;
+    train.number ^= 1;
+    train.passengers = boarding(train);
+    this.backdate(train);
   }
 
   /**
-   * Places each vehicle behind the front of the train, heading along the
+   * Places each vehicle behind the front of the train on the left-hand
+   * track, `offset` metres beside the middle of the line, heading along the
    * chord between its ends: it turns smoothly through the bends, the
    * vehicles following one another on the rails. The block, zoomed out,
    * covers the track the train holds.
    */
-  private locate(train: Train, scale: number): void {
+  private locate(train: Train, scale: number, offset: number): void {
     const { path, at } = train;
-    let offset = 0;
+    let behind = 0;
     for (const vehicle of train.vehicles) {
       const length = TRAIN_PARTS[vehicle.part].length * scale;
-      const front = pointAt(path, at - offset);
-      const rear = pointAt(path, at - offset - length);
-      vehicle.position = pointAt(path, at - offset - length / 2);
-      vehicle.bearing = bearing(rear, front) + (vehicle.reversed ? 180 : 0);
-      offset += length + COUPLING_PX * scale;
+      const front = pointAt(path, at - behind);
+      const rear = pointAt(path, at - behind - length);
+      const heading = bearing(rear, front);
+      vehicle.position = leftOf(
+        pointAt(path, at - behind - length / 2),
+        heading,
+        offset,
+      );
+      vehicle.bearing = heading + (vehicle.reversed ? 180 : 0);
+      behind += length + COUPLING_PX * scale;
     }
-    train.block.position = pointAt(path, at - train.span / 2);
-    train.block.bearing = bearing(
-      pointAt(path, at - train.span),
-      pointAt(path, at),
+    const heading = bearing(pointAt(path, at - train.span), pointAt(path, at));
+    train.block.position = leftOf(
+      pointAt(path, at - train.span / 2),
+      heading,
+      offset,
     );
+    train.block.bearing = heading;
   }
 
   private readonly tick = (time: number) => {
@@ -848,43 +1218,42 @@ export class TrainTraffic {
     // Followed, the train moves at the rate of the screen: the camera keeps up with it without jerks.
     if (!this.following && elapsed < FRAME_MS) return;
     this.lastFrame = time;
-    if (
-      this.trains.length < this.target &&
-      time - this.lastSpawn > SPAWN_EVERY_MS
-    ) {
+    if (time - this.lastSpawn > SPAWN_EVERY_MS) {
       this.lastSpawn = time;
-      this.spawn(time);
+      this.railways.forEach((railway, line) => {
+        if (this.count(line) < railway.target) this.spawn(line);
+      });
     }
     // A long frame, after the browser throttled the page, does not teleport the trains.
-    const seconds = Math.min(elapsed, 100) / 1000;
+    const seconds = (Math.min(elapsed, 100) / 1000) * trainSpeed();
+    this.clock += seconds * 1000;
     const zoom = this.map.getZoom();
+    const latitude = this.map.getCenter().lat;
     // Zoomed out, the vehicles keep their length at the detail zoom: within the track the train holds.
     const scale =
       sizeAt(zoom) *
-      metresPerPixelAt(
-        Math.max(zoom, TRAINS_DETAIL_ZOOM),
-        this.map.getCenter().lat,
-      );
+      metresPerPixelAt(Math.max(zoom, TRAINS_DETAIL_ZOOM), latitude);
+    // Half the distance between the tracks drawn, on the ground.
+    const offset =
+      (realScaleAt(TRACK_SPACING, zoom) / 2) * metresPerPixelAt(zoom, latitude);
     const bounds = this.viewBounds();
+    // The loudest train in view sets the rolling noise: as many trains, the same sound.
     let rolling = 0;
     for (const train of this.trains) {
-      this.step(train, time, seconds, scale);
-      this.locate(train, scale);
+      this.step(train, seconds, scale);
+      this.locate(train, scale, offset);
       train.seen = inside(train.block.position, bounds);
-      if (train.seen) rolling += train.speed / cruise(train.kind);
+      if (train.seen)
+        rolling = Math.max(rolling, train.speed / cruise(train.kind));
     }
-    setTrainRolling(Math.sqrt(Math.min(1, rolling / 4)));
+    setTrainRolling(Math.sqrt(rolling / 4));
     this.draw();
-    this.follow(seconds);
+    this.follow(Math.min(elapsed, 100) / 1000);
   };
 
   /** Moves `train` on by `seconds`: speeding up to cruise, braking softly to its stops, waiting for the track. */
-  private step(
-    train: Train,
-    time: number,
-    seconds: number,
-    scale: number,
-  ): void {
+  private step(train: Train, seconds: number, scale: number): void {
+    const time = this.clock;
     if (train.phase !== "run") {
       this.reserve(train);
       if (
@@ -902,20 +1271,14 @@ export class TrainTraffic {
           train,
           lengthPx(train.kind, train.vehicles.length - 2) * scale,
         );
-      if (train.stopLeg) train.stopLeg.stop = false;
-      train.stopLeg = null;
       train.phase = "run";
       if (train.seen) horn();
     }
-    this.extend(train);
-    this.trim(train);
+    const { legs } = train.path;
     const blockedAt = this.reserve(train);
-    const stopLeg =
-      train.path.legs.find(
-        (leg) => leg.stop && legEnd(leg) >= train.at - 0.5,
-      ) ?? null;
+    const stopLeg = legs.find((leg, i) => i >= train.reached && leg.stop);
     const stopAt = stopLeg ? legEnd(stopLeg) : Infinity;
-    const endAt = train.path.terminus ? train.path.length : Infinity;
+    const endAt = train.path.length;
     const limit = Math.min(blockedAt, stopAt, endAt);
     const remaining = limit - train.at;
     const { accel } = KINDS[train.kind];
@@ -927,33 +1290,35 @@ export class TrainTraffic {
     if (remaining > 1) train.speed = Math.max(train.speed, CREEP_M_S);
     const moved = Math.min(train.speed * seconds, Math.max(0, remaining));
     train.at += moved;
-    if (remaining - moved > 0.5) {
+    const arrived = remaining - moved <= 0.5;
+    // Stations reached, on the way or at the stop: when, for the itinerary.
+    while (
+      train.reached < legs.length &&
+      legEnd(legs[train.reached]) <= train.at + 0.5
+    )
+      train.times[train.reached++] = Date.now();
+    if (!arrived) {
       train.waitingSince = 0;
       return;
     }
     train.speed = 0;
     if (blockedAt < Math.min(stopAt, endAt)) {
-      // Held up by another train: it goes back after a while.
+      // Held up by another train: it goes back after a long while.
       train.waitingSince ||= time;
       if (time - train.waitingSince > WAIT_MS)
-        this.halt(train, "turn", time + TURN_DWELL_MS, null);
+        this.halt(train, "turn", time + TURN_DWELL_MS);
       return;
     }
-    // Some get off, others get on.
-    train.passengers = boarding(train);
-    if (stopAt <= endAt) this.halt(train, "stop", time + DWELL_MS, stopLeg);
-    else this.halt(train, "turn", time + DWELL_MS, null);
+    if (stopAt < endAt) {
+      // Some get off, others get on.
+      train.passengers = boarding(train);
+      this.halt(train, "stop", time + DWELL_MS);
+    } else this.halt(train, "turn", time + TERMINUS_DWELL_MS);
   }
 
-  private halt(
-    train: Train,
-    phase: Phase,
-    until: number,
-    stopLeg: Leg | null,
-  ): void {
+  private halt(train: Train, phase: Phase, until: number): void {
     train.phase = phase;
     train.dwellUntil = until;
-    train.stopLeg = stopLeg;
     train.waitingSince = 0;
     train.whistled = false;
     if (train.seen) brake();
@@ -994,7 +1359,7 @@ export class TrainTraffic {
     this.draw();
   };
 
-  /** Draws the trains in view: blocks zoomed out, vehicles zoomed in, both while they cross-fade. */
+  /** Draws the trains in view: blocks zoomed out, vehicles zoomed in. */
   private readonly draw = () => {
     const source = this.map.getSource<GeoJSONSource>(TRAINS_SOURCE);
     if (!source) return;
@@ -1005,47 +1370,37 @@ export class TrainTraffic {
       return;
     }
     this.empty = false;
-    const zoom = this.map.getZoom();
-    const blocks = zoom < TRAINS_DETAIL_ZOOM;
-    const vehicles = zoom >= TRAINS_DETAIL_ZOOM - DETAIL_BLEND_ZOOMS;
-    const now = performance.now();
+    const blocks = this.map.getZoom() < TRAINS_DETAIL_ZOOM;
     const features: Feature<Point>[] = [];
     const add = (
       train: number,
       image: string,
       position: Position,
       heading: number,
-      block: boolean,
-      opacity: number,
     ) =>
       features.push({
         type: "Feature",
-        properties: { train, image, bearing: heading, block, opacity },
+        properties: { train, image, bearing: heading },
         geometry: { type: "Point", coordinates: position },
       });
     for (const train of seen) {
-      const opacity = Math.min(1, (now - train.bornAt) / FADE_MS);
       const suffix = train.id === this.selected ? SELECTED_SUFFIX : "";
-      if (blocks)
+      if (blocks) {
         add(
           train.id,
           TRAIN_BLOCK.image + suffix,
           train.block.position,
           train.block.bearing,
-          true,
-          opacity,
         );
-      if (!vehicles) continue;
-      for (const vehicle of train.vehicles) {
+        continue;
+      }
+      for (const vehicle of train.vehicles)
         add(
           train.id,
           TRAIN_PARTS[vehicle.part].image + suffix,
           vehicle.position,
           vehicle.bearing,
-          false,
-          opacity,
         );
-      }
     }
     source.setData({ type: "FeatureCollection", features });
   };

@@ -22,7 +22,8 @@ const HOVER_CLOSE_MS = 250;
 /**
  * Sound of the site, such as the trains of the map: on or off, and its
  * volume, kept by the browser. On a desktop a click turns it on or off and
- * hovering opens the volume; on a phone, without hover, a tap opens both.
+ * hovering opens the volume slider alone; on a phone, without hover, a tap
+ * opens both.
  */
 export function SoundMenuItem() {
   const t = useTranslations("sound");
@@ -56,17 +57,24 @@ export function SoundMenuItem() {
           <Icon />
           <span>{label}</span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-56" side={isMobile ? "top" : "right"} align="end" sideOffset={4}>
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>{t("title")}</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem
-              checked={enabled}
-              closeOnClick={false}
-              onCheckedChange={(checked) => updateSoundSettings({ enabled: checked })}
-            >
-              {t("enable")}
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuGroup>
+        <DropdownMenuContent
+          className={isMobile ? "min-w-56" : "min-w-40"}
+          side={isMobile ? "top" : "right"}
+          align="end"
+          sideOffset={4}
+        >
+          {isMobile && (
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t("title")}</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem
+                checked={enabled}
+                closeOnClick={false}
+                onCheckedChange={(checked) => updateSoundSettings({ enabled: checked })}
+              >
+                {t("enable")}
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuGroup>
+          )}
           <div className="flex items-center gap-3 px-1.5 py-2">
             <Slider
               className="flex-1"
@@ -80,7 +88,7 @@ export function SoundMenuItem() {
                 updateSoundSettings({ volume: next / 100 });
               }}
             />
-            <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{percent} %</span>
+            {isMobile && <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{percent} %</span>}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>

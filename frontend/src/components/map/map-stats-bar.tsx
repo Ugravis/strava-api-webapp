@@ -17,6 +17,7 @@ import { type ComponentProps, type ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
 import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
@@ -491,6 +492,37 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
 
   return (
     <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-center md:pr-6">
+      <div className="flex shrink-0 flex-col gap-1">
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={layers.dimmed}
+          onPressedChange={(dimmed) =>
+            onLayersChange({
+              ...layers,
+              dimmed,
+              stations: layers.stations || dimmed,
+            })
+          }
+          className="justify-start"
+        >
+          <SunDimIcon aria-hidden />
+          {t("dim")}
+        </Toggle>
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={!sound.enabled}
+          onPressedChange={(muted) => updateSoundSettings({ enabled: !muted })}
+          className="justify-start"
+        >
+          <VolumeXIcon aria-hidden />
+          {t("mute")}
+        </Toggle>
+      </div>
+      <Separator orientation="vertical" className="h-10 self-center" />
+      <TrainSpeedControl />
+      <Separator orientation="vertical" className="h-10 self-center" />
       <StatsSection title={t("stations")}>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
@@ -513,33 +545,6 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           colorKey={<RailKey />}
         />
       </StatsSection>
-      <Toggle
-        variant="outline"
-        size="sm"
-        pressed={layers.dimmed}
-        onPressedChange={(dimmed) =>
-          onLayersChange({
-            ...layers,
-            dimmed,
-            stations: layers.stations || dimmed,
-          })
-        }
-        className="shrink-0"
-      >
-        <SunDimIcon aria-hidden />
-        {t("dim")}
-      </Toggle>
-      <TrainSpeedControl />
-      <Toggle
-        variant="outline"
-        size="sm"
-        pressed={!sound.enabled}
-        onPressedChange={(muted) => updateSoundSettings({ enabled: !muted })}
-        className="shrink-0"
-      >
-        <VolumeXIcon aria-hidden />
-        {t("mute")}
-      </Toggle>
     </div>
   );
 }

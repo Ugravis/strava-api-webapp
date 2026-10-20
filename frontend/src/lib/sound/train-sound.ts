@@ -45,6 +45,9 @@ const SIGNAL_GAP_S = 0.4;
 const BRAKE_GAIN = 0.05;
 /** Silence kept before suspending the audio context, in milliseconds: it then costs nothing. */
 const SUSPEND_AFTER_MS = 4000;
+/** Time constants of the master gain, in seconds: the sound fades when turned on or off, follows the volume at once. */
+const TOGGLE_FADE_S = 0.3;
+const VOLUME_FADE_S = 0.05;
 
 interface Engine {
   context: AudioContext;
@@ -66,6 +69,7 @@ let lastWhistle = 0;
 let signalUntil = 0;
 let lastBrake = 0;
 let suspendTimer: ReturnType<typeof setTimeout> | undefined;
+let clatterStopTimer: ReturnType<typeof setTimeout> | undefined;
 let clatterTimer: ReturnType<typeof setInterval> | undefined;
 /** Time of the next car of the clatter, in seconds of the audio context. */
 let nextCar = 0;
@@ -176,8 +180,16 @@ function createEngine(): Engine {
   echoIn.connect(delay).connect(damping).connect(feedback).connect(delay);
   damping.connect(master);
 
+  let enabled = soundSettings().enabled;
   subscribeSoundSettings(() => {
-    master.gain.setTargetAtTime(masterLevel(), context.currentTime, 0.05);
+    const toggled = soundSettings().enabled !== enabled;
+    enabled = soundSettings().enabled;
+    master.gain.cancelScheduledValues(context.currentTime);
+    master.gain.setTargetAtTime(
+      masterLevel(),
+      context.currentTime,
+      toggled ? TOGGLE_FADE_S : VOLUME_FADE_S,
+    );
     settle();
   });
   resumeOnGesture(context);
@@ -227,14 +239,21 @@ function scheduleClatter(): void {
 function settle(): void {
   if (!engine) return;
   clearTimeout(suspendTimer);
+  clearTimeout(clatterStopTimer);
   const { context } = engine;
   if (rolling > 0 && masterLevel() > 0) {
     if (context.state === "suspended") void context.resume();
     clatterTimer ??= setInterval(scheduleClatter, SCHEDULE_EVERY_MS);
     return;
   }
-  clearInterval(clatterTimer);
-  clatterTimer = undefined;
+  // Turned off while trains roll, the clatter goes on through the fade.
+  const stopClatter = () => {
+    clearInterval(clatterTimer);
+    clatterTimer = undefined;
+  };
+  if (rolling > 0)
+    clatterStopTimer = setTimeout(stopClatter, TOGGLE_FADE_S * 4000);
+  else stopClatter();
   suspendTimer = setTimeout(() => void context.suspend(), SUSPEND_AFTER_MS);
 }
 

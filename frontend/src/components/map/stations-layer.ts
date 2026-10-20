@@ -8,12 +8,14 @@ import type {
 } from "maplibre-gl";
 import type { VisitedStations } from "@/lib/api/types";
 import type { MapHistory } from "./history-layer";
-import { FADE_ZOOMS, type MapPalette } from "./map-style";
+import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
 import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
+import { addStationIcons, STATION_ICONS } from "./station-icons";
+import { TRAINS_MIN_ZOOM, TRAINS_SOURCE } from "./train-traffic";
 
 /** What the stations layer draws: the visited stations and the links unlocked between them. */
 export interface StationData {
-  stations: FeatureCollection<Point, { id: number }>;
+  stations: FeatureCollection<Point, { id: number; name: string | null }>;
   links: FeatureCollection<LineString>;
 }
 
@@ -29,6 +31,8 @@ const SOURCES = {
   visited: "visited-stations",
   links: "rail-links",
   selected: "station-selected",
+  hovered: "station-hovered",
+  trains: TRAINS_SOURCE,
 } as const;
 
 const LAYERS = {
@@ -36,8 +40,23 @@ const LAYERS = {
   linksCasing: "rail-links-casing",
   links: "rail-links-line",
   visited: "stations-visited",
+  trains: "station-trains-icon",
+  unvisitedIcon: "stations-unvisited-icon",
+  visitedIcon: "stations-visited-icon",
+  names: "stations-visited-name",
+  hovered: "station-hovered-ring",
   selected: "station-selected-ring",
 } as const;
+
+/**
+ * Zoomed in, the dots give way to icons, the visited stations to their name
+ * in a bubble, and the trains run: both cross-fade over one zoom level.
+ */
+const ICON_MIN_ZOOM = TRAINS_MIN_ZOOM;
+const ICONS_IN = fadeIn(ICON_MIN_ZOOM, 1);
+const DOTS_OUT: ExpressionSpecification = ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 1, ICON_MIN_ZOOM + FADE_ZOOMS, 0];
+const ICON_SIZE: ExpressionSpecification = ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 0.75, 16, 1.1];
+const NAME_FONT = ["Noto Sans Bold"];
 
 /** Veil over the base map, the tiles and the tracks, below the stations: they stand out. */
 const DIM_LAYER_ID = "stations-dim-veil";
@@ -52,13 +71,21 @@ const ALL_MAX_ZOOM = 14;
 /** Distance from the pointer, in pixels, where a click looks for a station: a finger is not precise. */
 const PICK_TOLERANCE_PX = 8;
 
-const EMPTY_POINTS: FeatureCollection<Point, { id: number }> = { type: "FeatureCollection", features: [] };
+const EMPTY_POINTS: FeatureCollection<Point, { id: number; name: string | null }> = {
+  type: "FeatureCollection",
+  features: [],
+};
 const EMPTY_LINES: FeatureCollection<LineString> = { type: "FeatureCollection", features: [] };
 export const NO_STATION_DATA: StationData = { stations: EMPTY_POINTS, links: EMPTY_LINES };
 
 /** Grows with the zoom, from a dot on a country to a marker on a town. */
 function byZoom(at6: number, at10: number, at14: number): ExpressionSpecification {
   return ["interpolate", ["linear"], ["zoom"], ALL_MIN_ZOOM, at6, 10, at10, 14, at14];
+}
+
+/** Radius of a ring around a station: around its dot, then around its icon. */
+function ringRadius(gap: number): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], ALL_MIN_ZOOM, 4 + gap, 10, 6 + gap, ICON_MIN_ZOOM, 7 + gap, 16, 11 + gap];
 }
 
 /** Whether a first visit counts for the history: the map as it was then, or what was gained since. */
@@ -83,7 +110,7 @@ export function stationData(visited: VisitedStations | null, history: MapHistory
     features.push({
       type: "Feature",
       id: station.id,
-      properties: { id: station.id },
+      properties: { id: station.id, name: station.name },
       geometry: { type: "Point", coordinates: [station.lon, station.lat] },
     });
   }
@@ -109,14 +136,14 @@ function allStationsUrl(version: string): string {
   return `${window.location.origin}/api/stations/vector/{z}/{x}/{y}?v=${version}`;
 }
 
-function selectedData(station: StationPick | null): FeatureCollection<Point, { id: number }> {
+function ringData(station: StationPick | null): FeatureCollection<Point, { id: number; name: string | null }> {
   if (!station) return EMPTY_POINTS;
   return {
     type: "FeatureCollection",
     features: [
       {
         type: "Feature",
-        properties: { id: station.id },
+        properties: { id: station.id, name: null },
         geometry: { type: "Point", coordinates: [station.lon, station.lat] },
       },
     ],
@@ -136,6 +163,7 @@ export function addStationLayers(
   map: MapLibreMap,
   data: StationData,
   selected: StationPick | null,
+  hovered: StationPick | null,
   palette: MapPalette,
   visible: boolean,
   dimmed: boolean,
@@ -155,7 +183,10 @@ export function addStationLayers(
   );
   map.addSource(SOURCES.links, { type: "geojson", data: data.links });
   map.addSource(SOURCES.visited, { type: "geojson", data: data.stations });
-  map.addSource(SOURCES.selected, { type: "geojson", data: selectedData(selected) });
+  map.addSource(SOURCES.selected, { type: "geojson", data: ringData(selected) });
+  map.addSource(SOURCES.hovered, { type: "geojson", data: ringData(hovered) });
+  map.addSource(SOURCES.trains, { type: "geojson", data: EMPTY_POINTS });
+  addStationIcons(map, palette);
   map.addLayer(
     {
       id: LAYERS.linksCasing,
@@ -182,31 +213,106 @@ export function addStationLayers(
       type: "circle",
       source: SOURCES.visited,
       layout,
+      maxzoom: ICON_MIN_ZOOM + FADE_ZOOMS,
       paint: {
         "circle-color": palette.station,
+        "circle-opacity": DOTS_OUT,
         "circle-radius": byZoom(2.5, 4, 6),
         "circle-stroke-color": palette.stationCasing,
+        "circle-stroke-opacity": DOTS_OUT,
         "circle-stroke-width": byZoom(1, 1.5, 2),
       },
     },
     top,
   );
+  // Below the stations: a train stops under their icon.
   map.addLayer(
     {
-      id: LAYERS.selected,
-      type: "circle",
-      source: SOURCES.selected,
-      layout,
-      paint: {
-        "circle-color": "transparent",
-        "circle-radius": byZoom(6, 8, 10),
-        "circle-stroke-color": palette.highlight,
-        "circle-stroke-opacity": 0.85,
-        "circle-stroke-width": 2,
+      id: LAYERS.trains,
+      type: "symbol",
+      source: SOURCES.trains,
+      minzoom: ICON_MIN_ZOOM,
+      layout: {
+        ...layout,
+        "icon-image": STATION_ICONS.train,
+        "icon-size": ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 0.9, 16, 1.4],
+        "icon-rotate": ["get", "bearing"],
+        "icon-rotation-alignment": "map",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
       },
+      paint: {
+        "icon-opacity": ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, 0, ICON_MIN_ZOOM + FADE_ZOOMS, ["get", "opacity"]],
+      },
+    },
+    LAYERS.visited,
+  );
+  map.addLayer(
+    {
+      id: LAYERS.visitedIcon,
+      type: "symbol",
+      source: SOURCES.visited,
+      minzoom: ICON_MIN_ZOOM,
+      layout: { ...layout, ...iconLayout(STATION_ICONS.visited) },
+      paint: { "icon-opacity": ICONS_IN },
     },
     top,
   );
+  // Names collide with each other and push the place names of the base map aside.
+  map.addLayer(
+    {
+      id: LAYERS.names,
+      type: "symbol",
+      source: SOURCES.visited,
+      minzoom: ICON_MIN_ZOOM,
+      layout: {
+        ...layout,
+        "text-field": ["coalesce", ["get", "name"], ""],
+        "text-font": NAME_FONT,
+        "text-size": 11.5,
+        "text-anchor": "bottom",
+        "text-offset": ["interpolate", ["linear"], ["zoom"], ICON_MIN_ZOOM, ["literal", [0, -1.55]], 16, ["literal", [0, -1.9]]],
+        "text-max-width": 12,
+        "icon-image": STATION_ICONS.bubble,
+        "icon-text-fit": "both",
+        "icon-text-fit-padding": [2, 6, 2, 6],
+        "icon-anchor": "bottom",
+      },
+      paint: { "text-color": palette.stationCasing, "text-opacity": ICONS_IN, "icon-opacity": ICONS_IN },
+    },
+    top,
+  );
+  for (const [id, source, opacity, width] of [
+    [LAYERS.hovered, SOURCES.hovered, 0.35, 1],
+    [LAYERS.selected, SOURCES.selected, 0.85, 2],
+  ] as const) {
+    map.addLayer(
+      {
+        id,
+        type: "circle",
+        source,
+        layout,
+        paint: {
+          "circle-color": "transparent",
+          "circle-radius": ringRadius(width + 1),
+          "circle-stroke-color": palette.highlight,
+          "circle-stroke-opacity": opacity,
+          "circle-stroke-width": width,
+        },
+      },
+      top,
+    );
+  }
+}
+
+/** Icon of a station, always drawn: it never hides a name nor gets hidden. */
+function iconLayout(image: string) {
+  return {
+    "icon-image": image,
+    "icon-size": ICON_SIZE,
+    "icon-allow-overlap": true,
+    "icon-ignore-placement": true,
+  } as const;
 }
 
 /**
@@ -221,6 +327,7 @@ export function setAllStations(map: MapLibreMap, version: string | null, palette
   const source = map.getSource<VectorTileSource>(SOURCES.all);
   if (source && source.tiles[0] === url) return;
   if (map.getLayer(LAYERS.unvisited)) map.removeLayer(LAYERS.unvisited);
+  if (map.getLayer(LAYERS.unvisitedIcon)) map.removeLayer(LAYERS.unvisitedIcon);
   if (source) map.removeSource(SOURCES.all);
   if (!url) return;
   map.addSource(SOURCES.all, { type: "vector", tiles: [url], minzoom: ALL_MIN_ZOOM, maxzoom: ALL_MAX_ZOOM });
@@ -231,17 +338,44 @@ export function setAllStations(map: MapLibreMap, version: string | null, palette
       source: SOURCES.all,
       "source-layer": ALL_SOURCE_LAYER,
       layout: { visibility: visibility(visible) },
+      maxzoom: ICON_MIN_ZOOM + FADE_ZOOMS,
       paint: {
         "circle-color": palette.stationUnvisited,
-        // Fading in from where the backend serves them, like every layer of the map.
-        "circle-opacity": ["interpolate", ["linear"], ["zoom"], ALL_MIN_ZOOM, 0, ALL_MIN_ZOOM + FADE_ZOOMS, 0.65, 10, 0.8, 14, 0.9],
+        // Fading in from where the backend serves them, like every layer of the map, out for the icons.
+        "circle-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ALL_MIN_ZOOM,
+          0,
+          ALL_MIN_ZOOM + FADE_ZOOMS,
+          0.65,
+          10,
+          0.8,
+          ICON_MIN_ZOOM,
+          0.85,
+          ICON_MIN_ZOOM + FADE_ZOOMS,
+          0,
+        ],
         "circle-radius": byZoom(1.5, 2.5, 4),
         "circle-stroke-color": palette.stationCasing,
-        "circle-stroke-opacity": byZoom(0, 0.6, 0.8),
+        "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], ALL_MIN_ZOOM, 0, 10, 0.6, ICON_MIN_ZOOM, 0.7, ICON_MIN_ZOOM + FADE_ZOOMS, 0],
         "circle-stroke-width": byZoom(0, 0.8, 1.2),
       },
     },
     LAYERS.visited,
+  );
+  map.addLayer(
+    {
+      id: LAYERS.unvisitedIcon,
+      type: "symbol",
+      source: SOURCES.all,
+      "source-layer": ALL_SOURCE_LAYER,
+      minzoom: ICON_MIN_ZOOM,
+      layout: { visibility: visibility(visible), ...iconLayout(STATION_ICONS.unvisited) },
+      paint: { "icon-opacity": fadeIn(ICON_MIN_ZOOM, 0.9) },
+    },
+    LAYERS.visitedIcon,
   );
 }
 
@@ -253,7 +387,12 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
 
 /** Rings the station shown in the panel, or none. */
 export function setSelectedStation(map: MapLibreMap, station: StationPick | null): void {
-  map.getSource<GeoJSONSource>(SOURCES.selected)?.setData(selectedData(station));
+  map.getSource<GeoJSONSource>(SOURCES.selected)?.setData(ringData(station));
+}
+
+/** Rings the station under the pointer, discreetly: a click opens it. */
+export function setHoveredStation(map: MapLibreMap, station: StationPick | null): void {
+  map.getSource<GeoJSONSource>(SOURCES.hovered)?.setData(ringData(station));
 }
 
 export function setStationsVisible(map: MapLibreMap, visible: boolean): void {
@@ -269,7 +408,9 @@ export function setMapDimmed(map: MapLibreMap, dimmed: boolean): void {
 
 /** The station drawn under the pointer or a few pixels from it, visited ones first; null without any. */
 export function stationNear(map: MapLibreMap, point: { x: number; y: number }): StationPick | null {
-  const layers = [LAYERS.visited, LAYERS.unvisited].filter((id) => map.getLayer(id));
+  const layers = [LAYERS.visited, LAYERS.visitedIcon, LAYERS.unvisited, LAYERS.unvisitedIcon].filter((id) =>
+    map.getLayer(id),
+  );
   if (layers.length === 0 || map.getLayoutProperty(LAYERS.visited, "visibility") === "none") return null;
   const features: MapGeoJSONFeature[] = map.queryRenderedFeatures(
     [

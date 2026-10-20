@@ -41,9 +41,11 @@ import { addTileOutlines, sameTile, setTileOutline, type TileRef } from "./tile-
 import { TilePickPanel } from "./tile-pick-panel";
 import { entryFromSearch, entryKey, pickOf, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
 import { StationPanel } from "./station-panel";
+import { TrainTraffic } from "./train-traffic";
 import {
   addStationLayers,
   setAllStations,
+  setHoveredStation,
   setMapDimmed,
   setSelectedStation,
   setStationData,
@@ -166,6 +168,8 @@ export function ActivityMap({
   const panelRef = useRef<HTMLElement>(null);
   // Outside React: the pointer moves far more often than the map should render.
   const hoveredRef = useRef<TileRef | null>(null);
+  const hoveredStationRef = useRef<StationPick | null>(null);
+  const trafficRef = useRef<TrainTraffic | null>(null);
   const shownRef = useRef<TileRef | null>(null);
   // The click handler of the map is registered once: it calls the latest one.
   const pickRef = useRef<(pick: TilePick) => void>(() => {});
@@ -237,6 +241,7 @@ export function ActivityMap({
         map,
         stationsDataRef.current,
         selectedStationRef.current,
+        hoveredStationRef.current,
         paletteRef.current,
         showStationsRef.current,
         dimmedRef.current,
@@ -284,8 +289,12 @@ export function ActivityMap({
     // once per frame, and not while the map moves under the pointer.
     let pointer: { x: number; y: number } | null = null;
     let frame = 0;
-    const hover = (tile: TileRef | null, clickable = tile !== null) => {
-      map.getCanvas().style.cursor = clickable ? "pointer" : "";
+    const hover = (tile: TileRef | null, station: StationPick | null = null) => {
+      map.getCanvas().style.cursor = tile || station ? "pointer" : "";
+      if (station?.id !== hoveredStationRef.current?.id) {
+        hoveredStationRef.current = station;
+        setHoveredStation(map, station);
+      }
       if (sameTile(tile, hoveredRef.current)) return;
       hoveredRef.current = tile;
       setTileOutline(map, "hovered", tile);
@@ -296,7 +305,7 @@ export function ActivityMap({
       // Over a station, no tile is outlined: a click opens the station.
       const station = still && showStationsRef.current ? stationNear(map, pointer!) : null;
       const pick = still && !station ? pickTile(map, modeRef.current, pointer!) : null;
-      hover(pick && shownTile(pick), station !== null || pick !== null);
+      hover(pick && shownTile(pick), station);
     };
     map.on("mousemove", (event) => {
       pointer = event.point;
@@ -309,8 +318,12 @@ export function ActivityMap({
     map.on("movestart", () => hover(null));
     map.on("moveend", pickHovered);
     mapRef.current = map;
+    trafficRef.current = new TrainTraffic(map, showStationsRef.current);
+    trafficRef.current.setLinks(stationsDataRef.current.links);
     return () => {
       cancelAnimationFrame(frame);
+      trafficRef.current?.destroy();
+      trafficRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -380,6 +393,7 @@ export function ActivityMap({
   useEffect(() => {
     stationsDataRef.current = stationsData;
     if (mapRef.current) setStationData(mapRef.current, stationsData);
+    trafficRef.current?.setLinks(stationsData.links);
   }, [stationsData]);
 
   useEffect(() => {
@@ -394,6 +408,7 @@ export function ActivityMap({
     showStationsRef.current = showStations;
     // Layers not added yet are shown or hidden once the style is loaded.
     if (mapRef.current) setStationsVisible(mapRef.current, showStations);
+    trafficRef.current?.setVisible(showStations);
   }, [showStations]);
 
   useEffect(() => {

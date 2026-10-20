@@ -301,8 +301,16 @@ interface Path {
 interface Vehicle {
   part: TrainPart;
   reversed: boolean;
+  /** Middle of the vehicle. */
   position: Position;
   bearing: number;
+  /**
+   * Where its image is anchored: the point of the vehicle nearest the middle
+   * of the view, the image shifted by `offset` image pixels along it. Zoomed
+   * far in, an image whose anchor lies off screen would not be drawn.
+   */
+  anchor: Position;
+  offset: number;
 }
 
 type Phase = "run" | "stop" | "turn";
@@ -500,6 +508,18 @@ function bearing(from: Position, to: Position): number {
   return (Math.atan2(dx, to[1] - from[1]) * 180) / Math.PI;
 }
 
+/** Where along the segment from `from` to `to` the point nearest `point` lies, from 0 to 1. */
+function nearestAlong(from: Position, to: Position, point: Position): number {
+  const cos = Math.cos((from[1] * Math.PI) / 180);
+  const ux = (to[0] - from[0]) * cos;
+  const uy = to[1] - from[1];
+  const squared = ux * ux + uy * uy;
+  if (squared === 0) return 0.5;
+  const t =
+    ((point[0] - from[0]) * cos * ux + (point[1] - from[1]) * uy) / squared;
+  return Math.min(1, Math.max(0, t));
+}
+
 function inside([lon, lat]: Position, bounds: Bounds): boolean {
   return (
     lon >= bounds[0] && lon <= bounds[2] && lat >= bounds[1] && lat <= bounds[3]
@@ -545,6 +565,8 @@ function consist(kind: TrainKind, cars: number): Vehicle[] {
     reversed,
     position: [0, 0],
     bearing: 0,
+    anchor: [0, 0],
+    offset: 0,
   });
   return [
     vehicle(cab),
@@ -644,6 +666,8 @@ export class TrainTraffic {
   private empty = false;
   private selected: number | null = null;
   private following = false;
+  /** Whether the trains in view are heard: zoomed in enough to show their vehicles. */
+  private audible = false;
 
   constructor(
     private readonly map: MapLibreMap,
@@ -1213,7 +1237,7 @@ export class TrainTraffic {
    * vehicles following one another on the rails. The block, zoomed out,
    * covers the track the train holds.
    */
-  private locate(train: Train, scale: number): void {
+  private locate(train: Train, scale: number, centre: Position): void {
     const { path, at } = train;
     let behind = 0;
     for (const vehicle of train.vehicles) {
@@ -1223,6 +1247,11 @@ export class TrainTraffic {
       const heading = bearing(rear, front);
       vehicle.position = pointAt(path, at - behind - length / 2);
       vehicle.bearing = heading + (vehicle.reversed ? 180 : 0);
+      const t = nearestAlong(rear, front, centre);
+      vehicle.anchor = pointAt(path, at - behind - length * (1 - t));
+      // Ahead of the middle, the image lies behind its anchor: down, unless the vehicle runs backwards.
+      const ahead = ((t - 0.5) * length) / scale;
+      vehicle.offset = vehicle.reversed ? -ahead : ahead;
       behind += length + COUPLING_PX * scale;
     }
     const heading = bearing(pointAt(path, at - train.span), pointAt(path, at));
@@ -1246,19 +1275,20 @@ export class TrainTraffic {
     const seconds = (Math.min(elapsed, 100) / 1000) * trainSpeed();
     this.clock += seconds * 1000;
     const zoom = this.map.getZoom();
-    const latitude = this.map.getCenter().lat;
+    const { lng, lat } = this.map.getCenter();
     // Zoomed out, the vehicles keep their length at the detail zoom: within the track the train holds.
     const scale =
-      sizeAt(zoom) *
-      metresPerPixelAt(Math.max(zoom, TRAINS_DETAIL_ZOOM), latitude);
+      sizeAt(zoom) * metresPerPixelAt(Math.max(zoom, TRAINS_DETAIL_ZOOM), lat);
     const bounds = this.viewBounds();
+    // Heard only with their vehicles shown.
+    this.audible = zoom >= TRAINS_DETAIL_ZOOM;
     // The loudest train in view sets the rolling noise: as many trains, the same sound.
     let rolling = 0;
     for (const train of this.trains) {
       this.step(train, seconds, scale);
-      this.locate(train, scale);
+      this.locate(train, scale, [lng, lat]);
       train.seen = inside(train.block.position, bounds);
-      if (train.seen)
+      if (train.seen && this.audible)
         rolling = Math.max(rolling, train.speed / cruise(train.kind));
     }
     setTrainRolling(Math.sqrt(rolling / 4));
@@ -1278,7 +1308,8 @@ export class TrainTraffic {
       ) {
         // The guard on the platform before the doors close.
         train.whistled = true;
-        if (train.seen && Math.random() < WHISTLE_CHANCE) guardWhistle();
+        if (train.seen && this.audible && Math.random() < WHISTLE_CHANCE)
+          guardWhistle();
       }
       if (time < train.dwellUntil) return;
       if (train.phase === "turn")
@@ -1287,7 +1318,7 @@ export class TrainTraffic {
           lengthPx(train.kind, train.vehicles.length - 2) * scale,
         );
       train.phase = "run";
-      if (train.seen) horn();
+      if (train.seen && this.audible) horn();
     }
     const { legs } = train.path;
     const blockedAt = this.reserve(train);
@@ -1392,10 +1423,11 @@ export class TrainTraffic {
       image: string,
       position: Position,
       heading: number,
+      offset = 0,
     ) =>
       features.push({
         type: "Feature",
-        properties: { train, image, bearing: heading },
+        properties: { train, image, bearing: heading, offset: [0, offset] },
         geometry: { type: "Point", coordinates: position },
       });
     for (const train of seen) {
@@ -1413,8 +1445,9 @@ export class TrainTraffic {
         add(
           train.id,
           TRAIN_PARTS[vehicle.part].image + suffix,
-          vehicle.position,
+          vehicle.anchor,
           vehicle.bearing,
+          vehicle.offset,
         );
     }
     source.setData({ type: "FeatureCollection", features });

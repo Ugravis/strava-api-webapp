@@ -416,6 +416,7 @@ export function addStationLayers(
         "icon-image": ["get", "image"],
         "icon-size": TRAIN_SIZE,
         "icon-rotate": ["get", "bearing"],
+        "icon-offset": ["get", "offset"],
         "icon-rotation-alignment": "map",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,

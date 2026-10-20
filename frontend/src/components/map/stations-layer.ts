@@ -14,8 +14,6 @@ import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
 import { addStationIcons, STATION_ICONS } from "./station-icons";
 import {
   realScale,
-  realScaleAt,
-  TRACK_SPACING,
   TRAIN_SIZE,
   TRAINS_MIN_ZOOM,
   TRAINS_SOURCE,
@@ -184,54 +182,17 @@ function unvisitedFilter(map: MapLibreMap): ExpressionSpecification {
   ];
 }
 
-type WidthStops = [zoom: number, width: number][];
-
 /** Width of a rail by zoom, as `byZoom`, then growing with the ground from the real scale like the trains. */
-function railStops(at6: number, at10: number, at14: number): WidthStops {
-  return [
+function railWidth(
+  at6: number,
+  at10: number,
+  at14: number,
+): ExpressionSpecification {
+  return realScale([
     [ALL_MIN_ZOOM, at6],
     [10, at10],
     [14, at14],
-  ];
-}
-
-/** Zooms where the two tracks of a line are measured, as they part from one line. */
-const TRACK_ZOOMS = [ALL_MIN_ZOOM, 10, 12, 12.25, 12.5, 12.75, 13, 14, 15];
-const TRACK_SPACING_MAX = realScaleAt(TRACK_SPACING, 13);
-
-/**
- * Paint of a line drawn as two tracks, `stops` wide each, as far apart as
- * the trains on them. Zoomed out, the two halves of one line touch: the line
- * keeps its width while they part.
- */
-function twoTracks(stops: WidthStops) {
-  const width = TRACK_ZOOMS.map((zoom): WidthStops[number] => {
-    const parted = Math.min(
-      1,
-      realScaleAt(TRACK_SPACING, zoom) / TRACK_SPACING_MAX,
-    );
-    return [zoom, (realScaleAt(stops, zoom) * (1 + parted)) / 2];
-  });
-  return {
-    "line-width": realScale(width),
-    // Never quite closed: a line without a gap would be drawn once, half as wide.
-    "line-gap-width": realScale(
-      width.map(([zoom, w]) => [
-        zoom,
-        Math.max(0.01, realScaleAt(TRACK_SPACING, zoom) - w),
-      ]),
-    ),
-  } satisfies Record<string, ExpressionSpecification>;
-}
-
-/** Width of a line `stops` wide around both tracks. */
-function aroundTracks(stops: WidthStops): ExpressionSpecification {
-  return realScale(
-    TRACK_ZOOMS.map((zoom) => [
-      zoom,
-      realScaleAt(stops, zoom) + realScaleAt(TRACK_SPACING, zoom),
-    ]),
-  );
+  ]);
 }
 
 function rememberVisited(map: MapLibreMap, data: StationData): void {
@@ -389,7 +350,7 @@ export function addStationLayers(
       paint: {
         "line-color": palette.stationCasing,
         "line-opacity": 0.8,
-        "line-width": aroundTracks(railStops(2.5, 4, 6)),
+        "line-width": railWidth(2.5, 4, 6),
       },
     },
     belowLabels,
@@ -405,7 +366,7 @@ export function addStationLayers(
       paint: {
         "line-color": palette.railLink,
         "line-opacity": fadeIn(TIES_MIN_ZOOM, 0.7),
-        ...twoTracks([
+        "line-width": realScale([
           [TIES_MIN_ZOOM, 5],
           [14, 7],
           [16, 9],
@@ -423,7 +384,7 @@ export function addStationLayers(
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": palette.railLink,
-        ...twoTracks(railStops(1.2, 2, 3.5)),
+        "line-width": railWidth(1.2, 2, 3.5),
       },
     },
     belowLabels,

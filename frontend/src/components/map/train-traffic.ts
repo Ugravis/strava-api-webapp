@@ -30,7 +30,7 @@ export const TRAINS_SOURCE = "station-trains";
 /** Zoom from which the trains show, as plain blocks. */
 export const TRAINS_MIN_ZOOM = 9;
 /** Zoom from which each train shows its vehicles instead of its block. */
-export const TRAINS_DETAIL_ZOOM = 13;
+export const TRAINS_DETAIL_ZOOM = 12;
 /** Marks the moves of the camera following a train: the handlers of the user's moves ignore them. */
 export const TRAIN_FOLLOW_EVENT = "trainFollow";
 
@@ -43,10 +43,6 @@ const MIN_TRAIN_SIZE = 1.1;
 /** Latitude of the real scale, mid France: a style expression cannot read the latitude. */
 const REFERENCE_LATITUDE = 46.5;
 const MAX_SCALE_ZOOM = 24;
-/** Distance between the two tracks of a line, centre to centre, in CSS pixels of the images of the trains. */
-const TRACK_SPACING_PX = 10;
-/** The two tracks part from one line between these zooms. */
-const TRACKS_SPLIT_ZOOMS = [12, 13] as const;
 
 function metresPerPixelAt(zoom: number, latitude: number): number {
   return (
@@ -96,28 +92,8 @@ export function realScale(stops: Stop[]): ExpressionSpecification {
   ] as ExpressionSpecification;
 }
 
-/** The value of `realScale(stops)` at `zoom`, as the style draws it. */
-export function realScaleAt(stops: Stop[], zoom: number): number {
-  const points = realScaleStops(stops);
-  if (zoom <= points[0][0]) return points[0][1];
-  for (let i = 1; i < points.length; i++) {
-    const [z1, v1] = points[i];
-    if (zoom > z1) continue;
-    const [z0, v0] = points[i - 1];
-    const t = (2 ** (zoom - z0) - 1) / (2 ** (z1 - z0) - 1);
-    return v0 + (v1 - v0) * t;
-  }
-  return points[points.length - 1][1];
-}
-
 /** Size of the images of the trains. */
 export const TRAIN_SIZE = realScale([[0, MIN_TRAIN_SIZE]]);
-
-/** Distance between the two tracks of a line by zoom, centre to centre, in CSS pixels: none zoomed out. */
-export const TRACK_SPACING: Stop[] = [
-  [TRACKS_SPLIT_ZOOMS[0], 0],
-  [TRACKS_SPLIT_ZOOMS[1], TRACK_SPACING_PX * MIN_TRAIN_SIZE],
-];
 
 /** Size of the trains at `zoom`, as drawn by `TRAIN_SIZE`. */
 function sizeAt(zoom: number): number {
@@ -126,8 +102,10 @@ function sizeAt(zoom: number): number {
 
 /** At most this many trains on the whole network beyond the first of each railway. */
 const MAX_TRAINS = 80;
-/** On each railway, one more train for each such length of track, in metres, and at most so many. */
+/** On each railway, one train for each such length of track, in metres, at most one by station and so many. */
 const RAILWAY_M_PER_TRAIN = 10_000;
+/** A railway shorter than this, in metres, has a single train. */
+const SHORT_RAILWAY_M = 15_000;
 const MAX_TRAINS_PER_RAILWAY = 14;
 /** About 30 frames a second: smooth enough for a train, half the work of the screen rate. */
 const FRAME_MS = 1000 / 30;
@@ -284,6 +262,9 @@ interface Railway {
   lines: Route[];
   /** Between two stations that are ends or junctions, through the others. */
   chains: Route[];
+  /** Stations along it: never more trains than these. */
+  stations: number;
+  length: number;
   target: number;
 }
 
@@ -504,18 +485,6 @@ function pointAt({ coords, along, length }: Path, at: number): Position {
 function bearing(from: Position, to: Position): number {
   const dx = (to[0] - from[0]) * Math.cos((from[1] * Math.PI) / 180);
   return (Math.atan2(dx, to[1] - from[1]) * 180) / Math.PI;
-}
-
-/** `point` moved `m` metres to the left of `heading`: trains run on the left-hand track, as in France. */
-function leftOf([lon, lat]: Position, heading: number, m: number): Position {
-  if (m === 0) return [lon, lat];
-  const angle = ((heading - 90) * Math.PI) / 180;
-  return [
-    lon +
-      (Math.sin(angle) * m) /
-        (METRES_PER_DEGREE * Math.cos((lat * Math.PI) / 180)),
-    lat + (Math.cos(angle) * m) / METRES_PER_DEGREE,
-  ];
 }
 
 function inside([lon, lat]: Position, bounds: Bounds): boolean {
@@ -850,6 +819,8 @@ export class TrainTraffic {
     return {
       lines: lines.length > 0 ? lines : chains,
       chains,
+      stations: new Set(edges.flatMap((e) => [e.start.id, e.end.id])).size,
+      length: chains.reduce((sum, r) => sum + r.length, 0),
       target: 0,
     };
   }
@@ -890,16 +861,20 @@ export class TrainTraffic {
     return toRoute(steps.reverse());
   }
 
-  /** Trains each railway should have: one at least, more on longer ones, a few in all. */
+  /**
+   * Trains each railway should have: one at least, the only one on a short
+   * railway, more on longer ones but never more than its stations, a few in
+   * all.
+   */
   private shareTrains(): void {
-    const extras = this.railways.map((railway) =>
-      Math.min(
-        MAX_TRAINS_PER_RAILWAY - 1,
-        Math.ceil(
-          railway.chains.reduce((sum, r) => sum + r.length, 0) /
-            RAILWAY_M_PER_TRAIN,
-        ),
-      ),
+    const extras = this.railways.map(({ length, stations }) =>
+      length < SHORT_RAILWAY_M
+        ? 0
+        : Math.min(
+            MAX_TRAINS_PER_RAILWAY,
+            stations,
+            Math.ceil(length / RAILWAY_M_PER_TRAIN),
+          ) - 1,
     );
     const total = extras.reduce((sum, n) => sum + n, 0);
     const share = total > MAX_TRAINS ? MAX_TRAINS / total : 1;
@@ -1181,13 +1156,12 @@ export class TrainTraffic {
   }
 
   /**
-   * Places each vehicle behind the front of the train on the left-hand
-   * track, `offset` metres beside the middle of the line, heading along the
+   * Places each vehicle behind the front of the train, heading along the
    * chord between its ends: it turns smoothly through the bends, the
    * vehicles following one another on the rails. The block, zoomed out,
    * covers the track the train holds.
    */
-  private locate(train: Train, scale: number, offset: number): void {
+  private locate(train: Train, scale: number): void {
     const { path, at } = train;
     let behind = 0;
     for (const vehicle of train.vehicles) {
@@ -1195,20 +1169,12 @@ export class TrainTraffic {
       const front = pointAt(path, at - behind);
       const rear = pointAt(path, at - behind - length);
       const heading = bearing(rear, front);
-      vehicle.position = leftOf(
-        pointAt(path, at - behind - length / 2),
-        heading,
-        offset,
-      );
+      vehicle.position = pointAt(path, at - behind - length / 2);
       vehicle.bearing = heading + (vehicle.reversed ? 180 : 0);
       behind += length + COUPLING_PX * scale;
     }
     const heading = bearing(pointAt(path, at - train.span), pointAt(path, at));
-    train.block.position = leftOf(
-      pointAt(path, at - train.span / 2),
-      heading,
-      offset,
-    );
+    train.block.position = pointAt(path, at - train.span / 2);
     train.block.bearing = heading;
   }
 
@@ -1233,15 +1199,12 @@ export class TrainTraffic {
     const scale =
       sizeAt(zoom) *
       metresPerPixelAt(Math.max(zoom, TRAINS_DETAIL_ZOOM), latitude);
-    // Half the distance between the tracks drawn, on the ground.
-    const offset =
-      (realScaleAt(TRACK_SPACING, zoom) / 2) * metresPerPixelAt(zoom, latitude);
     const bounds = this.viewBounds();
     // The loudest train in view sets the rolling noise: as many trains, the same sound.
     let rolling = 0;
     for (const train of this.trains) {
       this.step(train, seconds, scale);
-      this.locate(train, scale, offset);
+      this.locate(train, scale);
       train.seen = inside(train.block.position, bounds);
       if (train.seen)
         rolling = Math.max(rolling, train.speed / cruise(train.kind));

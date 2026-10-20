@@ -19,7 +19,7 @@ import {
 import { trainSpeed } from "@/lib/trains/train-speed";
 import {
   SELECTED_SUFFIX,
-  TRAIN_BLOCK,
+  TRAIN_BLOCKS,
   TRAIN_PARTS,
   type TrainPart,
 } from "./station-icons";
@@ -1438,7 +1438,7 @@ export class TrainTraffic {
       if (blocks) {
         add(
           train.id,
-          TRAIN_BLOCK.image + suffix,
+          TRAIN_BLOCKS[KINDS[train.kind].cab].image + suffix,
           train.block.position,
           train.block.bearing,
         );

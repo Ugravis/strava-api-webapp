@@ -3,8 +3,9 @@ import { soundSettings, subscribeSoundSettings } from "./sound-settings";
 /**
  * Sound of the trains, synthesized with WebAudio: no file to download. A low
  * rumble and the clatter of the bogies over the rail joints follow the trains
- * moving on the map, a two-tone horn marks a departure and a hiss of air the
- * braking into a station. The audio context is only created once the sound
+ * moving on the map, the two-tone horn of the French trains marks a departure,
+ * after the whistle of the guard on the platform, and a hiss of air the
+ * braking into a station. The horn and the whistle never sound together. The audio context is only created once the sound
  * is on and a train moves; the browser keeps it suspended until a gesture.
  */
 
@@ -27,12 +28,20 @@ const SCHEDULE_EVERY_MS = 100;
 /** Shortest time between two horns and two brakings, in milliseconds: dense lines stay calm. */
 const HORN_GAP_MS = 8000;
 const BRAKE_GAP_MS = 5000;
+const WHISTLE_GAP_MS = 6000;
 const HORN_GAIN = 0.07;
-/** The two tones of the horn, high then low, in hertz, and how long each lasts, in seconds. */
+/** The two tones of the SNCF horn, high then low, in hertz, and how long each lasts, in seconds. */
 const HORN_TONES = [
-  [466, 0.42],
-  [370, 0.55],
+  [440, 0.45],
+  [370, 0.6],
 ] as const;
+const WHISTLE_GAIN = 0.035;
+/** Pitch of the pea whistle of the guard, in hertz, the pea trilling it, and how long it lasts, in seconds. */
+const WHISTLE_HZ = 2750;
+const WHISTLE_TRILL_HZ = 28;
+const WHISTLE_S = 0.65;
+/** Silence kept after the horn or the whistle before the other may sound, in seconds. */
+const SIGNAL_GAP_S = 0.4;
 const BRAKE_GAIN = 0.05;
 /** Silence kept before suspending the audio context, in milliseconds: it then costs nothing. */
 const SUSPEND_AFTER_MS = 4000;
@@ -52,6 +61,9 @@ interface Engine {
 let engine: Engine | null = null;
 let rolling = 0;
 let lastHorn = 0;
+let lastWhistle = 0;
+/** Until when the horn or the whistle sounds, in seconds of the audio context: the other waits. */
+let signalUntil = 0;
 let lastBrake = 0;
 let suspendTimer: ReturnType<typeof setTimeout> | undefined;
 let clatterTimer: ReturnType<typeof setInterval> | undefined;
@@ -65,7 +77,11 @@ function masterLevel(): number {
 
 /** Brown noise: the low rumble of wheels on rails. */
 function brownNoise(context: AudioContext, seconds: number): AudioBuffer {
-  const buffer = context.createBuffer(1, context.sampleRate * seconds, context.sampleRate);
+  const buffer = context.createBuffer(
+    1,
+    context.sampleRate * seconds,
+    context.sampleRate,
+  );
   const samples = buffer.getChannelData(0);
   let last = 0;
   for (let i = 0; i < samples.length; i++) {
@@ -76,7 +92,11 @@ function brownNoise(context: AudioContext, seconds: number): AudioBuffer {
 }
 
 function whiteNoise(context: AudioContext, seconds: number): AudioBuffer {
-  const buffer = context.createBuffer(1, context.sampleRate * seconds, context.sampleRate);
+  const buffer = context.createBuffer(
+    1,
+    context.sampleRate * seconds,
+    context.sampleRate,
+  );
   const samples = buffer.getChannelData(0);
   for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
   return buffer;
@@ -92,8 +112,12 @@ function clackBuffer(context: AudioContext): AudioBuffer {
     const t = i / rate;
     // Low-passed noise for the knock, a falling sine for the thump.
     knock += 0.25 * (Math.random() * 2 - 1 - knock);
-    const thump = Math.sin(2 * Math.PI * (95 - 120 * t) * t) * Math.exp(-t / 0.035);
-    const ring = (Math.sin(2 * Math.PI * 2350 * t) + 0.6 * Math.sin(2 * Math.PI * 3170 * t)) * Math.exp(-t / 0.05);
+    const thump =
+      Math.sin(2 * Math.PI * (95 - 120 * t) * t) * Math.exp(-t / 0.035);
+    const ring =
+      (Math.sin(2 * Math.PI * 2350 * t) +
+        0.6 * Math.sin(2 * Math.PI * 3170 * t)) *
+      Math.exp(-t / 0.05);
     samples[i] = 0.9 * thump + 1.4 * knock * Math.exp(-t / 0.018) + 0.04 * ring;
   }
   return buffer;
@@ -229,7 +253,11 @@ export function setTrainRolling(level: number): void {
   rolling = level;
   const sound = level > 0 ? audio() : engine;
   if (!sound) return;
-  sound.rolling.gain.setTargetAtTime(level, sound.context.currentTime, ROLLING_FADE_S);
+  sound.rolling.gain.setTargetAtTime(
+    level,
+    sound.context.currentTime,
+    ROLLING_FADE_S,
+  );
   if (starting) settle();
 }
 
@@ -239,12 +267,17 @@ function playing(): Engine | null {
   return sound && sound.context.state === "running" ? sound : null;
 }
 
-/** The two-tone horn of a train leaving a station, at most one every few seconds. */
-export function whistle(): void {
+/** Whether the horn or the whistle sounds now: the other one then keeps silent. */
+function signalling(sound: Engine): boolean {
+  return sound.context.currentTime < signalUntil;
+}
+
+/** The two-tone horn of a train leaving a station, at most one every few seconds, never over the whistle. */
+export function horn(): void {
   const now = Date.now();
   if (now - lastHorn < HORN_GAP_MS) return;
   const sound = playing();
-  if (!sound) return;
+  if (!sound || signalling(sound)) return;
   lastHorn = now;
   const { context, echo } = sound;
   // A reed horn: a bright tone through the formant of its bell.
@@ -283,6 +316,55 @@ export function whistle(): void {
     }
     start += duration + 0.06;
   }
+  signalUntil = start + SIGNAL_GAP_S;
+}
+
+/** The pea whistle of the guard as a train is about to leave, at most one every few seconds, never over the horn. */
+export function guardWhistle(): void {
+  const now = Date.now();
+  if (now - lastWhistle < WHISTLE_GAP_MS) return;
+  const sound = playing();
+  if (!sound || signalling(sound)) return;
+  lastWhistle = now;
+  const { context, master } = sound;
+  const start = context.currentTime + 0.02;
+  const end = start + WHISTLE_S;
+  const tone = context.createOscillator();
+  tone.type = "sine";
+  tone.frequency.setValueAtTime(WHISTLE_HZ * 0.96, start);
+  tone.frequency.exponentialRampToValueAtTime(WHISTLE_HZ, start + 0.05);
+  // The pea rattling in the whistle: a fast flutter of the loudness and of the pitch.
+  const trill = context.createOscillator();
+  trill.frequency.value = WHISTLE_TRILL_HZ;
+  const depth = context.createGain();
+  depth.gain.value = 0.45;
+  const wobble = context.createGain();
+  wobble.gain.value = 60;
+  trill.connect(wobble).connect(tone.frequency);
+  const level = context.createGain();
+  level.gain.value = 0.55;
+  trill.connect(depth).connect(level.gain);
+  const envelope = context.createGain();
+  envelope.gain.setValueAtTime(0, start);
+  envelope.gain.linearRampToValueAtTime(WHISTLE_GAIN, start + 0.03);
+  envelope.gain.setValueAtTime(WHISTLE_GAIN, end - 0.08);
+  envelope.gain.linearRampToValueAtTime(0, end);
+  // A breath of air around the tone.
+  const air = context.createBufferSource();
+  air.buffer = sound.hiss;
+  const band = context.createBiquadFilter();
+  band.type = "bandpass";
+  band.frequency.value = WHISTLE_HZ;
+  band.Q.value = 3;
+  const breath = context.createGain();
+  breath.gain.value = 0.25;
+  air.connect(band).connect(breath).connect(envelope);
+  tone.connect(level).connect(envelope).connect(master);
+  for (const node of [tone, trill, air]) {
+    node.start(start);
+    node.stop(end + 0.02);
+  }
+  signalUntil = end + SIGNAL_GAP_S;
 }
 
 /** A hiss of air as a train brakes into a station, at most one every few seconds. */

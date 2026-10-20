@@ -1287,7 +1287,10 @@ export class TrainTraffic {
     for (const train of this.trains) {
       this.step(train, seconds, scale);
       this.locate(train, scale, [lng, lat]);
-      train.seen = inside(train.block.position, bounds);
+      // Zoomed in, a long train can cross the view with its middle off screen.
+      train.seen =
+        inside(train.block.position, bounds) ||
+        train.vehicles.some((vehicle) => inside(vehicle.anchor, bounds));
       if (train.seen && this.audible)
         rolling = Math.max(rolling, train.speed / cruise(train.kind));
     }

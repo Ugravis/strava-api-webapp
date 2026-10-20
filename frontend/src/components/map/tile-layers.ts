@@ -60,7 +60,7 @@ const SUBTILE_GRID_MIN_ZOOM = 14;
  */
 export const SUBTILE_MIN_ZOOM = 6;
 /** The large tiles can be picked from this zoom, where they span about 8 pixels; below, nothing is picked. */
-const TILE_CLICK_MIN_ZOOM = 8;
+export const TILE_CLICK_MIN_ZOOM = 8;
 /** The small tiles can be picked from this zoom, where they span about 8 pixels; below, a click picks the large tile. */
 const SUBTILE_CLICK_MIN_ZOOM = 12;
 /**

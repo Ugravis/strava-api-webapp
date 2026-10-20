@@ -9,6 +9,7 @@ import {
   type LucideIcon,
   SearchIcon,
   SunDimIcon,
+  VolumeXIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
@@ -16,15 +17,18 @@ import { type ComponentProps, type ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
 import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 import type { TileLevelSummary, TilesSummary, VisitedStations } from "@/lib/api/types";
+import { updateSoundSettings, useSoundSettings } from "@/lib/sound/sound-settings";
 import { cn } from "@/lib/utils";
 import { ClusterKey, OtherClusterKey, RailKey, SquareKey, StationKey, TileKey, TrackKey } from "./map-keys";
 import { MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
 import { MAP_MODULE_ICONS } from "./map-module-icons";
 import { Stat, ValueSkeleton } from "./map-stat";
+import { TrainSpeedControl } from "./train-speed-control";
 
 type TracksState = Pick<ActivityTracksState, "lines" | "status" | "progress" | "errorCode" | "retry">;
 
@@ -79,10 +83,20 @@ export function MapStatsBar({
       <div className="flex shrink-0 overflow-x-auto border-b scrollbar-none md:overflow-visible md:border-b-0 md:border-r">
         <ControlsGroup title={t("stats.tools")}>
           <SplitButton selected={historyOpen}>
-            <ToolPart icon={HistoryIcon} label={t("history.open")} pressed={historyOpen} onPressedChange={onHistoryOpenChange} />
+            <ToolPart
+              icon={HistoryIcon}
+              label={t("history.open")}
+              pressed={historyOpen}
+              onPressedChange={onHistoryOpenChange}
+            />
           </SplitButton>
           <SplitButton selected={sectorOpen}>
-            <ToolPart icon={LocateFixedIcon} label={t("sector.open")} pressed={sectorOpen} onPressedChange={onSectorOpenChange} />
+            <ToolPart
+              icon={LocateFixedIcon}
+              label={t("sector.open")}
+              pressed={sectorOpen}
+              onPressedChange={onSectorOpenChange}
+            />
             <SplitPart
               selected={sectorOpen}
               icon
@@ -309,9 +323,18 @@ interface ModuleProps {
  * share the width in equal columns, the tracks as narrow as their content.
  * An optional layer checked shows the module too.
  */
-function TilesModule({ tracks, summary, layers, onLayersChange }: ModuleProps & { tracks: TracksState; summary: TilesSummary | null }) {
+function TilesModule({
+  tracks,
+  summary,
+  layers,
+  onLayersChange,
+}: ModuleProps & { tracks: TracksState; summary: TilesSummary | null }) {
   const check = (layer: "subtiles" | "tracks") => (checked: boolean) =>
-    onLayersChange({ ...layers, [layer]: checked, tiles: layers.tiles || checked });
+    onLayersChange({
+      ...layers,
+      [layer]: checked,
+      tiles: layers.tiles || checked,
+    });
 
   return (
     <div className="flex snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none md:grid md:grid-cols-[repeat(2,minmax(0,1fr))_auto] md:overflow-visible">
@@ -365,7 +388,11 @@ function TilesSection({
 
   return (
     <StatsSection title={t(level)} checked={checked} onCheckedChange={onCheckedChange} columns>
-      <Stat value={value((s) => format.number(s.visited))} label={t("visited")} colorKey={<TileKey subtiles={level === "subtiles"} />} />
+      <Stat
+        value={value((s) => format.number(s.visited))}
+        label={t("visited")}
+        colorKey={<TileKey subtiles={level === "subtiles"} />}
+      />
       <Stat
         value={value((s) => withShare(`${size(s)} × ${size(s)}`, size(s) ** 2, s))}
         label={t("maxSquare")}
@@ -433,7 +460,12 @@ function TracksSection({
         {syncing && lines ? (
           <span className="flex items-center gap-1.5">
             <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin" aria-hidden />
-            {progress ? t("syncing", { fetched: progress.fetched, total: progress.total }) : t("checking")}
+            {progress
+              ? t("syncing", {
+                  fetched: progress.fetched,
+                  total: progress.total,
+                })
+              : t("checking")}
           </span>
         ) : (
           status === "ready" &&
@@ -456,9 +488,39 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const t = useTranslations("map.stats");
   const format = useFormatter();
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
+  const sound = useSoundSettings();
 
   return (
-    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-center md:pr-6">
+    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-evenly md:pr-6">
+      <div className="flex shrink-0 flex-col gap-1">
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={layers.dimmed}
+          onPressedChange={(dimmed) =>
+            onLayersChange({
+              ...layers,
+              dimmed,
+              stations: layers.stations || dimmed,
+            })
+          }
+          className="justify-start"
+        >
+          <SunDimIcon aria-hidden />
+          {t("dim")}
+        </Toggle>
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={!sound.enabled}
+          onPressedChange={(muted) => updateSoundSettings({ enabled: !muted })}
+          className="justify-start"
+        >
+          <VolumeXIcon aria-hidden />
+          {t("mute")}
+        </Toggle>
+      </div>
+      <Separator orientation="vertical" className="h-auto w-px self-stretch" />
       <StatsSection title={t("stations")}>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
@@ -468,7 +530,11 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
         <Stat
           value={
             stations ? (
-              format.number(railwayM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })
+              format.number(railwayM / 1000, {
+                style: "unit",
+                unit: "kilometer",
+                maximumFractionDigits: 0,
+              })
             ) : (
               <ValueSkeleton />
             )
@@ -477,16 +543,8 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           colorKey={<RailKey />}
         />
       </StatsSection>
-      <Toggle
-        variant="outline"
-        size="sm"
-        pressed={layers.dimmed}
-        onPressedChange={(dimmed) => onLayersChange({ ...layers, dimmed, stations: layers.stations || dimmed })}
-        className="shrink-0"
-      >
-        <SunDimIcon aria-hidden />
-        {t("dim")}
-      </Toggle>
+      <Separator orientation="vertical" className="h-auto w-px self-stretch" />
+      <TrainSpeedControl />
     </div>
   );
 }

@@ -38,6 +38,13 @@
     "switchToDark": "Mode sombre",
     "switchToLight": "Mode clair"
   },
+  "sound": {
+    "title": "Son",
+    "on": "Son : {percent} %",
+    "off": "Son coupé",
+    "enable": "Activer le son",
+    "volume": "Volume"
+  },
   "fields": {
     "email": "Email",
     "emailPlaceholder": "toi@exemple.fr",
@@ -361,7 +368,12 @@
       "stations": "Gares",
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
       "railway": "Voies débloquées",
-      "dim": "Atténuer la carte"
+      "dim": "Atténuer la carte",
+      "trainSpeed": "Vitesse des trains",
+      "speedValue": "×{factor, number}",
+      "realSpeed": "réelle",
+      "editSpeed": "Saisir une vitesse, de ×{min, number} à ×{max, number}",
+      "mute": "Couper le son"
     },
     "modules": {
       "tiles": "Tuiles",
@@ -540,6 +552,54 @@
       "viewTile": "Voir la petite tuile",
       "error": "Impossible de charger cette gare.",
       "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>"
+    },
+    "trainPanel": {
+      "title": "{kind} {number}",
+      "kinds": {
+        "ter": "TER",
+        "intercites": "Intercités",
+        "tgv": "TGV",
+        "freight": "Fret",
+        "local": "Navette"
+      },
+      "running": "En marche",
+      "dwelling": "À quai",
+      "onTime": "À l'heure",
+      "late": "Retard +{minutes} min",
+      "speed": "Vitesse",
+      "kmh": "{speed} km/h",
+      "speedFactor": "×{factor, number}",
+      "remaining": "Prochain arrêt dans",
+      "vehicles": "Véhicules",
+      "passengers": "Voyageurs",
+      "cargo": "Chargement",
+      "goods": "Marchandises",
+      "load": "Tonnage",
+      "tonnes": "{tonnes, number} t",
+      "cargoes": {
+        "wheat": "Blé",
+        "aggregates": "Granulats",
+        "chemicals": "Produits chimiques",
+        "containers": "Conteneurs",
+        "logs": "Grumes de bois",
+        "cars": "Voitures neuves",
+        "steel": "Acier",
+        "fuel": "Carburant"
+      },
+      "onLine": "Trains sur la ligne",
+      "journey": "Trajet ({count, plural, one {# arrêt} other {# arrêts}})",
+      "from": "Provenance",
+      "next": "Prochain arrêt",
+      "terminus": "Terminus",
+      "unnamed": "Gare sans nom",
+      "follow": "Suivre le train",
+      "following": "Suivi en cours",
+      "gone": "Ce train a quitté la carte.",
+      "disclaimer": "Train fictif : il circule sur tes liaisons débloquées, ses chiffres sont inventés.",
+      "moreStops": "{count, plural, one {# autre arrêt} other {# autres arrêts}}",
+      "fewerStops": "Masquer les arrêts intermédiaires",
+      "passed": "Desservi",
+      "estimated": "Horaire estimé"
     }
   }
 }

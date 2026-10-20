@@ -22,8 +22,8 @@ const HOVER_CLOSE_MS = 250;
 /**
  * Sound of the site, such as the trains of the map: on or off, and its
  * volume, kept by the browser. On a desktop a click turns it on or off and
- * hovering opens the volume slider alone; on a phone, without hover, a tap
- * opens both.
+ * hovering opens the volume slider alone, with its percentage; on a phone,
+ * without hover, a tap opens both.
  */
 export function SoundMenuItem() {
   const t = useTranslations("sound");
@@ -48,8 +48,9 @@ export function SoundMenuItem() {
           delay={HOVER_OPEN_MS}
           closeDelay={HOVER_CLOSE_MS}
           render={
+            // No tooltip: hovering opens the volume, which would show after it.
             <SidebarMenuButton
-              tooltip={label}
+              aria-label={label}
               className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
             />
           }
@@ -88,7 +89,7 @@ export function SoundMenuItem() {
                 updateSoundSettings({ volume: next / 100 });
               }}
             />
-            {isMobile && <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{percent} %</span>}
+            <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">{percent} %</span>
           </div>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -491,7 +491,7 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const sound = useSoundSettings();
 
   return (
-    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-center md:pr-6">
+    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-evenly md:pr-6">
       <div className="flex shrink-0 flex-col gap-1">
         <Toggle
           variant="outline"

@@ -25,9 +25,21 @@ export const TRAIN_PARTS = {
   car: { image: "train-car", length: 16 },
   wagon: { image: "train-wagon", length: 14 },
 } as const;
-/** A whole train zoomed out, without its vehicles: `length` long in CSS pixels, with a selected variant. */
-export const TRAIN_BLOCK = { image: "train-block", length: 14 } as const;
 export type TrainPart = keyof typeof TRAIN_PARTS;
+export type TrainCab = Extract<TrainPart, `${string}Cab`>;
+/**
+ * A whole train zoomed out, without its vehicles, by its driving vehicle:
+ * `length` long in CSS pixels, with a selected variant. Its front and length
+ * tell its kind: the long pointed TGV, the square Intercités, the rounded TER,
+ * the ribbed freight train, the short local railcar.
+ */
+export const TRAIN_BLOCKS = {
+  tgvCab: { image: "train-block-tgv", length: 20 },
+  intercitesCab: { image: "train-block-intercites", length: 16 },
+  terCab: { image: "train-block-ter", length: 14 },
+  freightCab: { image: "train-block-freight", length: 18 },
+  localCab: { image: "train-block-local", length: 10 },
+} as const satisfies Record<TrainCab, { image: string; length: number }>;
 /** Suffix of the image of a vehicle of the train shown in the panel. */
 export const SELECTED_SUFFIX = "-selected";
 
@@ -103,16 +115,30 @@ function bubble(color: string): ImageData {
   return image(c);
 }
 
-/** A whole train in `color`, outlined in `casing`: a plain rounded box. */
-function block(color: string, casing: string): ImageData {
-  const c = canvas(TRAIN_WIDTH, TRAIN_BLOCK.length);
+/**
+ * A whole train in `color`, outlined in `casing`: a box with the front of its
+ * driving vehicle, a stripe along a TGV, ribs across a freight train.
+ */
+function block(cab: TrainCab, color: string, casing: string): ImageData {
+  const length = TRAIN_BLOCKS[cab].length;
+  const c = canvas(TRAIN_WIDTH, length);
+  const bottom = length - 0.75;
   c.fillStyle = color;
   c.strokeStyle = casing;
   c.lineWidth = 1.2;
+  c.lineJoin = "round";
   c.beginPath();
-  c.roundRect(0.75, 0.75, TRAIN_WIDTH - 1.5, TRAIN_BLOCK.length - 1.5, 2.5);
+  cabFront(c, cab);
+  c.arcTo(TRAIN_WIDTH - 0.75, bottom, 0.75, bottom, 2);
+  c.arcTo(0.75, bottom, 0.75, 0.75, 2);
+  c.closePath();
   c.fill();
   c.stroke();
+  c.fillStyle = casing;
+  if (cab === "tgvCab") c.fillRect(3.2, 8, TRAIN_WIDTH - 6.4, length - 11);
+  if (cab === "freightCab")
+    for (let y = 4; y < length - 2; y += 2.5)
+      c.fillRect(1.4, y, TRAIN_WIDTH - 2.8, 0.8);
   return image(c);
 }
 
@@ -234,12 +260,20 @@ export function addStationIcons(map: MapLibreMap, palette: MapPalette): void {
       bubble(palette.stationUnvisited),
       bubbleOptions,
     ],
-    [TRAIN_BLOCK.image, block(palette.stationCasing, palette.station), {}],
-    [
-      TRAIN_BLOCK.image + SELECTED_SUFFIX,
-      block(palette.station, palette.stationCasing),
-      {},
-    ],
+    ...(Object.keys(TRAIN_BLOCKS) as TrainCab[]).flatMap(
+      (cab): ImageEntry[] => [
+        [
+          TRAIN_BLOCKS[cab].image,
+          block(cab, palette.stationCasing, palette.station),
+          {},
+        ],
+        [
+          TRAIN_BLOCKS[cab].image + SELECTED_SUFFIX,
+          block(cab, palette.station, palette.stationCasing),
+          {},
+        ],
+      ],
+    ),
     // In the color of the casing, outlined in violet: they stand out on the violet railway. Selected, the other way round.
     ...(Object.keys(TRAIN_PARTS) as TrainPart[]).flatMap(
       (part): ImageEntry[] => [

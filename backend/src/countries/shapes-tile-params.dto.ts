@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -45,6 +46,22 @@ export class ShapesTileQueryDto {
   @IsOptional()
   @IsString()
   v?: string;
+}
+
+/** A point of the map, in degrees. */
+export class PointQueryDto {
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lon!: number;
+
+  /** Within the latitudes of Web Mercator. */
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-85.06)
+  @Max(85.06)
+  lat!: number;
 }
 
 export class CountryCodeParamsDto {

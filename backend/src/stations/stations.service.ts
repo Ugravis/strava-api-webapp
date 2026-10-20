@@ -69,6 +69,12 @@ export interface CountryRailway {
   totalM: number;
 }
 
+/** The train stations of a country and those the user visited. */
+export interface CountryStations {
+  visited: number;
+  total: number;
+}
+
 /** Whether the user `u` visited the small tile of the place `p`. */
 const PLACE_VISITED = `u.mask & (1::bigint << p.bit) <> 0`;
 
@@ -249,6 +255,23 @@ export class StationsService {
       unlockedM: Math.round(row.unlocked_m ?? 0),
       totalM: Math.round(row.total_m),
     };
+  }
+
+  /** Stations of the country `code` and those visited by the user; null without any. */
+  async countryStations(
+    userId: string,
+    code: string,
+  ): Promise<CountryStations | null> {
+    const [row]: { total: number; visited: number }[] =
+      await this.dataSource.query(
+        `SELECT count(*)::int AS total,
+           count(*) FILTER (WHERE ${PLACE_VISITED})::int AS visited
+         FROM places p
+         LEFT JOIN user_tiles u ON u.user_id = $1 AND u.x = p.x AND u.y = p.y
+         WHERE p.kind = 'station' AND p.country_code = $2`,
+        [userId, code],
+      );
+    return row.total === 0 ? null : row;
   }
 
   /** Vector tile of every station, visited or not: geography only. */

@@ -5,13 +5,14 @@ import {
   EyeOffIcon,
   HistoryIcon,
   LoaderCircleIcon,
+  LocateFixedIcon,
   type LucideIcon,
   SearchIcon,
   SunDimIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
-import { type ReactNode, useEffect } from "react";
+import { type ComponentProps, type ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,7 +45,10 @@ interface MapStatsBarProps {
   onHistoryOpenChange: (open: boolean) => void;
   /** Whether the sector tool is in use: its search or its band open. */
   sectorOpen: boolean;
+  /** Opens the tool on the sector at the center of the map, or closes it. */
   onSectorOpenChange: (open: boolean) => void;
+  /** Opens the search of the sectors. */
+  onSectorSearch: () => void;
 }
 
 /**
@@ -65,6 +69,7 @@ export function MapStatsBar({
   onHistoryOpenChange,
   sectorOpen,
   onSectorOpenChange,
+  onSectorSearch,
 }: MapStatsBarProps) {
   const t = useTranslations("map");
   useTracksErrorToast(tracks);
@@ -73,8 +78,21 @@ export function MapStatsBar({
     <section aria-label={t("stats.label")} className="flex shrink-0 flex-col border-t bg-background md:flex-row">
       <div className="flex shrink-0 overflow-x-auto border-b scrollbar-none md:overflow-visible md:border-b-0 md:border-r">
         <ControlsGroup title={t("stats.tools")}>
-          <ToolToggle icon={HistoryIcon} label={t("history.open")} pressed={historyOpen} onPressedChange={onHistoryOpenChange} />
-          <ToolToggle icon={SearchIcon} label={t("sector.open")} pressed={sectorOpen} onPressedChange={onSectorOpenChange} />
+          <SplitButton selected={historyOpen}>
+            <ToolPart icon={HistoryIcon} label={t("history.open")} pressed={historyOpen} onPressedChange={onHistoryOpenChange} />
+          </SplitButton>
+          <SplitButton selected={sectorOpen}>
+            <ToolPart icon={LocateFixedIcon} label={t("sector.open")} pressed={sectorOpen} onPressedChange={onSectorOpenChange} />
+            <SplitPart
+              selected={sectorOpen}
+              icon
+              aria-label={t("sector.search.title")}
+              title={t("sector.search.title")}
+              onClick={onSectorSearch}
+            >
+              <SearchIcon aria-hidden />
+            </SplitPart>
+          </SplitButton>
         </ControlsGroup>
         <ControlsGroup title={t("stats.modules")}>
           {MAP_MODULES.map((candidate) => (
@@ -133,8 +151,50 @@ function ControlsGroup({ title, children }: { title: string; children: ReactNode
   );
 }
 
-/** A tool, by its icon alone on narrow screens. */
-function ToolToggle({
+/**
+ * Frame of the buttons of the tools and the modules: one or two actions side
+ * by side, outlined together, shaded while selected.
+ */
+function SplitButton({ selected, label, children }: { selected: boolean; label?: string; children: ReactNode }) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className={cn(
+        "flex h-7 shrink-0 items-stretch overflow-hidden rounded-[min(var(--radius-md),12px)] border border-input transition-colors",
+        selected && "border-foreground/30 bg-muted",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** One action of a `SplitButton`: the first one takes the width, the next ones are icons after a line. */
+function SplitPart({
+  selected,
+  icon = false,
+  className,
+  ...props
+}: ComponentProps<typeof Button> & { selected: boolean; icon?: boolean }) {
+  return (
+    <Button
+      variant="ghost"
+      size={icon ? "icon-sm" : "sm"}
+      className={cn(
+        "h-auto rounded-none border-0 active:not-aria-[haspopup]:translate-y-0",
+        icon ? "border-l border-l-input" : "flex-1 justify-start",
+        selected && "hover:bg-foreground/5",
+        selected && icon && "border-l-foreground/20",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** The main action of a tool, by its icon alone on narrow screens. */
+function ToolPart({
   icon: Icon,
   label,
   pressed,
@@ -146,17 +206,10 @@ function ToolToggle({
   onPressedChange: (pressed: boolean) => void;
 }) {
   return (
-    <Toggle
-      variant="outline"
-      size="sm"
-      pressed={pressed}
-      onPressedChange={onPressedChange}
-      aria-label={label}
-      className="md:justify-start"
-    >
+    <SplitPart selected={pressed} aria-pressed={pressed} aria-label={label} onClick={() => onPressedChange(!pressed)}>
       <Icon aria-hidden />
       <span className="hidden sm:inline">{label}</span>
-    </Toggle>
+    </SplitPart>
   );
 }
 
@@ -182,44 +235,28 @@ function ModuleButton({
   const label = t(module);
 
   return (
-    <div
-      role="group"
-      aria-label={label}
-      className={cn(
-        "flex h-7 shrink-0 items-stretch overflow-hidden rounded-[min(var(--radius-md),12px)] border border-input transition-colors",
-        selected && "border-foreground/30 bg-muted",
-      )}
-    >
-      <Button
-        variant="ghost"
-        size="sm"
+    <SplitButton selected={selected} label={label}>
+      <SplitPart
+        selected={selected}
         aria-pressed={selected}
         onClick={onSelect}
-        className={cn(
-          "h-auto flex-1 justify-start rounded-none border-0 active:not-aria-[haspopup]:translate-y-0",
-          selected && "hover:bg-foreground/5",
-          !shown && "text-muted-foreground",
-        )}
+        className={cn(!shown && "text-muted-foreground")}
       >
         <Icon aria-hidden />
         {label}
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
+      </SplitPart>
+      <SplitPart
+        selected={selected}
+        icon
         aria-pressed={shown}
         aria-label={t(shown ? "hide" : "show", { module })}
         title={t(shown ? "hide" : "show", { module })}
         onClick={() => onShownChange(!shown)}
-        className={cn(
-          "h-auto rounded-none border-0 border-l border-l-input active:not-aria-[haspopup]:translate-y-0",
-          selected && "border-l-foreground/20 hover:bg-foreground/5",
-          !shown && "text-muted-foreground",
-        )}
+        className={cn(!shown && "text-muted-foreground")}
       >
         {shown ? <EyeIcon aria-hidden /> : <EyeOffIcon aria-hidden />}
-      </Button>
-    </div>
+      </SplitPart>
+    </SplitButton>
   );
 }
 

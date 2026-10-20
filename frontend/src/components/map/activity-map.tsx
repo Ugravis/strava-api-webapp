@@ -80,6 +80,12 @@ interface ActivityMapProps {
   sector: MapSector | null;
   /** Incremented to frame the sector, once its bounds are known. */
   sectorFrame: number;
+  /**
+   * Called with the center of the visible map, beside the panel and above
+   * the bands, in degrees: once loaded, then whenever the camera stops,
+   * unless it was framing the sector.
+   */
+  onCenterChange: (center: [number, number]) => void;
   /** Stations visited and the links between them; null while loading. */
   stations: VisitedStations | null;
   showStations: boolean;
@@ -92,6 +98,8 @@ interface ActivityMapProps {
 const ACTIVITY_PADDING = 48;
 /** Zoom of the map centered on a tile of each level: it spans about a fifth of a large screen. */
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
+/** Marks the moves of the camera framing the sector. */
+const SECTOR_FRAME_EVENT = "sectorFrame";
 /** Zoom of the map centered on a station: its town and its neighbors around. */
 const STATION_ZOOM = 13;
 
@@ -105,6 +113,7 @@ export function ActivityMap({
   history: mapHistory,
   sector,
   sectorFrame,
+  onCenterChange,
   stations,
   showStations,
   dimmed,
@@ -126,6 +135,8 @@ export function ActivityMap({
   const sectorRef = useRef(sector);
   // The last request to frame the sector served.
   const sectorFramedRef = useRef(0);
+  // The handlers of the map are registered once: they call the latest one.
+  const onCenterChangeRef = useRef(onCenterChange);
   // Whether a past state is shown in place of today's tiles: only once it is loaded.
   const pastRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
@@ -239,6 +250,20 @@ export function ActivityMap({
       setSector(map, sectorRef.current, paletteRef.current);
     });
     map.on("moveend", () => updateGrids(map, modeRef.current));
+    // The sector framed is kept, even when the center of its bounds falls
+    // in a neighbor, as for Croatia.
+    const reportCenter = () => {
+      const { clientWidth, clientHeight } = map.getContainer();
+      const { lng, lat } = map.unproject([
+        (clientWidth - panelWidthOf(panelRef.current, collapsedRef.current)) / 2,
+        (clientHeight - bandsHeightOf(containerRef.current)) / 2,
+      ]);
+      onCenterChangeRef.current([lng, lat]);
+    };
+    map.on("load", reportCenter);
+    map.on("moveend", (event) => {
+      if (!(SECTOR_FRAME_EVENT in event)) reportCenter();
+    });
     // The tracks arrive after the map: once the user has moved it, they no
     // longer frame it.
     map.on("movestart", (event) => {
@@ -390,15 +415,23 @@ export function ActivityMap({
     if (!map || !sectorBounds || sectorFrame === sectorFramedRef.current) return;
     sectorFramedRef.current = sectorFrame;
     framedRef.current = true;
-    map.fitBounds(sectorBounds, {
-      padding: {
-        top: ACTIVITY_PADDING,
-        bottom: ACTIVITY_PADDING + bandsHeightOf(containerRef.current),
-        left: ACTIVITY_PADDING,
-        right: ACTIVITY_PADDING + panelWidthOf(panelRef.current, collapsedRef.current),
+    map.fitBounds(
+      sectorBounds,
+      {
+        padding: {
+          top: ACTIVITY_PADDING,
+          bottom: ACTIVITY_PADDING + bandsHeightOf(containerRef.current),
+          left: ACTIVITY_PADDING,
+          right: ACTIVITY_PADDING + panelWidthOf(panelRef.current, collapsedRef.current),
+        },
       },
-    });
+      { [SECTOR_FRAME_EVENT]: true },
+    );
   }, [sectorBounds, sectorFrame]);
+
+  useEffect(() => {
+    onCenterChangeRef.current = onCenterChange;
+  }, [onCenterChange]);
 
   useEffect(() => {
     collapsedRef.current = collapsed;

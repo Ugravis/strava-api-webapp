@@ -1,18 +1,32 @@
-## Présentation
-Plateforme web gamifiée (puis app Play Store / App Store) connectée à Strava. Visualisation des traces GPX sur une carte avec complétion de tuiles, de communes et de points d'intérêt. Badges, aspect communautaire, balises à récupérer sur la carte, accomplissements métaphoriques.
+# Project Guidelines
 
-## Stack
-- Back: NestJS + TypeORM. 
-- BDD: PostgreSQL + PostGIS (pour les requêtes spatiales). 
-- Front: NextJS. 
+## Stack & Commands
+- Stack: NestJS, TypeORM, PostgreSQL/PostGIS, Next.js, Tailwind, shadcn/ui, Docker.
+- PM: pnpm (use `pnpm --filter <app> <cmd>`).
+- Strict TS, mobile-first, responsive, skeleton loaders, SOLID principles.
 
-## Règles
-- Utilisation de Docker. 
-- Utilisation stricte de Gitflow et conventional commits (et milestones, labels, issues, etc). 
-- N'ajoute pas de mention Claude (que ce soit dans les commits, les PR). 
-- TS strict. 
-- Pour la V0, utilisation de https://ui.shadcn.com/. 
-- Frontend codé en respectant les principes de design SOLID + squelettes de chargement + responsive. 
-- Mobile first. 
-- Tout ce qui n'est pas de l'interface utilisateur doit être évidement écrit en professionnel. 
-- Je m'occupe de valider les PR. 
+## Interaction & Git
+- Language: French for discussion, English for code/docs/commits.
+- Git: Gitflow, Conventional Commits (no AI/Claude mentions). User validates PRs.
+
+## File Inspection & Token Guardrails
+- Source code: Max 150 lines per read. If > 150 lines, locate targets via `grep -n` and inspect using `offset`/`limit`.
+- Configs/Locks/Data: NEVER read full lockfiles, logs, GeoJSON, GPX, or Docker files. Use `jq`, `yq`, `grep`, `head`, `tail`.
+- Tests: Run targeted files only (never full suite). Silence linters (`--quiet`).
+
+## Output Rules
+- Output changed lines only (minimal diff style).
+- No unrequested architectural overhauls or passive code echoes.
+
+## Task Delegation
+
+Spawn subagents to isolate context, parallelize independent work, or offload bulk mechanical tasks. Don't spawn when the parent needs the reasoning, when synthesis requires holding things together, or when spawn overhead dominates.
+
+Pick the cheapest model that can do the subtask well:
+- Haiku: bulk mechanical work, no judgment
+- Sonnet: scoped research, code exploration, in-scope synthesis
+- Opus: subtasks needing real planning or tradeoffs
+
+If a subagent realizes it needs a higher tier than itself, return to the parent.
+
+Parent owns final output and cross-spawn synthesis. User instructions override.

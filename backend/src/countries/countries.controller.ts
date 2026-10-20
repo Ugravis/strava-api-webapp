@@ -17,11 +17,13 @@ import {
 } from './countries.service';
 import {
   type CountryRailway,
+  type CountryStations,
   StationsService,
 } from '../stations/stations.service';
 import { CountriesWorker } from './countries.worker';
 import {
   CountryCodeParamsDto,
+  PointQueryDto,
   SectorTileParamsDto,
   ShapesTileParamsDto,
   ShapesTileQueryDto,
@@ -78,18 +80,37 @@ export class CountriesController {
   }
 
   /**
+   * The country under a point of the map, the sector at its center; null
+   * at sea. Geography only.
+   */
+  @Get('at')
+  @Throttle(SHAPES_THROTTLE)
+  async at(
+    @Query() { lon, lat }: PointQueryDto,
+  ): Promise<{ code: string | null }> {
+    return { code: await this.countries.countryAt(lon, lat) };
+  }
+
+  /**
    * A country as a sector of the map: the tiles of the user in it, its
    * totals, the first and latest visits of the user, the bounds of its
-   * main landmass, and its railway network with the part the user
-   * unlocked. A country without totals is computed in the background.
+   * main landmass, and its train stations and railway network with the
+   * part the user visited and unlocked. A country without totals is
+   * computed in the background.
    */
   @Get(':code/sector')
   async sector(
     @CurrentUser() user: User,
     @Param() { code }: CountryCodeParamsDto,
-  ): Promise<CountrySector & { railway: CountryRailway | null }> {
-    const [sector, railway] = await Promise.all([
+  ): Promise<
+    CountrySector & {
+      stations: CountryStations | null;
+      railway: CountryRailway | null;
+    }
+  > {
+    const [sector, stations, railway] = await Promise.all([
       this.countries.sector(user.id, code),
+      this.stations.countryStations(user.id, code),
       this.stations.countryRailway(user.id, code),
     ]);
     if (!sector) {
@@ -98,7 +119,7 @@ export class CountriesController {
     if (sector.shapeVersion === null) {
       this.worker.wake();
     }
-    return { ...sector, railway };
+    return { ...sector, stations, railway };
   }
 
   /**

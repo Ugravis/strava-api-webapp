@@ -499,6 +499,7 @@
       "close": "Fermer le secteur",
       "change": "Changer",
       "recenter": "Recentrer",
+      "veil": "Griser autour du secteur",
       "tiles": "Grandes tuiles",
       "subtiles": "Petites tuiles",
       "computingTotal": "… (calcul)",
@@ -517,6 +518,7 @@
         "empty": "Aucun pays trouvé.",
         "error": "Impossible de charger la liste des pays."
       },
+      "stations": "Gares",
       "railway": "Réseau ferré"
     },
     "bands": {

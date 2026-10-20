@@ -996,6 +996,8 @@ export class TrainTraffic {
     const service = alone ? "line" : (weighted(SERVICES) ?? "junction");
     const route = this.routeOf(railway, service);
     let kind = kindFor(service, route.length);
+    // Stopping at every station, the only train carries passengers.
+    if (alone && kind === "freight") kind = "ter";
     const metresPerPx =
       MIN_TRAIN_SIZE *
       metresPerPixelAt(TRAINS_DETAIL_ZOOM, route.steps[0].edge.coords[0][1]);

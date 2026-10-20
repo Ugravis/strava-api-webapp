@@ -520,9 +520,7 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           {t("mute")}
         </Toggle>
       </div>
-      <Separator orientation="vertical" className="h-10 self-center" />
-      <TrainSpeedControl />
-      <Separator orientation="vertical" className="h-10 self-center" />
+      <Separator orientation="vertical" className="my-3 h-auto w-px self-stretch" />
       <StatsSection title={t("stations")}>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
@@ -545,6 +543,8 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           colorKey={<RailKey />}
         />
       </StatsSection>
+      <Separator orientation="vertical" className="my-3 h-auto w-px self-stretch" />
+      <TrainSpeedControl />
     </div>
   );
 }

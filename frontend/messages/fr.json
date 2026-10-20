@@ -499,6 +499,7 @@
       "close": "Fermer le secteur",
       "change": "Changer",
       "recenter": "Recentrer",
+      "veil": "Griser autour du secteur",
       "tiles": "Grandes tuiles",
       "subtiles": "Petites tuiles",
       "computingTotal": "… (calcul)",

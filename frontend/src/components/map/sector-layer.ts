@@ -9,6 +9,8 @@ export interface MapSector {
   shapeVersion: string | null;
   /** Main landmass, `[west, south, east, north]` in degrees, framed by the camera. */
   bounds: [number, number, number, number] | null;
+  /** Whether the area outside the sector is dimmed and the border of the sector outlined. */
+  veil: boolean;
 }
 
 const SOURCE_ID = "sector-outside";
@@ -36,14 +38,18 @@ function removeSectorLayers(map: MapLibreMap): void {
 /**
  * Dims everything outside the tile shape of the sector, base map, tiles,
  * tracks and labels alike, under a veil over every other layer, and
- * outlines the sector. Without a sector or its shape, nothing is dimmed.
+ * outlines the sector, both only with the veil on. Without a sector or its shape, nothing is dimmed.
  * Each shape gets its own source: a vector source whose first tiles were
  * empty would keep drawing nothing after `setTiles`.
  */
 export function setSector(map: MapLibreMap, sector: MapSector | null, palette: MapPalette): void {
   const url = sector?.shapeVersion ? tilesUrl(sector.code, sector.shapeVersion) : null;
+  const visibility = sector?.veil ? "visible" : "none";
   const source = map.getSource<VectorTileSource>(SOURCE_ID);
-  if (source && source.tiles[0] === url) return;
+  if (source && source.tiles[0] === url) {
+    for (const id of [FILL_ID, LINE_ID]) map.setLayoutProperty(id, "visibility", visibility);
+    return;
+  }
   removeSectorLayers(map);
   if (!url) return;
   map.addSource(SOURCE_ID, { type: "vector", tiles: [url], maxzoom: SHAPES_MAX_ZOOM });
@@ -53,6 +59,7 @@ export function setSector(map: MapLibreMap, sector: MapSector | null, palette: M
     type: "fill",
     source: SOURCE_ID,
     "source-layer": OUTSIDE_SOURCE_LAYER,
+    layout: { visibility },
     paint: { "fill-color": palette.outside, "fill-opacity": palette.outsideOpacity, "fill-antialias": false },
   });
   map.addLayer({
@@ -60,7 +67,7 @@ export function setSector(map: MapLibreMap, sector: MapSector | null, palette: M
     type: "line",
     source: SOURCE_ID,
     "source-layer": BORDER_SOURCE_LAYER,
-    layout: { "line-join": "round" },
+    layout: { "line-join": "round", visibility },
     paint: {
       "line-color": palette.sectorBorder,
       "line-opacity": 0.5,

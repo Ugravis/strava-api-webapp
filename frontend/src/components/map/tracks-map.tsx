@@ -116,6 +116,8 @@ export function TracksMap() {
   // Incremented to frame the sector: when picked, and on demand. Named by the
   // address with a tile or an activity, it leaves the camera on them.
   const [sectorFrame, setSectorFrame] = useState(initialTool?.kind === "sector" && !fromAddress.focused ? 1 : 0);
+  // The map is dimmed around the sector when it was asked for in the search or named by the address.
+  const [veil, setVeil] = useState(initialTool?.kind === "sector");
   const [center, setCenter] = useState<MapCenter | null>(null);
   const onCenterChange = useCallback(
     (point: [number, number]) => setCenter((current) => ({ point, version: (current?.version ?? 0) + 1 })),
@@ -130,7 +132,10 @@ export function TracksMap() {
   const lookedUp = tool === "sector" && center && center.version > ignoredCenter ? center.point : null;
   const centerCountry = useCountryAt(lookedUp);
   if (centerCountry) {
-    if (centerCountry.code !== null && centerCountry.code !== sectorCode) setSectorCode(centerCountry.code);
+    if (centerCountry.code !== null && centerCountry.code !== sectorCode) {
+      setSectorCode(centerCountry.code);
+      setVeil(false);
+    }
     if (awaitingCenter) {
       setAwaitingCenter(false);
       // At sea, without a sector shown before: the search.
@@ -142,6 +147,7 @@ export function TracksMap() {
   }
   const openSectorAtCenter = () => {
     setTool("sector");
+    setVeil(false);
     setIgnoredCenter(0);
     if (center) setAwaitingCenter(true);
     else if (sectorCode === null) {
@@ -154,8 +160,8 @@ export function TracksMap() {
   const sectorShapeVersion = sector?.shapeVersion ?? null;
   const sectorBounds = sector?.bounds ?? null;
   const mapSector = useMemo<MapSector | null>(
-    () => (shownSector ? { code: shownSector, shapeVersion: sectorShapeVersion, bounds: sectorBounds } : null),
-    [shownSector, sectorShapeVersion, sectorBounds],
+    () => (shownSector ? { code: shownSector, shapeVersion: sectorShapeVersion, bounds: sectorBounds, veil } : null),
+    [shownSector, sectorShapeVersion, sectorBounds, veil],
   );
   const [historySettings, setHistorySettings] = useState<HistorySettings>(() =>
     initialTool?.kind === "history"
@@ -234,6 +240,8 @@ export function TracksMap() {
             sector={sector}
             error={sectorError}
             subtiles={layers.subtiles}
+            veil={veil}
+            onVeilChange={setVeil}
             onSearch={() => setSearchOpen(true)}
             onRecenter={() => setSectorFrame((count) => count + 1)}
             onClose={() => setTool(null)}
@@ -268,6 +276,7 @@ export function TracksMap() {
         current={shownSector}
         onPick={(code) => {
           setSectorCode(code);
+          setVeil(true);
           setTool("sector");
           setSearchOpen(false);
           setAwaitingCenter(false);

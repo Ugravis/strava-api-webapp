@@ -1,9 +1,10 @@
 "use client";
 
-import { CircleAlertIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react";
+import { CircleAlertIcon, ContrastIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CountryLevelCompletion, CountryRailway, CountrySector, CountryStations } from "@/lib/api/types";
 import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,9 @@ interface SectorBandProps {
   error: boolean;
   /** Whether the small tiles are drawn: their completion is shown with them. */
   subtiles: boolean;
+  /** Whether the map is dimmed around the sector. */
+  veil: boolean;
+  onVeilChange: (veil: boolean) => void;
   onSearch: () => void;
   onRecenter: () => void;
   onClose: () => void;
@@ -34,7 +38,7 @@ const SECTION = "flex items-center px-4 py-3 md:px-6";
  * to search for another sector or frame this one again. Stacked on narrow
  * screens, in a row on larger ones.
  */
-export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter, onClose }: SectorBandProps) {
+export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, onSearch, onRecenter, onClose }: SectorBandProps) {
   const t = useTranslations("map.sector");
   const format = useFormatter();
   const locale = useLocale();
@@ -52,20 +56,42 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
       {t("computing")}
     </span>
   ) : null;
-  // An icon on narrow screens, beside the name; labelled at the end of the band on larger ones.
-  const recenterButton = (className: string) => (
-    <Button
-      size="sm"
-      variant="outline"
-      className={className}
-      onClick={onRecenter}
-      disabled={!sector?.bounds}
-      aria-label={t("recenter")}
-      title={t("recenter")}
-    >
-      <FocusIcon />
-      <span className="max-md:sr-only">{t("recenter")}</span>
-    </Button>
+  // Icon-only buttons: their name shows in a tooltip.
+  const recenterButton = (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            size="icon-sm"
+            variant="outline"
+            onClick={onRecenter}
+            disabled={!sector?.bounds}
+            aria-label={t("recenter")}
+          />
+        }
+      >
+        <FocusIcon />
+      </TooltipTrigger>
+      <TooltipContent>{t("recenter")}</TooltipContent>
+    </Tooltip>
+  );
+  const veilButton = (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            size="icon-sm"
+            variant={veil ? "secondary" : "outline"}
+            onClick={() => onVeilChange(!veil)}
+            aria-pressed={veil}
+            aria-label={t("veil")}
+          />
+        }
+      >
+        <ContrastIcon />
+      </TooltipTrigger>
+      <TooltipContent>{t("veil")}</TooltipContent>
+    </Tooltip>
   );
   const closeButton = (className: string) => (
     <Button size="icon-sm" variant="ghost" className={className} onClick={onClose} aria-label={t("close")} title={t("close")}>
@@ -90,7 +116,8 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
             <SearchIcon />
             {t("change")}
           </Button>
-          {recenterButton("md:hidden")}
+          {recenterButton}
+          {veilButton}
           {closeButton("md:hidden")}
         </div>
       </div>
@@ -122,8 +149,13 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
             colorKey={<StationKey />}
           />
         )}
-        {sector?.railway && (
-          <Stat value={<RailwayCompletion railway={sector.railway} />} label={t("railway")} colorKey={<RailKey />} />
+        {/* Hidden once loaded for a country without railway. */}
+        {(!sector || sector.railway) && (
+          <Stat
+            value={sector?.railway ? <RailwayCompletion railway={sector.railway} /> : <ValueSkeleton />}
+            label={t("railway")}
+            colorKey={<RailKey />}
+          />
         )}
       </div>
 
@@ -137,7 +169,6 @@ export function SectorBand({ code, sector, error, subtiles, onSearch, onRecenter
         <div role="status" className="flex min-w-0 flex-1 items-center text-xs text-muted-foreground md:max-w-64">
           {status}
         </div>
-        {recenterButton("hidden md:inline-flex")}
         {closeButton("hidden md:inline-flex")}
       </div>
     </section>

@@ -2,6 +2,7 @@
 
 import { Volume1Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,7 +15,15 @@ import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/
 import { Slider } from "@/components/ui/slider";
 import { updateSoundSettings, useSoundSettings } from "@/lib/sound/sound-settings";
 
-/** Sound of the site, such as the trains of the map: on or off, and its volume, kept by the browser. */
+/** Hover before the volume opens, and after leaving it before it closes, in milliseconds. */
+const HOVER_OPEN_MS = 150;
+const HOVER_CLOSE_MS = 250;
+
+/**
+ * Sound of the site, such as the trains of the map: on or off, and its
+ * volume, kept by the browser. On a desktop a click turns it on or off and
+ * hovering opens the volume; on a phone, without hover, a tap opens both.
+ */
 export function SoundMenuItem() {
   const t = useTranslations("sound");
   const { isMobile } = useSidebar();
@@ -22,11 +31,21 @@ export function SoundMenuItem() {
   const percent = Math.round(volume * 100);
   const Icon = !enabled || volume === 0 ? VolumeXIcon : volume < 0.5 ? Volume1Icon : Volume2Icon;
   const label = enabled ? t("on", { percent }) : t("off");
+  const [open, setOpen] = useState(false);
 
   return (
     <SidebarMenuItem>
-      <DropdownMenu>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(next, details) => {
+          if (!isMobile && details.reason === "trigger-press") updateSoundSettings({ enabled: !enabled });
+          else setOpen(next);
+        }}
+      >
         <DropdownMenuTrigger
+          openOnHover={!isMobile}
+          delay={HOVER_OPEN_MS}
+          closeDelay={HOVER_CLOSE_MS}
           render={
             <SidebarMenuButton
               tooltip={label}

@@ -587,7 +587,7 @@
         "fuel": "Carburant"
       },
       "onLine": "Trains sur la ligne",
-      "journey": "Trajet",
+      "journey": "Trajet ({count, plural, one {# arrêt} other {# arrêts}})",
       "from": "Provenance",
       "next": "Prochain arrêt",
       "terminus": "Terminus",
@@ -596,7 +596,8 @@
       "following": "Suivi en cours",
       "gone": "Ce train a quitté la carte.",
       "disclaimer": "Train fictif : il circule sur tes liaisons débloquées, ses chiffres sont inventés.",
-      "itinerary": "Itinéraire ({count, plural, one {# arrêt} other {# arrêts}})",
+      "moreStops": "{count, plural, one {# autre arrêt} other {# autres arrêts}}",
+      "fewerStops": "Masquer les arrêts intermédiaires",
       "passed": "Desservi",
       "estimated": "Horaire estimé"
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, ChevronRightIcon, CrosshairIcon } from "lucide-react";
+import { ChevronDownIcon, CrosshairIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { REAL_TRAIN_SPEED, useTrainSpeed } from "@/lib/trains/train-speed";
 import { cn } from "@/lib/utils";
 import { PanelFigure } from "./panel-figure";
-import type { LinkEnd, StationPick } from "./stations-layer";
+import type { StationPick } from "./stations-layer";
 import type { TrainInfo, TrainStop } from "./train-traffic";
 
 /** The figures of a train change as it runs: read again a few times a second. */
@@ -23,8 +23,8 @@ interface TrainPanelProps {
 }
 
 /**
- * Content of the panel for a train running on the map: where it comes from,
- * stops next and ends, its stops with their times, how fast, and made-up
+ * Content of the panel for a train running on the map: its journey, from
+ * where it comes from to where it ends, through its next stop, with times, how fast, and made-up
  * figures such as its passengers. The camera follows it until the map is
  * dragged.
  */
@@ -37,7 +37,7 @@ export function TrainPanel({
   const t = useTranslations("map.trainPanel");
   const format = useFormatter();
   const [info, setInfo] = useState(() => getInfo(trainId));
-  const [itineraryOpen, setItineraryOpen] = useState(false);
+  const [allStops, setAllStops] = useState(false);
   const factor = useTrainSpeed();
 
   useEffect(() => {
@@ -105,55 +105,43 @@ export function TrainPanel({
 
       <section className="flex flex-col gap-1">
         <h3 className="text-xs font-medium text-muted-foreground uppercase">
-          {t("journey")}
+          {t("journey", { count: info.stops.length })}
         </h3>
-        <ul className="flex flex-col divide-y">
-          <StationRow
-            label={t("from")}
-            station={info.origin}
-            onOpenStation={onOpenStation}
-          />
-          <StationRow
-            label={t("next")}
-            station={info.next}
-            onOpenStation={onOpenStation}
-          />
-          <StationRow
-            label={t("terminus")}
-            station={info.terminus}
-            onOpenStation={onOpenStation}
-          />
-        </ul>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start"
-          aria-expanded={itineraryOpen}
-          aria-controls="train-itinerary"
-          onClick={() => setItineraryOpen(!itineraryOpen)}
-        >
-          <ChevronDownIcon
-            data-icon="inline-start"
-            className={cn(
-              "transition-transform",
-              !itineraryOpen && "-rotate-90",
-            )}
-            aria-hidden
-          />
-          {t("itinerary", { count: info.stops.length })}
-        </Button>
-        {itineraryOpen && (
-          <ol id="train-itinerary" className="flex flex-col">
-            {info.stops.map((stop, index) => (
-              <ItineraryStop
+        <ol className="flex flex-col">
+          {journey(info, allStops).map((row, index, rows) =>
+            !("stop" in row) ? (
+              <HiddenStops
+                key={`hidden-${index}`}
+                count={row.hidden}
+                passed={row.passed}
+                onShow={() => setAllStops(true)}
+              />
+            ) : (
+              <JourneyStop
                 // A loop passes its first station again at its end.
-                key={`${stop.station.id}-${index}`}
-                stop={stop}
-                last={index === info.stops.length - 1}
+                key={`${row.stop.station.id}-${row.index}`}
+                stop={row.stop}
+                label={row.label}
+                last={index === rows.length - 1}
                 onOpenStation={onOpenStation}
               />
-            ))}
-          </ol>
+            ),
+          )}
+        </ol>
+        {allStops && info.stops.length > 3 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            onClick={() => setAllStops(false)}
+          >
+            <ChevronDownIcon
+              data-icon="inline-start"
+              className="rotate-180"
+              aria-hidden
+            />
+            {t("fewerStops")}
+          </Button>
         )}
       </section>
 
@@ -176,50 +164,96 @@ export function TrainPanel({
   );
 }
 
-function StationRow({
-  label,
-  station,
-  onOpenStation,
+type JourneyRow =
+  | {
+      hidden: 0;
+      stop: TrainStop;
+      index: number;
+      label?: "from" | "next" | "terminus";
+    }
+  | { hidden: number; passed: boolean };
+
+/**
+ * The rows of the journey: every stop, or only the origin, the next stop and
+ * the terminus, the stops between them folded into a count.
+ */
+function journey(info: TrainInfo, all: boolean): JourneyRow[] {
+  const { stops } = info;
+  const last = stops.length - 1;
+  const next = Math.max(
+    0,
+    stops.findIndex((stop) => !stop.passed),
+  );
+  const label = (index: number) =>
+    index === 0
+      ? "from"
+      : index === last
+        ? "terminus"
+        : index === next
+          ? "next"
+          : undefined;
+  const rows: JourneyRow[] = [];
+  let hidden = 0;
+  stops.forEach((stop, index) => {
+    const shown = all || index === 0 || index === next || index === last;
+    if (!shown) {
+      hidden++;
+      return;
+    }
+    if (hidden > 0) rows.push({ hidden, passed: stop.passed });
+    hidden = 0;
+    rows.push({ hidden: 0, stop, index, label: label(index) });
+  });
+  return rows;
+}
+
+/** Stops folded between two shown ones: a click shows them all. */
+function HiddenStops({
+  count,
+  passed,
+  onShow,
 }: {
-  label: string;
-  station: LinkEnd;
-  onOpenStation: (station: StationPick) => void;
+  count: number;
+  passed: boolean;
+  onShow: () => void;
 }) {
   const t = useTranslations("map.trainPanel");
   return (
-    <li>
+    <li className="relative">
+      <span
+        className={cn(
+          "absolute inset-y-0 left-[0.3125rem] w-0.5",
+          passed ? "bg-primary" : "bg-border",
+        )}
+        aria-hidden
+      />
       <button
         type="button"
-        onClick={() =>
-          onOpenStation({ id: station.id, lon: station.lon, lat: station.lat })
-        }
+        onClick={onShow}
         className={cn(
-          "flex w-full items-center gap-2.5 py-2.5 text-left",
-          "hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+          "relative flex w-full items-center gap-2.5 py-1 pl-[1.375rem] text-left text-xs text-muted-foreground",
+          "hover:text-foreground focus-visible:text-foreground focus-visible:outline-none",
         )}
       >
-        <span className="w-20 shrink-0 text-xs text-muted-foreground">
-          {label}
-        </span>
-        <span className="min-w-0 flex-1 truncate font-medium">
-          {station.name ?? t("unnamed")}
-        </span>
-        <ChevronRightIcon
-          className="size-4 shrink-0 text-muted-foreground"
-          aria-hidden
-        />
+        <ChevronDownIcon className="size-3.5" aria-hidden />
+        {t("moreStops", { count })}
       </button>
     </li>
   );
 }
 
-/** A stop of the itinerary on its line: a dot filled once served, the time on the right. */
-function ItineraryStop({
+/**
+ * A stop of the journey on its line: a dot filled once served, the time on
+ * the right, and whether it is the origin, the next stop or the terminus.
+ */
+function JourneyStop({
   stop,
+  label,
   last,
   onOpenStation,
 }: {
   stop: TrainStop;
+  label?: "from" | "next" | "terminus";
   last: boolean;
   onOpenStation: (station: StationPick) => void;
 }) {
@@ -254,13 +288,19 @@ function ItineraryStop({
           )}
           aria-hidden
         />
-        <span
-          className={cn(
-            "min-w-0 flex-1 truncate",
-            passed && "text-muted-foreground",
+        <span className="flex min-w-0 flex-1 flex-col">
+          {label && (
+            <span className="text-xs text-muted-foreground">{t(label)}</span>
           )}
-        >
-          {station.name ?? t("unnamed")}
+          <span
+            className={cn(
+              "truncate",
+              passed && !label && "text-muted-foreground",
+              label && "font-medium",
+            )}
+          >
+            {station.name ?? t("unnamed")}
+          </span>
         </span>
         <time
           dateTime={new Date(stop.time).toISOString()}

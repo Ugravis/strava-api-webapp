@@ -19,6 +19,7 @@ import type { User } from "@/lib/api/types";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import { SidebarToggleMenuItem } from "./sidebar-toggle-menu-item";
+import { SoundMenuItem } from "./sound-menu-item";
 import { ThemeMenuItem } from "./theme-menu-item";
 
 export function AppSidebar({ user }: { user: User }) {
@@ -45,6 +46,7 @@ export function AppSidebar({ user }: { user: User }) {
         <SidebarMenu>
           <SidebarToggleMenuItem />
           <ThemeMenuItem />
+          <SoundMenuItem />
           <NavUser user={user} />
         </SidebarMenu>
       </SidebarFooter>

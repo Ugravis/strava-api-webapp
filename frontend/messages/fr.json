@@ -38,6 +38,13 @@
     "switchToDark": "Mode sombre",
     "switchToLight": "Mode clair"
   },
+  "sound": {
+    "title": "Son",
+    "on": "Son : {percent} %",
+    "off": "Son coupé",
+    "enable": "Activer le son",
+    "volume": "Volume"
+  },
   "fields": {
     "email": "Email",
     "emailPlaceholder": "toi@exemple.fr",

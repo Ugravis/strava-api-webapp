@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { BadgeIcon } from "./badge-icon";
 
 /** Background of the banner of each family. */
-export const FAMILY_GRADIENTS: Record<DistanceFamily, string> = {
+const FAMILY_GRADIENTS: Record<DistanceFamily, string> = {
   all: "from-violet-500 to-indigo-700",
   run: "from-orange-400 to-rose-600",
   hike: "from-emerald-400 to-teal-700",

@@ -279,7 +279,6 @@
     "retry": "Réessayer",
     "empty": "Connecte Strava depuis le tableau de bord pour faire avancer tes badges.",
     "familyTotal": "{distance} parcourus",
-    "obtainedLabel": "{obtained} {count, plural, one {badge obtenu sur #} other {badges obtenus sur #}}",
     "completions": "{count, plural, =0 {Pas encore accompli} one {Accompli # fois} other {Accompli # fois}}",
     "progressLabel": "{name} : {percent} de l'itération en cours",
     "families": {
@@ -287,41 +286,6 @@
       "run": "Course à pied",
       "hike": "Randonnée et marche",
       "ride": "Vélo"
-    },
-    "hero": {
-      "label": "Résumé de tes distances",
-      "total": "Distance totale",
-      "unit": "km",
-      "closest": "Prochain badge",
-      "next": "Ensuite",
-      "latest": "Derniers badges ajoutés",
-      "carousel": {
-        "role": "carrousel",
-        "slide": "diapositive",
-        "position": "{position} sur {count}",
-        "goTo": "Afficher : {title}",
-        "previous": "Diapositive précédente",
-        "next": "Diapositive suivante"
-      }
-    },
-    "card": {
-      "of": "de {distance}",
-      "remaining": "Encore {distance}",
-      "left": "reste {distance}"
-    },
-    "toolbar": {
-      "sort": {
-        "label": "Trier les badges",
-        "default": "Ordre du catalogue",
-        "closest": "Plus proches",
-        "progress": "Progression",
-        "distance": "Distance"
-      },
-      "view": {
-        "label": "Affichage des badges",
-        "cards": "Cartes",
-        "compact": "Compact"
-      }
     },
     "favorite": "favori",
     "favoritesSection": {

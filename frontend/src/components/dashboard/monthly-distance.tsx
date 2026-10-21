@@ -28,9 +28,16 @@ const MARGIN = { top: 16, right: 16, bottom: 24, left: 56 };
 
 const EMPTY_FAMILIES: Record<MonthlyFamily, number> = { ride: 0, run: 0, hike: 0, swim: 0, other: 0 };
 
+/** Months shown by the rolling view: the current one and the twelve before. */
+const ROLLING_MONTHS = 13;
+
+/** `YYYY-MM` of a month counted from January of year 0. */
+const monthKey = (index: number) => `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+
 /**
- * Distance of each month of a calendar year, with arrows to the other years:
- * the total as the main curve, each family of sports as a thinner one.
+ * Distance of each month, from the current one back a year, or of a past
+ * calendar year with the arrows: the total as the main curve, each family of
+ * sports as a thinner one, the same months a year earlier in grey.
  */
 export function MonthlyDistance({ version }: { version: string }) {
   const t = useTranslations("dashboard.monthly");
@@ -39,17 +46,20 @@ export function MonthlyDistance({ version }: { version: string }) {
   const { months, error } = useMonthlyDistances(version);
   const currentYear = now.getFullYear();
   const firstYear = months && months.length > 0 ? Number(months[0].month.slice(0, 4)) : currentYear;
-  const [year, setYear] = useState(currentYear);
+  // A past calendar year, or null for the months up to the current one.
+  const [year, setYear] = useState<number | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<MonthlyFamily>>(new Set());
 
-  // The twelve months of the year, those to come left out.
-  const yearMonths = useMemo(() => {
+  const { yearMonths, previousMonths } = useMemo(() => {
     const byMonth = new Map((months ?? []).map((month) => [month.month, month]));
-    const last = year === currentYear ? now.getMonth() : 11;
-    return Array.from({ length: last + 1 }, (_, index): MonthDistance => {
-      const key = `${year}-${String(index + 1).padStart(2, "0")}`;
-      return byMonth.get(key) ?? { month: key, distanceM: 0, families: EMPTY_FAMILIES };
-    });
+    const monthAt = (index: number): MonthDistance =>
+      byMonth.get(monthKey(index)) ?? { month: monthKey(index), distanceM: 0, families: EMPTY_FAMILIES };
+    const first = year === null ? currentYear * 12 + now.getMonth() - (ROLLING_MONTHS - 1) : year * 12;
+    const count = year === null ? ROLLING_MONTHS : 12;
+    return {
+      yearMonths: Array.from({ length: count }, (_, index) => monthAt(first + index)),
+      previousMonths: Array.from({ length: count }, (_, index) => monthAt(first + index - 12)),
+    };
   }, [months, year, currentYear, now]);
   // Families practiced during the year, those hidden from the legend apart.
   const practiced = FAMILIES.filter((family) => yearMonths.some((month) => month.families[family] > 0));
@@ -60,7 +70,7 @@ export function MonthlyDistance({ version }: { version: string }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <BarChart3Icon className="size-4 text-muted-foreground" aria-hidden />
-          {t("title", { year })}
+          {year === null ? t("rollingTitle") : t("title", { year })}
         </CardTitle>
         <CardDescription>
           {months ? (
@@ -74,8 +84,8 @@ export function MonthlyDistance({ version }: { version: string }) {
             variant="ghost"
             size="icon-sm"
             aria-label={t("previousYear")}
-            disabled={year <= firstYear}
-            onClick={() => setYear(year - 1)}
+            disabled={(year ?? currentYear) <= firstYear}
+            onClick={() => setYear((year ?? currentYear) - 1)}
           >
             <ChevronLeftIcon />
           </Button>
@@ -83,8 +93,8 @@ export function MonthlyDistance({ version }: { version: string }) {
             variant="ghost"
             size="icon-sm"
             aria-label={t("nextYear")}
-            disabled={year >= currentYear}
-            onClick={() => setYear(year + 1)}
+            disabled={year === null}
+            onClick={() => setYear(year !== null && year + 1 < currentYear ? year + 1 : null)}
           >
             <ChevronRightIcon />
           </Button>
@@ -95,6 +105,10 @@ export function MonthlyDistance({ version }: { version: string }) {
           <li className="flex h-8 items-center gap-1.5 px-1 text-sm font-medium">
             <span className="h-[3px] w-3.5 rounded-full bg-foreground" aria-hidden />
             {t("total")}
+          </li>
+          <li className="flex h-8 items-center gap-1.5 px-1 text-sm text-muted-foreground">
+            <span className="h-0.5 w-3.5 rounded-full bg-muted-foreground/50" aria-hidden />
+            {t("previousYearCurve")}
           </li>
           {practiced.map((family) => (
             <li key={family}>
@@ -130,6 +144,7 @@ export function MonthlyDistance({ version }: { version: string }) {
         ) : (
           <MonthlyChart
             months={yearMonths}
+            previous={previousMonths}
             families={practiced.filter((family) => !hidden.has(family))}
           />
         )}
@@ -141,8 +156,15 @@ export function MonthlyDistance({ version }: { version: string }) {
 /** Dates `YYYY-MM` as the first day of the month, at noon. */
 const dateOfMonth = (month: string) => new Date(`${month}-01T12:00:00`);
 
-/** The curves of the months of a year, twelve slots wide; pointed at, the figures of a month. */
-function MonthlyChart({ months, families }: { months: MonthDistance[]; families: MonthlyFamily[] }) {
+interface MonthlyChartProps {
+  months: MonthDistance[];
+  /** The same months a year earlier. */
+  previous: MonthDistance[];
+  families: MonthlyFamily[];
+}
+
+/** The curves of the months, a slot each; pointed at, the figures of a month. */
+function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
   const t = useTranslations("dashboard.monthly");
   const format = useFormatter();
   const container = useRef<HTMLDivElement>(null);
@@ -161,8 +183,8 @@ function MonthlyChart({ months, families }: { months: MonthDistance[]; families:
 
   const plotWidth = Math.max(width - MARGIN.left - MARGIN.right, 1);
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
-  const slot = plotWidth / 12;
-  const maxKm = Math.max(...months.map((month) => month.distanceM), 1) / 1000;
+  const slot = plotWidth / months.length;
+  const maxKm = Math.max(...months.map((month) => month.distanceM), ...previous.map((month) => month.distanceM), 1) / 1000;
   const step = niceStep(maxKm);
   const high = Math.ceil(maxKm / step) * step;
 
@@ -170,8 +192,8 @@ function MonthlyChart({ months, families }: { months: MonthDistance[]; families:
   const y = (meters: number) => MARGIN.top + (1 - meters / 1000 / high) * plotHeight;
   const km = (meters: number) =>
     format.number(meters / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 });
-  const curve = (value: (month: MonthDistance) => number) =>
-    monotonePath(months.map((month, index): [number, number] => [x(index), y(value(month))]));
+  const curve = (value: (month: MonthDistance) => number, of: MonthDistance[] = months) =>
+    monotonePath(of.map((month, index): [number, number] => [x(index), y(value(month))]));
   const totalCurve = curve((month) => month.distanceM);
   const pointedMonth = pointed === null ? null : months[pointed];
 
@@ -213,15 +235,22 @@ function MonthlyChart({ months, families }: { months: MonthDistance[]; families:
                 </text>
               </g>
             ))}
-            {Array.from({ length: 12 }, (_, index) => (
+            {months.map((month, index) => (
               <text
-                key={index}
+                key={month.month}
                 x={x(index)}
                 y={HEIGHT - 6}
                 textAnchor="middle"
                 className="fill-muted-foreground text-[10px] capitalize"
               >
-                {format.dateTime(new Date(2000, index, 1), { month: "short" })}
+                {format.dateTime(
+                  dateOfMonth(month.month),
+                  // The year where it changes, when the months span two.
+                  months[0].month.slice(0, 4) !== months[months.length - 1].month.slice(0, 4) &&
+                    (index === 0 || month.month.endsWith("-01"))
+                    ? { month: "short", year: "2-digit" }
+                    : { month: "short" },
+                )}
               </text>
             ))}
             {pointed !== null && (
@@ -239,6 +268,13 @@ function MonthlyChart({ months, families }: { months: MonthDistance[]; families:
                 className="fill-foreground/5"
               />
             )}
+            <path
+              d={curve((month) => month.distanceM, previous)}
+              fill="none"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              className="stroke-muted-foreground/40"
+            />
             {families.map((family) => (
               <path
                 key={family}
@@ -280,6 +316,11 @@ function MonthlyChart({ months, families }: { months: MonthDistance[]; families:
             <span className="h-[3px] w-3 rounded-full bg-foreground" />
             {t("total")}
             <span className="ml-auto pl-3 font-semibold text-foreground tabular-nums">{km(pointedMonth.distanceM)}</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <span className="h-0.5 w-3 rounded-full bg-muted-foreground/50" />
+            {t("previousYearCurve")}
+            <span className="ml-auto pl-3 tabular-nums">{km(previous[pointed].distanceM)}</span>
           </span>
           {families
             .filter((family) => pointedMonth.families[family] > 0)

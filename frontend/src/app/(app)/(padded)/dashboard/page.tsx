@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function DashboardPage() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 py-2 sm:py-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 py-2 sm:py-4">
       <Suspense>
         <StravaConnectFeedback />
       </Suspense>

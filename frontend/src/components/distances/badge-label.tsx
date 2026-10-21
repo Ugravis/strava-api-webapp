@@ -10,14 +10,12 @@ interface BadgeLabelProps {
   withFamily?: boolean;
   /** Centered under the medal, or aligned beside it. */
   align?: "center" | "start";
-  /** Only the name, the progress being told to screen readers. */
-  compact?: boolean;
   /** On a background of its own: the text takes its color, set by the card. */
   onBackground?: boolean;
 }
 
 /** Name of a badge, its progress and its target, under or beside its medal. */
-export function BadgeLabel({ badge, withFamily, align = "center", compact, onBackground }: BadgeLabelProps) {
+export function BadgeLabel({ badge, withFamily, align = "center", onBackground }: BadgeLabelProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const amount = useAmount();
@@ -27,14 +25,13 @@ export function BadgeLabel({ badge, withFamily, align = "center", compact, onBac
 
   return (
     <span className={cn("flex min-w-0 flex-col", align === "center" ? "text-center" : "text-left")}>
-      <span className={cn("text-xs leading-tight font-medium", compact ? "truncate" : "line-clamp-2")}>
+      <span className="line-clamp-2 text-xs leading-tight font-medium">
         {badge.name}
       </span>
       <span
         className={cn(
           "text-xs tabular-nums",
           onBackground ? "opacity-80" : "text-muted-foreground",
-          compact && "sr-only",
         )}
       >
         <span className={cn("font-medium", onBackground ? "font-semibold" : tier.text)}>{percent}</span>

@@ -334,13 +334,21 @@
         "title": "Historique",
         "iteration": "n° {number}",
         "openOnMap": "Itération n° {number} : voir {name} sur la carte",
-        "error": "Impossible de charger l'historique pour le moment."
+        "error": "Impossible de charger l'historique pour le moment.",
+        "loadMore": "{count, plural, one {Charger plus (# restante)} other {Charger plus (# restantes)}}",
+        "loadMoreError": "Impossible de charger la suite de l'historique pour le moment."
       },
       "addFavorite": "Ajouter aux favoris",
       "removeFavorite": "Retirer des favoris",
       "favoriteError": "Impossible de modifier tes favoris pour le moment.",
       "tier": "Palier {number} sur {total}",
-      "lastTier": "Dernier palier atteint"
+      "lastTier": "Dernier palier atteint",
+      "tiers": {
+        "title": "Paliers",
+        "tier": "Palier {number}",
+        "reached": "atteint",
+        "locked": "pas encore atteint"
+      }
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",
@@ -392,7 +400,6 @@
       "closest": "Le plus proche",
       "remaining": "encore {amount}",
       "carousel": "Badges à la une",
-      "slide": "{number} sur {total}",
       "previous": "Précédent",
       "next": "Suivant",
       "slides": {
@@ -408,7 +415,10 @@
         "tiles": "Tuiles",
         "subtiles": "Petites tuiles",
         "stations": "Gares"
-      }
+      },
+      "random": "Au hasard",
+      "reroll": "Tirer un autre badge",
+      "carouselLists": "Badges affichés"
     }
   },
   "map": {

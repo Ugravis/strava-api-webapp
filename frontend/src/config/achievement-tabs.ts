@@ -40,3 +40,12 @@ export const ACHIEVEMENT_TAB_METRICS: Record<AchievementTab, readonly BadgeMetri
   time: ["time"],
   elevation: ["elevation"],
 };
+
+/** Metrics of the main widget of the header of each tab, at most four. */
+export const ACHIEVEMENT_TAB_HEADLINES: Record<AchievementTab, readonly BadgeMetric[]> = {
+  all: ["distance", "time", "elevation", "activities"],
+  challenges: ["activities", "active_days", "tiles", "stations"],
+  distance: ["distance"],
+  time: ["time"],
+  elevation: ["elevation"],
+};

@@ -3,17 +3,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DistancesSkeleton() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
-      <div className="flex flex-col gap-5 rounded-2xl bg-zinc-900 p-4 sm:p-6">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-3 w-20 bg-white/10" />
-          <Skeleton className="h-9 w-40 bg-white/10" />
+      <div className="flex flex-col gap-4 rounded-2xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
+        <div className="grid gap-3 @lg:grid-cols-[12rem_1fr] @3xl:grid-cols-[13rem_1fr_1fr]">
+          <Skeleton className="h-28 rounded-xl @lg:row-span-2 @lg:h-auto @lg:aspect-square @3xl:row-span-1" />
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
         </div>
-        <div className="grid gap-3 @2xl:grid-cols-2">
-          <Skeleton className="h-24 rounded-xl bg-white/10" />
-          <Skeleton className="h-24 rounded-xl bg-white/10" />
+        <div className="flex gap-2 overflow-hidden">
+          {Array.from({ length: 6 }, (_, badge) => (
+            <Skeleton key={badge} className="h-32 w-32 shrink-0 rounded-xl sm:w-36" />
+          ))}
         </div>
       </div>
-      <Skeleton className="h-9 w-full" />
+      <Skeleton className="h-15 w-full rounded-xl" />
       {Array.from({ length: 2 }, (_, section) => (
         <div key={section} className="flex flex-col gap-3">
           <Skeleton className="h-5 w-36" />

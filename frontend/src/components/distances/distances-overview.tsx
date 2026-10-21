@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
-import { ACHIEVEMENT_TAB_METRICS, type AchievementTab } from "@/config/achievement-tabs";
+import { ACHIEVEMENT_TAB_HEADLINES, ACHIEVEMENT_TAB_METRICS, type AchievementTab } from "@/config/achievement-tabs";
 import { favoriteBadges, useDistances } from "@/hooks/use-distances";
 import type { DistanceBadge, DistanceFamily } from "@/lib/api/types";
 import { CHALLENGE_METRICS } from "@/lib/badge-amount";
@@ -142,13 +142,16 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
     sort,
     locale,
   );
-  /** Where the tab counts a single metric, its total is shown in the sections of sports. */
-  const singleMetric = metrics.length === 1 ? metrics[0] : null;
+  /** Totals of the metrics a section counts, in the order of the tab. */
+  const totalsOf = (kind: SectionKind) =>
+    metrics
+      .filter((metric) => tabBadges.some((badge) => sectionOf(badge) === kind && badge.metric === metric))
+      .map((metric) => ({ metric, amount: overview.totals[metric][kind === "challenges" ? "all" : kind] }));
 
   return (
     <div className="flex flex-col gap-6">
-      <AchievementsHeader metrics={metrics} totals={overview.totals} badges={tabBadges} onOpen={openBadge} />
-      <div className="flex flex-col gap-3">
+      <AchievementsHeader headlines={ACHIEVEMENT_TAB_HEADLINES[tab]} totals={overview.totals} badges={tabBadges} onOpen={openBadge} />
+      <div className="flex flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
         <div className="flex gap-2">
           <div className="min-w-0 flex-1">
             <BadgeSearch badges={tabBadges} onPick={pickSearched} />
@@ -183,11 +186,7 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
             <DistanceFamilySection
               key={kind}
               kind={kind}
-              total={
-                singleMetric && kind !== "challenges"
-                  ? { metric: singleMetric, amount: overview.totals[singleMetric][kind] }
-                  : null
-              }
+              totals={totalsOf(kind)}
               badges={badges}
               compact={compact}
               onOpen={openBadge}
@@ -207,6 +206,7 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
       })}
       <BadgeDialog
         badge={overview.badges.find((badge) => badge.id === openBadgeId) ?? null}
+        themes={overview.themes}
         open={dialogOpen}
         onOpenChange={onDialogOpenChange}
         onFavoriteChange={setFavorite}

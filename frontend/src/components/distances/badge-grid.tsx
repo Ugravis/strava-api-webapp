@@ -15,7 +15,7 @@ import { BadgeCard, type BadgeCardLayout } from "./badge-card";
 export const BADGE_GRID_CLASS: Record<BadgeCardLayout, string> = {
   vertical: "grid grid-cols-3 gap-2 @md:grid-cols-4 @2xl:grid-cols-6",
   horizontal: "grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-4",
-  compact: "grid grid-cols-4 gap-1.5 @md:grid-cols-6 @2xl:grid-cols-8",
+  compact: "grid grid-cols-2 gap-1.5 @md:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-5",
 };
 
 interface BadgeGridProps {
@@ -49,7 +49,7 @@ export function BadgeGrid({
 }: BadgeGridProps) {
   const t = useTranslations("distances");
   const ref = useRef<HTMLUListElement>(null);
-  const columns = useGridColumns(ref, layout === "horizontal" ? 2 : 3);
+  const columns = useGridColumns(ref, layout === "vertical" ? 3 : 2);
   const limit = columns * rows;
   const hidden = Math.max(badges.length - limit, 0);
   const shown = expanded ? badges : badges.slice(0, limit);

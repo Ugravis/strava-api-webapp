@@ -8,8 +8,8 @@ export type SectionKind = DistanceFamily | "challenges";
 
 interface DistanceFamilySectionProps {
   kind: SectionKind;
-  /** Metric and cumulated amount shown in the header, where the section counts a single metric. */
-  total: { metric: BadgeMetric; amount: number } | null;
+  /** Cumulated amounts of the metrics the section counts, shown in its header. */
+  totals: { metric: BadgeMetric; amount: number }[];
   badges: DistanceBadge[];
   /** Cards with the name only. */
   compact: boolean;
@@ -22,8 +22,8 @@ interface DistanceFamilySectionProps {
 /** Rows shown while folded, whatever the width. */
 const FOLDED_ROWS = 3;
 
-/** Badges of a family of sports, or the challenges, with the share obtained and the amount accumulated where a single metric is shown. */
-export function DistanceFamilySection({ kind, total, badges, compact, ...grid }: DistanceFamilySectionProps) {
+/** Badges of a family of sports, or the challenges, with the share obtained and the amounts accumulated. */
+export function DistanceFamilySection({ kind, totals, badges, compact, ...grid }: DistanceFamilySectionProps) {
   const t = useTranslations("distances");
   const amount = useAmount();
   const headingId = `distances-${kind}`;
@@ -42,9 +42,9 @@ export function DistanceFamilySection({ kind, total, badges, compact, ...grid }:
         >
           {t("obtained", { obtained, total: badges.length })}
         </span>
-        {total && (
+        {totals.length > 0 && (
           <span className="ml-auto text-sm text-muted-foreground tabular-nums">
-            {t(`totals.${total.metric}`, { amount: amount(total.metric, total.amount) })}
+            {totals.map(({ metric, amount: value }) => amount(metric, value)).join(" · ")}
           </span>
         )}
       </div>

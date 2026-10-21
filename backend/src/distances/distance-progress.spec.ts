@@ -100,6 +100,18 @@ describe('Distance progress', () => {
     ]);
   });
 
+  it('pages the completions, the latest first', () => {
+    const badge = { family: 'run' as const, target: 12_000 };
+    expect(
+      badgeCompletions(badge, timelines.run, { offset: 1, limit: 1 }).map(
+        ({ iteration }) => iteration,
+      ),
+    ).toEqual([2]);
+    expect(
+      badgeCompletions(badge, timelines.run, { offset: 3, limit: 5 }),
+    ).toEqual([]);
+  });
+
   it('estimates the next completion at the recent pace', () => {
     const badge = { family: 'run' as const, target: 50_000 };
     const now = new Date('2026-01-10T08:00:00Z');

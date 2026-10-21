@@ -141,7 +141,7 @@ export interface DistanceBadgeDetails extends DistanceBadge {
   remaining: number;
   /** At the pace of the last 90 days; null without recent activity. */
   estimatedNextAt: string | null;
-  /** Every completed iteration, the latest first. */
+  /** First completed iterations, the latest first; the others come from the pages of the history. */
   history: BadgeCompletion[];
 }
 

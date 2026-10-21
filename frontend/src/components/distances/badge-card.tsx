@@ -1,13 +1,18 @@
 "use client";
 
+import { StarIcon } from "lucide-react";
+import { useFormatter, useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
 import type { DistanceBadge } from "@/lib/api/types";
 import { lightTextOn } from "@/lib/badge-sort";
 import { cn } from "@/lib/utils";
 import { BadgeLabel } from "./badge-label";
 import { BadgeMedal, type BadgeMedalProps } from "./badge-medal";
+import { BadgeMiniBar } from "./badge-mini-bar";
+import { progressTier } from "./progress-tier";
+import { useAmount } from "./use-amount";
 
-/** How a card lays out a badge: medal over its details, beside them, or with its name only. */
+/** How a card lays out a badge: medal over its details, beside them, or details only. */
 export type BadgeCardLayout = "vertical" | "horizontal" | "compact";
 
 /** Classes and style of the card of a badge, with its own background if any. */
@@ -25,12 +30,13 @@ export function badgeCardSurface(badge: DistanceBadge): { className: string; sty
   };
 }
 
-/** Medal and details of a badge laid out as a card asks. */
+/** Medal and details of a badge laid out as a card asks; compact, the details without the medal. */
 export function BadgeCardContent({
   badge,
   layout,
   ...medal
 }: Omit<BadgeMedalProps, "className"> & { layout: BadgeCardLayout }) {
+  if (layout === "compact") return <CompactBadgeContent badge={badge} showFavorite={medal.showFavorite} />;
   const horizontal = layout === "horizontal";
   return (
     <>
@@ -39,17 +45,60 @@ export function BadgeCardContent({
         {...medal}
         className={cn(
           "shrink-0 transition-transform group-hover:scale-105 group-active:scale-95 motion-reduce:transition-none",
-          horizontal ? "w-11 sm:w-11" : layout === "compact" && "w-10 sm:w-11",
+          horizontal && "w-11 sm:w-11",
         )}
       />
       <BadgeLabel
         badge={badge}
         withFamily={medal.showFamily}
         align={horizontal ? "start" : "center"}
-        compact={layout === "compact"}
         onBackground={badge.background !== null}
       />
     </>
+  );
+}
+
+/** Name, progress bar, share and target of a badge, with its completions or level and its favorite mark. */
+function CompactBadgeContent({ badge, showFavorite }: { badge: DistanceBadge; showFavorite?: boolean }) {
+  const t = useTranslations("distances");
+  const format = useFormatter();
+  const amount = useAmount();
+  const onBackground = badge.background !== null;
+  const tier = progressTier(badge.progress);
+  // Rounded down: an unfinished iteration never shows 100 %.
+  const percent = format.number(Math.floor(badge.progress * 100) / 100, { style: "percent" });
+  const favorite = showFavorite && badge.favoritePosition !== null;
+  const pill = cn(
+    "flex h-4.5 shrink-0 items-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums",
+    onBackground ? "bg-black/15" : "bg-muted",
+  );
+
+  return (
+    <span className="flex w-full min-w-0 flex-col gap-1.5 text-left">
+      <span className="flex min-w-0 items-center gap-1">
+        <span className="min-w-0 flex-1 truncate text-xs font-medium">{badge.name}</span>
+        {badge.completions > 0 && (
+          <span className={pill} aria-hidden>
+            {badge.tiers ? t("level", { level: badge.completions }) : `×${format.number(badge.completions)}`}
+          </span>
+        )}
+        {favorite && (
+          <span className={cn(pill, "px-1")} aria-hidden>
+            <StarIcon className="size-2.5 fill-amber-400 text-amber-500" />
+          </span>
+        )}
+      </span>
+      <BadgeMiniBar value={badge.progress} className={onBackground ? "bg-black/15" : undefined} />
+      <span className={cn("text-[11px] tabular-nums", onBackground ? "opacity-80" : "text-muted-foreground")}>
+        <span className={cn("font-medium", onBackground ? "font-semibold" : tier.text)}>{percent}</span>
+        {" · "}
+        {amount(badge.metric, badge.goal)}
+      </span>
+      <span className="sr-only">
+        {badge.tiers ? t("level", { level: badge.completions }) : t("completions", { count: badge.completions })}
+        {favorite && `, ${t("favorite")}`}
+      </span>
+    </span>
   );
 }
 
@@ -57,7 +106,7 @@ export function BadgeCardContent({
 export const BADGE_CARD_LAYOUT_CLASS: Record<BadgeCardLayout, string> = {
   vertical: "flex-col items-center gap-1.5 p-2.5",
   horizontal: "flex-row items-center gap-2.5 p-2.5",
-  compact: "flex-col items-center gap-1 p-1.5",
+  compact: "flex-col p-2",
 };
 
 interface BadgeCardProps extends Omit<BadgeMedalProps, "className"> {
@@ -67,13 +116,15 @@ interface BadgeCardProps extends Omit<BadgeMedalProps, "className"> {
   highlighted?: boolean;
   /** Marks the badge as the one the search scrolls to. */
   anchor?: boolean;
+  /** Classes of the list item, e.g. its width in a row. */
+  className?: string;
 }
 
 /** A badge in its card, with its name and progress, opening its details. */
-export function BadgeCard({ badge, layout, onOpen, highlighted, anchor, ...medal }: BadgeCardProps) {
+export function BadgeCard({ badge, layout, onOpen, highlighted, anchor, className, ...medal }: BadgeCardProps) {
   const surface = badgeCardSurface(badge);
   return (
-    <li className="flex min-w-0" data-badge-anchor={anchor ? badge.id : undefined}>
+    <li className={cn("flex min-w-0", className)} data-badge-anchor={anchor ? badge.id : undefined}>
       <button
         type="button"
         onClick={() => onOpen(badge.id)}

@@ -74,9 +74,12 @@ export interface BadgeDetails extends BadgeView {
   remaining: number;
   /** At the recent pace of the family; null without recent activity. */
   estimatedNextAt: Date | null;
-  /** Every completed iteration, the latest first. */
+  /** First completed iterations, the latest first; the others are paged by `history`. */
   history: BadgeCompletion[];
 }
+
+/** Completions sent at once, in the details and in each page of the history. */
+export const HISTORY_PAGE_SIZE = 20;
 
 /** Badges of known amounts, compared to the cumulated amounts of a user. */
 @Injectable()
@@ -138,8 +141,27 @@ export class DistancesService {
       familyTotal: timelineTotal(timeline),
       remaining: Math.max(0, view.goal - view.covered),
       estimatedNextAt: estimatedNextCompletion(badge, timeline, new Date()),
-      history: badgeCompletions(badge, timeline),
+      history: badgeCompletions(badge, timeline, {
+        offset: 0,
+        limit: HISTORY_PAGE_SIZE,
+      }),
     };
+  }
+
+  /** A page of the completions of a badge, the latest first, from `offset`. */
+  async history(
+    userId: string,
+    badgeId: string,
+    offset: number,
+  ): Promise<BadgeCompletion[]> {
+    const [badge, timelines] = await Promise.all([
+      this.findBadge(badgeId),
+      this.timelines(userId),
+    ]);
+    return badgeCompletions(badge, timelines[badge.metric][badge.family], {
+      offset,
+      limit: HISTORY_PAGE_SIZE,
+    });
   }
 
   /** Adds a badge to the favorites, last; adding it again keeps its rank. */

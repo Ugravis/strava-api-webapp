@@ -16,17 +16,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useBadgeDetails } from "@/hooks/use-badge-details";
-import type { DistanceBadge } from "@/lib/api/types";
+import type { BadgeTheme, DistanceBadge } from "@/lib/api/types";
 import { BadgeBanner } from "./badge-banner";
 import { BadgeFacts } from "./badge-facts";
 import { BadgeHistory } from "./badge-history";
 import { useAmount } from "./use-amount";
 import { BadgeProgressBar } from "./badge-progress-bar";
+import { BadgeTiers } from "./badge-tiers";
 import { FamilyIcon } from "./family-icon";
 
 interface BadgeDialogProps {
   /** Kept while the dialog closes, for its exit animation. */
   badge: DistanceBadge | null;
+  /** Themes of the badges, to name the one of the badge. */
+  themes: BadgeTheme[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFavoriteChange: (badge: DistanceBadge, favorite: boolean) => Promise<void>;
@@ -35,7 +38,7 @@ interface BadgeDialogProps {
 }
 
 /** Details of a badge, centered over the page. */
-export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, finalFocus }: BadgeDialogProps) {
+export function BadgeDialog({ badge, themes, open, onOpenChange, onFavoriteChange, finalFocus }: BadgeDialogProps) {
   return (
     <Dialog open={open && badge !== null} onOpenChange={onOpenChange}>
       <DialogContent
@@ -44,7 +47,14 @@ export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, final
         // One column no wider than the dialog: long activity names get truncated instead of widening it.
         className="max-h-[calc(100dvh-2rem)] grid-cols-1 gap-0 overflow-x-hidden overflow-y-auto p-0 sm:max-w-md"
       >
-        {badge && <BadgeDialogBody key={badge.id} badge={badge} onFavoriteChange={onFavoriteChange} />}
+        {badge && (
+          <BadgeDialogBody
+            key={badge.id}
+            badge={badge}
+            theme={themes.find((theme) => theme.id === badge.themeId) ?? null}
+            onFavoriteChange={onFavoriteChange}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -52,8 +62,9 @@ export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, final
 
 function BadgeDialogBody({
   badge,
+  theme,
   onFavoriteChange,
-}: Pick<BadgeDialogProps, "onFavoriteChange"> & { badge: DistanceBadge }) {
+}: Pick<BadgeDialogProps, "onFavoriteChange"> & { badge: DistanceBadge; theme: BadgeTheme | null }) {
   const t = useTranslations("distances");
   const amount = useAmount();
   const { details, error } = useBadgeDetails(badge.id);
@@ -89,6 +100,7 @@ function BadgeDialogBody({
               <FamilyIcon family={badge.family} data-icon="inline-start" aria-hidden />
               {t(`families.${badge.family}`)}
             </Badge>
+            {theme && <Badge variant="secondary">{theme.name}</Badge>}
             <Badge variant="outline" className="tabular-nums">
               {amount(badge.metric, badge.goal)}
             </Badge>
@@ -98,7 +110,8 @@ function BadgeDialogBody({
         </DialogHeader>
         <BadgeProgressBar badge={badge} />
         <BadgeFacts badge={badge} details={details} error={error} />
-        {badge.completions > 0 && <BadgeHistory details={details} error={error} />}
+        {badge.tiers && <BadgeTiers badge={badge} tiers={badge.tiers} />}
+        {badge.completions > 0 && <BadgeHistory badge={badge} details={details} error={error} />}
       </div>
       <DialogFooter className="mx-0 mb-0">
         <Button variant={favorite ? "outline" : "default"} onClick={toggleFavorite} disabled={pending} aria-pressed={favorite}>

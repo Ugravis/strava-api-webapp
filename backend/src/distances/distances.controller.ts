@@ -6,10 +6,13 @@ import {
   HttpCode,
   Param,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '../users/user.entity';
+import { BadgeHistoryQueryDto } from './badge-history-query.dto';
 import { BadgeParamsDto } from './badge-params.dto';
+import type { BadgeCompletion } from './distance-progress';
 import {
   type BadgeDetails,
   DistancesService,
@@ -27,13 +30,23 @@ export class DistancesController {
     return this.distances.overview(user.id);
   }
 
-  /** A badge with every completion of the user and the next one estimated. */
+  /** A badge with its latest completions by the user and the next one estimated. */
   @Get('badges/:id')
   details(
     @CurrentUser() user: User,
     @Param() { id }: BadgeParamsDto,
   ): Promise<BadgeDetails> {
     return this.distances.details(user.id, id);
+  }
+
+  /** A page of the completions of a badge, the latest first. */
+  @Get('badges/:id/history')
+  history(
+    @CurrentUser() user: User,
+    @Param() { id }: BadgeParamsDto,
+    @Query() { offset }: BadgeHistoryQueryDto,
+  ): Promise<BadgeCompletion[]> {
+    return this.distances.history(user.id, id, offset);
   }
 
   @Put('badges/:id/favorite')

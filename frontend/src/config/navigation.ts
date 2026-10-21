@@ -1,5 +1,7 @@
-import { HouseIcon, MapIcon, MilestoneIcon, UserIcon, type LucideIcon } from "lucide-react";
+import { HouseIcon, MapIcon, TrophyIcon, UserIcon, type LucideIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
+import { AchievementTabsNav } from "@/components/distances/achievement-tabs-nav";
 import { useOpenMapModule } from "@/components/map/map-module-channel";
 import { MapModulesNav } from "@/components/map/map-modules-nav";
 import { routes } from "./routes";
@@ -31,6 +33,12 @@ export const mainNavigation: NavigationItem[] = [
     quickAccess: MapModulesNav,
     useQuickAccessActive: () => useOpenMapModule() !== null,
   },
-  { href: routes.distances, labelKey: "distances", icon: MilestoneIcon },
+  {
+    href: routes.distances,
+    labelKey: "distances",
+    icon: TrophyIcon,
+    quickAccess: AchievementTabsNav,
+    useQuickAccessActive: () => usePathname() === routes.distances,
+  },
   { href: routes.profile, labelKey: "profile", icon: UserIcon },
 ];

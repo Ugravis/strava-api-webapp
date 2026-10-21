@@ -24,7 +24,7 @@
     "label": "Navigation",
     "dashboard": "Tableau de bord",
     "map": "Carte",
-    "distances": "Distances",
+    "distances": "Succès",
     "profile": "Profil",
     "settings": "Paramètres",
     "logout": "Déconnexion",
@@ -273,8 +273,16 @@
     }
   },
   "distances": {
-    "title": "Distances",
-    "description": "Ton kilométrage comparé à des distances mythiques.",
+    "title": "Succès",
+    "tabs": {
+      "label": "Catégories de succès",
+      "all": "Tous",
+      "challenges": "Défis",
+      "distance": "Distance",
+      "time": "Temps",
+      "elevation": "Dénivelé",
+      "empty": "Aucun badge dans cette catégorie pour l'instant."
+    },
     "error": "Impossible de charger tes distances pour le moment.",
     "retry": "Réessayer",
     "empty": "Connecte Strava depuis le tableau de bord pour faire avancer tes badges.",

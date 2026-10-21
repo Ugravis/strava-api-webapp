@@ -104,7 +104,7 @@ function CompactBadgeContent({ badge, showFavorite }: { badge: DistanceBadge; sh
 
 /** Classes laying out the content of a card. */
 export const BADGE_CARD_LAYOUT_CLASS: Record<BadgeCardLayout, string> = {
-  vertical: "flex-col items-center gap-1.5 p-2.5",
+  vertical: "flex-col items-center gap-1.5 px-2.5 py-4",
   horizontal: "flex-row items-center gap-2.5 p-2.5",
   compact: "flex-col p-2",
 };

@@ -420,7 +420,7 @@
       "reroll": "Relancer le dé",
       "roll": "Lancer le dé pour tirer un badge",
       "rollHint": "Lance le dé",
-      "closestNew": "Le plus proche, jamais obtenu",
+      "closestNew": "Prochain inédit",
       "closestNone": "Aucun badge en cours."
     }
   },

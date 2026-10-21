@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DistancesSkeleton() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
-      <div className="flex flex-col gap-4 rounded-2xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
+      <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-[13rem_13rem_minmax(0,1fr)]">
           <Skeleton className="aspect-square rounded-xl" />
           <Skeleton className="aspect-square rounded-xl" />

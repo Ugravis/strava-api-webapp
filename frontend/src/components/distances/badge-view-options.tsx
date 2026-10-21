@@ -77,7 +77,7 @@ export function BadgeViewOptions({ sort, onSortChange, compact, onCompactChange 
           <ArrowDownUpIcon />
           <span className="hidden sm:inline">{t(`sorts.${sort}`)}</span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-48">
+        <DropdownMenuContent align="center" className="w-auto min-w-max">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{t("sortLabel")}</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={sort} onValueChange={(value) => onSortChange(value as BadgeSort)}>

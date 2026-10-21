@@ -56,7 +56,7 @@ export function AchievementsHeader({ headlines, totals, badges, onOpen }: Achiev
   return (
     <section
       aria-label={t("label")}
-      className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4"
+      className="flex min-w-0 flex-col gap-3"
     >
       <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-[13rem_13rem_minmax(0,1fr)]">
         <HeadlineWidget headlines={headlines} totals={totals} />
@@ -222,8 +222,8 @@ function WidgetSwitcher<T extends string>({
   );
 }
 
-/** Badges the closest widget picks from: all of them, or those never completed yet. */
-const CLOSEST_SCOPES = ["closest", "closestNew"] as const;
+/** Badges the closest widget picks from: those never completed yet, or all of them. */
+const CLOSEST_SCOPES = ["closestNew", "closest"] as const;
 
 type ClosestScope = (typeof CLOSEST_SCOPES)[number];
 
@@ -232,11 +232,14 @@ function ClosestBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpe
   const t = useTranslations("distances.header");
   const format = useFormatter();
   const amount = useAmount();
-  const [scope, setScope] = useState<ClosestScope>("closest");
-  const [badge] = closestBadges(
-    scope === "closest" ? badges : badges.filter((candidate) => candidate.completions === 0),
+  const [picked, setScope] = useState<ClosestScope | null>(null);
+  const [closestNew] = closestBadges(
+    badges.filter((candidate) => candidate.completions === 0),
     1,
   );
+  // Those never completed first, unless there are none left.
+  const scope = picked ?? (closestNew ? "closestNew" : "closest");
+  const [badge] = scope === "closestNew" ? [closestNew] : closestBadges(badges, 1);
 
   return (
     <div className="col-span-2 flex min-w-0 flex-col gap-1 rounded-xl bg-muted/50 p-2 ring-1 ring-foreground/5 @2xl:col-span-1">
@@ -247,12 +250,12 @@ function ClosestBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpe
           type="button"
           onClick={() => onOpen(badge.id)}
           aria-haspopup="dialog"
-          className="group flex flex-1 items-center gap-4 rounded-lg px-3 py-3 text-left outline-none animate-in fade-in-0 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4"
+          className="group flex flex-1 items-center gap-3 rounded-lg px-3 py-3 text-left outline-none animate-in fade-in-0 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4"
         >
           <BadgeMedal
             badge={badge}
             index={0}
-            className="w-16 shrink-0 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-16"
+            className="w-12 shrink-0 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-13"
           />
           <span className="flex min-w-0 flex-1 flex-col gap-2">
             <span className="line-clamp-2 leading-tight font-semibold">{badge.name}</span>

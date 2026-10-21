@@ -3,18 +3,33 @@
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { type GridColumns, useGridColumns } from "@/hooks/use-grid-columns";
+import { type Breakpoint, useBreakpoint } from "@/hooks/use-breakpoint";
 import type { DistanceBadge } from "@/lib/api/types";
 import { BadgeButton } from "./badge-button";
+import type { BadgeLayout } from "./badge-card-content";
 
-/** Classes of the badge grids, matching `useGridColumns`. */
-export const BADGE_GRID_CLASS = "grid grid-cols-3 gap-x-2 gap-y-4 sm:grid-cols-4 md:grid-cols-6";
+/** Classes of the badge grids and their columns at each breakpoint. */
+export const BADGE_GRIDS: Record<BadgeLayout, { className: string; columns: Record<Breakpoint, number> }> = {
+  card: {
+    className: "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+    columns: { base: 1, sm: 2, md: 2, lg: 3, xl: 4 },
+  },
+  tile: {
+    className: "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
+    columns: { base: 2, sm: 3, md: 4, lg: 5, xl: 5 },
+  },
+  compact: {
+    className: "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+    columns: { base: 2, sm: 3, md: 4, lg: 5, xl: 6 },
+  },
+};
 
 interface BadgeGridProps {
   badges: DistanceBadge[];
   onOpen: (badgeId: string) => void;
+  layout: BadgeLayout;
   /** Rows shown while folded, for each number of columns. */
-  rows: Record<GridColumns, number>;
+  rows: Record<Breakpoint, number>;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   showFavorite?: boolean;
@@ -29,6 +44,7 @@ interface BadgeGridProps {
 export function BadgeGrid({
   badges,
   onOpen,
+  layout,
   rows,
   expanded,
   onExpandedChange,
@@ -38,19 +54,21 @@ export function BadgeGrid({
   anchors,
 }: BadgeGridProps) {
   const t = useTranslations("distances");
-  const columns = useGridColumns();
-  const limit = columns * rows[columns];
+  const breakpoint = useBreakpoint();
+  const grid = BADGE_GRIDS[layout];
+  const limit = grid.columns[breakpoint] * rows[breakpoint];
   const hidden = Math.max(badges.length - limit, 0);
   const shown = expanded ? badges : badges.slice(0, limit);
 
   return (
     <div className="flex flex-col gap-3">
-      <ul className={BADGE_GRID_CLASS}>
+      <ul className={grid.className}>
         {shown.map((badge, index) => (
           <BadgeButton
             key={badge.id}
             badge={badge}
             index={index}
+            layout={layout}
             showFavorite={showFavorite}
             showFamily={showFamily}
             highlighted={badge.id === highlightedId}

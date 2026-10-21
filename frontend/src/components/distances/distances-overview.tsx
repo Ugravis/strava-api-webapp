@@ -10,11 +10,13 @@ import { routes } from "@/config/routes";
 import { favoriteBadges, useDistances } from "@/hooks/use-distances";
 import type { DistanceFamily } from "@/lib/api/types";
 import { BadgeDialog } from "./badge-dialog";
-import { BadgeSearch } from "./badge-search";
+import { type BadgeSort, sortBadges, useBadgeView } from "./badge-view";
 import { DistanceFamilySection } from "./distance-family-section";
+import { DistancesHero } from "./distances-hero";
 import { DistancesSkeleton } from "./distances-skeleton";
+import { DistancesToolbar } from "./distances-toolbar";
 import { FavoriteBadgesSection } from "./favorite-badges-section";
-import { ALL_THEMES, ThemeTabs } from "./theme-tabs";
+import { ALL_THEMES } from "./theme-tabs";
 
 /** Display order of the families. */
 const FAMILIES: DistanceFamily[] = ["all", "run", "hike", "ride"];
@@ -32,7 +34,9 @@ const anchorOf = (badgeId: string) =>
 export function DistancesOverview() {
   const t = useTranslations("distances");
   const { overview, error, refresh, setFavorite, reorderFavorites } = useDistances();
+  const view = useBadgeView();
   const [theme, setTheme] = useState(ALL_THEMES);
+  const [sort, setSort] = useState<BadgeSort>("default");
   const [expanded, setExpanded] = useState<ReadonlySet<DistanceFamily>>(new Set());
   // The badge stays set while the dialog closes, for its exit animation.
   const [openBadgeId, setOpenBadgeId] = useState<string | null>(null);
@@ -113,14 +117,22 @@ export function DistancesOverview() {
     );
   }
 
-  const shown = theme === ALL_THEMES ? overview.badges : overview.badges.filter((badge) => badge.themeId === theme);
+  const shown = sortBadges(
+    theme === ALL_THEMES ? overview.badges : overview.badges.filter((badge) => badge.themeId === theme),
+    sort,
+  );
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
-        <BadgeSearch badges={overview.badges} onPick={pickSearched} />
-        {overview.themes.length > 0 && <ThemeTabs themes={overview.themes} value={theme} onValueChange={setTheme} />}
-      </div>
+    <div className="flex flex-col gap-6">
+      <DistancesHero overview={overview} onOpen={openBadge} />
+      <DistancesToolbar
+        overview={overview}
+        onPick={pickSearched}
+        theme={theme}
+        onThemeChange={setTheme}
+        sort={sort}
+        onSortChange={setSort}
+      />
       {overview.totals.all === 0 && (
         <Alert>
           <InfoIcon />
@@ -136,6 +148,7 @@ export function DistancesOverview() {
           badges={favorites}
           onOpen={openBadge}
           onReorder={reorderFavorites}
+          view={view}
           highlightedId={highlightedId}
         />
       )}
@@ -148,6 +161,7 @@ export function DistancesOverview() {
               family={family}
               totalM={overview.totals[family]}
               badges={badges}
+              view={view}
               onOpen={openBadge}
               expanded={expanded.has(family)}
               onExpandedChange={(open) =>

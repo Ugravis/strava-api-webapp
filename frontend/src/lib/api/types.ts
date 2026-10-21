@@ -92,6 +92,8 @@ export interface DistanceBadge {
   lastCompletedAt: string | null;
   /** Rank among the favorites, from 1; null when not a favorite. */
   favoritePosition: number | null;
+  /** When the badge joined the catalog. */
+  addedAt: string;
 }
 
 export interface DistancesOverview {

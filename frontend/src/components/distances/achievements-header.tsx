@@ -255,7 +255,7 @@ function ClosestBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpe
           <BadgeMedal
             badge={badge}
             index={0}
-            className="w-12 shrink-0 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-13"
+            className="w-10 shrink-0 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-11"
           />
           <span className="flex min-w-0 flex-1 flex-col gap-2">
             <span className="line-clamp-2 leading-tight font-semibold">{badge.name}</span>

@@ -348,7 +348,10 @@
         "tier": "Palier {number}",
         "reached": "atteint",
         "locked": "pas encore atteint"
-      }
+      },
+      "addToProfile": "Afficher sur le profil",
+      "removeFromProfile": "Retirer du profil",
+      "profileError": "Impossible de modifier ton profil pour le moment."
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",

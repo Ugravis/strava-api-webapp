@@ -44,7 +44,7 @@ const anchorOf = (badgeId: string) =>
 export function DistancesOverview({ tab }: { tab: AchievementTab }) {
   const t = useTranslations("distances");
   const locale = useLocale();
-  const { overview, error, refresh, setFavorite, reorderFavorites } = useDistances();
+  const { overview, error, refresh, setFavorite, reorderFavorites, setOnProfile } = useDistances();
   const [theme, setTheme] = useState(ALL_THEMES);
   const [sort, setSort] = useState<BadgeSort>("default");
   const [compact, setCompact] = useCompactView();
@@ -213,6 +213,7 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
         open={dialogOpen}
         onOpenChange={onDialogOpenChange}
         onFavoriteChange={setFavorite}
+        onProfileChange={setOnProfile}
         // Opened from the search, the focus goes back to the badge, not to the search field.
         finalFocus={
           highlightedId ? () => anchorOf(highlightedId)?.querySelector<HTMLElement>("button") ?? null : undefined

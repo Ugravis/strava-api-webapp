@@ -67,6 +67,25 @@ export class DistancesController {
     return this.distances.removeFavorite(user.id, id);
   }
 
+  /** Shows a badge on the profile of the user. */
+  @Put('badges/:id/profile')
+  @HttpCode(204)
+  addToProfile(
+    @CurrentUser() user: User,
+    @Param() { id }: BadgeParamsDto,
+  ): Promise<void> {
+    return this.distances.addToProfile(user.id, id);
+  }
+
+  @Delete('badges/:id/profile')
+  @HttpCode(204)
+  removeFromProfile(
+    @CurrentUser() user: User,
+    @Param() { id }: BadgeParamsDto,
+  ): Promise<void> {
+    return this.distances.removeFromProfile(user.id, id);
+  }
+
   /** Ranks the favorite badges of the user in the given order. */
   @Put('favorites')
   @HttpCode(204)

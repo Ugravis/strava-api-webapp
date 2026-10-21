@@ -1,6 +1,6 @@
 "use client";
 
-import { StarIcon, StarOffIcon, XIcon } from "lucide-react";
+import { StarIcon, StarOffIcon, UserRoundCheckIcon, UserRoundIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -33,12 +33,21 @@ interface BadgeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFavoriteChange: (badge: DistanceBadge, favorite: boolean) => Promise<void>;
+  onProfileChange: (badge: DistanceBadge, onProfile: boolean) => Promise<void>;
   /** Element focused once closed; by default the one focused before opening. */
   finalFocus?: () => HTMLElement | null;
 }
 
 /** Details of a badge, centered over the page. */
-export function BadgeDialog({ badge, themes, open, onOpenChange, onFavoriteChange, finalFocus }: BadgeDialogProps) {
+export function BadgeDialog({
+  badge,
+  themes,
+  open,
+  onOpenChange,
+  onFavoriteChange,
+  onProfileChange,
+  finalFocus,
+}: BadgeDialogProps) {
   return (
     <Dialog open={open && badge !== null} onOpenChange={onOpenChange}>
       <DialogContent
@@ -53,6 +62,7 @@ export function BadgeDialog({ badge, themes, open, onOpenChange, onFavoriteChang
             badge={badge}
             theme={themes.find((theme) => theme.id === badge.themeId) ?? null}
             onFavoriteChange={onFavoriteChange}
+            onProfileChange={onProfileChange}
           />
         )}
       </DialogContent>
@@ -64,18 +74,26 @@ function BadgeDialogBody({
   badge,
   theme,
   onFavoriteChange,
-}: Pick<BadgeDialogProps, "onFavoriteChange"> & { badge: DistanceBadge; theme: BadgeTheme | null }) {
+  onProfileChange,
+}: Pick<BadgeDialogProps, "onFavoriteChange" | "onProfileChange"> & { badge: DistanceBadge; theme: BadgeTheme | null }) {
   const t = useTranslations("distances");
   const amount = useAmount();
   const { details, error } = useBadgeDetails(badge.id);
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<"favorite" | "profile" | null>(null);
   const favorite = badge.favoritePosition !== null;
 
   const toggleFavorite = () => {
-    setPending(true);
+    setPending("favorite");
     onFavoriteChange(badge, !favorite)
       .catch(() => toast.error(t("dialog.favoriteError")))
-      .finally(() => setPending(false));
+      .finally(() => setPending(null));
+  };
+
+  const toggleProfile = () => {
+    setPending("profile");
+    onProfileChange(badge, !badge.onProfile)
+      .catch(() => toast.error(t("dialog.profileError")))
+      .finally(() => setPending(null));
   };
 
   return (
@@ -113,8 +131,23 @@ function BadgeDialogBody({
         {badge.tiers && <BadgeTiers badge={badge} tiers={badge.tiers} />}
         {badge.completions > 0 && <BadgeHistory badge={badge} details={details} error={error} />}
       </div>
-      <DialogFooter className="mx-0 mb-0">
-        <Button variant={favorite ? "outline" : "default"} onClick={toggleFavorite} disabled={pending} aria-pressed={favorite}>
+      {/* Kept in sight while the details scroll. */}
+      <DialogFooter className="sticky bottom-0 z-10 mx-0 mb-0 bg-muted/95 backdrop-blur-sm">
+        <Button
+          variant="outline"
+          onClick={toggleProfile}
+          disabled={pending === "profile"}
+          aria-pressed={badge.onProfile}
+        >
+          {badge.onProfile ? <UserRoundCheckIcon data-icon="inline-start" /> : <UserRoundIcon data-icon="inline-start" />}
+          {badge.onProfile ? t("dialog.removeFromProfile") : t("dialog.addToProfile")}
+        </Button>
+        <Button
+          variant={favorite ? "outline" : "default"}
+          onClick={toggleFavorite}
+          disabled={pending === "favorite"}
+          aria-pressed={favorite}
+        >
           {favorite ? <StarOffIcon data-icon="inline-start" /> : <StarIcon data-icon="inline-start" />}
           {favorite ? t("dialog.removeFavorite") : t("dialog.addFavorite")}
         </Button>

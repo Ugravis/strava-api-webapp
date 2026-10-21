@@ -13,6 +13,8 @@ export interface DistancesState {
   setFavorite: (badge: DistanceBadge, favorite: boolean) => Promise<void>;
   /** Ranks the favorites in the given order, at once; back as it was and rejects if the server refuses. */
   reorderFavorites: (badgeIds: string[]) => Promise<void>;
+  /** Shows a badge on the profile or hides it, at once; back as it was and rejects if the server refuses. */
+  setOnProfile: (badge: DistanceBadge, onProfile: boolean) => Promise<void>;
 }
 
 type FavoritePositions = Map<string, number | null>;
@@ -108,5 +110,26 @@ export function useDistances(): DistancesState {
     [overview, showFavorites],
   );
 
-  return { overview, error, refresh, setFavorite, reorderFavorites };
+  const setOnProfile = useCallback(async (badge: DistanceBadge, onProfile: boolean) => {
+    const show = (value: boolean) =>
+      setOverview((current) =>
+        current
+          ? {
+              ...current,
+              badges: current.badges.map((candidate) =>
+                candidate.id === badge.id ? { ...candidate, onProfile: value } : candidate,
+              ),
+            }
+          : current,
+      );
+    show(onProfile);
+    try {
+      await (onProfile ? distancesService.addToProfile(badge.id) : distancesService.removeFromProfile(badge.id));
+    } catch (failure) {
+      show(!onProfile);
+      throw failure;
+    }
+  }, []);
+
+  return { overview, error, refresh, setFavorite, reorderFavorites, setOnProfile };
 }

@@ -222,7 +222,7 @@ function HiddenStops({
     <li className="relative">
       <span
         className={cn(
-          "absolute inset-y-0 left-[0.3125rem] w-0.5",
+          "absolute inset-y-0 left-1.25 w-0.5",
           passed ? "bg-primary" : "bg-border",
         )}
         aria-hidden
@@ -231,7 +231,7 @@ function HiddenStops({
         type="button"
         onClick={onShow}
         className={cn(
-          "relative flex w-full items-center gap-2.5 py-1 pl-[1.375rem] text-left text-xs text-muted-foreground",
+          "relative flex w-full items-center gap-2.5 py-1 pl-5.5 text-left text-xs text-muted-foreground",
           "hover:text-foreground focus-visible:text-foreground focus-visible:outline-none",
         )}
       >
@@ -265,7 +265,7 @@ function JourneyStop({
       {!last && (
         <span
           className={cn(
-            "absolute top-1/2 left-[0.3125rem] h-full w-0.5",
+            "absolute top-1/2 left-1.25 h-full w-0.5",
             passed ? "bg-primary" : "bg-border",
           )}
           aria-hidden

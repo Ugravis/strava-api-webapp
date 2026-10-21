@@ -2,6 +2,7 @@
 
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import { useFormatter, useTranslations } from "next-intl";
+import { useAmount } from "./use-amount";
 import { ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import type { DistanceBadge } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -16,8 +17,7 @@ export function BadgeProgressBar({ badge }: { badge: DistanceBadge }) {
   const tier = progressTier(badge.progress);
   // Rounded down: an unfinished iteration never shows 100 %.
   const share = Math.floor(badge.progress * 100) / 100;
-  const km = (meters: number) =>
-    format.number(meters / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 1 });
+  const amount = useAmount();
 
   return (
     <ProgressPrimitive.Root
@@ -28,7 +28,13 @@ export function BadgeProgressBar({ badge }: { badge: DistanceBadge }) {
     >
       <div className="flex items-baseline justify-between gap-3 text-xs">
         <span className="text-muted-foreground">
-          {badge.completions > 0 ? t("iteration", { number: badge.completions + 1 }) : t("firstIteration")}
+          {badge.tiers
+            ? badge.completions >= badge.tiers.length
+              ? t("lastTier")
+              : t("tier", { number: badge.completions + 1, total: badge.tiers.length })
+            : badge.completions > 0
+              ? t("iteration", { number: badge.completions + 1 })
+              : t("firstIteration")}
         </span>
         <span className={cn("font-semibold tabular-nums", tier.text)}>{format.number(share, { style: "percent" })}</span>
       </div>
@@ -38,7 +44,10 @@ export function BadgeProgressBar({ badge }: { badge: DistanceBadge }) {
         />
       </ProgressTrack>
       <p className="text-xs text-muted-foreground tabular-nums">
-        {t("covered", { covered: km(badge.progress * badge.distanceM), distance: km(badge.distanceM) })}
+        {t("covered", {
+          covered: amount(badge.metric, badge.covered),
+          target: amount(badge.metric, badge.goal),
+        })}
       </p>
     </ProgressPrimitive.Root>
   );

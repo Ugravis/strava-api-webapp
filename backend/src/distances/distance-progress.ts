@@ -5,44 +5,60 @@ import {
   type DistanceFamily,
 } from './distance-families';
 
-/** What the progress of a badge needs to know about an activity. */
-export interface DistanceActivity {
+/** What the progress of a badge needs to know about an event: an activity, or what it brought. */
+export interface MetricEvent {
   id: string;
   name: string;
   sportType: SportType;
   startedAt: Date;
-  distanceM: number;
+  value: number;
 }
 
 /** What the progress of a badge needs to know about it. */
 export interface BadgeTarget {
   family: DistanceFamily;
-  distanceM: number;
+  /** Amount of one iteration of a repeatable badge. */
+  target: number;
+  /**
+   * Amounts reaching each tier, ascending, of a badge that is completed only
+   * once; null for a repeatable badge.
+   */
+  tiers?: readonly number[] | null;
 }
 
-/** Activities of a family, oldest first, with their cumulated distance. */
+/** Events of a family, oldest first, with their cumulated amount. */
 export interface FamilyTimeline {
-  activities: DistanceActivity[];
-  /** Distance covered up to each activity included, in meters. */
-  cumulatedM: number[];
+  activities: MetricEvent[];
+  /** Amount reached up to each event included, in the unit of the metric. */
+  cumulated: number[];
 }
 
 export interface BadgeProgress {
-  /** Number of times the whole distance was covered. */
+  /** Number of iterations completed, or of tiers reached. */
   completions: number;
-  /** Share of the current iteration already covered, in [0, 1). */
+  /**
+   * Share of the current iteration, or of the way to the next tier, already
+   * done: in [0, 1), or 1 once the last tier is reached.
+   */
   progress: number;
-  /** Start of the activity that completed the first iteration. */
+  /** Amount counted toward the goal, in the unit of the metric. */
+  covered: number;
+  /**
+   * Amount of the current goal: the iteration, or the next tier (the last
+   * one when reached).
+   */
+  goal: number;
+  /** Start of the activity that completed the first iteration or tier. */
   firstCompletedAt: Date | null;
-  /** Start of the activity that completed the latest iteration. */
+  /** Start of the activity that completed the latest iteration or tier. */
   lastCompletedAt: Date | null;
 }
 
 export interface BadgeCompletion {
-  /** Iteration completed, from 1. */
+  /** Iteration completed or tier reached, from 1. */
   iteration: number;
   /** The activity whose distance completed it. */
-  activity: Pick<DistanceActivity, 'id' | 'name' | 'sportType' | 'startedAt'>;
+  activity: Pick<MetricEvent, 'id' | 'name' | 'sportType' | 'startedAt'>;
 }
 
 /** Sports counted by a family; null for `all`, which counts every sport. */
@@ -52,7 +68,7 @@ function familySports(family: DistanceFamily): readonly SportType[] | null {
 
 /** Splits activities sorted by start into the timeline of each family. */
 export function familyTimelines(
-  activities: readonly DistanceActivity[],
+  activities: readonly MetricEvent[],
 ): Record<DistanceFamily, FamilyTimeline> {
   return Object.fromEntries(
     DISTANCE_FAMILIES.map((family) => {
@@ -61,70 +77,81 @@ export function familyTimelines(
         ? activities.filter((activity) => sports.includes(activity.sportType))
         : [...activities];
       let total = 0;
-      const cumulatedM = selected.map(
-        (activity) => (total += activity.distanceM),
-      );
-      return [family, { activities: selected, cumulatedM }];
+      const cumulated = selected.map((activity) => (total += activity.value));
+      return [family, { activities: selected, cumulated }];
     }),
   ) as Record<DistanceFamily, FamilyTimeline>;
 }
 
-/** Distance covered by a timeline, in meters. */
-export function timelineTotal({ cumulatedM }: FamilyTimeline): number {
-  return cumulatedM.at(-1) ?? 0;
+/** Amount reached by a timeline, in the unit of its metric. */
+export function timelineTotal({ cumulated }: FamilyTimeline): number {
+  return cumulated.at(-1) ?? 0;
 }
 
 /**
  * Index of the first activity bringing the cumulated distance to at least
- * `distanceM`; the last one when it never does, which rounding errors allow
+ * `amount`; the last one when it never does, which rounding errors allow
  * for a distance equal to the total.
  */
-export function reachedAt(timeline: FamilyTimeline, distanceM: number): number {
+export function reachedAt(timeline: FamilyTimeline, amount: number): number {
   let low = 0;
-  let high = timeline.cumulatedM.length;
+  let high = timeline.cumulated.length;
   while (low < high) {
     const middle = (low + high) >> 1;
-    if (timeline.cumulatedM[middle] >= distanceM) high = middle;
+    if (timeline.cumulated[middle] >= amount) high = middle;
     else low = middle + 1;
   }
-  return Math.min(low, timeline.cumulatedM.length - 1);
+  return Math.min(low, timeline.cumulated.length - 1);
 }
 
-function completionDate(
-  timeline: FamilyTimeline,
-  distanceM: number,
-): Date | null {
-  return timeline.activities[reachedAt(timeline, distanceM)]?.startedAt ?? null;
+function completionDate(timeline: FamilyTimeline, amount: number): Date | null {
+  return timeline.activities[reachedAt(timeline, amount)]?.startedAt ?? null;
+}
+
+/** Amount completing the iteration or reaching the tier `index`, from 1; undefined past the last tier. */
+function milestone(badge: BadgeTarget, index: number): number | undefined {
+  return badge.tiers ? badge.tiers[index - 1] : index * badge.target;
+}
+
+function completionsOf(badge: BadgeTarget, total: number): number {
+  return badge.tiers
+    ? badge.tiers.filter((tier) => tier <= total).length
+    : Math.floor(total / badge.target);
 }
 
 export function badgeProgress(
   badge: BadgeTarget,
   timeline: FamilyTimeline,
 ): BadgeProgress {
-  const totalM = timelineTotal(timeline);
-  const completions = Math.floor(totalM / badge.distanceM);
+  const total = timelineTotal(timeline);
+  const completions = completionsOf(badge, total);
+  const base = completions > 0 ? (milestone(badge, completions) ?? 0) : 0;
+  const next = milestone(badge, completions + 1);
   return {
     completions,
-    progress: (totalM - completions * badge.distanceM) / badge.distanceM,
+    progress: next === undefined ? 1 : (total - base) / (next - base),
+    covered: badge.tiers ? total : total - base,
+    goal: badge.tiers ? (next ?? base) : badge.target,
     firstCompletedAt:
-      completions > 0 ? completionDate(timeline, badge.distanceM) : null,
-    lastCompletedAt:
       completions > 0
-        ? completionDate(timeline, completions * badge.distanceM)
+        ? completionDate(timeline, milestone(badge, 1) ?? 0)
         : null,
+    lastCompletedAt: completions > 0 ? completionDate(timeline, base) : null,
   };
 }
 
-/** Every completed iteration of a badge, the latest first. */
+/** Every completed iteration or reached tier of a badge, the latest first. */
 export function badgeCompletions(
   badge: BadgeTarget,
   timeline: FamilyTimeline,
 ): BadgeCompletion[] {
-  const completions = Math.floor(timelineTotal(timeline) / badge.distanceM);
+  const completions = completionsOf(badge, timelineTotal(timeline));
   return Array.from({ length: completions }, (_, index) => {
     const iteration = completions - index;
     const { id, name, sportType, startedAt } =
-      timeline.activities[reachedAt(timeline, iteration * badge.distanceM)];
+      timeline.activities[
+        reachedAt(timeline, milestone(badge, iteration) ?? 0)
+      ];
     return { iteration, activity: { id, name, sportType, startedAt } };
   });
 }
@@ -136,7 +163,7 @@ const DAY_MS = 86_400_000;
 
 /**
  * When the next iteration would be completed at the pace of the last
- * `RECENT_PACE_DAYS` days; null without any distance over that window.
+ * `RECENT_PACE_DAYS` days; null without any amount over that window, or once the last tier is reached.
  */
 export function estimatedNextCompletion(
   badge: BadgeTarget,
@@ -144,12 +171,14 @@ export function estimatedNextCompletion(
   now: Date,
 ): Date | null {
   const since = now.getTime() - RECENT_PACE_DAYS * DAY_MS;
-  const recentM = timeline.activities
+  const recent = timeline.activities
     .filter((activity) => activity.startedAt.getTime() >= since)
-    .reduce((total, activity) => total + activity.distanceM, 0);
-  if (recentM <= 0) return null;
-  const { progress } = badgeProgress(badge, timeline);
-  const remainingM = (1 - progress) * badge.distanceM;
-  const dailyM = recentM / RECENT_PACE_DAYS;
-  return new Date(now.getTime() + (remainingM / dailyM) * DAY_MS);
+    .reduce((total, activity) => total + activity.value, 0);
+  if (recent <= 0) return null;
+  const { completions } = badgeProgress(badge, timeline);
+  const next = milestone(badge, completions + 1);
+  if (next === undefined) return null;
+  const remaining = next - timelineTotal(timeline);
+  const daily = recent / RECENT_PACE_DAYS;
+  return new Date(now.getTime() + (remaining / daily) * DAY_MS);
 }

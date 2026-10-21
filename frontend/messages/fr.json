@@ -280,13 +280,11 @@
       "challenges": "Défis",
       "distance": "Distance",
       "time": "Temps",
-      "elevation": "Dénivelé",
-      "empty": "Aucun badge dans cette catégorie pour l'instant."
+      "elevation": "Dénivelé"
     },
-    "error": "Impossible de charger tes distances pour le moment.",
+    "error": "Impossible de charger tes succès pour le moment.",
     "retry": "Réessayer",
     "empty": "Connecte Strava depuis le tableau de bord pour faire avancer tes badges.",
-    "familyTotal": "{distance} parcourus",
     "completions": "{count, plural, =0 {Pas encore accompli} one {Accompli # fois} other {Accompli # fois}}",
     "progressLabel": "{name} : {percent} de l'itération en cours",
     "families": {
@@ -316,18 +314,21 @@
       "progressLabel": "Progression de l'itération en cours",
       "firstIteration": "Première itération",
       "iteration": "Itération n° {number}",
-      "covered": "{covered} sur {distance}",
+      "covered": "{covered} sur {target}",
       "facts": {
         "completions": "Accompli",
         "completionsValue": "{count, plural, =0 {Pas encore} one {# fois} other {# fois}}",
-        "remaining": "Reste à parcourir",
+        "remaining": "Restant",
         "firstCompletedAt": "Première fois",
         "lastCompletedAt": "Dernière fois",
         "never": "Pas encore",
         "estimatedNext": "Prochaine fois, au rythme actuel",
-        "estimateHint": "Estimation selon ta distance des 90 derniers jours",
+        "estimateHint": "Estimation selon ton rythme des 90 derniers jours",
         "noRecentActivity": "Aucune activité depuis 90 jours",
-        "unavailable": "Indisponible"
+        "unavailable": "Indisponible",
+        "tierReached": "Palier atteint",
+        "tierValue": "{level, plural, =0 {Aucun} other {# sur {total}}}",
+        "done": "Terminé"
       },
       "history": {
         "title": "Historique",
@@ -337,7 +338,9 @@
       },
       "addFavorite": "Ajouter aux favoris",
       "removeFavorite": "Retirer des favoris",
-      "favoriteError": "Impossible de modifier tes favoris pour le moment."
+      "favoriteError": "Impossible de modifier tes favoris pour le moment.",
+      "tier": "Palier {number} sur {total}",
+      "lastTier": "Dernier palier atteint"
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",
@@ -349,7 +352,26 @@
     "themes": {
       "label": "Thèmes",
       "all": "Tous"
-    }
+    },
+    "totals": {
+      "distance": "{amount} parcourus",
+      "time": "{amount} de mouvement",
+      "elevation": "{amount} de dénivelé",
+      "activities": "{amount} enregistrées",
+      "active_days": "{amount} avec une activité",
+      "tiles": "{amount} découvertes",
+      "subtiles": "{amount} découvertes",
+      "stations": "{amount} visitées"
+    },
+    "units": {
+      "activities": "{count, plural, one {# activité} other {# activités}}",
+      "active_days": "{count, plural, one {# jour} other {# jours}}",
+      "tiles": "{count, plural, one {# tuile} other {# tuiles}}",
+      "subtiles": "{count, plural, one {# petite tuile} other {# petites tuiles}}",
+      "stations": "{count, plural, one {# gare} other {# gares}}"
+    },
+    "challengesTitle": "Défis",
+    "level": "Nv. {level}"
   },
   "map": {
     "title": "Carte",

@@ -71,21 +71,38 @@ export interface BadgeTheme {
   name: string;
 }
 
-/** A known distance compared to the cumulated distance of a family, with the progress of the user. */
+/** What a badge counts: distance in meters, time in seconds, elevation in meters, or a count. */
+export type BadgeMetric =
+  | "distance"
+  | "time"
+  | "elevation"
+  | "activities"
+  | "active_days"
+  | "tiles"
+  | "subtiles"
+  | "stations";
+
+/** A known amount compared to the cumulated amount of a metric, with the progress of the user. */
 export interface DistanceBadge {
   id: string;
+  metric: BadgeMetric;
   family: DistanceFamily;
-  distanceM: number;
+  /** Amounts reaching each tier of a badge completed only once, ascending; null for a repeatable badge. */
+  tiers: number[] | null;
   name: string;
   description: string;
   /** Icon key; unknown keys get a generic icon. */
   icon: string;
   /** Theme of the badge, among those of the overview; null without theme. */
   themeId: string | null;
-  /** Number of times the whole distance was covered. */
+  /** Number of iterations completed, or of tiers reached. */
   completions: number;
-  /** Share of the current iteration already covered, in [0, 1). */
+  /** Share of the current iteration or of the way to the next tier, in [0, 1); 1 once the last tier is reached. */
   progress: number;
+  /** Amount counted toward the goal, in the unit of the metric. */
+  covered: number;
+  /** Amount of the current goal: the iteration, or the next tier (the last one when reached). */
+  goal: number;
   /** Start of the activity that completed the first iteration. */
   firstCompletedAt: string | null;
   /** Start of the activity that completed the latest iteration. */
@@ -95,8 +112,8 @@ export interface DistanceBadge {
 }
 
 export interface DistancesOverview {
-  /** Cumulated distance per family, in meters. */
-  totals: Record<DistanceFamily, number>;
+  /** Cumulated amount per metric and family, in the unit of the metric. */
+  totals: Record<BadgeMetric, Record<DistanceFamily, number>>;
   /** Themes having badges, in display order. */
   themes: BadgeTheme[];
   /** Every badge, in display order. */
@@ -106,15 +123,15 @@ export interface DistancesOverview {
 export interface BadgeCompletion {
   /** Iteration completed, from 1. */
   iteration: number;
-  /** The activity whose distance completed it. */
+  /** The activity that completed it. */
   activity: { id: string; name: string; sportType: string; startedAt: string };
 }
 
 export interface DistanceBadgeDetails extends DistanceBadge {
-  /** Distance covered by the family of the badge, in meters. */
-  familyTotalM: number;
-  /** Distance left before the next iteration, in meters. */
-  remainingM: number;
+  /** Amount reached by the family of the badge, in the unit of its metric. */
+  familyTotal: number;
+  /** Amount left before the next iteration, in the unit of its metric. */
+  remaining: number;
   /** At the pace of the last 90 days; null without recent activity. */
   estimatedNextAt: string | null;
   /** Every completed iteration, the latest first. */

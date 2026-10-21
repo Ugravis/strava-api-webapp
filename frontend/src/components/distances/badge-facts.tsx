@@ -1,4 +1,5 @@
 import { useFormatter, useTranslations } from "next-intl";
+import { useAmount } from "./use-amount";
 import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DistanceBadge, DistanceBadgeDetails } from "@/lib/api/types";
@@ -23,17 +24,18 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 export function BadgeFacts({ badge, details, error }: BadgeFactsProps) {
   const t = useTranslations("distances.dialog.facts");
   const format = useFormatter();
+  const amount = useAmount();
   const date = (value: string) => format.dateTime(new Date(value), { dateStyle: "medium" });
 
   return (
     <dl className="grid grid-cols-2 gap-2">
-      <Fact label={t("completions")}>{t("completionsValue", { count: badge.completions })}</Fact>
+      {badge.tiers ? (
+        <Fact label={t("tierReached")}>{t("tierValue", { level: badge.completions, total: badge.tiers.length })}</Fact>
+      ) : (
+        <Fact label={t("completions")}>{t("completionsValue", { count: badge.completions })}</Fact>
+      )}
       <Fact label={t("remaining")}>
-        {format.number(((1 - badge.progress) * badge.distanceM) / 1000, {
-          style: "unit",
-          unit: "kilometer",
-          maximumFractionDigits: 1,
-        })}
+        {badge.progress >= 1 ? t("done") : amount(badge.metric, badge.goal - badge.covered)}
       </Fact>
       <Fact label={t("firstCompletedAt")}>{badge.firstCompletedAt ? date(badge.firstCompletedAt) : t("never")}</Fact>
       {badge.completions > 1 && badge.lastCompletedAt && (

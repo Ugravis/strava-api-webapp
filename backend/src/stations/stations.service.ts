@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import type { SportType } from '../activities/sport-type';
 import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
 
 const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
@@ -10,6 +11,15 @@ const LINK_SIMPLIFY_DEG = 0.00002;
 const STATIONS_LAYER = 'stations';
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
+
+/** Stations first visited during an activity. */
+export interface StationVisits {
+  id: string;
+  name: string;
+  sportType: SportType;
+  startedAt: Date;
+  value: number;
+}
 
 /** A station whose small tile the user visited. */
 export interface VisitedStation {
@@ -91,6 +101,30 @@ const VISITED_STATIONS = `SELECT p.id, p.name, p.geom, p.x, p.y, p.bit FROM user
 @Injectable()
 export class StationsService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+
+  /**
+   * The stations visited by the user, counted on the activity that first
+   * visited them: one row per activity bringing at least one, oldest first.
+   */
+  visitTimeline(userId: string): Promise<StationVisits[]> {
+    return this.dataSource.query(
+      `WITH visited AS (${VISITED_STATIONS}),
+       first_visits AS (
+         SELECT DISTINCT ON (v.id) v.id, f.activity_id
+         FROM visited v
+         JOIN tile_first_visits f ON f.user_id = $1 AND f.x = v.x AND f.y = v.y
+           AND f.mask & (1::bigint << v.bit) <> 0
+         ORDER BY v.id, f.visited_at
+       )
+       SELECT a.id, a.name, a.sport_type AS "sportType",
+         a.started_at AS "startedAt", count(*)::int AS value
+       FROM first_visits fv
+       JOIN activities a ON a.id = fv.activity_id
+       GROUP BY a.id
+       ORDER BY a.started_at, a.id`,
+      [userId],
+    );
+  }
 
   /** Stations visited by the user, with their first visit, and the links between them. */
   async visited(userId: string): Promise<VisitedStations> {

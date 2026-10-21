@@ -1,4 +1,5 @@
 import { AwardIcon, FlagIcon, MilestoneIcon, MountainIcon, TimerIcon, type LucideIcon } from "lucide-react";
+import type { BadgeMetric } from "@/lib/api/types";
 import { routes } from "./routes";
 
 /** First-level tabs of the achievements page, in display order. New badge kinds only need a tab declared here. */
@@ -31,7 +32,11 @@ export function achievementTabHref(tab: AchievementTab): string {
   return tab === DEFAULT_ACHIEVEMENT_TAB ? routes.distances : `${routes.distances}?${TAB_PARAM}=${tab}`;
 }
 
-/** Whether the distance badges, and their favorites, belong to `tab`. */
-export function showsDistanceBadges(tab: AchievementTab): boolean {
-  return tab === "all" || tab === "distance";
-}
+/** Metrics of the badges each tab shows, in display order. */
+export const ACHIEVEMENT_TAB_METRICS: Record<AchievementTab, readonly BadgeMetric[]> = {
+  all: ["distance", "time", "elevation", "activities", "active_days", "tiles", "subtiles", "stations"],
+  challenges: ["activities", "active_days", "tiles", "subtiles", "stations"],
+  distance: ["distance"],
+  time: ["time"],
+  elevation: ["elevation"],
+};

@@ -1,7 +1,7 @@
 "use client";
 
 import { StarIcon, StarOffIcon, XIcon } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import type { DistanceBadge } from "@/lib/api/types";
 import { BadgeBanner } from "./badge-banner";
 import { BadgeFacts } from "./badge-facts";
 import { BadgeHistory } from "./badge-history";
+import { useAmount } from "./use-amount";
 import { BadgeProgressBar } from "./badge-progress-bar";
 import { FamilyIcon } from "./family-icon";
 
@@ -54,7 +55,7 @@ function BadgeDialogBody({
   onFavoriteChange,
 }: Pick<BadgeDialogProps, "onFavoriteChange"> & { badge: DistanceBadge }) {
   const t = useTranslations("distances");
-  const format = useFormatter();
+  const amount = useAmount();
   const { details, error } = useBadgeDetails(badge.id);
   const [pending, setPending] = useState(false);
   const favorite = badge.favoritePosition !== null;
@@ -89,7 +90,7 @@ function BadgeDialogBody({
               {t(`families.${badge.family}`)}
             </Badge>
             <Badge variant="outline" className="tabular-nums">
-              {format.number(badge.distanceM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 1 })}
+              {amount(badge.metric, badge.goal)}
             </Badge>
           </div>
           <DialogTitle className="text-lg">{badge.name}</DialogTitle>

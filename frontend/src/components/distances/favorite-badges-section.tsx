@@ -67,7 +67,7 @@ export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId
       ) : editing ? (
         <>
           <p className="text-xs text-muted-foreground">{t("reorderHint")}</p>
-          <SortableFavorites badges={badges} onReorder={reorder} />
+          <SortableFavorites badges={badges} layout={compact ? "compact" : "vertical"} onReorder={reorder} />
         </>
       ) : (
         <BadgeGrid

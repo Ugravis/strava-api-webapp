@@ -1,11 +1,13 @@
 "use client";
 
-import { StarIcon } from "lucide-react";
+import { StarIcon, UserRoundIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
+import { achievementKindOf } from "@/config/achievement-tabs";
 import type { DistanceBadge } from "@/lib/api/types";
 import { lightTextOn } from "@/lib/badge-sort";
 import { cn } from "@/lib/utils";
+import { BadgeKindIcon } from "./badge-kind-icon";
 import { BadgeLabel } from "./badge-label";
 import { BadgeMedal, type BadgeMedalProps } from "./badge-medal";
 import { BadgeMiniBar } from "./badge-mini-bar";
@@ -34,9 +36,12 @@ export function badgeCardSurface(badge: DistanceBadge): { className: string; sty
 export function BadgeCardContent({
   badge,
   layout,
+  showKind,
   ...medal
-}: Omit<BadgeMedalProps, "className"> & { layout: BadgeCardLayout }) {
-  if (layout === "compact") return <CompactBadgeContent badge={badge} showFavorite={medal.showFavorite} />;
+}: Omit<BadgeMedalProps, "className"> & { layout: BadgeCardLayout; showKind?: boolean }) {
+  if (layout === "compact") {
+    return <CompactBadgeContent badge={badge} showFavorite={medal.showFavorite} showKind={showKind} />;
+  }
   const horizontal = layout === "horizontal";
   return (
     <>
@@ -53,13 +58,22 @@ export function BadgeCardContent({
         withFamily={medal.showFamily}
         align={horizontal ? "start" : "center"}
         onBackground={badge.background !== null}
+        showKind={showKind}
       />
     </>
   );
 }
 
 /** Name, progress bar, share and target of a badge, with its completions or level and its favorite mark. */
-function CompactBadgeContent({ badge, showFavorite }: { badge: DistanceBadge; showFavorite?: boolean }) {
+function CompactBadgeContent({
+  badge,
+  showFavorite,
+  showKind,
+}: {
+  badge: DistanceBadge;
+  showFavorite?: boolean;
+  showKind?: boolean;
+}) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const amount = useAmount();
@@ -77,6 +91,16 @@ function CompactBadgeContent({ badge, showFavorite }: { badge: DistanceBadge; sh
     <span className="flex w-full min-w-0 flex-col gap-1.5 text-left">
       <span className="flex min-w-0 items-center gap-1">
         <span className="min-w-0 flex-1 truncate text-xs font-medium">{badge.name}</span>
+        {showKind && (
+          <span className={cn(pill, "px-1")} aria-hidden>
+            <BadgeKindIcon metric={badge.metric} className="size-2.5" />
+          </span>
+        )}
+        {badge.onProfile && (
+          <span className={cn(pill, "px-1")} aria-hidden>
+            <UserRoundIcon className="size-2.5" />
+          </span>
+        )}
         {badge.completions > 0 && (
           <span className={pill} aria-hidden>
             {badge.tiers ? t("level", { level: badge.completions }) : `×${format.number(badge.completions)}`}
@@ -95,8 +119,10 @@ function CompactBadgeContent({ badge, showFavorite }: { badge: DistanceBadge; sh
         {amount(badge.metric, badge.goal)}
       </span>
       <span className="sr-only">
+        {showKind && `${t(`tabs.${achievementKindOf(badge.metric)}`)}, `}
         {badge.tiers ? t("level", { level: badge.completions }) : t("completions", { count: badge.completions })}
         {favorite && `, ${t("favorite")}`}
+        {badge.onProfile && `, ${t("onProfile")}`}
       </span>
     </span>
   );
@@ -118,6 +144,8 @@ interface BadgeCardProps extends Omit<BadgeMedalProps, "className"> {
   anchor?: boolean;
   /** Classes of the list item, e.g. its width in a row. */
   className?: string;
+  /** Marks the kind of badge (challenge, distance…), where kinds mix. */
+  showKind?: boolean;
 }
 
 /** A badge in its card, with its name and progress, opening its details. */

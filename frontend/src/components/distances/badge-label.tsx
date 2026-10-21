@@ -1,7 +1,9 @@
 import { useFormatter, useTranslations } from "next-intl";
+import { achievementKindOf } from "@/config/achievement-tabs";
 import { useAmount } from "./use-amount";
 import type { DistanceBadge } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { BadgeKindIcon } from "./badge-kind-icon";
 import { progressTier } from "./progress-tier";
 
 interface BadgeLabelProps {
@@ -12,10 +14,12 @@ interface BadgeLabelProps {
   align?: "center" | "start";
   /** On a background of its own: the text takes its color, set by the card. */
   onBackground?: boolean;
+  /** Marks the kind of badge (challenge, distance…), where kinds mix. */
+  showKind?: boolean;
 }
 
 /** Name of a badge, its progress and its target, under or beside its medal. */
-export function BadgeLabel({ badge, withFamily, align = "center", onBackground }: BadgeLabelProps) {
+export function BadgeLabel({ badge, withFamily, align = "center", onBackground, showKind }: BadgeLabelProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const amount = useAmount();
@@ -34,14 +38,17 @@ export function BadgeLabel({ badge, withFamily, align = "center", onBackground }
           onBackground ? "opacity-80" : "text-muted-foreground",
         )}
       >
+        {showKind && <BadgeKindIcon metric={badge.metric} className="mr-1 inline size-3 align-[-2px]" />}
         <span className={cn("font-medium", onBackground ? "font-semibold" : tier.text)}>{percent}</span>
         {" · "}
         {amount(badge.metric, badge.goal)}
       </span>
       <span className="sr-only">
+        {showKind && `${t(`tabs.${achievementKindOf(badge.metric)}`)}, `}
         {withFamily && `${t(`families.${badge.family}`)}, `}
         {badge.tiers ? t("level", { level: badge.completions }) : t("completions", { count: badge.completions })}
         {badge.favoritePosition !== null && `, ${t("favorite")}`}
+        {badge.onProfile && `, ${t("onProfile")}`}
       </span>
     </span>
   );

@@ -63,7 +63,7 @@ export interface ActivityStats {
 }
 
 /** Groups of sports compared to landmarks; `all` counts every activity. */
-export type DistanceFamily = "all" | "run" | "hike" | "ride";
+export type DistanceFamily = "all" | "run" | "hike" | "ride" | "swim";
 
 /** A theme gathering badges across families, e.g. astronomy. */
 export interface BadgeTheme {

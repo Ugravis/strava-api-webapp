@@ -19,6 +19,8 @@ interface DistanceFamilySectionProps {
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   highlightedId: string | null;
+  /** Marks the kind of each badge, where kinds mix. */
+  showKind: boolean;
 }
 
 /** Rows shown while folded, whatever the width. */

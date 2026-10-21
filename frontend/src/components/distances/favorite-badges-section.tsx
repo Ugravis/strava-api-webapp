@@ -17,10 +17,12 @@ interface FavoriteBadgesSectionProps {
   highlightedId: string | null;
   /** Cards with the name only. */
   compact: boolean;
+  /** Marks the kind of each badge, where kinds mix. */
+  showKind: boolean;
 }
 
 /** The favorite badges of the user, first on the page and in the order they choose, on a single row while folded. */
-export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId, compact }: FavoriteBadgesSectionProps) {
+export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId, compact, showKind }: FavoriteBadgesSectionProps) {
   const t = useTranslations("distances.favoritesSection");
   const [reordering, setReordering] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -76,6 +78,7 @@ export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId
           expanded={expanded}
           onExpandedChange={setExpanded}
           showFamily
+          showKind={showKind}
           highlightedId={highlightedId}
         />
       )}

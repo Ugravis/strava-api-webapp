@@ -291,7 +291,8 @@
       "all": "Tous sports",
       "run": "Course à pied",
       "hike": "Randonnée et marche",
-      "ride": "Vélo"
+      "ride": "Vélo",
+      "swim": "Natation"
     },
     "favorite": "favori",
     "favoritesSection": {
@@ -425,7 +426,8 @@
       "rollHint": "Lance le dé",
       "closestNew": "Prochain inédit",
       "closestNone": "Aucun badge en cours."
-    }
+    },
+    "onProfile": "affiché sur le profil"
   },
   "map": {
     "title": "Carte",

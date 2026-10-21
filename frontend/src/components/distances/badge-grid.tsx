@@ -28,6 +28,8 @@ interface BadgeGridProps {
   onExpandedChange: (expanded: boolean) => void;
   showFavorite?: boolean;
   showFamily?: boolean;
+  /** Marks the kind of each badge, where kinds mix. */
+  showKind?: boolean;
   /** Badge outlined, if any. */
   highlightedId?: string | null;
   /** Marks the badges as those the search scrolls to. */
@@ -44,6 +46,7 @@ export function BadgeGrid({
   onExpandedChange,
   showFavorite,
   showFamily,
+  showKind,
   highlightedId,
   anchors,
 }: BadgeGridProps) {
@@ -65,6 +68,7 @@ export function BadgeGrid({
             index={index}
             showFavorite={showFavorite}
             showFamily={showFamily}
+            showKind={showKind}
             highlighted={badge.id === highlightedId}
             anchor={anchors}
             onOpen={onOpen}

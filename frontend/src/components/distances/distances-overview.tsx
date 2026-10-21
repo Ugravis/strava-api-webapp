@@ -22,7 +22,7 @@ import { FavoriteBadgesSection } from "./favorite-badges-section";
 import { ALL_THEMES, ThemeTabs } from "./theme-tabs";
 
 /** Display order of the families. */
-const FAMILIES: DistanceFamily[] = ["all", "run", "hike", "ride"];
+const FAMILIES: DistanceFamily[] = ["all", "run", "hike", "ride", "swim"];
 
 /** Display order of the sections: the families of sports, then the challenges. */
 const SECTIONS: SectionKind[] = [...FAMILIES, "challenges"];
@@ -153,6 +153,7 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
       <AchievementsHeader
         // A badge drawn in a tab is not kept in another one.
         key={tab}
+        showKind={tab === "all"}
         headlines={ACHIEVEMENT_TAB_HEADLINES[tab]} totals={overview.totals} badges={tabBadges} onOpen={openBadge} />
       <div className="flex flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
         <div className="flex gap-2">
@@ -180,6 +181,7 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
           onReorder={reorderFavorites}
           highlightedId={highlightedId}
           compact={compact}
+          showKind={tab === "all"}
         />
       )}
       {SECTIONS.map((kind) => {
@@ -192,6 +194,7 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
               totals={totalsOf(kind)}
               badges={badges}
               compact={compact}
+              showKind={tab === "all"}
               onOpen={openBadge}
               expanded={expanded.has(kind)}
               onExpandedChange={(open) =>

@@ -16,7 +16,7 @@ import { progressTier } from "./progress-tier";
 import { useAmount } from "./use-amount";
 
 /** Sports detailed under the total of a tab counting a single metric. */
-const SPORTS: DistanceFamily[] = ["run", "hike", "ride"];
+const SPORTS: DistanceFamily[] = ["run", "hike", "ride", "swim"];
 
 /** Badges of each list of the carousel. */
 const CAROUSEL_SIZE = 10;
@@ -27,6 +27,8 @@ const CAROUSEL_LISTS = ["closest", "recent"] as const;
 type CarouselList = (typeof CAROUSEL_LISTS)[number];
 
 interface AchievementsHeaderProps {
+  /** Marks the kind of the badges of the carousel, where kinds mix. */
+  showKind: boolean;
   /** Metrics of the main widget, at most four. */
   headlines: readonly BadgeMetric[];
   totals: DistancesOverview["totals"];
@@ -50,7 +52,7 @@ const SQUARE = "aspect-square min-w-0 rounded-xl";
  * Header of the achievements page: the main totals of the tab, a badge drawn
  * at random and the badge closest to completion, then a carousel.
  */
-export function AchievementsHeader({ headlines, totals, badges, onOpen }: AchievementsHeaderProps) {
+export function AchievementsHeader({ showKind, headlines, totals, badges, onOpen }: AchievementsHeaderProps) {
   const t = useTranslations("distances.header");
 
   return (
@@ -63,7 +65,7 @@ export function AchievementsHeader({ headlines, totals, badges, onOpen }: Achiev
         <RandomBadgeWidget badges={badges} onOpen={onOpen} />
         <ClosestBadgeWidget badges={badges} onOpen={onOpen} />
       </div>
-      {badges.length > 0 && <BadgeCarousel badges={badges} onOpen={onOpen} />}
+      {badges.length > 0 && <BadgeCarousel badges={badges} showKind={showKind} onOpen={onOpen} />}
     </section>
   );
 }
@@ -277,7 +279,15 @@ function ClosestBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpe
 }
 
 /** Badges nearly obtained or new to the catalog, as cards scrolled sideways. */
-function BadgeCarousel({ badges, onOpen }: { badges: DistanceBadge[]; onOpen: (badgeId: string) => void }) {
+function BadgeCarousel({
+  badges,
+  showKind,
+  onOpen,
+}: {
+  badges: DistanceBadge[];
+  showKind: boolean;
+  onOpen: (badgeId: string) => void;
+}) {
   const t = useTranslations("distances.header");
   const [list, setList] = useState<CarouselList>("closest");
   const track = useRef<HTMLUListElement>(null);
@@ -312,6 +322,7 @@ function BadgeCarousel({ badges, onOpen }: { badges: DistanceBadge[]; onOpen: (b
             layout="vertical"
             index={index}
             showFavorite
+            showKind={showKind}
             onOpen={onOpen}
             className="w-32 shrink-0 snap-start sm:w-36"
           />

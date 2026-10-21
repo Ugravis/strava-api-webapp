@@ -18,6 +18,13 @@ export const ACHIEVEMENT_TAB_ICONS: Record<AchievementTab, LucideIcon> = {
   elevation: MountainIcon,
 };
 
+/** The tab of a single kind a badge belongs to: its metric, or the challenges. */
+export function achievementKindOf(metric: BadgeMetric): Exclude<AchievementTab, "all"> {
+  return ACHIEVEMENT_KINDS.find((tab) => ACHIEVEMENT_TAB_METRICS[tab].includes(metric)) ?? "challenges";
+}
+
+const ACHIEVEMENT_KINDS = ["challenges", "distance", "time", "elevation"] as const;
+
 /** Search parameter keeping the tab in the address. */
 const TAB_PARAM = "tab";
 

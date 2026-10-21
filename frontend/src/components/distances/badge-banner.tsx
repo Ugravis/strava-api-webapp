@@ -10,6 +10,7 @@ const FAMILY_GRADIENTS: Record<DistanceFamily, string> = {
   run: "from-orange-400 to-rose-600",
   hike: "from-emerald-400 to-teal-700",
   ride: "from-sky-400 to-blue-700",
+  swim: "from-cyan-400 to-indigo-600",
 };
 
 /** Concentric circles behind the icon. */

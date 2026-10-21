@@ -148,7 +148,11 @@ function BadgeDialogBody({
           disabled={pending === "favorite"}
           aria-pressed={favorite}
         >
-          {favorite ? <StarOffIcon data-icon="inline-start" /> : <StarIcon data-icon="inline-start" />}
+          {favorite ? (
+            <StarOffIcon data-icon="inline-start" className="text-amber-500" />
+          ) : (
+            <StarIcon data-icon="inline-start" className="fill-amber-400 text-amber-400" />
+          )}
           {favorite ? t("dialog.removeFavorite") : t("dialog.addFavorite")}
         </Button>
       </DialogFooter>

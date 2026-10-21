@@ -327,7 +327,7 @@
         "estimateHint": "Estimation selon ton rythme des 90 derniers jours",
         "noRecentActivity": "Aucune activité depuis 90 jours",
         "unavailable": "Indisponible",
-        "tierReached": "Palier atteint",
+        "tierReached": "Niveau atteint",
         "tierValue": "{level, plural, =0 {Aucun} other {# sur {total}}}",
         "done": "Terminé"
       },
@@ -342,11 +342,11 @@
       "addFavorite": "Ajouter aux favoris",
       "removeFavorite": "Retirer des favoris",
       "favoriteError": "Impossible de modifier tes favoris pour le moment.",
-      "tier": "Palier {number} sur {total}",
-      "lastTier": "Dernier palier atteint",
+      "tier": "Niveau {number} sur {total}",
+      "lastTier": "Dernier niveau atteint",
       "tiers": {
-        "title": "Paliers",
-        "tier": "Palier {number}",
+        "title": "Niveaux",
+        "tier": "Niveau {number}",
         "reached": "atteint",
         "locked": "pas encore atteint"
       },

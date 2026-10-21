@@ -56,7 +56,7 @@ function NavEntry({ item }: { item: NavigationItem }) {
     <SidebarMenuItem
       className={cn(
         QuickAccess && "rounded-md transition-colors",
-        QuickAccess && (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group focus-within:bg-sidebar-group"),
+        QuickAccess && (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group hover:delay-500 focus-within:bg-sidebar-group"),
       )}
     >
       <SidebarMenuButton
@@ -80,7 +80,7 @@ function NavEntry({ item }: { item: NavigationItem }) {
             "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
             unfolded
               ? "grid-rows-[1fr]"
-              : "grid-rows-[0fr] group-focus-within/menu-item:grid-rows-[1fr] group-hover/menu-item:grid-rows-[1fr] group-hover/menu-item:delay-150",
+              : "grid-rows-[0fr] group-focus-within/menu-item:grid-rows-[1fr] group-hover/menu-item:grid-rows-[1fr] group-hover/menu-item:delay-500",
           )}
         >
           <div className="min-h-0 overflow-hidden">

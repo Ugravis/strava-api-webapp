@@ -50,8 +50,7 @@
 }
 
 :root {
-  /* Light warm grey, for the white cards to stand out. */
-  --background: oklch(0.965 0.004 95);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);

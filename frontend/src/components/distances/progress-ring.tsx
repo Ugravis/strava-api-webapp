@@ -18,7 +18,7 @@ interface ProgressRingProps {
 }
 
 const RADIUS = 46;
-const STROKE_WIDTH = 7;
+const STROKE_WIDTH = 8;
 
 /** Circular progress bar drawn around its content, filling up from zero when it appears. */
 export function ProgressRing({

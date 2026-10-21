@@ -5,9 +5,10 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DistanceBadge } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
 import { BadgeGrid } from "./badge-grid";
-import type { BadgeView } from "./badge-view";
 import { SortableFavorites } from "./sortable-favorites";
 
 interface FavoriteBadgesSectionProps {
@@ -15,15 +16,14 @@ interface FavoriteBadgesSectionProps {
   badges: DistanceBadge[];
   onOpen: (badgeId: string) => void;
   onReorder: (badgeIds: string[]) => Promise<void>;
-  view: BadgeView;
   highlightedId: string | null;
 }
 
 /** A single row of favorites while folded, whatever the width. */
-const FOLDED_ROWS = { base: 1, sm: 1, md: 1, lg: 1, xl: 1 } as const;
+const FOLDED_ROWS = { 3: 1, 4: 1, 6: 1 } as const;
 
 /** The favorite badges of the user, first on the page and in the order they choose. */
-export function FavoriteBadgesSection({ badges, onOpen, onReorder, view, highlightedId }: FavoriteBadgesSectionProps) {
+export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId }: FavoriteBadgesSectionProps) {
   const t = useTranslations("distances.favoritesSection");
   const [reordering, setReordering] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -31,62 +31,71 @@ export function FavoriteBadgesSection({ badges, onOpen, onReorder, view, highlig
   const empty = badges.length === 0;
   // A single badge has no order to choose.
   const editing = reordering && badges.length > 1;
-  // Cards stand upright here, unlike in the families.
-  const layout = view === "cards" ? "tile" : "compact";
 
   const reorder = (badgeIds: string[]) => {
     onReorder(badgeIds).catch(() => toast.error(t("reorderError")));
   };
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <div className="flex min-h-7 items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span className="grid size-6 place-items-center rounded-full bg-amber-500 text-white" aria-hidden>
-            <StarIcon className="size-3 fill-current" />
-          </span>
-          <h2 id={headingId} className="text-base font-semibold">
-            {t("title")}
-          </h2>
-          {!empty && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {badges.length}
-            </span>
-          )}
-        </div>
-        {badges.length > 1 && (
-          <Button
-            variant={editing ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setReordering(!editing)}
-            aria-pressed={editing}
-          >
-            {editing ? <CheckIcon data-icon="inline-start" /> : <ArrowUpDownIcon data-icon="inline-start" />}
-            {editing ? t("done") : t("reorder")}
-          </Button>
+    <section aria-labelledby={headingId}>
+      <Card
+        className={cn(
+          empty
+            ? "border border-dashed border-amber-500/40 bg-amber-50/40 ring-0 dark:bg-amber-500/5"
+            : // Strong in the top left corner, faint in the bottom right one.
+            "bg-linear-to-br from-amber-100/80 via-card via-55% to-amber-50 ring-amber-500/30 dark:from-amber-500/15 dark:to-amber-500/5",
         )}
-      </div>
-      {empty ? (
-        <p className="rounded-xl border border-dashed border-amber-500/40 bg-amber-50/40 p-4 text-sm text-muted-foreground dark:bg-amber-500/5">
-          {t("empty")}
-        </p>
-      ) : editing ? (
-        <>
-          <p className="text-xs text-muted-foreground">{t("reorderHint")}</p>
-          <SortableFavorites badges={badges} onReorder={reorder} layout={layout} />
-        </>
-      ) : (
-        <BadgeGrid
-          badges={badges}
-          onOpen={onOpen}
-          layout={layout}
-          rows={FOLDED_ROWS}
-          expanded={expanded}
-          onExpandedChange={setExpanded}
-          showFamily
-          highlightedId={highlightedId}
-        />
-      )}
+      >
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2.5">
+            <span className="grid size-7 place-items-center rounded-full bg-amber-500 text-white shadow-sm" aria-hidden>
+              <StarIcon className="size-3.5 fill-current" />
+            </span>
+            <h2 id={headingId} className="text-base font-semibold">
+              {t("title")}
+            </h2>
+            {!empty && (
+              <span className="rounded-full bg-amber-500/15 px-2 text-xs font-medium text-amber-700 tabular-nums dark:text-amber-300">
+                {badges.length}
+              </span>
+            )}
+          </CardTitle>
+          {empty && <CardDescription>{t("empty")}</CardDescription>}
+          {badges.length > 1 && (
+            <CardAction>
+              <Button
+                variant={editing ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setReordering(!editing)}
+                aria-pressed={editing}
+              >
+                {editing ? <CheckIcon data-icon="inline-start" /> : <ArrowUpDownIcon data-icon="inline-start" />}
+                {editing ? t("done") : t("reorder")}
+              </Button>
+            </CardAction>
+          )}
+        </CardHeader>
+        {!empty && (
+          <CardContent className="flex flex-col gap-3">
+            {editing ? (
+              <>
+                <p className="text-xs text-muted-foreground">{t("reorderHint")}</p>
+                <SortableFavorites badges={badges} onReorder={reorder} />
+              </>
+            ) : (
+              <BadgeGrid
+                badges={badges}
+                onOpen={onOpen}
+                rows={FOLDED_ROWS}
+                expanded={expanded}
+                onExpandedChange={setExpanded}
+                showFamily
+                highlightedId={highlightedId}
+              />
+            )}
+          </CardContent>
+        )}
+      </Card>
     </section>
   );
 }

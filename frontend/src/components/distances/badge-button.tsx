@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { BADGE_CARD_CLASS, BADGE_LAYOUT_CLASS, BadgeCardContent, type BadgeCardContentProps } from "./badge-card-content";
+import { BadgeLabel } from "./badge-label";
+import { BadgeMedal, type BadgeMedalProps } from "./badge-medal";
 
-interface BadgeButtonProps extends BadgeCardContentProps {
+interface BadgeButtonProps extends Omit<BadgeMedalProps, "className"> {
   onOpen: (badgeId: string) => void;
   /** Outlines the badge, e.g. once found by the search. */
   highlighted?: boolean;
@@ -11,22 +12,25 @@ interface BadgeButtonProps extends BadgeCardContentProps {
   anchor?: boolean;
 }
 
-/** A badge card, opening its details. */
-export function BadgeButton({ badge, onOpen, highlighted, anchor, ...content }: BadgeButtonProps) {
+/** A badge with its name and progress, opening its details. */
+export function BadgeButton({ badge, onOpen, highlighted, anchor, ...medal }: BadgeButtonProps) {
   return (
-    <li className="flex flex-col" data-badge-anchor={anchor ? badge.id : undefined}>
+    <li className="flex flex-col items-center" data-badge-anchor={anchor ? badge.id : undefined}>
       <button
         type="button"
         onClick={() => onOpen(badge.id)}
         aria-haspopup="dialog"
         className={cn(
-          "group flex h-full w-full outline-none transition-[background-color,box-shadow] duration-700 hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50",
-          BADGE_CARD_CLASS,
-          BADGE_LAYOUT_CLASS[content.layout],
+          "group flex w-full flex-col items-center gap-1.5 rounded-lg p-1 outline-none transition-[background-color,box-shadow] duration-700 focus-visible:ring-3 focus-visible:ring-ring/50",
           highlighted && "bg-primary/10 ring-2 ring-primary",
         )}
       >
-        <BadgeCardContent badge={badge} {...content} />
+        <BadgeMedal
+          badge={badge}
+          {...medal}
+          className="transition-transform group-hover:scale-105 group-active:scale-95 motion-reduce:transition-none"
+        />
+        <BadgeLabel badge={badge} withFamily={medal.showFamily} />
       </button>
     </li>
   );

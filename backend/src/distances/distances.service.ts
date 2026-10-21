@@ -22,15 +22,39 @@ import {
 import { favoriteOrder } from './favorite-order';
 import { activityEvents, isActivityMetric } from './metric-events';
 import { UserFavoriteBadge } from './user-favorite-badge.entity';
+import { UserProfileBadge } from './user-profile-badge.entity';
+
+/** Background of a badge card: a color or an image. */
+export type BadgeBackground =
+  { kind: 'color'; color: string } | { kind: 'image'; url: string };
 
 export type BadgeView = Omit<
   Badge,
-  'createdAt' | 'position' | 'theme' | 'target'
+  | 'createdAt'
+  | 'position'
+  | 'theme'
+  | 'target'
+  | 'backgroundColor'
+  | 'backgroundImage'
 > &
   BadgeProgress & {
+    /** Background of the card; null for the default one. */
+    background: BadgeBackground | null;
+    /** When the badge joined the catalog. */
+    addedAt: Date;
     /** Rank among the favorites, from 1; null when not a favorite. */
     favoritePosition: number | null;
+    /** Whether the user shows the badge on their profile. */
+    onProfile: boolean;
   };
+
+function backgroundOf(badge: Badge): BadgeBackground | null {
+  if (badge.backgroundColor)
+    return { kind: 'color', color: badge.backgroundColor };
+  if (badge.backgroundImage)
+    return { kind: 'image', url: badge.backgroundImage };
+  return null;
+}
 
 type MetricTimelines = Record<
   BadgeMetric,
@@ -53,9 +77,12 @@ export interface BadgeDetails extends BadgeView {
   remaining: number;
   /** At the recent pace of the family; null without recent activity. */
   estimatedNextAt: Date | null;
-  /** Every completed iteration, the latest first. */
+  /** First completed iterations, the latest first; the others are paged by `history`. */
   history: BadgeCompletion[];
 }
+
+/** Completions sent at once, in the details and in each page of the history. */
+export const HISTORY_PAGE_SIZE = 20;
 
 /** Badges of known amounts, compared to the cumulated amounts of a user. */
 @Injectable()
@@ -68,16 +95,21 @@ export class DistancesService {
     private readonly themes: Repository<BadgeTheme>,
     @InjectRepository(UserFavoriteBadge)
     private readonly favorites: Repository<UserFavoriteBadge>,
+    @InjectRepository(UserProfileBadge)
+    private readonly profileBadges: Repository<UserProfileBadge>,
     private readonly dataSource: DataSource,
   ) {}
 
   async overview(userId: string): Promise<DistancesOverview> {
-    const [badges, themes, favorites, timelines] = await Promise.all([
-      this.badges.find({ order: { position: 'ASC', id: 'ASC' } }),
-      this.themes.find({ order: { position: 'ASC', id: 'ASC' } }),
-      this.favoritePositions(userId),
-      this.timelines(userId),
-    ]);
+    const [badges, themes, favorites, onProfile, timelines] = await Promise.all(
+      [
+        this.badges.find({ order: { position: 'ASC', id: 'ASC' } }),
+        this.themes.find({ order: { position: 'ASC', id: 'ASC' } }),
+        this.favoritePositions(userId),
+        this.profileBadgeIds(userId),
+        this.timelines(userId),
+      ],
+    );
     const usedThemes = new Set(badges.map((badge) => badge.themeId));
     return {
       totals: Object.fromEntries(
@@ -99,26 +131,52 @@ export class DistancesService {
           badge,
           timelines[badge.metric][badge.family],
           favorites.get(badge.id) ?? null,
+          onProfile.has(badge.id),
         ),
       ),
     };
   }
 
   async details(userId: string, badgeId: string): Promise<BadgeDetails> {
-    const [badge, favorites, timelines] = await Promise.all([
+    const [badge, favorites, onProfile, timelines] = await Promise.all([
       this.findBadge(badgeId),
       this.favoritePositions(userId),
+      this.profileBadgeIds(userId),
       this.timelines(userId),
     ]);
     const timeline = timelines[badge.metric][badge.family];
-    const view = this.view(badge, timeline, favorites.get(badge.id) ?? null);
+    const view = this.view(
+      badge,
+      timeline,
+      favorites.get(badge.id) ?? null,
+      onProfile.has(badge.id),
+    );
     return {
       ...view,
       familyTotal: timelineTotal(timeline),
       remaining: Math.max(0, view.goal - view.covered),
       estimatedNextAt: estimatedNextCompletion(badge, timeline, new Date()),
-      history: badgeCompletions(badge, timeline),
+      history: badgeCompletions(badge, timeline, {
+        offset: 0,
+        limit: HISTORY_PAGE_SIZE,
+      }),
     };
+  }
+
+  /** A page of the completions of a badge, the latest first, from `offset`. */
+  async history(
+    userId: string,
+    badgeId: string,
+    offset: number,
+  ): Promise<BadgeCompletion[]> {
+    const [badge, timelines] = await Promise.all([
+      this.findBadge(badgeId),
+      this.timelines(userId),
+    ]);
+    return badgeCompletions(badge, timelines[badge.metric][badge.family], {
+      offset,
+      limit: HISTORY_PAGE_SIZE,
+    });
   }
 
   /** Adds a badge to the favorites, last; adding it again keeps its rank. */
@@ -135,6 +193,21 @@ export class DistancesService {
 
   async removeFavorite(userId: string, badgeId: string): Promise<void> {
     await this.favorites.delete({ userId, badgeId });
+  }
+
+  /** Shows a badge on the profile of the user; showing it again changes nothing. */
+  async addToProfile(userId: string, badgeId: string): Promise<void> {
+    await this.findBadge(badgeId);
+    await this.profileBadges
+      .createQueryBuilder()
+      .insert()
+      .values({ userId, badgeId })
+      .orIgnore()
+      .execute();
+  }
+
+  async removeFromProfile(userId: string, badgeId: string): Promise<void> {
+    await this.profileBadges.delete({ userId, badgeId });
   }
 
   /**
@@ -170,6 +243,15 @@ export class DistancesService {
   }
 
   /** Ranks of the favorite badges, from 1 without gaps. */
+  /** Badges shown on the profile of the user. */
+  private async profileBadgeIds(userId: string): Promise<Set<string>> {
+    const badges = await this.profileBadges.find({
+      where: { userId },
+      select: { badgeId: true },
+    });
+    return new Set(badges.map(({ badgeId }) => badgeId));
+  }
+
   private async favoritePositions(
     userId: string,
   ): Promise<Map<string, number>> {
@@ -219,6 +301,7 @@ export class DistancesService {
     badge: Badge,
     timeline: FamilyTimeline,
     favoritePosition: number | null,
+    onProfile: boolean,
   ): BadgeView {
     const { id, metric, family, tiers, name, description, icon, themeId } =
       badge;
@@ -231,8 +314,11 @@ export class DistancesService {
       description,
       icon,
       themeId,
+      background: backgroundOf(badge),
+      addedAt: badge.createdAt,
       ...badgeProgress(badge, timeline),
       favoritePosition,
+      onProfile,
     };
   }
 }

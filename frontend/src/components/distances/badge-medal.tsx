@@ -1,6 +1,6 @@
 "use client";
 
-import { StarIcon } from "lucide-react";
+import { StarIcon, UserRoundIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { DistanceBadge } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,11 @@ export function BadgeMedal({ badge, index, showFavorite, showFamily, className }
       {showFavorite && badge.favoritePosition !== null && (
         <span className={cn(corner, "-top-1 -left-1")} aria-hidden>
           <StarIcon className="size-3 fill-amber-400 text-amber-500" />
+        </span>
+      )}
+      {badge.onProfile && (
+        <span className={cn(corner, "-right-1 -bottom-0.5")} title={t("onProfile")} aria-hidden>
+          <UserRoundIcon className="size-3" />
         </span>
       )}
       {showFamily && (

@@ -63,7 +63,7 @@ export interface ActivityStats {
 }
 
 /** Groups of sports compared to landmarks; `all` counts every activity. */
-export type DistanceFamily = "all" | "run" | "hike" | "ride";
+export type DistanceFamily = "all" | "run" | "hike" | "ride" | "swim";
 
 /** A theme gathering badges across families, e.g. astronomy. */
 export interface BadgeTheme {
@@ -82,6 +82,9 @@ export type BadgeMetric =
   | "subtiles"
   | "stations";
 
+/** Background of a badge card: a color (`#rrggbb`) or an image. */
+export type BadgeBackground = { kind: "color"; color: string } | { kind: "image"; url: string };
+
 /** A known amount compared to the cumulated amount of a metric, with the progress of the user. */
 export interface DistanceBadge {
   id: string;
@@ -95,6 +98,10 @@ export interface DistanceBadge {
   icon: string;
   /** Theme of the badge, among those of the overview; null without theme. */
   themeId: string | null;
+  /** Background of its card; null for the default one. */
+  background: BadgeBackground | null;
+  /** When the badge joined the catalog. */
+  addedAt: string;
   /** Number of iterations completed, or of tiers reached. */
   completions: number;
   /** Share of the current iteration or of the way to the next tier, in [0, 1); 1 once the last tier is reached. */
@@ -109,6 +116,8 @@ export interface DistanceBadge {
   lastCompletedAt: string | null;
   /** Rank among the favorites, from 1; null when not a favorite. */
   favoritePosition: number | null;
+  /** Whether the user shows the badge on their profile. */
+  onProfile: boolean;
 }
 
 export interface DistancesOverview {
@@ -134,7 +143,7 @@ export interface DistanceBadgeDetails extends DistanceBadge {
   remaining: number;
   /** At the pace of the last 90 days; null without recent activity. */
   estimatedNextAt: string | null;
-  /** Every completed iteration, the latest first. */
+  /** First completed iterations, the latest first; the others come from the pages of the history. */
   history: BadgeCompletion[];
 }
 

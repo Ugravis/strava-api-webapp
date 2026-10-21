@@ -177,3 +177,26 @@
 .dark .maplibregl-map .maplibregl-ctrl-attrib-button {
   filter: invert(1);
 }
+
+/* Die rolled to draw a random badge. */
+@theme {
+  --animate-dice-roll: dice-roll 1s cubic-bezier(0.3, 0.7, 0.4, 1);
+
+  @keyframes dice-roll {
+    0% {
+      transform: rotate(0) scale(1);
+    }
+    20% {
+      transform: translateY(-14%) rotate(160deg) scale(1.1);
+    }
+    45% {
+      transform: translateY(4%) rotate(380deg) scale(0.95);
+    }
+    70% {
+      transform: translateY(-5%) rotate(560deg) scale(1.04);
+    }
+    100% {
+      transform: rotate(720deg) scale(1);
+    }
+  }
+}

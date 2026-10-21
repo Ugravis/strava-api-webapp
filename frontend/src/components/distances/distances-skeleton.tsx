@@ -1,25 +1,30 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function DistancesSkeleton() {
   return (
-    <div className="flex flex-col gap-4" aria-busy>
+    <div className="flex flex-col gap-6" aria-busy>
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-[13rem_13rem_minmax(0,1fr)]">
+          <Skeleton className="aspect-square rounded-xl" />
+          <Skeleton className="aspect-square rounded-xl" />
+          <Skeleton className="col-span-2 h-28 rounded-xl @2xl:col-span-1 @2xl:h-auto" />
+        </div>
+        <div className="flex gap-2 overflow-hidden">
+          {Array.from({ length: 6 }, (_, badge) => (
+            <Skeleton key={badge} className="h-32 w-32 shrink-0 rounded-xl sm:w-36" />
+          ))}
+        </div>
+      </div>
+      <Skeleton className="h-15 w-full rounded-xl" />
       {Array.from({ length: 2 }, (_, section) => (
-        <Card key={section}>
-          <CardHeader className="flex items-center justify-between gap-4">
-            <Skeleton className="h-5 w-36" />
-            <Skeleton className="h-4 w-24" />
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
-            {Array.from({ length: 3 }, (_, badge) => (
-              <div key={badge} className="flex flex-col items-center gap-1.5">
-                <Skeleton className="size-12 rounded-full sm:size-14" />
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-3 w-16" />
-              </div>
+        <div key={section} className="flex flex-col gap-3">
+          <Skeleton className="h-5 w-36" />
+          <div className="grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-4">
+            {Array.from({ length: 4 }, (_, badge) => (
+              <Skeleton key={badge} className="h-16 rounded-xl" />
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   );

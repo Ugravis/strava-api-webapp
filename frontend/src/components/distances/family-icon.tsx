@@ -1,12 +1,21 @@
-import { ActivityIcon, BackpackIcon, BikeIcon, FootprintsIcon, type LucideIcon, type LucideProps } from "lucide-react";
+import {
+  ActivityIcon,
+  BikeIcon,
+  FootprintsIcon,
+  type LucideIcon,
+  type LucideProps,
+  SportShoeIcon,
+  WavesIcon,
+} from "lucide-react";
 import { createElement } from "react";
 import type { DistanceFamily } from "@/lib/api/types";
 
 const FAMILY_ICONS: Record<DistanceFamily, LucideIcon> = {
   all: ActivityIcon,
-  run: FootprintsIcon,
-  hike: BackpackIcon,
+  run: SportShoeIcon,
+  hike: FootprintsIcon,
   ride: BikeIcon,
+  swim: WavesIcon,
 };
 
 /** Icon of a family of sports. */

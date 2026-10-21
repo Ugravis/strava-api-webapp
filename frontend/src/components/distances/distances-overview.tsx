@@ -2,24 +2,27 @@
 
 import { CircleAlertIcon, InfoIcon, RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
-import { ACHIEVEMENT_TAB_METRICS, type AchievementTab } from "@/config/achievement-tabs";
+import { ACHIEVEMENT_TAB_HEADLINES, ACHIEVEMENT_TAB_METRICS, type AchievementTab } from "@/config/achievement-tabs";
 import { favoriteBadges, useDistances } from "@/hooks/use-distances";
 import type { DistanceBadge, DistanceFamily } from "@/lib/api/types";
 import { CHALLENGE_METRICS } from "@/lib/badge-amount";
+import { type BadgeSort, sortBadges } from "@/lib/badge-sort";
+import { AchievementsHeader } from "./achievements-header";
 import { BadgeDialog } from "./badge-dialog";
 import { BadgeSearch } from "./badge-search";
+import { BadgeViewOptions, useCompactView } from "./badge-view-options";
 import { DistanceFamilySection, type SectionKind } from "./distance-family-section";
 import { DistancesSkeleton } from "./distances-skeleton";
 import { FavoriteBadgesSection } from "./favorite-badges-section";
 import { ALL_THEMES, ThemeTabs } from "./theme-tabs";
 
 /** Display order of the families. */
-const FAMILIES: DistanceFamily[] = ["all", "run", "hike", "ride"];
+const FAMILIES: DistanceFamily[] = ["all", "ride", "run", "hike", "swim"];
 
 /** Display order of the sections: the families of sports, then the challenges. */
 const SECTIONS: SectionKind[] = [...FAMILIES, "challenges"];
@@ -40,8 +43,11 @@ const anchorOf = (badgeId: string) =>
 
 export function DistancesOverview({ tab }: { tab: AchievementTab }) {
   const t = useTranslations("distances");
-  const { overview, error, refresh, setFavorite, reorderFavorites } = useDistances();
+  const locale = useLocale();
+  const { overview, error, refresh, setFavorite, reorderFavorites, setOnProfile } = useDistances();
   const [theme, setTheme] = useState(ALL_THEMES);
+  const [sort, setSort] = useState<BadgeSort>("default");
+  const [compact, setCompact] = useCompactView();
   const [expanded, setExpanded] = useState<ReadonlySet<SectionKind>>(new Set());
   // The badge stays set while the dialog closes, for its exit animation.
   const [openBadgeId, setOpenBadgeId] = useState<string | null>(null);
@@ -131,14 +137,31 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
   // A theme with no badge in this tab is not offered, and would otherwise filter everything out.
   const themes = overview.themes.filter((candidate) => tabBadges.some((badge) => badge.themeId === candidate.id));
   const activeTheme = themes.some((candidate) => candidate.id === theme) ? theme : ALL_THEMES;
-  const shown = activeTheme === ALL_THEMES ? tabBadges : tabBadges.filter((badge) => badge.themeId === activeTheme);
-  /** Where the tab counts a single metric, its total is shown in the sections of sports. */
-  const singleMetric = metrics.length === 1 ? metrics[0] : null;
+  const shown = sortBadges(
+    activeTheme === ALL_THEMES ? tabBadges : tabBadges.filter((badge) => badge.themeId === activeTheme),
+    sort,
+    locale,
+  );
+  /** Totals of the metrics a section counts, in the order of the tab. */
+  const totalsOf = (kind: SectionKind) =>
+    metrics
+      .filter((metric) => tabBadges.some((badge) => sectionOf(badge) === kind && badge.metric === metric))
+      .map((metric) => ({ metric, amount: overview.totals[metric][kind === "challenges" ? "all" : kind] }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
-        <BadgeSearch badges={tabBadges} onPick={pickSearched} />
+    <div className="flex flex-col gap-6">
+      <AchievementsHeader
+        // A badge drawn in a tab is not kept in another one.
+        key={tab}
+        showKind={tab === "all"}
+        headlines={ACHIEVEMENT_TAB_HEADLINES[tab]} totals={overview.totals} badges={tabBadges} onOpen={openBadge} />
+      <div className="flex flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+        <div className="flex gap-2">
+          <div className="min-w-0 flex-1">
+            <BadgeSearch badges={tabBadges} onPick={pickSearched} />
+          </div>
+          <BadgeViewOptions sort={sort} onSortChange={setSort} compact={compact} onCompactChange={setCompact} />
+        </div>
         {themes.length > 0 && <ThemeTabs themes={themes} value={activeTheme} onValueChange={setTheme} />}
       </div>
       {overview.totals.activities.all === 0 && (
@@ -157,6 +180,8 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
           onOpen={openBadge}
           onReorder={reorderFavorites}
           highlightedId={highlightedId}
+          compact={compact}
+          showKind={tab === "all"}
         />
       )}
       {SECTIONS.map((kind) => {
@@ -166,12 +191,10 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
             <DistanceFamilySection
               key={kind}
               kind={kind}
-              total={
-                singleMetric && kind !== "challenges"
-                  ? { metric: singleMetric, amount: overview.totals[singleMetric][kind] }
-                  : null
-              }
+              totals={totalsOf(kind)}
               badges={badges}
+              compact={compact}
+              showKind={tab === "all"}
               onOpen={openBadge}
               expanded={expanded.has(kind)}
               onExpandedChange={(open) =>
@@ -189,9 +212,11 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
       })}
       <BadgeDialog
         badge={overview.badges.find((badge) => badge.id === openBadgeId) ?? null}
+        themes={overview.themes}
         open={dialogOpen}
         onOpenChange={onDialogOpenChange}
         onFavoriteChange={setFavorite}
+        onProfileChange={setOnProfile}
         // Opened from the search, the focus goes back to the badge, not to the search field.
         finalFocus={
           highlightedId ? () => anchorOf(highlightedId)?.querySelector<HTMLElement>("button") ?? null : undefined

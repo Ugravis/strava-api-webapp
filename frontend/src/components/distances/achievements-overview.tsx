@@ -10,7 +10,8 @@ export function AchievementsOverview() {
   const tab = achievementTabOf(useSearchParams());
 
   return (
-    <div className="flex flex-col gap-4">
+    // The badge grids follow the width of the page, not of the window.
+    <div className="@container flex flex-col gap-4">
       <AchievementTabs value={tab} />
       <DistancesOverview tab={tab} />
     </div>

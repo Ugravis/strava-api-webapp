@@ -7,12 +7,18 @@ import { BadgeTheme } from './badge-theme.entity';
 import { DistancesController } from './distances.controller';
 import { DistancesService } from './distances.service';
 import { UserFavoriteBadge } from './user-favorite-badge.entity';
+import { UserProfileBadge } from './user-profile-badge.entity';
 
 @Module({
   imports: [
     ActivitiesModule,
     StationsModule,
-    TypeOrmModule.forFeature([Badge, BadgeTheme, UserFavoriteBadge]),
+    TypeOrmModule.forFeature([
+      Badge,
+      BadgeTheme,
+      UserFavoriteBadge,
+      UserProfileBadge,
+    ]),
   ],
   controllers: [DistancesController],
   providers: [DistancesService],

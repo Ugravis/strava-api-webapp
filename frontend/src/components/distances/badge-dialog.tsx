@@ -1,6 +1,6 @@
 "use client";
 
-import { StarIcon, StarOffIcon, XIcon } from "lucide-react";
+import { StarIcon, StarOffIcon, UserRoundCheckIcon, UserRoundIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -16,26 +16,38 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useBadgeDetails } from "@/hooks/use-badge-details";
-import type { DistanceBadge } from "@/lib/api/types";
+import type { BadgeTheme, DistanceBadge } from "@/lib/api/types";
 import { BadgeBanner } from "./badge-banner";
 import { BadgeFacts } from "./badge-facts";
 import { BadgeHistory } from "./badge-history";
 import { useAmount } from "./use-amount";
 import { BadgeProgressBar } from "./badge-progress-bar";
+import { BadgeTiers } from "./badge-tiers";
 import { FamilyIcon } from "./family-icon";
 
 interface BadgeDialogProps {
   /** Kept while the dialog closes, for its exit animation. */
   badge: DistanceBadge | null;
+  /** Themes of the badges, to name the one of the badge. */
+  themes: BadgeTheme[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFavoriteChange: (badge: DistanceBadge, favorite: boolean) => Promise<void>;
+  onProfileChange: (badge: DistanceBadge, onProfile: boolean) => Promise<void>;
   /** Element focused once closed; by default the one focused before opening. */
   finalFocus?: () => HTMLElement | null;
 }
 
 /** Details of a badge, centered over the page. */
-export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, finalFocus }: BadgeDialogProps) {
+export function BadgeDialog({
+  badge,
+  themes,
+  open,
+  onOpenChange,
+  onFavoriteChange,
+  onProfileChange,
+  finalFocus,
+}: BadgeDialogProps) {
   return (
     <Dialog open={open && badge !== null} onOpenChange={onOpenChange}>
       <DialogContent
@@ -44,7 +56,15 @@ export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, final
         // One column no wider than the dialog: long activity names get truncated instead of widening it.
         className="max-h-[calc(100dvh-2rem)] grid-cols-1 gap-0 overflow-x-hidden overflow-y-auto p-0 sm:max-w-md"
       >
-        {badge && <BadgeDialogBody key={badge.id} badge={badge} onFavoriteChange={onFavoriteChange} />}
+        {badge && (
+          <BadgeDialogBody
+            key={badge.id}
+            badge={badge}
+            theme={themes.find((theme) => theme.id === badge.themeId) ?? null}
+            onFavoriteChange={onFavoriteChange}
+            onProfileChange={onProfileChange}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -52,19 +72,28 @@ export function BadgeDialog({ badge, open, onOpenChange, onFavoriteChange, final
 
 function BadgeDialogBody({
   badge,
+  theme,
   onFavoriteChange,
-}: Pick<BadgeDialogProps, "onFavoriteChange"> & { badge: DistanceBadge }) {
+  onProfileChange,
+}: Pick<BadgeDialogProps, "onFavoriteChange" | "onProfileChange"> & { badge: DistanceBadge; theme: BadgeTheme | null }) {
   const t = useTranslations("distances");
   const amount = useAmount();
   const { details, error } = useBadgeDetails(badge.id);
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<"favorite" | "profile" | null>(null);
   const favorite = badge.favoritePosition !== null;
 
   const toggleFavorite = () => {
-    setPending(true);
+    setPending("favorite");
     onFavoriteChange(badge, !favorite)
       .catch(() => toast.error(t("dialog.favoriteError")))
-      .finally(() => setPending(false));
+      .finally(() => setPending(null));
+  };
+
+  const toggleProfile = () => {
+    setPending("profile");
+    onProfileChange(badge, !badge.onProfile)
+      .catch(() => toast.error(t("dialog.profileError")))
+      .finally(() => setPending(null));
   };
 
   return (
@@ -89,6 +118,7 @@ function BadgeDialogBody({
               <FamilyIcon family={badge.family} data-icon="inline-start" aria-hidden />
               {t(`families.${badge.family}`)}
             </Badge>
+            {theme && <Badge variant="secondary">{theme.name}</Badge>}
             <Badge variant="outline" className="tabular-nums">
               {amount(badge.metric, badge.goal)}
             </Badge>
@@ -98,11 +128,31 @@ function BadgeDialogBody({
         </DialogHeader>
         <BadgeProgressBar badge={badge} />
         <BadgeFacts badge={badge} details={details} error={error} />
-        {badge.completions > 0 && <BadgeHistory details={details} error={error} />}
+        {badge.tiers && <BadgeTiers badge={badge} tiers={badge.tiers} />}
+        {badge.completions > 0 && <BadgeHistory badge={badge} details={details} error={error} />}
       </div>
-      <DialogFooter className="mx-0 mb-0">
-        <Button variant={favorite ? "outline" : "default"} onClick={toggleFavorite} disabled={pending} aria-pressed={favorite}>
-          {favorite ? <StarOffIcon data-icon="inline-start" /> : <StarIcon data-icon="inline-start" />}
+      {/* Kept in sight while the details scroll. */}
+      <DialogFooter className="sticky bottom-0 z-10 mx-0 mb-0 bg-muted/95 backdrop-blur-sm">
+        <Button
+          variant="outline"
+          onClick={toggleProfile}
+          disabled={pending === "profile"}
+          aria-pressed={badge.onProfile}
+        >
+          {badge.onProfile ? <UserRoundCheckIcon data-icon="inline-start" /> : <UserRoundIcon data-icon="inline-start" />}
+          {badge.onProfile ? t("dialog.removeFromProfile") : t("dialog.addToProfile")}
+        </Button>
+        <Button
+          variant={favorite ? "outline" : "default"}
+          onClick={toggleFavorite}
+          disabled={pending === "favorite"}
+          aria-pressed={favorite}
+        >
+          {favorite ? (
+            <StarOffIcon data-icon="inline-start" className="text-amber-500" />
+          ) : (
+            <StarIcon data-icon="inline-start" className="fill-amber-400 text-amber-400" />
+          )}
           {favorite ? t("dialog.removeFavorite") : t("dialog.addFavorite")}
         </Button>
       </DialogFooter>

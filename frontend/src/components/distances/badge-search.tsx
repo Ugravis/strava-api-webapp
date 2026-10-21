@@ -41,7 +41,7 @@ export function BadgeSearch({ badges, onPick }: BadgeSearchProps) {
       onKeyDown={(event) => {
         if (event.key === "Escape") setOpen(false);
       }}
-      className="relative overflow-visible rounded-lg! bg-transparent p-0 [&_[data-slot=command-input-wrapper]]:p-0 [&_[data-slot=input-group]]:h-9! [&_[data-slot=input-group]]:bg-card!"
+      className="relative overflow-visible rounded-lg! bg-transparent p-0 [&_[data-slot=command-input-wrapper]]:p-0 [&_[data-slot=input-group]]:h-9! [&_[data-slot=input-group]]:bg-card! [&_[data-slot=input-group]]:border-border dark:[&_[data-slot=input-group]]:border-input"
     >
       <CommandInput
         value={query}

@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function DistancesPage() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-2 sm:py-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2 sm:py-4">
       <AchievementsOverview />
     </div>
   );

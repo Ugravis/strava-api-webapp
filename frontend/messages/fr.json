@@ -291,7 +291,8 @@
       "all": "Tous sports",
       "run": "Course à pied",
       "hike": "Randonnée et marche",
-      "ride": "Vélo"
+      "ride": "Vélo",
+      "swim": "Natation"
     },
     "favorite": "favori",
     "favoritesSection": {
@@ -334,13 +335,24 @@
         "title": "Historique",
         "iteration": "n° {number}",
         "openOnMap": "Itération n° {number} : voir {name} sur la carte",
-        "error": "Impossible de charger l'historique pour le moment."
+        "error": "Impossible de charger l'historique pour le moment.",
+        "loadMore": "{count, plural, one {Charger plus (# restante)} other {Charger plus (# restantes)}}",
+        "loadMoreError": "Impossible de charger la suite de l'historique pour le moment."
       },
       "addFavorite": "Ajouter aux favoris",
       "removeFavorite": "Retirer des favoris",
       "favoriteError": "Impossible de modifier tes favoris pour le moment.",
       "tier": "Palier {number} sur {total}",
-      "lastTier": "Dernier palier atteint"
+      "lastTier": "Dernier palier atteint",
+      "tiers": {
+        "title": "Paliers",
+        "tier": "Palier {number}",
+        "reached": "atteint",
+        "locked": "pas encore atteint"
+      },
+      "addToProfile": "Afficher sur le profil",
+      "removeFromProfile": "Retirer du profil",
+      "profileError": "Impossible de modifier ton profil pour le moment."
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",
@@ -371,7 +383,51 @@
       "stations": "{count, plural, one {# gare} other {# gares}}"
     },
     "challengesTitle": "Défis",
-    "level": "Nv. {level}"
+    "level": "Nv. {level}",
+    "obtained": "{obtained}/{total}",
+    "obtainedLabel": "{obtained} {obtained, plural, one {badge obtenu} other {badges obtenus}} sur {total}",
+    "viewOptions": {
+      "sortLabel": "Trier par",
+      "sorts": {
+        "default": "Par défaut",
+        "name_asc": "Nom (A–Z)",
+        "name_desc": "Nom (Z–A)",
+        "progress_asc": "Progression croissante",
+        "progress_desc": "Progression décroissante"
+      },
+      "compactView": "Vue compacte",
+      "normalView": "Vue large",
+      "viewLabel": "Affichage"
+    },
+    "header": {
+      "label": "Résumé de tes succès",
+      "closest": "Le plus proche",
+      "remaining": "encore {amount}",
+      "carousel": "Badges à la une",
+      "previous": "Contenu précédent",
+      "next": "Contenu suivant",
+      "slides": {
+        "closest": "Bientôt obtenus",
+        "recent": "Nouveaux badges"
+      },
+      "metrics": {
+        "distance": "Distance",
+        "time": "Temps",
+        "elevation": "Dénivelé",
+        "activities": "Activités",
+        "active_days": "Jours actifs",
+        "tiles": "Tuiles",
+        "subtiles": "Petites tuiles",
+        "stations": "Gares"
+      },
+      "random": "Au hasard",
+      "reroll": "Relancer le dé",
+      "roll": "Lancer le dé pour tirer un badge",
+      "rollHint": "Lance le dé",
+      "closestNew": "Prochain inédit",
+      "closestNone": "Aucun badge en cours."
+    },
+    "onProfile": "affiché sur le profil"
   },
   "map": {
     "title": "Carte",

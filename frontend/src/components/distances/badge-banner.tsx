@@ -1,5 +1,6 @@
 import { useFormatter, useTranslations } from "next-intl";
 import type { DistanceBadge, DistanceFamily } from "@/lib/api/types";
+import { lightTextOn } from "@/lib/badge-sort";
 import { cn } from "@/lib/utils";
 import { BadgeIcon } from "./badge-icon";
 
@@ -9,23 +10,35 @@ const FAMILY_GRADIENTS: Record<DistanceFamily, string> = {
   run: "from-orange-400 to-rose-600",
   hike: "from-emerald-400 to-teal-700",
   ride: "from-sky-400 to-blue-700",
+  swim: "from-cyan-400 to-indigo-600",
 };
 
 /** Concentric circles behind the icon. */
 const RINGS = [36, 60, 84, 108, 132];
 
-/** Header picture of a badge: its icon on the colors of its family, full once obtained. */
+/** Header picture of a badge: its icon on its own background or the colors of its family, full once obtained. */
 export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const achieved = badge.completions > 0;
+  const { background } = badge;
+  // Dark text and disc on light backgrounds, like the yellow of the Tour de France.
+  const light = background ? lightTextOn(background) : true;
 
   return (
     <div
       className={cn(
-        "relative grid h-32 place-items-center overflow-hidden bg-linear-to-br text-white",
-        FAMILY_GRADIENTS[badge.family],
+        "relative grid h-32 place-items-center overflow-hidden",
+        background ? "bg-cover bg-center" : cn("bg-linear-to-br", FAMILY_GRADIENTS[badge.family]),
+        light ? "text-white" : "text-zinc-950",
       )}
+      style={
+        background?.kind === "color"
+          ? { backgroundColor: background.color }
+          : background?.kind === "image"
+            ? { backgroundImage: `linear-gradient(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.35)), url("${background.url}")` }
+            : undefined
+      }
     >
       <svg viewBox="0 0 400 128" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden>
         {RINGS.map((radius) => (
@@ -37,8 +50,12 @@ export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
           className={cn(
             "grid size-18 place-items-center rounded-full",
             achieved
-              ? "bg-white text-neutral-900 shadow-lg ring-4 ring-white/30"
-              : "border-2 border-dashed border-white/60 bg-white/10",
+              ? light
+                ? "bg-white text-neutral-900 shadow-lg ring-4 ring-white/30"
+                : "bg-neutral-900 text-white shadow-lg ring-4 ring-black/15"
+              : light
+                ? "border-2 border-dashed border-white/60 bg-white/10"
+                : "border-2 border-dashed border-black/40 bg-black/5",
           )}
         >
           <BadgeIcon icon={badge.icon} className="size-9" strokeWidth={1.75} aria-hidden />

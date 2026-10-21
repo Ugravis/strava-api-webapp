@@ -140,14 +140,16 @@ export function badgeProgress(
   };
 }
 
-/** Every completed iteration or reached tier of a badge, the latest first. */
+/** Completed iterations or reached tiers of a badge, the latest first, from `offset` and at most `limit`. */
 export function badgeCompletions(
   badge: BadgeTarget,
   timeline: FamilyTimeline,
+  page: { offset: number; limit: number } = { offset: 0, limit: Infinity },
 ): BadgeCompletion[] {
   const completions = completionsOf(badge, timelineTotal(timeline));
-  return Array.from({ length: completions }, (_, index) => {
-    const iteration = completions - index;
+  const length = Math.max(0, Math.min(page.limit, completions - page.offset));
+  return Array.from({ length }, (_, index) => {
+    const iteration = completions - page.offset - index;
     const { id, name, sportType, startedAt } =
       timeline.activities[
         reachedAt(timeline, milestone(badge, iteration) ?? 0)

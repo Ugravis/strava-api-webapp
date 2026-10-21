@@ -4,7 +4,13 @@ import type { SportType } from '../activities/sport-type';
  * Groups of sports whose cumulated distance is compared to landmarks.
  * `all` counts every activity.
  */
-export const DISTANCE_FAMILIES = ['all', 'run', 'hike', 'ride'] as const;
+export const DISTANCE_FAMILIES = [
+  'all',
+  'run',
+  'hike',
+  'ride',
+  'swim',
+] as const;
 
 export type DistanceFamily = (typeof DISTANCE_FAMILIES)[number];
 
@@ -19,4 +25,5 @@ export const FAMILY_SPORT_TYPES: Record<
   run: ['run', 'trail_run', 'virtual_run'],
   hike: ['walk', 'hike', 'snowshoe'],
   ride: ['ride', 'gravel_ride', 'mountain_bike_ride', 'virtual_ride'],
+  swim: ['swim'],
 };

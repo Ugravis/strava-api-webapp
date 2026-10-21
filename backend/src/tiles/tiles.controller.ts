@@ -40,6 +40,7 @@ import {
 import {
   type TileHistorySummary,
   TileHistoryService,
+  type TileTimelineDay,
 } from './tile-history.service';
 
 export interface LevelStats {
@@ -152,6 +153,12 @@ export class TilesController {
           clusters ? rgba(clusters) : null,
         ),
     });
+  }
+
+  /** Gains of the tiles day by day, for the evolution of the counters. */
+  @Get('timeline')
+  timeline(@CurrentUser() user: User): Promise<TileTimelineDay[]> {
+    return this.tileHistory.timeline(user.id);
   }
 
   /** Counts of the tiles gained since a date, or visited before it. */

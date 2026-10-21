@@ -22,7 +22,7 @@ import { FavoriteBadgesSection } from "./favorite-badges-section";
 import { ALL_THEMES, ThemeTabs } from "./theme-tabs";
 
 /** Display order of the families. */
-const FAMILIES: DistanceFamily[] = ["all", "run", "hike", "ride", "swim"];
+const FAMILIES: DistanceFamily[] = ["all", "ride", "run", "hike", "swim"];
 
 /** Display order of the sections: the families of sports, then the challenges. */
 const SECTIONS: SectionKind[] = [...FAMILIES, "challenges"];

@@ -16,7 +16,7 @@ import { progressTier } from "./progress-tier";
 import { useAmount } from "./use-amount";
 
 /** Sports detailed under the total of a tab counting a single metric. */
-const SPORTS: DistanceFamily[] = ["run", "hike", "ride", "swim"];
+const SPORTS: DistanceFamily[] = ["ride", "run", "hike", "swim"];
 
 /** Badges of each list of the carousel. */
 const CAROUSEL_SIZE = 10;

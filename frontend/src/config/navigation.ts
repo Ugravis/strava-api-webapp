@@ -34,11 +34,11 @@ export const mainNavigation: NavigationItem[] = [
     useQuickAccessActive: () => useOpenMapModule() !== null,
   },
   {
-    href: routes.distances,
+    href: routes.achievements,
     labelKey: "distances",
     icon: TrophyIcon,
     quickAccess: AchievementTabsNav,
-    useQuickAccessActive: () => usePathname() === routes.distances,
+    useQuickAccessActive: () => usePathname() === routes.achievements,
   },
   { href: routes.profile, labelKey: "profile", icon: UserIcon },
 ];

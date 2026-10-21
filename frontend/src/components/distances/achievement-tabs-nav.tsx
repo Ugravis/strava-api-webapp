@@ -16,7 +16,7 @@ import { routes } from "@/config/routes";
 /** Quick access to the tabs of the achievements page, under its entry in the navigation. */
 export function AchievementTabsNav({ onNavigate }: QuickAccessProps) {
   const t = useTranslations("distances.tabs");
-  const onPage = usePathname() === routes.distances;
+  const onPage = usePathname() === routes.achievements;
   const current = achievementTabOf(useSearchParams());
 
   return (

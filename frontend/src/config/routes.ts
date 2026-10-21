@@ -6,7 +6,7 @@ export const routes = {
   forgotPassword: "/forgot-password",
   terms: "/terms",
   dashboard: "/dashboard",
-  distances: "/distances",
+  achievements: "/achievements",
   map: "/map",
   profile: "/profile",
   settings: "/settings",
@@ -14,7 +14,7 @@ export const routes = {
 } as const;
 
 /** Routes requiring a session, checked optimistically by the proxy. */
-export const PROTECTED_PREFIXES = [routes.dashboard, routes.distances, routes.map, routes.profile, routes.settings];
+export const PROTECTED_PREFIXES = [routes.dashboard, routes.achievements, routes.map, routes.profile, routes.settings];
 
 /** Landing route once signed in. */
 export const DEFAULT_AUTHENTICATED_ROUTE = routes.dashboard;

@@ -36,7 +36,7 @@ export function achievementTabOf(params: URLSearchParams): AchievementTab {
 
 /** The address of the achievements page opened on `tab`. */
 export function achievementTabHref(tab: AchievementTab): string {
-  return tab === DEFAULT_ACHIEVEMENT_TAB ? routes.distances : `${routes.distances}?${TAB_PARAM}=${tab}`;
+  return tab === DEFAULT_ACHIEVEMENT_TAB ? routes.achievements : `${routes.achievements}?${TAB_PARAM}=${tab}`;
 }
 
 /** Metrics of the badges each tab shows, in display order. */

@@ -23,6 +23,8 @@ export type BadgeView = Omit<Badge, 'createdAt' | 'position' | 'theme'> &
   BadgeProgress & {
     /** Rank among the favorites, from 1; null when not a favorite. */
     favoritePosition: number | null;
+    /** When the badge joined the catalog. */
+    addedAt: Date;
   };
 
 export interface DistancesOverview {
@@ -186,6 +188,7 @@ export class DistancesService {
       themeId,
       ...badgeProgress(badge, timeline),
       favoritePosition,
+      addedAt: badge.createdAt,
     };
   }
 }

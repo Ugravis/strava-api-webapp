@@ -13,7 +13,7 @@ export default function DistancesPage() {
   const t = useTranslations("distances");
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-2 sm:py-4">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 py-2 sm:py-4">
       <PageHeader title={t("title")} description={t("description")} />
       <DistancesOverview />
     </div>

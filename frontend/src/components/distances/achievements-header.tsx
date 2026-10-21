@@ -52,7 +52,6 @@ const SQUARE = "aspect-square min-w-0 rounded-xl";
  */
 export function AchievementsHeader({ headlines, totals, badges, onOpen }: AchievementsHeaderProps) {
   const t = useTranslations("distances.header");
-  const [closest] = closestBadges(badges, 1);
 
   return (
     <section
@@ -62,7 +61,7 @@ export function AchievementsHeader({ headlines, totals, badges, onOpen }: Achiev
       <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-[13rem_13rem_minmax(0,1fr)]">
         <HeadlineWidget headlines={headlines} totals={totals} />
         <RandomBadgeWidget badges={badges} onOpen={onOpen} />
-        {closest && <ClosestBadge badge={closest} onOpen={onOpen} />}
+        <ClosestBadgeWidget badges={badges} onOpen={onOpen} />
       </div>
       {badges.length > 0 && <BadgeCarousel badges={badges} onOpen={onOpen} />}
     </section>
@@ -187,39 +186,89 @@ function RandomBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpen
   );
 }
 
-/** The badge closest to completion, with its progress and what is left to complete it. */
-function ClosestBadge({ badge, onOpen }: { badge: DistanceBadge; onOpen: (badgeId: string) => void }) {
+/** Discreet chevrons around a title, cycling through the contents of a widget. */
+function WidgetSwitcher<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: readonly T[];
+  value: T;
+  onChange: (value: T) => void;
+  label: (option: T) => string;
+}) {
+  const t = useTranslations("distances.header");
+  const index = options.indexOf(value);
+  const step = (by: number) => onChange(options[(index + by + options.length) % options.length]);
+  const chevron =
+    "size-6 shrink-0 text-muted-foreground/70 hover:bg-transparent hover:text-foreground dark:hover:bg-transparent";
+
+  return (
+    <div className="flex min-w-0 items-center gap-0.5">
+      <Button variant="ghost" size="icon-xs" className={chevron} onClick={() => step(-1)} aria-label={t("previous")}>
+        <ChevronLeftIcon />
+      </Button>
+      <span
+        className="min-w-0 truncate text-[11px] font-medium tracking-wide text-muted-foreground uppercase"
+        aria-live="polite"
+      >
+        {label(value)}
+      </span>
+      <Button variant="ghost" size="icon-xs" className={chevron} onClick={() => step(1)} aria-label={t("next")}>
+        <ChevronRightIcon />
+      </Button>
+    </div>
+  );
+}
+
+/** Badges the closest widget picks from: all of them, or those never completed yet. */
+const CLOSEST_SCOPES = ["closest", "closestNew"] as const;
+
+type ClosestScope = (typeof CLOSEST_SCOPES)[number];
+
+/** The badge closest to completion, among all or among those never completed, with what is left to complete it. */
+function ClosestBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpen: (badgeId: string) => void }) {
   const t = useTranslations("distances.header");
   const format = useFormatter();
   const amount = useAmount();
-  const tier = progressTier(badge.progress);
-  // Rounded down: an unfinished iteration never shows 100 %.
-  const percent = format.number(Math.floor(badge.progress * 100) / 100, { style: "percent" });
+  const [scope, setScope] = useState<ClosestScope>("closest");
+  const [badge] = closestBadges(
+    scope === "closest" ? badges : badges.filter((candidate) => candidate.completions === 0),
+    1,
+  );
 
   return (
-    <div className="col-span-2 flex min-w-0 flex-col gap-2 rounded-xl bg-muted/50 p-3 ring-1 ring-foreground/5 @2xl:col-span-1">
-      <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{t("closest")}</span>
-      <button
-        type="button"
-        onClick={() => onOpen(badge.id)}
-        aria-haspopup="dialog"
-        className="group flex flex-1 items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <BadgeMedal
-          badge={badge}
-          index={0}
-          className="w-16 shrink-0 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-16"
-        />
-        <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="line-clamp-2 leading-tight font-semibold">{badge.name}</span>
-          <BadgeMiniBar value={badge.progress} />
-          <span className="text-xs text-muted-foreground tabular-nums">
-            <span className={cn("font-semibold", tier.text)}>{percent}</span>
-            {badge.progress < 1 &&
-              ` · ${t("remaining", { amount: amount(badge.metric, Math.max(0, badge.goal - badge.covered)) })}`}
+    <div className="col-span-2 flex min-w-0 flex-col gap-1 rounded-xl bg-muted/50 p-2 ring-1 ring-foreground/5 @2xl:col-span-1">
+      <WidgetSwitcher options={CLOSEST_SCOPES} value={scope} onChange={setScope} label={(option) => t(option)} />
+      {badge ? (
+        <button
+          key={badge.id}
+          type="button"
+          onClick={() => onOpen(badge.id)}
+          aria-haspopup="dialog"
+          className="group flex flex-1 items-center gap-4 rounded-lg px-3 py-3 text-left outline-none animate-in fade-in-0 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4"
+        >
+          <BadgeMedal
+            badge={badge}
+            index={0}
+            className="w-16 shrink-0 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-16"
+          />
+          <span className="flex min-w-0 flex-1 flex-col gap-2">
+            <span className="line-clamp-2 leading-tight font-semibold">{badge.name}</span>
+            <BadgeMiniBar value={badge.progress} />
+            <span className="text-xs text-muted-foreground tabular-nums">
+              <span className={cn("font-semibold", progressTier(badge.progress).text)}>
+                {format.number(Math.floor(badge.progress * 100) / 100, { style: "percent" })}
+              </span>
+              {badge.progress < 1 &&
+                ` · ${t("remaining", { amount: amount(badge.metric, Math.max(0, badge.goal - badge.covered)) })}`}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      ) : (
+        <p className="grid flex-1 place-items-center p-4 text-center text-sm text-muted-foreground">{t("closestNone")}</p>
+      )}
     </div>
   );
 }
@@ -229,67 +278,29 @@ function BadgeCarousel({ badges, onOpen }: { badges: DistanceBadge[]; onOpen: (b
   const t = useTranslations("distances.header");
   const [list, setList] = useState<CarouselList>("closest");
   const track = useRef<HTMLUListElement>(null);
-  const [edges, setEdges] = useState({ start: true, end: true });
   const shown = list === "closest" ? closestBadges(badges, CAROUSEL_SIZE) : recentBadges(badges, CAROUSEL_SIZE);
 
-  const updateEdges = () => {
-    const element = track.current;
-    if (!element) return;
-    setEdges({
-      start: element.scrollLeft <= 1,
-      end: element.scrollLeft + element.clientWidth >= element.scrollWidth - 1,
-    });
-  };
-
-  // Back to the start, and the buttons updated, for each list and width.
+  // Back to the start for each list.
   useEffect(() => {
-    const element = track.current;
-    if (!element) return;
-    element.scrollLeft = 0;
-    const observer = new ResizeObserver(updateEdges);
-    observer.observe(element);
-    return () => observer.disconnect();
+    if (track.current) track.current.scrollLeft = 0;
   }, [list]);
 
-  const scroll = (direction: 1 | -1) => {
-    const element = track.current;
-    if (!element) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    element.scrollBy({ left: direction * element.clientWidth * 0.8, behavior: reduced ? "auto" : "smooth" });
-  };
-
   return (
-    <div role="region" aria-roledescription="carousel" aria-label={t("carousel")} className="flex min-w-0 flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <div className="flex gap-1 rounded-full bg-muted p-0.5" role="group" aria-label={t("carouselLists")}>
-          {CAROUSEL_LISTS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setList(option)}
-              aria-pressed={list === option}
-              className={cn(
-                "h-7 rounded-full px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50",
-                list === option ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t(`slides.${option}`)}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto hidden gap-1 sm:flex">
-          <Button variant="outline" size="icon-sm" onClick={() => scroll(-1)} disabled={edges.start} aria-label={t("previous")}>
-            <ChevronLeftIcon />
-          </Button>
-          <Button variant="outline" size="icon-sm" onClick={() => scroll(1)} disabled={edges.end} aria-label={t("next")}>
-            <ChevronRightIcon />
-          </Button>
-        </div>
-      </div>
+    <div
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={t("carousel")}
+      className="flex min-w-0 flex-col gap-1 rounded-xl bg-muted/50 p-2 ring-1 ring-foreground/5"
+    >
+      <WidgetSwitcher
+        options={CAROUSEL_LISTS}
+        value={list}
+        onChange={setList}
+        label={(option) => t(`slides.${option}`)}
+      />
       <ul
         ref={track}
-        onScroll={updateEdges}
-        className="no-scrollbar -mx-1 flex snap-x snap-mandatory scroll-px-1 gap-2 overflow-x-auto px-1 py-1"
+        className="no-scrollbar flex snap-x snap-mandatory scroll-px-1 gap-2 overflow-x-auto p-1"
       >
         {shown.map((badge, index) => (
           <BadgeCard

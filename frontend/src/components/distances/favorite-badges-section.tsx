@@ -43,9 +43,7 @@ export function FavoriteBadgesSection({ badges, onOpen, onReorder, highlightedId
           {t("title")}
         </h2>
         {!empty && (
-          <span className="rounded-full bg-amber-500/15 px-2 text-xs font-medium text-amber-700 tabular-nums dark:text-amber-300">
-            {badges.length}
-          </span>
+          <span className="text-sm text-muted-foreground tabular-nums">{badges.length}</span>
         )}
         {badges.length > 1 && (
           <Button

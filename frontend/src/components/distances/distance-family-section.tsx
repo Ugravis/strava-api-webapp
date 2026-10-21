@@ -1,6 +1,9 @@
+import { FlagIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { BadgeMetric, DistanceBadge, DistanceFamily } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
 import { BadgeGrid } from "./badge-grid";
+import { FamilyIcon } from "./family-icon";
 import { useAmount } from "./use-amount";
 
 /** Sports of a section, or the challenges, which are not tied to a sport. */
@@ -19,6 +22,15 @@ interface DistanceFamilySectionProps {
   highlightedId: string | null;
 }
 
+/** Color of the icon of each section, like those of the badge banners. */
+const SECTION_COLORS: Record<SectionKind, string> = {
+  all: "bg-violet-500",
+  run: "bg-orange-500",
+  hike: "bg-emerald-500",
+  ride: "bg-sky-500",
+  challenges: "bg-rose-500",
+};
+
 /** Rows shown while folded, whatever the width. */
 const FOLDED_ROWS = 3;
 
@@ -32,7 +44,13 @@ export function DistanceFamilySection({ kind, totals, badges, compact, ...grid }
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <div className="flex min-h-8 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-0.5">
+        <span
+          className={cn("grid size-7 place-items-center rounded-full text-white shadow-sm", SECTION_COLORS[kind])}
+          aria-hidden
+        >
+          {kind === "challenges" ? <FlagIcon className="size-3.5" /> : <FamilyIcon family={kind} className="size-3.5" />}
+        </span>
         <h2 id={headingId} className="text-base font-semibold">
           {title}
         </h2>

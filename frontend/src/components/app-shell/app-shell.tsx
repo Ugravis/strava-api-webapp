@@ -20,7 +20,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <TrackSyncProvider userId={user.id}>
         <SidebarProvider defaultOpen={sidebarOpen}>
           <AppSidebar user={user} />
-          <SidebarInset>
+          {/* Never wider than the space beside the sidebar, whatever its content: no sideways scroll. */}
+          <SidebarInset className="min-w-0">
             <AppHeader />
             {children}
           </SidebarInset>

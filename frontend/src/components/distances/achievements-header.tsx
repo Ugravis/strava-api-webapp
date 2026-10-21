@@ -313,7 +313,8 @@ function BadgeCarousel({
       />
       <ul
         ref={track}
-        className="no-scrollbar flex snap-x snap-mandatory scroll-px-1 gap-2 overflow-x-auto p-1"
+        // Positioned: the hidden labels of its badges stay inside its scroll instead of widening the page.
+        className="no-scrollbar relative flex snap-x snap-mandatory scroll-px-1 gap-2 overflow-x-auto p-1"
       >
         {shown.map((badge, index) => (
           <BadgeCard

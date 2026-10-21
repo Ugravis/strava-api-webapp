@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, Repository } from 'typeorm';
 import { Activity } from './activity.entity';
+import { FAMILY_SPORT_TYPES } from '../distances/distance-families';
+import {
+  type ActivityDay,
+  activityDays,
+  type MonthDistance,
+  type MonthlyFamily,
+  monthlyDistances,
+} from './activity-days';
 import {
   ActivitySource,
   type ActivityProvider,
@@ -51,6 +59,39 @@ export interface ActivityDetails {
   /** Identifier of the activity on Strava, to link to it. */
   stravaId: string | null;
 }
+
+/** An activity in the list of the latest ones. */
+export type RecentActivity = Omit<
+  ActivityDetails,
+  'timezone' | 'elapsedTimeS' | 'stravaId'
+>;
+
+/** Totals of one sport over every activity. */
+export interface SportTotals {
+  sportType: SportType;
+  count: number;
+  distanceM: number;
+  movingTimeS: number;
+}
+
+export type { ActivityDay, MonthDistance };
+
+/** What the home page shows of the activities, besides their totals. */
+export interface ActivitiesOverview {
+  /** Latest activities, the most recent first. */
+  recent: RecentActivity[];
+  /** Days with activities over the last `OVERVIEW_DAYS` days, oldest first. */
+  days: ActivityDay[];
+  /** Sports practiced, the most practiced (by moving time) first. */
+  sports: SportTotals[];
+  /** Start of the first activity, ISO 8601; null without activities. */
+  firstActivityAt: string | null;
+}
+
+/** Latest activities listed on the home page. */
+const RECENT_COUNT = 6;
+/** Days covered by the calendar of the home page: 53 weeks, plus margin for the time zones. */
+export const OVERVIEW_DAYS = 373;
 
 /** What the badges need of an activity: no location. */
 export type ActivityTotals = Pick<
@@ -206,6 +247,122 @@ export class ActivitiesService {
         totalElevationGainM: 0,
         totalMovingTimeS: 0,
       }
+    );
+  }
+
+  /** Latest activities, daily totals of the last year and totals per sport. */
+  async overview(userId: string): Promise<ActivitiesOverview> {
+    const since = new Date(Date.now() - OVERVIEW_DAYS * 24 * 3600 * 1000);
+    const [recent, lastYear, sports, first] = await Promise.all([
+      this.activities.find({
+        select: {
+          id: true,
+          name: true,
+          sportType: true,
+          startedAt: true,
+          distanceM: true,
+          movingTimeS: true,
+          elevationGainM: true,
+        },
+        where: { userId },
+        order: { startedAt: 'DESC', id: 'DESC' },
+        take: RECENT_COUNT,
+      }),
+      this.activities
+        .createQueryBuilder('activity')
+        .select([
+          'activity.startedAt',
+          'activity.timezone',
+          'activity.distanceM',
+          'activity.movingTimeS',
+        ])
+        .where('activity.user_id = :userId', { userId })
+        .andWhere('activity.started_at >= :since', { since })
+        .getMany(),
+      this.activities
+        .createQueryBuilder('activity')
+        .select('activity.sport_type', 'sportType')
+        .addSelect('COUNT(*)::int', 'count')
+        .addSelect('COALESCE(SUM(activity.distance_m), 0)::float8', 'distanceM')
+        .addSelect(
+          'COALESCE(SUM(activity.moving_time_s), 0)::float8',
+          'movingTimeS',
+        )
+        .where('activity.user_id = :userId', { userId })
+        .groupBy('activity.sport_type')
+        .orderBy('"movingTimeS"', 'DESC')
+        .getRawMany<SportTotals>(),
+      this.activities.findOne({
+        select: { startedAt: true },
+        where: { userId },
+        order: { startedAt: 'ASC' },
+      }),
+    ]);
+    return {
+      recent: recent.map((activity) => ({
+        id: activity.id,
+        name: activity.name,
+        sportType: activity.sportType,
+        startedAt: activity.startedAt.toISOString(),
+        distanceM: activity.distanceM,
+        movingTimeS: activity.movingTimeS,
+        elevationGainM: activity.elevationGainM,
+      })),
+      days: activityDays(lastYear),
+      sports,
+      firstActivityAt: first?.startedAt.toISOString() ?? null,
+    };
+  }
+
+  /** Distance of every month since the first activity, in total and by family of sports. */
+  async monthly(userId: string): Promise<MonthDistance[]> {
+    const activities = await this.activities.find({
+      select: {
+        startedAt: true,
+        timezone: true,
+        sportType: true,
+        distanceM: true,
+      },
+      where: { userId },
+    });
+    const families = Object.entries(FAMILY_SPORT_TYPES) as [
+      MonthlyFamily,
+      readonly SportType[],
+    ][];
+    return monthlyDistances(
+      activities,
+      (sportType) =>
+        families.find(([, sports]) => sports.includes(sportType))?.[0] ??
+        'other',
+    );
+  }
+
+  /**
+   * Days with activities of a calendar year, from the November before it:
+   * the calendar of the year starts up to two months earlier.
+   */
+  async yearDays(userId: string, year: number): Promise<ActivityDay[]> {
+    const from = `${year - 1}-11-01`;
+    const to = `${year}-12-31`;
+    // A day of margin on both sides for the time zones.
+    const activities = await this.activities
+      .createQueryBuilder('activity')
+      .select([
+        'activity.startedAt',
+        'activity.timezone',
+        'activity.distanceM',
+        'activity.movingTimeS',
+      ])
+      .where('activity.user_id = :userId', { userId })
+      .andWhere('activity.started_at >= :start', {
+        start: new Date(`${year - 1}-10-31T00:00:00Z`),
+      })
+      .andWhere('activity.started_at < :end', {
+        end: new Date(`${year + 1}-01-02T00:00:00Z`),
+      })
+      .getMany();
+    return activityDays(activities).filter(
+      (day) => day.date >= from && day.date <= to,
     );
   }
 

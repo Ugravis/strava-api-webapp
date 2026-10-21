@@ -103,7 +103,7 @@ export function MonthlyDistance({ version }: { version: string }) {
       <CardContent className="flex flex-col gap-4">
         <ul className="flex min-h-8 flex-wrap gap-2" aria-label={t("legend")}>
           <li className="flex h-8 items-center gap-1.5 px-1 text-sm font-medium">
-            <span className="h-[3px] w-3.5 rounded-full bg-foreground" aria-hidden />
+            <span className="h-0.75 w-3.5 rounded-full bg-foreground" aria-hidden />
             {t("total")}
           </li>
           <li className="flex h-8 items-center gap-1.5 px-1 text-sm text-muted-foreground">
@@ -313,7 +313,7 @@ function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
             {format.dateTime(dateOfMonth(pointedMonth.month), { month: "long", year: "numeric" })}
           </span>
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-[3px] w-3 rounded-full bg-foreground" />
+            <span className="h-0.75 w-3 rounded-full bg-foreground" />
             {t("total")}
             <span className="ml-auto pl-3 font-semibold text-foreground tabular-nums">{km(pointedMonth.distanceM)}</span>
           </span>

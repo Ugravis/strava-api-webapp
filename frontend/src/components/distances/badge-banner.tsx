@@ -1,4 +1,4 @@
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import type { DistanceBadge, DistanceFamily } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { BadgeIcon } from "./badge-icon";
@@ -16,6 +16,7 @@ const RINGS = [36, 60, 84, 108, 132];
 
 /** Header picture of a badge: its icon on the colors of its family, full once obtained. */
 export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
+  const t = useTranslations("distances");
   const format = useFormatter();
   const achieved = badge.completions > 0;
 
@@ -47,7 +48,7 @@ export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
             className="absolute -top-1 -right-3 flex h-6 min-w-6 items-center justify-center rounded-full bg-neutral-900 px-1.5 text-xs font-semibold text-white tabular-nums ring-2 ring-white"
             aria-hidden
           >
-            ×{format.number(badge.completions)}
+            {badge.tiers ? t("level", { level: badge.completions }) : `×${format.number(badge.completions)}`}
           </span>
         )}
       </div>

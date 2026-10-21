@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
+import { StationsService } from '../stations/stations.service';
 import { Badge } from './badge.entity';
+import { BADGE_METRICS, type BadgeMetric } from './badge-metrics';
 import { BadgeTheme } from './badge-theme.entity';
 import { DISTANCE_FAMILIES, type DistanceFamily } from './distance-families';
 import {
@@ -15,19 +17,29 @@ import {
   type BadgeCompletion,
   type BadgeProgress,
   type FamilyTimeline,
+  type MetricEvent,
 } from './distance-progress';
 import { favoriteOrder } from './favorite-order';
+import { activityEvents, isActivityMetric } from './metric-events';
 import { UserFavoriteBadge } from './user-favorite-badge.entity';
 
-export type BadgeView = Omit<Badge, 'createdAt' | 'position' | 'theme'> &
+export type BadgeView = Omit<
+  Badge,
+  'createdAt' | 'position' | 'theme' | 'target'
+> &
   BadgeProgress & {
     /** Rank among the favorites, from 1; null when not a favorite. */
     favoritePosition: number | null;
   };
 
+type MetricTimelines = Record<
+  BadgeMetric,
+  Record<DistanceFamily, FamilyTimeline>
+>;
+
 export interface DistancesOverview {
-  /** Cumulated distance per family, in meters. */
-  totals: Record<DistanceFamily, number>;
+  /** Cumulated amount per metric and family, in the unit of the metric. */
+  totals: Record<BadgeMetric, Record<DistanceFamily, number>>;
   /** Themes having badges, in display order. */
   themes: Pick<BadgeTheme, 'id' | 'name'>[];
   /** Every badge, in display order. */
@@ -35,21 +47,22 @@ export interface DistancesOverview {
 }
 
 export interface BadgeDetails extends BadgeView {
-  /** Distance covered by the family of the badge, in meters. */
-  familyTotalM: number;
-  /** Distance left before the next iteration, in meters. */
-  remainingM: number;
+  /** Amount reached by the family of the badge, in the unit of its metric. */
+  familyTotal: number;
+  /** Amount left before the next iteration, in the unit of its metric. */
+  remaining: number;
   /** At the recent pace of the family; null without recent activity. */
   estimatedNextAt: Date | null;
   /** Every completed iteration, the latest first. */
   history: BadgeCompletion[];
 }
 
-/** Badges of known distances, compared to the cumulated distances of a user. */
+/** Badges of known amounts, compared to the cumulated amounts of a user. */
 @Injectable()
 export class DistancesService {
   constructor(
     private readonly activities: ActivitiesService,
+    private readonly stations: StationsService,
     @InjectRepository(Badge) private readonly badges: Repository<Badge>,
     @InjectRepository(BadgeTheme)
     private readonly themes: Repository<BadgeTheme>,
@@ -68,18 +81,23 @@ export class DistancesService {
     const usedThemes = new Set(badges.map((badge) => badge.themeId));
     return {
       totals: Object.fromEntries(
-        DISTANCE_FAMILIES.map((family) => [
-          family,
-          timelineTotal(timelines[family]),
+        BADGE_METRICS.map((metric) => [
+          metric,
+          Object.fromEntries(
+            DISTANCE_FAMILIES.map((family) => [
+              family,
+              timelineTotal(timelines[metric][family]),
+            ]),
+          ),
         ]),
-      ) as Record<DistanceFamily, number>,
+      ) as DistancesOverview['totals'],
       themes: themes
         .filter((theme) => usedThemes.has(theme.id))
         .map(({ id, name }) => ({ id, name })),
       badges: badges.map((badge) =>
         this.view(
           badge,
-          timelines[badge.family],
+          timelines[badge.metric][badge.family],
           favorites.get(badge.id) ?? null,
         ),
       ),
@@ -92,12 +110,12 @@ export class DistancesService {
       this.favoritePositions(userId),
       this.timelines(userId),
     ]);
-    const timeline = timelines[badge.family];
+    const timeline = timelines[badge.metric][badge.family];
     const view = this.view(badge, timeline, favorites.get(badge.id) ?? null);
     return {
       ...view,
-      familyTotalM: timelineTotal(timeline),
-      remainingM: (1 - view.progress) * badge.distanceM,
+      familyTotal: timelineTotal(timeline),
+      remaining: Math.max(0, view.goal - view.covered),
       estimatedNextAt: estimatedNextCompletion(badge, timeline, new Date()),
       history: badgeCompletions(badge, timeline),
     };
@@ -164,10 +182,37 @@ export class DistancesService {
     );
   }
 
-  private async timelines(
+  private async timelines(userId: string): Promise<MetricTimelines> {
+    const [activities, tiles, subtiles, stations] = await Promise.all([
+      this.activities.totalsTimeline(userId),
+      this.gainedTiles(userId, 'gained_tiles'),
+      this.gainedTiles(userId, 'gained_subtiles'),
+      this.stations.visitTimeline(userId),
+    ]);
+    const events = (metric: BadgeMetric): MetricEvent[] =>
+      isActivityMetric(metric)
+        ? activityEvents(metric, activities)
+        : { tiles, subtiles, stations }[metric];
+    return Object.fromEntries(
+      BADGE_METRICS.map((metric) => [metric, familyTimelines(events(metric))]),
+    ) as MetricTimelines;
+  }
+
+  /** Tiles (the `column` of the gains) each activity brought, oldest first. */
+  private gainedTiles(
     userId: string,
-  ): Promise<Record<DistanceFamily, FamilyTimeline>> {
-    return familyTimelines(await this.activities.distanceTimeline(userId));
+    column: 'gained_tiles' | 'gained_subtiles',
+  ): Promise<MetricEvent[]> {
+    // Gained tiles are flattened [x, y] pairs.
+    return this.dataSource.query(
+      `SELECT a.id, a.name, a.sport_type AS "sportType",
+         a.started_at AS "startedAt", cardinality(g.${column}) / 2 AS value
+       FROM activity_gains g
+       JOIN activities a ON a.id = g.activity_id
+       WHERE g.user_id = $1 AND cardinality(g.${column}) > 0
+       ORDER BY a.started_at, a.id`,
+      [userId],
+    );
   }
 
   private view(
@@ -175,11 +220,13 @@ export class DistancesService {
     timeline: FamilyTimeline,
     favoritePosition: number | null,
   ): BadgeView {
-    const { id, family, distanceM, name, description, icon, themeId } = badge;
+    const { id, metric, family, tiers, name, description, icon, themeId } =
+      badge;
     return {
       id,
+      metric,
       family,
-      distanceM,
+      tiers,
       name,
       description,
       icon,

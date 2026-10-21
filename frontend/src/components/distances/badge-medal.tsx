@@ -24,7 +24,7 @@ export interface BadgeMedalProps {
 const STAGGER_MS = 60;
 const MAX_DELAY_MS = 600;
 
-/** Icon of a badge ringed by the progress of its current iteration, with its completions. */
+/** Icon of a badge ringed by the progress of its current iteration or tier, with its completions or level. */
 export function BadgeMedal({ badge, index, showFavorite, showFamily, className }: BadgeMedalProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
@@ -55,7 +55,7 @@ export function BadgeMedal({ badge, index, showFavorite, showFamily, className }
           className="absolute -top-1 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums ring-2 ring-card"
           aria-hidden
         >
-          ×{format.number(badge.completions)}
+          {badge.tiers ? t("level", { level: badge.completions }) : `×${format.number(badge.completions)}`}
         </span>
       )}
       {showFavorite && badge.favoritePosition !== null && (

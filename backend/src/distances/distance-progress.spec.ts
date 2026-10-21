@@ -2,7 +2,7 @@ import type { SportType } from '../activities/sport-type';
 import {
   badgeCompletions,
   badgeProgress,
-  type DistanceActivity,
+  type MetricEvent,
   estimatedNextCompletion,
   familyTimelines,
   reachedAt,
@@ -15,14 +15,14 @@ function activity(
   id: string,
   sportType: SportType,
   day: string,
-  distanceM: number,
-): DistanceActivity {
+  value: number,
+): MetricEvent {
   return {
     id,
     name: `Activity ${id}`,
     sportType,
     startedAt: new Date(`${day}T08:00:00Z`),
-    distanceM,
+    value,
   };
 }
 
@@ -48,9 +48,11 @@ describe('Distance progress', () => {
   it('gives empty timelines without any activity', () => {
     const empty = familyTimelines([]);
     expect(timelineTotal(empty.all)).toBe(0);
-    expect(badgeProgress({ family: 'run', distanceM: 40 }, empty.run)).toEqual({
+    expect(badgeProgress({ family: 'run', target: 40 }, empty.run)).toEqual({
       completions: 0,
       progress: 0,
+      covered: 0,
+      goal: 40,
       firstCompletedAt: null,
       lastCompletedAt: null,
     });
@@ -64,17 +66,19 @@ describe('Distance progress', () => {
   });
 
   it('counts the completions and dates the first and the latest', () => {
-    const badge = { family: 'run' as const, distanceM: 12_000 };
+    const badge = { family: 'run' as const, target: 12_000 };
     expect(badgeProgress(badge, timelines.run)).toEqual({
       completions: 3,
       progress: 4_000 / 12_000,
+      covered: 4_000,
+      goal: 12_000,
       firstCompletedAt: ACTIVITIES[2].startedAt,
       lastCompletedAt: ACTIVITIES[4].startedAt,
     });
   });
 
   it('completes an iteration exactly at the total', () => {
-    const badge = { family: 'run' as const, distanceM: 20_000 };
+    const badge = { family: 'run' as const, target: 20_000 };
     expect(badgeProgress(badge, timelines.run)).toMatchObject({
       completions: 2,
       progress: 0,
@@ -83,7 +87,7 @@ describe('Distance progress', () => {
   });
 
   it('lists every completion, the latest first', () => {
-    const badge = { family: 'run' as const, distanceM: 12_000 };
+    const badge = { family: 'run' as const, target: 12_000 };
     expect(
       badgeCompletions(badge, timelines.run).map(({ iteration, activity }) => [
         iteration,
@@ -97,7 +101,7 @@ describe('Distance progress', () => {
   });
 
   it('estimates the next completion at the recent pace', () => {
-    const badge = { family: 'run' as const, distanceM: 50_000 };
+    const badge = { family: 'run' as const, target: 50_000 };
     const now = new Date('2026-01-10T08:00:00Z');
     // 40 km over 90 days, 10 km left.
     expect(estimatedNextCompletion(badge, timelines.run, now)).toEqual(
@@ -106,7 +110,7 @@ describe('Distance progress', () => {
   });
 
   it('gives no estimate without recent activity', () => {
-    const badge = { family: 'run' as const, distanceM: 50_000 };
+    const badge = { family: 'run' as const, target: 50_000 };
     expect(
       estimatedNextCompletion(
         badge,
@@ -114,5 +118,47 @@ describe('Distance progress', () => {
         new Date('2027-01-01T00:00:00Z'),
       ),
     ).toBeNull();
+  });
+
+  describe('with tiers', () => {
+    const badge = {
+      family: 'run' as const,
+      target: 0,
+      tiers: [5_000, 15_000, 60_000],
+    };
+
+    it('reaches a tier once its amount is', () => {
+      expect(badgeProgress(badge, timelines.run)).toEqual({
+        completions: 2,
+        progress: 25_000 / 45_000,
+        covered: 40_000,
+        goal: 60_000,
+        firstCompletedAt: ACTIVITIES[0].startedAt,
+        lastCompletedAt: ACTIVITIES[2].startedAt,
+      });
+    });
+
+    it('stays full once the last tier is reached', () => {
+      const last = { ...badge, tiers: [5_000, 40_000] };
+      expect(badgeProgress(last, timelines.run)).toMatchObject({
+        completions: 2,
+        progress: 1,
+        goal: 40_000,
+      });
+      expect(
+        estimatedNextCompletion(last, timelines.run, new Date('2026-01-10')),
+      ).toBeNull();
+    });
+
+    it('lists every tier, the latest first', () => {
+      expect(
+        badgeCompletions(badge, timelines.run).map(
+          ({ iteration, activity }) => [iteration, activity.id],
+        ),
+      ).toEqual([
+        [2, 'c'],
+        [1, 'a'],
+      ]);
+    });
   });
 });

@@ -52,10 +52,16 @@ export interface ActivityDetails {
   stravaId: string | null;
 }
 
-/** What the distance badges need of an activity: no location. */
-export type ActivityDistance = Pick<
+/** What the badges need of an activity: no location. */
+export type ActivityTotals = Pick<
   Activity,
-  'id' | 'name' | 'sportType' | 'startedAt' | 'distanceM'
+  | 'id'
+  | 'name'
+  | 'sportType'
+  | 'startedAt'
+  | 'distanceM'
+  | 'movingTimeS'
+  | 'elevationGainM'
 >;
 
 /** Provider-agnostic storage of activities and of their provider sources. */
@@ -256,9 +262,9 @@ export class ActivitiesService {
   }
 
   /**
-   * Every activity of a user, oldest first, as the distance badges need it.
+   * Every activity of a user, oldest first, as the badges need it.
    */
-  distanceTimeline(userId: string): Promise<ActivityDistance[]> {
+  totalsTimeline(userId: string): Promise<ActivityTotals[]> {
     return this.activities.find({
       select: {
         id: true,
@@ -266,6 +272,8 @@ export class ActivitiesService {
         sportType: true,
         startedAt: true,
         distanceM: true,
+        movingTimeS: true,
+        elevationGainM: true,
       },
       where: { userId },
       order: { startedAt: 'ASC', id: 'ASC' },

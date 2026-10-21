@@ -345,7 +345,7 @@
       "tier": "Niveau {number} sur {total}",
       "lastTier": "Dernier niveau atteint",
       "tiers": {
-        "title": "Niveaus",
+        "title": "Niveaux",
         "tier": "Niveau {number}",
         "reached": "atteint",
         "locked": "pas encore atteint"

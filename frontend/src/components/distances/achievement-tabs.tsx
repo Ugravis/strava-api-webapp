@@ -14,7 +14,7 @@ import {
 
 /** The sliding indicator is the active background: the tab itself stays transparent. */
 const TRIGGER =
-  "z-10 min-w-0 px-0.5 text-[13px] after:hidden hover:bg-background/60 hover:text-foreground data-active:bg-transparent data-active:shadow-none data-active:hover:bg-transparent sm:px-1.5 sm:text-sm dark:hover:bg-input/20 dark:data-active:border-transparent dark:data-active:bg-transparent";
+  "z-10 min-w-0 px-0.5 text-[13px] after:hidden data-active:bg-transparent data-active:shadow-none sm:px-1.5 sm:text-sm dark:data-active:border-transparent dark:data-active:bg-transparent";
 
 /** First-level tabs of the achievements page, across the whole content; the tab is kept in the address. */
 export function AchievementTabs({ value }: { value: AchievementTab }) {

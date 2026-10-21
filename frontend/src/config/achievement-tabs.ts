@@ -1,4 +1,4 @@
-import { LayoutGridIcon, MilestoneIcon, MountainIcon, TargetIcon, TimerIcon, type LucideIcon } from "lucide-react";
+import { AwardIcon, FlagIcon, MilestoneIcon, MountainIcon, TimerIcon, type LucideIcon } from "lucide-react";
 import { routes } from "./routes";
 
 /** First-level tabs of the achievements page, in display order. New badge kinds only need a tab declared here. */
@@ -10,8 +10,8 @@ export type AchievementTab = (typeof ACHIEVEMENT_TABS)[number];
 export const DEFAULT_ACHIEVEMENT_TAB: AchievementTab = "all";
 
 export const ACHIEVEMENT_TAB_ICONS: Record<AchievementTab, LucideIcon> = {
-  all: LayoutGridIcon,
-  challenges: TargetIcon,
+  all: AwardIcon,
+  challenges: FlagIcon,
   distance: MilestoneIcon,
   time: TimerIcon,
   elevation: MountainIcon,

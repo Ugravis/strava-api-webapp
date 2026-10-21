@@ -62,6 +62,58 @@ export interface ActivityStats {
   totalMovingTimeS: number;
 }
 
+/** An activity in the list of the latest ones. */
+export interface RecentActivity {
+  id: string;
+  name: string;
+  sportType: string;
+  startedAt: string;
+  distanceM: number;
+  movingTimeS: number;
+  elevationGainM: number | null;
+}
+
+/** Activities of one day, in the time zone where each one started. */
+export interface ActivityDay {
+  /** Local date, `YYYY-MM-DD`. */
+  date: string;
+  count: number;
+  distanceM: number;
+  movingTimeS: number;
+}
+
+/** Totals of one sport over every activity. */
+export interface SportTotals {
+  sportType: string;
+  count: number;
+  distanceM: number;
+  movingTimeS: number;
+}
+
+/** What the home page shows of the activities, besides their totals. */
+export interface ActivitiesOverview {
+  /** Latest activities, the most recent first. */
+  recent: RecentActivity[];
+  /** Days with activities over about the last year, oldest first. */
+  days: ActivityDay[];
+  /** Sports practiced, the most practiced (by moving time) first. */
+  sports: SportTotals[];
+  /** Start of the first activity, ISO 8601; null without activities. */
+  firstActivityAt: string | null;
+}
+
+/** Families of sports followed month by month; `other` gathers the remaining sports. */
+export type MonthlyFamily = "ride" | "run" | "hike" | "swim" | "other";
+
+/** Distance of one month, in the time zone where each activity started. */
+export interface MonthDistance {
+  /** Local month, `YYYY-MM`. */
+  month: string;
+  distanceM: number;
+  /** Distance of each family of sports. */
+  families: Record<MonthlyFamily, number>;
+}
+
 /** Groups of sports compared to landmarks; `all` counts every activity. */
 export type DistanceFamily = "all" | "run" | "hike" | "ride" | "swim";
 
@@ -351,6 +403,20 @@ export interface TileHistorySummary {
   tiles: number;
   /** Small tiles (zoom 17) gained since the date, or visited before it. */
   subtiles: number;
+}
+
+/** What the activities of one day brought to the tiles. */
+export interface TileTimelineDay {
+  /** UTC date of the activities, `YYYY-MM-DD`. */
+  date: string;
+  tiles: number;
+  subtiles: number;
+  /** Growth of the side of the largest squares. */
+  maxSquareTiles: number;
+  maxSquareSubtiles: number;
+  /** Growth of the largest clusters. */
+  maxClusterTiles: number;
+  maxClusterSubtiles: number;
 }
 
 /** A train station whose small tile the user visited. */

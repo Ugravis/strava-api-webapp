@@ -3,12 +3,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} className="h-24 rounded-xl" />
-        ))}
+      <Skeleton className="h-64 rounded-2xl sm:h-56" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Skeleton className="h-72 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-72 rounded-xl" />
       </div>
-      <Skeleton className="h-5 w-64 max-w-full" />
+      <Skeleton className="h-56 rounded-xl" />
     </div>
   );
 }

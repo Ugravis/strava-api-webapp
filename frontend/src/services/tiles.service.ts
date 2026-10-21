@@ -5,6 +5,7 @@ import type {
   TileActivitiesPage,
   TileHistorySummary,
   TileStats,
+  TileTimelineDay,
   TilesSummary,
   TileVisits,
 } from "@/lib/api/types";
@@ -13,6 +14,8 @@ export const tilesService = {
   getSummary: () => apiRequest<TilesSummary>("/tiles/summary"),
 
   getStats: () => apiRequest<TileStats>("/tiles/stats"),
+
+  getTimeline: () => apiRequest<TileTimelineDay[]>("/tiles/timeline"),
 
   getVisits: (zoom: number, x: number, y: number) => apiRequest<TileVisits>(`/tiles/${zoom}/${x}/${y}`),
 

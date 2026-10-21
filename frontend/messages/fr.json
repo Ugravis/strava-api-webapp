@@ -196,34 +196,142 @@
   },
   "dashboard": {
     "title": "Tableau de bord",
-    "description": "Vue d'ensemble de tes activités.",
-    "stats": {
+    "hero": {
+      "morning": "Bonjour {name}",
+      "evening": "Bonsoir {name}",
+      "latest": "Dernière activité : <strong>{name}</strong>, {when}.",
+      "noActivity": "Aucune activité importée pour le moment.",
+      "welcome": "Connecte ton compte Strava pour remplir ton tableau de bord.",
+      "map": "Carte",
+      "achievements": "Succès",
+      "distance": "Distance",
+      "elevation": "Dénivelé",
+      "time": "Temps en mouvement",
       "activities": "Activités",
-      "distance": "Distance totale",
-      "elevation": "Dénivelé positif",
-      "movingTime": "Temps en mouvement",
-      "error": "Impossible de charger tes statistiques pour le moment."
+      "earth": "{ratio} × le tour de la Terre",
+      "everest": "{ratio} × l'Everest",
+      "days": "soit {days} jours",
+      "sports": "{count, plural, one {# sport} other {# sports}}"
     },
-    "tiles": {
+    "week": {
+      "title": "Cette semaine",
+      "time": "Temps",
+      "distance": "Distance",
+      "activities": "Activités",
+      "daysLabel": "Distance de chaque jour de la semaine",
+      "compared": "{change} par rapport à la semaine dernière ({previous})",
+      "noPrevious": "Aucune activité la semaine dernière.",
+      "streak": "{count, plural, =0 {Aucune série} one {# jour d'affilée} other {# jours d'affilée}}",
+      "bestStreak": "Record sur un an : {count, plural, one {# jour} other {# jours}} d'affilée",
+      "dayDetail": "Cette semaine : {current} · Semaine dernière : {previous} · Moyenne : {average}",
+      "legendCurrent": "Cette semaine",
+      "legendPrevious": "Semaine dernière",
+      "legendAverage": "Moyenne sur {weeks} semaines",
+      "average": "Moyenne"
+    },
+    "calendar": {
+      "title": "Année {year}",
+      "summary": "{activities, plural, =0 {Aucune activité} one {# activité} other {# activités}} sur {days, plural, one {# jour} other {# jours}} · {distance} · {time}",
+      "label": "Calendrier de l'année : {days, plural, =0 {aucun jour actif} one {# jour actif} other {# jours actifs}}",
+      "hint": "Survole un jour pour voir son détail.",
+      "day": "{count, plural, one {# activité} other {# activités}} · {distance} · {time}",
+      "rest": "Repos",
+      "less": "Moins",
+      "more": "Plus",
+      "below": "Moins de {distance}",
+      "between": "De {from} à {to}",
+      "above": "{distance} et plus",
+      "previousYear": "Année précédente",
+      "nextYear": "Année suivante"
+    },
+    "sports": {
+      "title": "Tes sports",
+      "others": "{count, plural, one {# autre sport} other {# autres sports}}",
+      "detail": "{count, plural, one {# activité} other {# activités}} · {time} · {distance}",
+      "empty": "Aucun sport pour le moment."
+    },
+    "recent": {
+      "title": "Dernières activités",
+      "empty": "Aucune activité pour le moment.",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier"
+    },
+    "exploration": {
+      "title": "Exploration",
+      "map": "Carte",
       "tiles": "Tuiles",
       "subtiles": "Petites tuiles",
-      "visited": "Explorées",
-      "maxSquare": "Plus grand carré",
+      "maxSquare": "Carré max",
       "squareSize": "{size} × {size}",
-      "maxCluster": "Plus grand cluster",
-      "clustered": "Tuiles en cluster",
-      "error": "Impossible de charger tes tuiles pour le moment."
+      "maxCluster": "Cluster max",
+      "tilesError": "Impossible de charger tes tuiles pour le moment.",
+      "countries": "Pays",
+      "countriesCount": "{count, plural, one {{formatted} pays visité} other {{formatted} pays visités}}",
+      "countryTiles": "{visited} tuiles",
+      "countriesPending": "Tes tuiles sont en cours de localisation.",
+      "countriesEmpty": "Aucun pays visité pour le moment.",
+      "countriesError": "Impossible de charger tes pays pour le moment.",
+      "stations": "Gares et voies",
+      "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
+      "railway": "de voies débloquées",
+      "lastStation": "Dernière : {name}",
+      "stationsError": "Impossible de charger tes gares pour le moment.",
+      "openTiles": "Voir les tuiles sur la carte",
+      "openStations": "Voir les gares sur la carte"
     },
-    "countries": {
-      "title": "Pays",
-      "tiles": "Tuiles",
-      "subtiles": "Petites tuiles",
-      "count": "{visited} sur {total}",
-      "computingTotal": "{visited} sur … (calcul du total)",
-      "locating": "{count, plural, one {Localisation de {formatted} tuile…} other {Localisation de {formatted} tuiles…}}",
-      "pending": "Tes tuiles sont en cours de localisation.",
-      "empty": "Aucun pays visité pour le moment.",
-      "error": "Impossible de charger tes pays pour le moment."
+    "badges": {
+      "all": "Tous",
+      "favorites": {
+        "title": "Badges favoris",
+        "description": "Les badges que tu suis de près."
+      },
+      "closest": {
+        "title": "Presque débloqués",
+        "description": "Les badges les plus proches de leur prochaine étape."
+      },
+      "empty": "Aucun badge en cours."
+    },
+    "evolution": {
+      "tilesTitle": "Évolution de tes tuiles",
+      "stationsTitle": "Évolution de tes gares",
+      "modesLabel": "Valeur suivie",
+      "tileModes": {
+        "tiles": "Tuiles",
+        "maxClusterTiles": "Cluster max",
+        "maxSquareTiles": "Carré max",
+        "subtiles": "Petites tuiles",
+        "maxClusterSubtiles": "Petit cluster max",
+        "maxSquareSubtiles": "Petit carré max"
+      },
+      "stationModes": {
+        "stations": "Gares visitées",
+        "railway": "Voies débloquées"
+      },
+      "squareSize": "{size} × {size}",
+      "label": "Évolution : {name}, {value} aujourd'hui",
+      "hint": "Glisse sur le graphique pour zoomer.",
+      "reset": "Réinitialiser",
+      "empty": "Rien à afficher pour le moment.",
+      "error": "Impossible de charger l'évolution pour le moment."
+    },
+    "monthly": {
+      "title": "Distance mensuelle {year}",
+      "legend": "Séries du graphique",
+      "total": "Total",
+      "families": {
+        "ride": "Vélo",
+        "run": "Course à pied",
+        "hike": "Randonnée et marche",
+        "swim": "Natation",
+        "other": "Autres sports"
+      },
+      "label": "Distance de chaque mois, au total, par sport et un an plus tôt",
+      "error": "Impossible de charger les distances mensuelles pour le moment.",
+      "summary": "{distance} sur la période",
+      "previousYear": "Année précédente",
+      "nextYear": "Année suivante",
+      "rollingTitle": "Distance mensuelle sur un an",
+      "previousYearCurve": "Un an plus tôt"
     }
   },
   "strava": {

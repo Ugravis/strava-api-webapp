@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  Query,
   ParseUUIDPipe,
   Req,
   Res,
@@ -10,9 +11,13 @@ import type { Request, Response } from 'express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import type { User } from '../users/user.entity';
+import { ActivityDaysQueryDto } from './activity-days-query.dto';
 import {
   ActivitiesService,
+  type ActivitiesOverview,
+  type ActivityDay,
   type ActivityDetails,
+  type MonthDistance,
   type ActivityStats,
 } from './activities.service';
 
@@ -23,6 +28,27 @@ export class ActivitiesController {
   @Get('stats')
   stats(@CurrentUser() user: User): Promise<ActivityStats> {
     return this.activities.stats(user.id);
+  }
+
+  /** Latest activities, days of the last year and sports, for the home page. */
+  @Get('overview')
+  overview(@CurrentUser() user: User): Promise<ActivitiesOverview> {
+    return this.activities.overview(user.id);
+  }
+
+  /** Distance of every month since the first activity, in total and by family of sports. */
+  @Get('monthly')
+  monthly(@CurrentUser() user: User): Promise<MonthDistance[]> {
+    return this.activities.monthly(user.id);
+  }
+
+  /** Days with activities of a calendar year, for its calendar. */
+  @Get('days')
+  days(
+    @CurrentUser() user: User,
+    @Query() { year }: ActivityDaysQueryDto,
+  ): Promise<ActivityDay[]> {
+    return this.activities.yearDays(user.id, year);
   }
 
   /**
@@ -45,7 +71,7 @@ export class ActivitiesController {
     response.json(await this.activities.mappable(user.id));
   }
 
-  /** One activity of the user. Declared last: `stats` and `mappable` are not identifiers. */
+  /** One activity of the user. Declared last: the named routes above are not identifiers. */
   @Get(':id')
   async details(
     @CurrentUser() user: User,

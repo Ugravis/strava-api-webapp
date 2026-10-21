@@ -59,9 +59,47 @@ function visitedSql(mode: HistoryMode, column: string, index: number): string {
  * visited since a date, or the map as it was at that date. A large tile was
  * first visited at the earliest first visit of its small tiles.
  */
+/** What the activities of one day brought to the tiles. */
+export interface TileTimelineDay {
+  /** UTC date of the activities, `YYYY-MM-DD`. */
+  date: string;
+  tiles: number;
+  subtiles: number;
+  /** Growth of the side of the largest squares. */
+  maxSquareTiles: number;
+  maxSquareSubtiles: number;
+  /** Growth of the largest clusters. */
+  maxClusterTiles: number;
+  maxClusterSubtiles: number;
+}
+
 @Injectable()
 export class TileHistoryService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+
+  /**
+   * Gains of the tiles day by day, oldest first, over every activity: their
+   * running sums give the counters and achievements at any date.
+   */
+  timeline(userId: string): Promise<TileTimelineDay[]> {
+    return this.dataSource.query(
+      `SELECT to_char(a.started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
+         sum(cardinality(g.gained_tiles) / 2)::int AS tiles,
+         sum(cardinality(g.gained_subtiles) / 2)::int AS subtiles,
+         sum(g.max_square_tiles)::int AS "maxSquareTiles",
+         sum(g.max_square_subtiles)::int AS "maxSquareSubtiles",
+         sum(g.max_cluster_tiles)::int AS "maxClusterTiles",
+         sum(g.max_cluster_subtiles)::int AS "maxClusterSubtiles"
+       FROM activity_gains g JOIN activities a ON a.id = g.activity_id
+       WHERE g.user_id = $1
+       GROUP BY 1
+       HAVING sum(cardinality(g.gained_tiles) + cardinality(g.gained_subtiles)
+         + g.max_square_tiles + g.max_square_subtiles
+         + g.max_cluster_tiles + g.max_cluster_subtiles) > 0
+       ORDER BY 1`,
+      [userId],
+    );
+  }
 
   async summary(
     userId: string,

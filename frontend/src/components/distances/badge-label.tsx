@@ -8,10 +8,16 @@ interface BadgeLabelProps {
   badge: DistanceBadge;
   /** Tells the family of the badge to screen readers, where badges of several families mix. */
   withFamily?: boolean;
+  /** Centered under the medal, or aligned beside it. */
+  align?: "center" | "start";
+  /** Only the name, the progress being told to screen readers. */
+  compact?: boolean;
+  /** On a background of its own: the text takes its color, set by the card. */
+  onBackground?: boolean;
 }
 
-/** Name of a badge, its progress and its target, under its medal. */
-export function BadgeLabel({ badge, withFamily }: BadgeLabelProps) {
+/** Name of a badge, its progress and its target, under or beside its medal. */
+export function BadgeLabel({ badge, withFamily, align = "center", compact, onBackground }: BadgeLabelProps) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const amount = useAmount();
@@ -20,10 +26,18 @@ export function BadgeLabel({ badge, withFamily }: BadgeLabelProps) {
   const percent = format.number(Math.floor(badge.progress * 100) / 100, { style: "percent" });
 
   return (
-    <span className="flex flex-col text-center">
-      <span className="text-xs leading-tight font-medium">{badge.name}</span>
-      <span className="text-xs text-muted-foreground tabular-nums">
-        <span className={cn("font-medium", tier.text)}>{percent}</span>
+    <span className={cn("flex min-w-0 flex-col", align === "center" ? "text-center" : "text-left")}>
+      <span className={cn("text-xs leading-tight font-medium", compact ? "truncate" : "line-clamp-2")}>
+        {badge.name}
+      </span>
+      <span
+        className={cn(
+          "text-xs tabular-nums",
+          onBackground ? "opacity-80" : "text-muted-foreground",
+          compact && "sr-only",
+        )}
+      >
+        <span className={cn("font-medium", onBackground ? "font-semibold" : tier.text)}>{percent}</span>
         {" · "}
         {amount(badge.metric, badge.goal)}
       </span>

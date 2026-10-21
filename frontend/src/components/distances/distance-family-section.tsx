@@ -1,5 +1,4 @@
 import { useTranslations } from "next-intl";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BadgeMetric, DistanceBadge, DistanceFamily } from "@/lib/api/types";
 import { BadgeGrid } from "./badge-grid";
 import { useAmount } from "./use-amount";
@@ -12,39 +11,51 @@ interface DistanceFamilySectionProps {
   /** Metric and cumulated amount shown in the header, where the section counts a single metric. */
   total: { metric: BadgeMetric; amount: number } | null;
   badges: DistanceBadge[];
+  /** Cards with the name only. */
+  compact: boolean;
   onOpen: (badgeId: string) => void;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   highlightedId: string | null;
 }
 
-/** Rows shown while folded: 4 on phones, 3 from `sm`, 2 from `md`, twelve badges each time. */
-const FOLDED_ROWS = { 3: 4, 4: 3, 6: 2 } as const;
+/** Rows shown while folded, whatever the width. */
+const FOLDED_ROWS = 3;
 
-/** Badges of a family of sports, or the challenges, with the amount accumulated where a single metric is shown. */
-export function DistanceFamilySection({ kind, total, badges, ...grid }: DistanceFamilySectionProps) {
+/** Badges of a family of sports, or the challenges, with the share obtained and the amount accumulated where a single metric is shown. */
+export function DistanceFamilySection({ kind, total, badges, compact, ...grid }: DistanceFamilySectionProps) {
   const t = useTranslations("distances");
   const amount = useAmount();
   const headingId = `distances-${kind}`;
   const title = kind === "challenges" ? t("challengesTitle") : t(`families.${kind}`);
+  const obtained = badges.filter((badge) => badge.completions > 0).length;
 
   return (
-    <section aria-labelledby={headingId}>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <h2 id={headingId}>{title}</h2>
-          </CardTitle>
-          {total && (
-            <CardAction className="text-sm text-muted-foreground tabular-nums">
-              {t(`totals.${total.metric}`, { amount: amount(total.metric, total.amount) })}
-            </CardAction>
-          )}
-        </CardHeader>
-        <CardContent>
-          <BadgeGrid badges={badges} rows={FOLDED_ROWS} showFavorite anchors {...grid} />
-        </CardContent>
-      </Card>
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
+      <div className="flex min-h-8 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+        <h2 id={headingId} className="text-base font-semibold">
+          {title}
+        </h2>
+        <span
+          className="text-sm text-muted-foreground tabular-nums"
+          aria-label={t("obtainedLabel", { obtained, total: badges.length })}
+        >
+          {t("obtained", { obtained, total: badges.length })}
+        </span>
+        {total && (
+          <span className="ml-auto text-sm text-muted-foreground tabular-nums">
+            {t(`totals.${total.metric}`, { amount: amount(total.metric, total.amount) })}
+          </span>
+        )}
+      </div>
+      <BadgeGrid
+        badges={badges}
+        layout={compact ? "compact" : "horizontal"}
+        rows={FOLDED_ROWS}
+        showFavorite
+        anchors
+        {...grid}
+      />
     </section>
   );
 }

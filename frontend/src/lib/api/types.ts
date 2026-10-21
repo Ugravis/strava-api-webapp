@@ -82,6 +82,9 @@ export type BadgeMetric =
   | "subtiles"
   | "stations";
 
+/** Background of a badge card: a color (`#rrggbb`) or an image. */
+export type BadgeBackground = { kind: "color"; color: string } | { kind: "image"; url: string };
+
 /** A known amount compared to the cumulated amount of a metric, with the progress of the user. */
 export interface DistanceBadge {
   id: string;
@@ -95,6 +98,10 @@ export interface DistanceBadge {
   icon: string;
   /** Theme of the badge, among those of the overview; null without theme. */
   themeId: string | null;
+  /** Background of its card; null for the default one. */
+  background: BadgeBackground | null;
+  /** When the badge joined the catalog. */
+  addedAt: string;
   /** Number of iterations completed, or of tiers reached. */
   completions: number;
   /** Share of the current iteration or of the way to the next tier, in [0, 1); 1 once the last tier is reached. */

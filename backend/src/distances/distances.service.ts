@@ -23,14 +23,35 @@ import { favoriteOrder } from './favorite-order';
 import { activityEvents, isActivityMetric } from './metric-events';
 import { UserFavoriteBadge } from './user-favorite-badge.entity';
 
+/** Background of a badge card: a color or an image. */
+export type BadgeBackground =
+  { kind: 'color'; color: string } | { kind: 'image'; url: string };
+
 export type BadgeView = Omit<
   Badge,
-  'createdAt' | 'position' | 'theme' | 'target'
+  | 'createdAt'
+  | 'position'
+  | 'theme'
+  | 'target'
+  | 'backgroundColor'
+  | 'backgroundImage'
 > &
   BadgeProgress & {
+    /** Background of the card; null for the default one. */
+    background: BadgeBackground | null;
+    /** When the badge joined the catalog. */
+    addedAt: Date;
     /** Rank among the favorites, from 1; null when not a favorite. */
     favoritePosition: number | null;
   };
+
+function backgroundOf(badge: Badge): BadgeBackground | null {
+  if (badge.backgroundColor)
+    return { kind: 'color', color: badge.backgroundColor };
+  if (badge.backgroundImage)
+    return { kind: 'image', url: badge.backgroundImage };
+  return null;
+}
 
 type MetricTimelines = Record<
   BadgeMetric,
@@ -231,6 +252,8 @@ export class DistancesService {
       description,
       icon,
       themeId,
+      background: backgroundOf(badge),
+      addedAt: badge.createdAt,
       ...badgeProgress(badge, timeline),
       favoritePosition,
     };

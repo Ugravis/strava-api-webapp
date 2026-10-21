@@ -371,7 +371,45 @@
       "stations": "{count, plural, one {# gare} other {# gares}}"
     },
     "challengesTitle": "Défis",
-    "level": "Nv. {level}"
+    "level": "Nv. {level}",
+    "obtained": "{obtained}/{total}",
+    "obtainedLabel": "{obtained} {obtained, plural, one {badge obtenu} other {badges obtenus}} sur {total}",
+    "viewOptions": {
+      "sortLabel": "Trier par",
+      "sorts": {
+        "default": "Par défaut",
+        "name_asc": "Nom (A–Z)",
+        "name_desc": "Nom (Z–A)",
+        "progress_asc": "Progression croissante",
+        "progress_desc": "Progression décroissante"
+      },
+      "compact": "Vue compacte",
+      "compactView": "Passer en vue compacte",
+      "normalView": "Passer en vue normale"
+    },
+    "header": {
+      "label": "Résumé de tes succès",
+      "closest": "Le plus proche",
+      "remaining": "encore {amount}",
+      "carousel": "Badges à la une",
+      "slide": "{number} sur {total}",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "slides": {
+        "closest": "Bientôt obtenus",
+        "recent": "Nouveaux badges"
+      },
+      "metrics": {
+        "distance": "Distance",
+        "time": "Temps",
+        "elevation": "Dénivelé",
+        "activities": "Activités",
+        "active_days": "Jours actifs",
+        "tiles": "Tuiles",
+        "subtiles": "Petites tuiles",
+        "stations": "Gares"
+      }
+    }
   },
   "map": {
     "title": "Carte",

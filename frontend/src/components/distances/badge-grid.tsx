@@ -2,19 +2,28 @@
 
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { type GridColumns, useGridColumns } from "@/hooks/use-grid-columns";
+import { useGridColumns } from "@/hooks/use-grid-columns";
 import type { DistanceBadge } from "@/lib/api/types";
-import { BadgeButton } from "./badge-button";
+import { BadgeCard, type BadgeCardLayout } from "./badge-card";
 
-/** Classes of the badge grids, matching `useGridColumns`. */
-export const BADGE_GRID_CLASS = "grid grid-cols-3 gap-x-2 gap-y-4 sm:grid-cols-4 md:grid-cols-6";
+/**
+ * Columns of the badge grids for each card layout, following the width of
+ * the page (a `@container`) rather than of the window, the sidebar aside.
+ */
+export const BADGE_GRID_CLASS: Record<BadgeCardLayout, string> = {
+  vertical: "grid grid-cols-3 gap-2 @md:grid-cols-4 @2xl:grid-cols-6",
+  horizontal: "grid grid-cols-2 gap-2 @xl:grid-cols-3 @4xl:grid-cols-4",
+  compact: "grid grid-cols-4 gap-1.5 @md:grid-cols-6 @2xl:grid-cols-8",
+};
 
 interface BadgeGridProps {
   badges: DistanceBadge[];
+  layout: BadgeCardLayout;
   onOpen: (badgeId: string) => void;
-  /** Rows shown while folded, for each number of columns. */
-  rows: Record<GridColumns, number>;
+  /** Rows shown while folded. */
+  rows: number;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   showFavorite?: boolean;
@@ -25,9 +34,10 @@ interface BadgeGridProps {
   anchors?: boolean;
 }
 
-/** Badges laid out in rows, folded after a few rows with a button to show the others. */
+/** Badges laid out in rows of cards, folded after a few rows with a button to show the others. */
 export function BadgeGrid({
   badges,
+  layout,
   onOpen,
   rows,
   expanded,
@@ -38,18 +48,20 @@ export function BadgeGrid({
   anchors,
 }: BadgeGridProps) {
   const t = useTranslations("distances");
-  const columns = useGridColumns();
-  const limit = columns * rows[columns];
+  const ref = useRef<HTMLUListElement>(null);
+  const columns = useGridColumns(ref, layout === "horizontal" ? 2 : 3);
+  const limit = columns * rows;
   const hidden = Math.max(badges.length - limit, 0);
   const shown = expanded ? badges : badges.slice(0, limit);
 
   return (
     <div className="flex flex-col gap-3">
-      <ul className={BADGE_GRID_CLASS}>
+      <ul ref={ref} className={BADGE_GRID_CLASS[layout]}>
         {shown.map((badge, index) => (
-          <BadgeButton
+          <BadgeCard
             key={badge.id}
             badge={badge}
+            layout={layout}
             index={index}
             showFavorite={showFavorite}
             showFamily={showFamily}

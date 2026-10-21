@@ -62,6 +62,24 @@ export class Badge {
   @Column({ type: 'varchar', length: 40 })
   icon!: string;
 
+  /** Background color of the card, `#rrggbb`; exclusive with the image. */
+  @Column({
+    name: 'background_color',
+    type: 'varchar',
+    length: 7,
+    nullable: true,
+  })
+  backgroundColor!: string | null;
+
+  /** Background image of the card, a URL; exclusive with the color. */
+  @Column({
+    name: 'background_image',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  backgroundImage!: string | null;
+
   /** Display order, ascending. */
   @Column({ type: 'integer' })
   position!: number;

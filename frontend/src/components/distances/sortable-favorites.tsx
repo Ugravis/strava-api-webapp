@@ -20,8 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
 import type { DistanceBadge } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { BadgeLabel } from "./badge-label";
-import { BadgeMedal } from "./badge-medal";
+import { BADGE_CARD_LAYOUT_CLASS, BadgeCardContent, badgeCardSurface } from "./badge-card";
 import { BADGE_GRID_CLASS } from "./badge-grid";
 
 interface SortableFavoritesProps {
@@ -32,20 +31,22 @@ interface SortableFavoritesProps {
 
 function SortableBadge({ badge, index }: { badge: DistanceBadge; index: number }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: badge.id });
+  const surface = badgeCardSurface(badge);
 
   return (
     <li
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{ ...surface.style, transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex cursor-grab touch-none flex-col items-center gap-1.5 rounded-lg p-1 outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50",
-        isDragging && "relative z-10 cursor-grabbing bg-card shadow-lg ring-1 ring-foreground/10",
+        "flex min-w-0 cursor-grab touch-none rounded-xl outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        BADGE_CARD_LAYOUT_CLASS.vertical,
+        surface.className,
+        isDragging && "relative z-10 cursor-grabbing shadow-lg",
       )}
       {...attributes}
       {...listeners}
     >
-      <BadgeMedal badge={badge} index={index} showFamily />
-      <BadgeLabel badge={badge} withFamily />
+      <BadgeCardContent badge={badge} layout="vertical" index={index} showFamily />
     </li>
   );
 }
@@ -83,7 +84,7 @@ export function SortableFavorites({ badges, onReorder }: SortableFavoritesProps)
       }}
     >
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <ul className={BADGE_GRID_CLASS}>
+        <ul className={BADGE_GRID_CLASS.vertical}>
           {badges.map((badge, index) => (
             <SortableBadge key={badge.id} badge={badge} index={index} />
           ))}

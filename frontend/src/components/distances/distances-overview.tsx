@@ -150,7 +150,10 @@ export function DistancesOverview({ tab }: { tab: AchievementTab }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <AchievementsHeader headlines={ACHIEVEMENT_TAB_HEADLINES[tab]} totals={overview.totals} badges={tabBadges} onOpen={openBadge} />
+      <AchievementsHeader
+        // A badge drawn in a tab is not kept in another one.
+        key={tab}
+        headlines={ACHIEVEMENT_TAB_HEADLINES[tab]} totals={overview.totals} badges={tabBadges} onOpen={openBadge} />
       <div className="flex flex-col gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
         <div className="flex gap-2">
           <div className="min-w-0 flex-1">

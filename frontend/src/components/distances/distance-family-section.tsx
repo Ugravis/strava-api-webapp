@@ -44,7 +44,7 @@ export function DistanceFamilySection({ kind, totals, badges, compact, ...grid }
         </span>
         {totals.length > 0 && (
           <span className="ml-auto text-sm text-muted-foreground tabular-nums">
-            {totals.map(({ metric, amount: value }) => amount(metric, value)).join(" · ")}
+            {totals.map(({ metric, amount: value }) => amount(metric, value, true)).join(" · ")}
           </span>
         )}
       </div>

@@ -4,10 +4,10 @@ export function DistancesSkeleton() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
       <div className="flex flex-col gap-4 rounded-2xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
-        <div className="grid gap-3 @lg:grid-cols-[12rem_1fr] @3xl:grid-cols-[13rem_1fr_1fr]">
-          <Skeleton className="h-28 rounded-xl @lg:row-span-2 @lg:h-auto @lg:aspect-square @3xl:row-span-1" />
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
+        <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-[13rem_13rem_minmax(0,1fr)]">
+          <Skeleton className="aspect-square rounded-xl" />
+          <Skeleton className="aspect-square rounded-xl" />
+          <Skeleton className="col-span-2 h-28 rounded-xl @2xl:col-span-1 @2xl:h-auto" />
         </div>
         <div className="flex gap-2 overflow-hidden">
           {Array.from({ length: 6 }, (_, badge) => (

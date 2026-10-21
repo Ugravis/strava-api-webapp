@@ -24,14 +24,18 @@ export interface AmountFormat {
   count: (metric: BadgeMetric, value: number) => string;
 }
 
-/** An amount of a metric with its unit: kilometers, hours, meters, or a count with its noun. */
-export function formatAmount(format: AmountFormat, metric: BadgeMetric, value: number): string {
+/**
+ * An amount of a metric with its unit: kilometers, hours, meters, or a count
+ * with its noun; `whole`, the kilometers without decimals.
+ */
+export function formatAmount(format: AmountFormat, metric: BadgeMetric, value: number, whole = false): string {
+  const kmDigits = whole ? 0 : 1;
   switch (metric) {
     case "distance":
-      return format.number(value / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 1 });
+      return format.number(value / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: kmDigits });
     case "elevation":
       return value >= KILOMETERS_FROM_M
-        ? format.number(value / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 1 })
+        ? format.number(value / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: kmDigits })
         : format.number(value, { style: "unit", unit: "meter", maximumFractionDigits: 0 });
     case "time": {
       const hours = Math.floor(value / 3600);

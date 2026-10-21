@@ -391,9 +391,9 @@
         "progress_asc": "Progression croissante",
         "progress_desc": "Progression décroissante"
       },
-      "compact": "Vue compacte",
-      "compactView": "Passer en vue compacte",
-      "normalView": "Passer en vue normale"
+      "compactView": "Vue compacte",
+      "normalView": "Vue large",
+      "viewLabel": "Affichage"
     },
     "header": {
       "label": "Résumé de tes succès",
@@ -417,8 +417,10 @@
         "stations": "Gares"
       },
       "random": "Au hasard",
-      "reroll": "Tirer un autre badge",
-      "carouselLists": "Badges affichés"
+      "reroll": "Relancer le dé",
+      "carouselLists": "Badges affichés",
+      "roll": "Lancer le dé pour tirer un badge",
+      "rollHint": "Lance le dé"
     }
   },
   "map": {

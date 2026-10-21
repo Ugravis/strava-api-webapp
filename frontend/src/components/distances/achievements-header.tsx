@@ -2,7 +2,7 @@
 
 import { ChevronLeftIcon, ChevronRightIcon, DicesIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BadgeMetric, DistanceBadge, DistanceFamily, DistancesOverview } from "@/lib/api/types";
 import { CHALLENGE_METRICS } from "@/lib/badge-amount";
@@ -35,127 +35,160 @@ interface AchievementsHeaderProps {
   onOpen: (badgeId: string) => void;
 }
 
-/** A total, its number alone for the counts, its label telling what is counted. */
+/** A total without decimals, its number alone for the counts, its label telling what is counted. */
 function useStatValue(): (metric: BadgeMetric, value: number) => string {
   const format = useFormatter();
   const amount = useAmount();
-  return (metric, value) => (CHALLENGE_METRICS.includes(metric) ? format.number(Math.round(value)) : amount(metric, value));
+  return (metric, value) =>
+    CHALLENGE_METRICS.includes(metric) ? format.number(Math.round(value)) : amount(metric, value, true);
 }
 
+/** Square widgets of the header. */
+const SQUARE = "aspect-square min-w-0 rounded-xl";
+
 /**
- * Header of the achievements page: the main totals of the tab, the badge
- * closest to completion and a random one, then a carousel.
+ * Header of the achievements page: the main totals of the tab, a badge drawn
+ * at random and the badge closest to completion, then a carousel.
  */
 export function AchievementsHeader({ headlines, totals, badges, onOpen }: AchievementsHeaderProps) {
   const t = useTranslations("distances.header");
   const [closest] = closestBadges(badges, 1);
-  const others = badges.filter((badge) => badge !== closest);
-  // A share of the list rather than a rank, the list changing with the tab.
-  const [seed, setSeed] = useState(() => Math.random());
-  const [rolls, setRolls] = useState(0);
-  const random = others.length > 0 ? others[Math.floor(seed * others.length)] : undefined;
-
-  const reroll = () => {
-    const current = Math.floor(seed * others.length);
-    let next = Math.random();
-    // Another badge whenever there is one.
-    while (others.length > 1 && Math.floor(next * others.length) === current) next = Math.random();
-    setSeed(next);
-    setRolls(rolls + 1);
-  };
 
   return (
     <section
       aria-label={t("label")}
-      className="flex flex-col gap-4 rounded-2xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4"
+      className="flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4"
     >
-      <div className="grid gap-3 @lg:grid-cols-[12rem_1fr] @3xl:grid-cols-[13rem_1fr_1fr]">
+      <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-[13rem_13rem_minmax(0,1fr)]">
         <HeadlineWidget headlines={headlines} totals={totals} />
-        {closest && <FeaturedBadge title={t("closest")} badge={closest} onOpen={onOpen} />}
-        {random && (
-          <FeaturedBadge
-            title={t("random")}
-            badge={random}
-            onOpen={onOpen}
-            action={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="-my-1 text-muted-foreground"
-                onClick={reroll}
-                disabled={others.length < 2}
-                aria-label={t("reroll")}
-                title={t("reroll")}
-              >
-                <DicesIcon
-                  className="transition-transform duration-500 motion-reduce:transition-none"
-                  style={{ transform: `rotate(${rolls * 360}deg)` }}
-                />
-              </Button>
-            }
-          />
-        )}
+        <RandomBadgeWidget badges={badges} onOpen={onOpen} />
+        {closest && <ClosestBadge badge={closest} onOpen={onOpen} />}
       </div>
       {badges.length > 0 && <BadgeCarousel badges={badges} onOpen={onOpen} />}
     </section>
   );
 }
 
-/** The main totals of the tab in a dark square: one with its sports, or up to four. */
+/** The main totals of the tab in a dark square: the first one in large, the others or its sports under it. */
 function HeadlineWidget({ headlines, totals }: Pick<AchievementsHeaderProps, "headlines" | "totals">) {
   const t = useTranslations("distances");
   const value = useStatValue();
-  // Dark whatever the theme.
-  const widget =
-    "flex flex-col rounded-xl bg-linear-to-br from-zinc-800 to-zinc-950 p-4 text-zinc-50 ring-1 ring-white/10 @lg:row-span-2 @lg:aspect-square @3xl:row-span-1";
+  const [top, ...others] = headlines;
+  const details =
+    others.length > 0
+      ? others.map((metric) => ({ key: metric, label: t(`header.metrics.${metric}`), value: value(metric, totals[metric].all) }))
+      : SPORTS.map((family) => ({ key: family, label: t(`families.${family}`), value: value(top, totals[top][family]) }));
 
-  if (headlines.length === 1) {
-    const [metric] = headlines;
-    return (
-      <div className={cn(widget, "justify-between gap-4")}>
-        <div className="flex flex-col">
-          <span className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
-            {t(`header.metrics.${metric}`)}
-          </span>
-          <span className="text-3xl font-semibold tabular-nums">{value(metric, totals[metric].all)}</span>
-        </div>
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-300 @lg:flex-col">
-          {SPORTS.map((family) => (
-            <li key={family} className="flex items-center gap-1.5 tabular-nums">
-              <FamilyIcon family={family} className="size-4 text-zinc-400" aria-hidden />
-              <span className="sr-only">{t(`families.${family}`)} :</span>
-              {value(metric, totals[metric][family])}
-            </li>
-          ))}
-        </ul>
+  return (
+    <div
+      // Dark whatever the theme.
+      className={cn(
+        SQUARE,
+        "flex flex-col justify-between gap-2 bg-linear-to-br from-zinc-800 to-zinc-950 p-3 text-zinc-50 ring-1 ring-white/10 sm:p-4",
+      )}
+    >
+      <div className="flex min-w-0 flex-col">
+        <span className="truncate text-[11px] font-medium tracking-wide text-zinc-400 uppercase">
+          {t(`header.metrics.${top}`)}
+        </span>
+        <span className="truncate text-2xl font-semibold tabular-nums sm:text-3xl">{value(top, totals[top].all)}</span>
       </div>
+      <dl className="flex min-w-0 flex-col gap-0.5 text-xs">
+        {details.map((detail) => (
+          <div key={detail.key} className="flex min-w-0 items-baseline justify-between gap-2">
+            <dt className="truncate text-zinc-400">{detail.label}</dt>
+            <dd className="shrink-0 font-medium text-zinc-200 tabular-nums">{detail.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** Length of a roll of the die. */
+const ROLL_MS = 1000;
+
+/** A badge drawn at random once the die is rolled, drawn again with each roll. */
+function RandomBadgeWidget({ badges, onOpen }: { badges: DistanceBadge[]; onOpen: (badgeId: string) => void }) {
+  const t = useTranslations("distances.header");
+  const format = useFormatter();
+  const [badge, setBadge] = useState<DistanceBadge | null>(null);
+  const [rolling, setRolling] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const roll = () => {
+    if (rolling || badges.length === 0) return;
+    setRolling(true);
+    timer.current = window.setTimeout(() => {
+      // Another badge whenever there is one.
+      const pool = badges.length > 1 ? badges.filter((candidate) => candidate.id !== badge?.id) : badges;
+      setBadge(pool[Math.floor(Math.random() * pool.length)]);
+      setRolling(false);
+    }, ROLL_MS);
+  };
+
+  const die = (
+    <DicesIcon className={cn("size-12 text-muted-foreground", rolling && "animate-dice-roll motion-reduce:animate-none")} />
+  );
+
+  if (!badge || rolling) {
+    return (
+      <button
+        type="button"
+        onClick={roll}
+        disabled={badges.length === 0}
+        aria-label={t("roll")}
+        aria-busy={rolling}
+        className={cn(
+          SQUARE,
+          "flex flex-col items-center justify-center gap-2 bg-muted/50 ring-1 ring-foreground/5 outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+        )}
+      >
+        {die}
+        <span className="text-xs font-medium text-muted-foreground">{t("rollHint")}</span>
+      </button>
     );
   }
 
   return (
-    <dl className={cn(widget, "grid grid-cols-2 content-between gap-3")}>
-      {headlines.map((metric) => (
-        <div key={metric} className="flex min-w-0 flex-col">
-          <dt className="truncate text-[11px] font-medium tracking-wide text-zinc-400 uppercase">
-            {t(`header.metrics.${metric}`)}
-          </dt>
-          <dd className="truncate text-lg font-semibold tabular-nums">{value(metric, totals[metric].all)}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className={cn(SQUARE, "relative flex flex-col bg-muted/50 p-2 ring-1 ring-foreground/5")}>
+      <span className="truncate pr-7 pl-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        {t("random")}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="absolute top-1 right-1 text-muted-foreground"
+        onClick={roll}
+        aria-label={t("reroll")}
+        title={t("reroll")}
+      >
+        <DicesIcon />
+      </Button>
+      <button
+        type="button"
+        onClick={() => onOpen(badge.id)}
+        aria-haspopup="dialog"
+        className="group flex min-h-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg text-center outline-none animate-in fade-in-0 zoom-in-95 focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <BadgeMedal
+          badge={badge}
+          index={0}
+          className="w-12 transition-transform group-hover:scale-105 motion-reduce:transition-none sm:w-14"
+        />
+        <span className="line-clamp-2 text-xs leading-tight font-semibold">{badge.name}</span>
+        <span className={cn("text-xs font-semibold tabular-nums", progressTier(badge.progress).text)}>
+          {format.number(Math.floor(badge.progress * 100) / 100, { style: "percent" })}
+        </span>
+      </button>
+    </div>
   );
 }
 
-interface FeaturedBadgeProps {
-  title: string;
-  badge: DistanceBadge;
-  onOpen: (badgeId: string) => void;
-  /** Button beside the title. */
-  action?: ReactNode;
-}
-
-/** A badge put forward, with its progress and what is left to complete it. */
-function FeaturedBadge({ title, badge, onOpen, action }: FeaturedBadgeProps) {
+/** The badge closest to completion, with its progress and what is left to complete it. */
+function ClosestBadge({ badge, onOpen }: { badge: DistanceBadge; onOpen: (badgeId: string) => void }) {
   const t = useTranslations("distances.header");
   const format = useFormatter();
   const amount = useAmount();
@@ -164,11 +197,8 @@ function FeaturedBadge({ title, badge, onOpen, action }: FeaturedBadgeProps) {
   const percent = format.number(Math.floor(badge.progress * 100) / 100, { style: "percent" });
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-xl bg-muted/50 p-3 ring-1 ring-foreground/5">
-      <div className="flex min-h-7 items-center justify-between gap-2">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</span>
-        {action}
-      </div>
+    <div className="col-span-2 flex min-w-0 flex-col gap-2 rounded-xl bg-muted/50 p-3 ring-1 ring-foreground/5 @2xl:col-span-1">
+      <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{t("closest")}</span>
       <button
         type="button"
         onClick={() => onOpen(badge.id)}

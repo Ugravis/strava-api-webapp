@@ -158,8 +158,8 @@ export function SidebarNotificationsItem() {
   return (
     <SidebarMenuItem>
       <NotificationsMenu
-        side={isMobile ? "top" : "right"}
-        align="end"
+        side={isMobile ? "bottom" : "right"}
+        align="start"
         trigger={
           <SidebarMenuButton
             tooltip={label}

@@ -21,6 +21,7 @@ export function AppSidebar({ user }: { user: User }) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarBrand />
+          <SidebarNotificationsItem />
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
@@ -28,7 +29,6 @@ export function AppSidebar({ user }: { user: User }) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarNotificationsItem />
           <NavUser user={user} />
         </SidebarMenu>
       </SidebarFooter>

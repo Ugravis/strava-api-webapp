@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow, Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { siteConfig } from "@/config/site";
 import { DEFAULT_LOCALE } from "@/i18n/request";
@@ -17,6 +17,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/** Only the wordmark uses it, so a single weight and style is loaded. */
+const barlow = Barlow({
+  variable: "--font-barlow",
+  subsets: ["latin"],
+  weight: "800",
+  style: "italic",
+});
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return {
@@ -29,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={DEFAULT_LOCALE}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

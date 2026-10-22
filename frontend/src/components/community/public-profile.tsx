@@ -35,7 +35,10 @@ export function PublicProfileView({ username }: { username: string }) {
   }
 
   return (
-    <ProfileStage top={<p className="text-sm font-medium text-muted-foreground">@{username}</p>}>
+    <ProfileStage
+      top={<p className="text-sm font-medium text-muted-foreground">@{username}</p>}
+      color={profile?.color ?? null}
+    >
       <div className={CARD_WIDTH}>
         {!profile || profile.self ? (
           <ProfileCardSkeleton />
@@ -49,7 +52,6 @@ export function PublicProfileView({ username }: { username: string }) {
                 state={followStateOf(profile)}
                 followsViewer={profile.followsViewer}
                 onChange={showFollowState}
-                className="border-transparent shadow-none"
               />
             }
           />

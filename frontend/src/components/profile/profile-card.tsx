@@ -104,7 +104,7 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
             className="size-20 shrink-0 shadow-lg ring-4 ring-card"
             fallbackClassName="text-2xl"
           />
-          <div className="flex min-w-0 items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-xs" {...EXPORT_IGNORE}>
+          <div className="flex min-w-0 items-center gap-2" {...EXPORT_IGNORE}>
             <LikeButton
               key={profile.username}
               username={profile.username}

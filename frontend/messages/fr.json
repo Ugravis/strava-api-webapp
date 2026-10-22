@@ -269,8 +269,7 @@
       "like": "Aimer ce profil ({count, plural, one {# like} other {# likes}})",
       "unlike": "Ne plus aimer ce profil ({count, plural, one {# like} other {# likes}})",
       "count": "{count, plural, =0 {Aucun like} one {# like} other {# likes}}",
-      "anonymous": "Les likes sont anonymes : personne ne voit qui a aimé un profil.",
-      "anonymousOwn": "Les likes sont anonymes : tu vois combien de personnes aiment ton profil, jamais qui."
+      "anonymous": "Les likes sont anonymes."
     }
   },
   "settings": {
@@ -981,10 +980,12 @@
     "toast": {
       "follow": "{name} s'est abonné·e à toi.",
       "follow_request": "{name} demande à s'abonner à toi.",
-      "follow_accepted": "{name} a accepté ta demande d'abonnement."
+      "follow_accepted": "{name} a accepté ta demande d'abonnement.",
+      "profile_like": "Quelqu'un a aimé ton profil."
     },
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à toi.",
-    "follow_accepted": "<b>{name}</b> a accepté ta demande d'abonnement."
+    "follow_accepted": "<b>{name}</b> a accepté ta demande d'abonnement.",
+    "profile_like": "Quelqu'un a aimé ton profil."
   }
 }

@@ -48,7 +48,7 @@ export function OwnProfile() {
           profile={color === undefined ? profile : { ...profile, color }}
           onFollowsClosed={refresh}
           action={
-            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={routes.settingsProfile} />}>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href={routes.settingsProfile} />}>
               <PencilIcon aria-hidden />
               {t("edit")}
             </Button>
@@ -72,7 +72,6 @@ export function OwnProfile() {
                 username={other.username}
                 state={followStateOf(other)}
                 followsViewer={other.followsViewer}
-                className="border-transparent shadow-none"
                 onChange={() => others.reload(summary.username)}
               />
             }
@@ -85,8 +84,10 @@ export function OwnProfile() {
   ];
 
   const shown = items[index];
+  const shownColor = self ? (color === undefined ? profile?.color : color) : others.profiles[shown.key]?.color;
   return (
     <ProfileStage
+      color={shownColor ?? null}
       top={
         self ? (
           <div className="flex items-center gap-3">

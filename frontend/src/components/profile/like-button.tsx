@@ -57,11 +57,11 @@ export function LikeButton({ username, liked: initiallyLiked, count: initialCoun
             <span
               tabIndex={0}
               aria-label={t("count", { count })}
-              className="inline-flex h-7 items-center gap-1 px-2 text-sm font-medium [&_svg]:size-4"
+              className="inline-flex h-7 items-center gap-1 rounded-[min(var(--radius-md),12px)] border bg-background px-2.5 text-[0.8rem] font-medium [&_svg]:size-3.5"
             />
           ) : (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               disabled={pending}
               aria-pressed={liked}
@@ -73,7 +73,7 @@ export function LikeButton({ username, liked: initiallyLiked, count: initialCoun
       >
         {content}
       </TooltipTrigger>
-      <TooltipContent>{t(self ? "anonymousOwn" : "anonymous")}</TooltipContent>
+      <TooltipContent>{t("anonymous")}</TooltipContent>
     </Tooltip>
   );
 }

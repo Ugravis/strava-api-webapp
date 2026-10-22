@@ -580,12 +580,13 @@ export type FollowStatus = "following" | "requested";
 
 export type FollowDirection = "followers" | "following";
 
-export type NotificationType = "follow" | "follow_request" | "follow_accepted";
+export type NotificationType = "follow" | "follow_request" | "follow_accepted" | "profile_like";
 
 export interface AppNotification {
   id: string;
   type: NotificationType;
-  actor: PublicUser;
+  /** Null for an anonymous kind: who liked a profile is never told. */
+  actor: PublicUser | null;
   read: boolean;
   createdAt: string;
 }

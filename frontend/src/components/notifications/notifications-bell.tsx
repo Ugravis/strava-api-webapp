@@ -1,6 +1,6 @@
 "use client";
 
-import { BellIcon } from "lucide-react";
+import { BellIcon, HeartIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useState, type ReactElement } from "react";
@@ -94,15 +94,23 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
 
   return (
     <DropdownMenuItem
-      // A request is answered from the own profile.
-      render={<Link href={notification.type === "follow_request" ? routes.profile : userProfileHref(actor.username)} />}
+      // A request is answered from the own profile, where an anonymous like is counted.
+      render={
+        <Link href={actor && notification.type !== "follow_request" ? userProfileHref(actor.username) : routes.profile} />
+      }
       className={cn("items-start gap-3 py-2", unread && "bg-primary/5")}
     >
-      <UserAvatar user={actor} className="size-8" />
+      {actor ? (
+        <UserAvatar user={actor} className="size-8" />
+      ) : (
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-rose-500/10 text-rose-500">
+          <HeartIcon className="size-4 fill-current" aria-hidden />
+        </span>
+      )}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-sm leading-snug whitespace-normal">
           {t.rich(notification.type, {
-            name: publicNameOf(actor),
+            name: actor ? publicNameOf(actor) : "",
             b: (chunks) => <span className="font-semibold">{chunks}</span>,
           })}
         </span>

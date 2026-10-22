@@ -56,6 +56,9 @@ function NavEntry({ item }: { item: NavigationItem }) {
     <SidebarMenuItem
       className={cn(
         QuickAccess && "rounded-md transition-colors",
+        // Inside the group, already lit, hovering only brightens the text.
+        QuickAccess &&
+          "[&_[data-sidebar=menu-button]]:text-sidebar-foreground/75 [&_[data-sidebar=menu-button]:not([data-active]):hover]:bg-transparent [&_[data-sidebar=menu-button]:hover]:text-sidebar-foreground [&_[data-sidebar=menu-button][data-active]]:text-sidebar-accent-foreground",
         QuickAccess && (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group hover:delay-500 focus-within:bg-sidebar-group"),
       )}
     >

@@ -32,7 +32,7 @@ interface NotificationsMenuProps {
   /** The bell, rendered by the caller to fit where it sits. */
   trigger: ReactElement;
   side?: "bottom" | "right" | "top";
-  align?: "start" | "end";
+  align?: "start" | "center" | "end";
 }
 
 /**
@@ -159,12 +159,12 @@ export function SidebarNotificationsItem() {
     <SidebarMenuItem>
       <NotificationsMenu
         side={isMobile ? "bottom" : "right"}
-        align="start"
+        align={isMobile ? "start" : "center"}
         trigger={
           <SidebarMenuButton
             tooltip={label}
             aria-label={label}
-            className="relative data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+            className="relative data-popup-open:bg-sidebar-group"
           >
             <BellIcon />
             <span>{t("label")}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDownIcon, LogOutIcon, SettingsIcon } from "lucide-react";
+import { EllipsisIcon, LogOutIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user/user-avatar";
@@ -46,12 +46,12 @@ export function NavUser({ user }: { user: User }) {
             <SidebarMenuButton
               size="lg"
               aria-label={t("userMenu")}
-              className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+              className="data-popup-open:bg-sidebar-group"
             />
           }
         >
           <UserSummary user={user} />
-          <ChevronsUpDownIcon className="ml-auto" />
+          <EllipsisIcon className="ml-auto" />
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="min-w-56"

@@ -5,9 +5,11 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarRail,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { mainNavigation } from "@/config/navigation";
 import type { User } from "@/lib/api/types";
@@ -21,9 +23,15 @@ export function AppSidebar({ user }: { user: User }) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarBrand />
-          <SidebarNotificationsItem />
         </SidebarMenu>
       </SidebarHeader>
+      <SidebarSeparator className="mt-1" />
+      <SidebarGroup>
+        <SidebarMenu>
+          <SidebarNotificationsItem />
+        </SidebarMenu>
+      </SidebarGroup>
+      <SidebarSeparator />
       <SidebarContent>
         <NavMain items={mainNavigation} />
       </SidebarContent>

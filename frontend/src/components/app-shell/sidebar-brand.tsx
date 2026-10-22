@@ -26,7 +26,7 @@ export function SidebarBrand() {
           onClick={toggleSidebar}
           tooltip={t("expandMenu")}
           aria-label={t("expandMenu")}
-          className="group/brand"
+          className="group/brand hover:bg-transparent active:bg-transparent"
         >
           <AppLogoMark className="group-hover/brand:hidden group-focus-visible/brand:hidden" />
           <PanelLeftOpenIcon className="mx-auto hidden size-4! group-hover/brand:block group-focus-visible/brand:block" />
@@ -37,7 +37,11 @@ export function SidebarBrand() {
 
   return (
     <SidebarMenuItem className="flex items-center gap-1">
-      <SidebarMenuButton size="lg" render={<Link href={DEFAULT_AUTHENTICATED_ROUTE} />} className="min-w-0 flex-1">
+      <SidebarMenuButton
+        size="lg"
+        render={<Link href={DEFAULT_AUTHENTICATED_ROUTE} />}
+        className="min-w-0 flex-1 hover:bg-transparent active:bg-transparent"
+      >
         <AppLogoMark />
         <span className="truncate font-semibold">{siteConfig.name}</span>
       </SidebarMenuButton>
@@ -50,7 +54,7 @@ export function SidebarBrand() {
                 onClick={toggleSidebar}
                 aria-label={t("collapseMenu")}
                 aria-expanded
-                className="flex size-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+                className="flex size-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 outline-hidden ring-sidebar-ring hover:bg-sidebar-group hover:text-sidebar-foreground focus-visible:ring-2"
               />
             }
           >

@@ -30,9 +30,12 @@ export const DEFAULT_AUTHENTICATED_ROUTE = routes.dashboard;
 
 export const SESSION_COOKIE = "session";
 
-/** Accepts only same-origin relative paths, to prevent open redirects. */
+/**
+ * Accepts only same-origin relative paths, to prevent open redirects. Browsers
+ * read a backslash as a slash, so `/\evil.com` would leave the site too.
+ */
 export function safeRedirectPath(path: string | null | undefined): string {
-  return path && path.startsWith("/") && !path.startsWith("//")
+  return path && path.startsWith("/") && !path.startsWith("//") && !path.includes("\\")
     ? path
     : DEFAULT_AUTHENTICATED_ROUTE;
 }

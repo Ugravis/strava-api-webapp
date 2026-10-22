@@ -15,3 +15,19 @@ COPY packages packages
 WORKDIR /app/backend
 EXPOSE 4000
 CMD ["pnpm", "start:dev"]
+
+FROM deps AS build
+COPY backend backend
+COPY packages packages
+RUN pnpm --filter backend build \
+  && pnpm --filter backend deploy --prod --legacy /out
+
+FROM node:24-alpine AS prod
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build --chown=node:node /out/package.json ./
+COPY --from=build --chown=node:node /out/node_modules node_modules
+COPY --from=build --chown=node:node /app/backend/dist dist
+USER node
+EXPOSE 4000
+CMD ["node", "dist/main"]

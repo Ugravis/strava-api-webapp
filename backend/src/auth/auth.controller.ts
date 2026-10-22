@@ -4,11 +4,14 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Req,
   Res,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { ApiErrorCode, ApiErrors } from '../common/api-error';
+import authConfig, { type AuthConfig } from '../config/auth.config';
 import { toUserResponse, type UserResponse } from '../users/dto/user-response';
 import type { User } from '../users/user.entity';
 import { AuthService } from './auth.service';
@@ -26,6 +29,7 @@ import { SensitiveThrottle } from './throttle';
 @Controller('auth')
 export class AuthController {
   constructor(
+    @Inject(authConfig.KEY) private readonly config: AuthConfig,
     private readonly auth: AuthService,
     private readonly sessionCookie: SessionCookie,
     private readonly google: GoogleOAuthService,
@@ -46,6 +50,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserResponse> {
+    this.assertEmailSignIn();
     const { user, session } = await this.auth.register(
       dto,
       requestMetadata(request),
@@ -63,6 +68,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserResponse> {
+    this.assertEmailSignIn();
     const { user, session } = await this.auth.login(
       dto,
       requestMetadata(request),
@@ -96,6 +102,7 @@ export class AuthController {
   @Post('password/forgot')
   @HttpCode(HttpStatus.NO_CONTENT)
   forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
+    this.assertEmailSignIn();
     return this.auth.requestPasswordReset(dto.email);
   }
 
@@ -104,6 +111,17 @@ export class AuthController {
   @Post('password/reset')
   @HttpCode(HttpStatus.NO_CONTENT)
   resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    this.assertEmailSignIn();
     return this.auth.resetPassword(dto.token, dto.password);
+  }
+
+  /** Email and password accounts can be turned off while their flows are unfinished. */
+  private assertEmailSignIn(): void {
+    if (!this.config.emailSignInEnabled) {
+      throw ApiErrors.forbidden(
+        ApiErrorCode.EmailSignInDisabled,
+        'Email sign-in is disabled',
+      );
+    }
   }
 }

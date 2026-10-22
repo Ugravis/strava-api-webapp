@@ -140,18 +140,18 @@ export function DashboardHero({ stats, overview, welcome }: DashboardHeroProps) 
 }
 
 /** A grid of tiles crossed by a railway, fading toward the left: a nod to the map. */
-function HeroBackdrop() {
+export function HeroBackdrop({ id = "dashboard-hero-tiles" }: { id?: string }) {
   return (
     <svg
       aria-hidden
       className="absolute inset-y-0 right-0 -z-10 h-full w-2/3 text-green-500 mask-[linear-gradient(to_left,black,transparent)]"
     >
       <defs>
-        <pattern id="dashboard-hero-tiles" width="28" height="28" patternUnits="userSpaceOnUse">
+        <pattern id={id} width="28" height="28" patternUnits="userSpaceOnUse">
           <rect x="1" y="1" width="26" height="26" rx="3" fill="none" stroke="currentColor" strokeOpacity="0.14" />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#dashboard-hero-tiles)" />
+      <rect width="100%" height="100%" fill={`url(#${id})`} />
       {HIGHLIGHTED.map(([x, y]) => (
         <rect key={`${x}-${y}`} x={x * 28 + 1} y={y * 28 + 1} width="26" height="26" rx="3" fill="currentColor" fillOpacity="0.16" />
       ))}

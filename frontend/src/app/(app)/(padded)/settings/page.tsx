@@ -7,6 +7,7 @@ import { AvatarSettings } from "@/components/settings/avatar-settings";
 import { ConnectionsSettings } from "@/components/settings/connections-settings";
 import { DeleteAccountSettings } from "@/components/settings/delete-account-settings";
 import { PasswordSettings } from "@/components/settings/password-settings";
+import { PrivacySettings } from "@/components/settings/privacy-settings";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 import { StravaConnectFeedback } from "@/components/strava/strava-connect-feedback";
 
@@ -23,6 +24,7 @@ export default function SettingsPage() {
       <PageHeader title={t("title")} description={t("description")} />
       <AvatarSettings />
       <ProfileSettings />
+      <PrivacySettings />
       <Suspense>
         <StravaConnectFeedback />
       </Suspense>

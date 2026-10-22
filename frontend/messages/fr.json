@@ -62,7 +62,15 @@
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "rememberMe": "Rester connecté",
-    "acceptTerms": "J'accepte les <link>conditions d'utilisation</link>."
+    "acceptTerms": "J'accepte les <link>conditions d'utilisation</link>.",
+    "bio": "Bio",
+    "bioDescription": "160 caractères au plus.",
+    "bioPlaceholder": "Quelques mots sur toi…",
+    "city": "Ville",
+    "cityDescription": "Saisie libre, jamais déduite de tes activités.",
+    "cityPlaceholder": "Lyon",
+    "favoriteSports": "Sports favoris",
+    "profileColor": "Couleur du profil"
   },
   "validation": {
     "emailInvalid": "Saisis une adresse email valide.",
@@ -75,7 +83,9 @@
     "usernamePattern": "Utilise uniquement des lettres minuscules, des chiffres et _.",
     "usernameTaken": "Ce pseudo est déjà pris.",
     "usernameReserved": "Ce pseudo est réservé.",
-    "termsRequired": "Tu dois accepter les conditions d'utilisation pour continuer."
+    "termsRequired": "Tu dois accepter les conditions d'utilisation pour continuer.",
+    "bioMax": "La bio doit contenir au plus 160 caractères.",
+    "cityMax": "La ville doit contenir au plus 60 caractères."
   },
   "errors": {
     "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
@@ -94,7 +104,9 @@
     "CANNOT_FOLLOW_SELF": "Tu ne peux pas te suivre toi-même.",
     "ALREADY_FOLLOWING": "Tu suis déjà cette personne.",
     "NOT_FOLLOWING": "Tu ne suis pas cette personne.",
-    "NOT_FOUND": "Introuvable."
+    "NOT_FOUND": "Introuvable.",
+    "PRIVATE_PROFILE": "Ce profil est privé.",
+    "NO_FOLLOW_REQUEST": "Cette demande n'existe plus."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -142,7 +154,109 @@
   "profile": {
     "title": "Profil",
     "memberSince": "Membre depuis {date}",
-    "addDisplayName": "Ajouter un nom affiché"
+    "private": "Profil privé",
+    "edit": "Modifier le profil",
+    "favoriteSports": "Sports favoris",
+    "locked": {
+      "title": "Ce profil est privé",
+      "description": "Abonne-toi à {name} pour voir ses badges et ses statistiques.",
+      "requested": "Ta demande d'abonnement est en attente."
+    },
+    "showcase": {
+      "railway": "Voies",
+      "badges": "Badges épinglés",
+      "noBadges": "Aucun badge épinglé. Choisis ceux à afficher depuis la page <link>Succès</link>.",
+      "stationsVisited": "Gares visitées",
+      "previousLevel": "Grandes tuiles",
+      "nextLevel": "Petites tuiles",
+      "badgeLevel": "Niveau {level}",
+      "badgeCompletions": "{count, plural, one {Réalisé # fois} other {Réalisé # fois}}",
+      "badgeProgress": "En cours · {percent}",
+      "openAchievements": "Voir dans Succès"
+    },
+    "visibility": {
+      "label": "Profil privé",
+      "confirm": {
+        "private": {
+          "title": "Passer ton profil en privé ?",
+          "description": "Seuls tes abonnés verront tes badges épinglés, tes statistiques et tes abonnements. Les nouveaux abonnés devront être acceptés. Ton nom, ta bio et tes distinctions restent visibles.",
+          "action": "Passer en privé"
+        },
+        "public": {
+          "title": "Rendre ton profil public ?",
+          "description": "Tout le monde verra tes badges épinglés, tes statistiques et tes abonnements. Les demandes d'abonnement en attente seront acceptées.",
+          "action": "Rendre public"
+        }
+      }
+    },
+    "requests": {
+      "title": "{count, plural, one {# demande d'abonnement} other {# demandes d'abonnement}}",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "error": "Les demandes n'ont pas pu être chargées.",
+      "more": "{count, plural, one {# autre demande} other {# autres demandes}} en attente."
+    },
+    "distinctions": {
+      "label": "Distinctions",
+      "awarded": "Obtenue le {date}",
+      "founder": {
+        "name": "Fondateur",
+        "description": "A créé l'application et l'a ouverte à la communauté."
+      },
+      "team": {
+        "name": "Équipe",
+        "description": "Fait partie de l'équipe qui construit et fait vivre l'application."
+      },
+      "early_member": {
+        "name": "100 premiers membres",
+        "description": "Parmi les 100 premiers membres à avoir rejoint l'aventure."
+      }
+    },
+    "share": {
+      "open": "Partager le profil",
+      "title": "Partager le profil",
+      "description": "Invite d'autres membres à découvrir le profil de {name}.",
+      "link": "Lien",
+      "qr": "QR code",
+      "copy": "Copier le lien",
+      "copyFailed": "Le lien n'a pas pu être copié.",
+      "native": "Partager…",
+      "qrLabel": "QR code du profil de {name}",
+      "qrHint": "Scanne-le avec l'appareil photo de ton téléphone."
+    },
+    "ownHint": "Voici ton profil tel que le voient les autres membres : c'est la seule chose qu'ils peuvent voir de toi.",
+    "color": {
+      "label": "Couleur du profil",
+      "custom": "Couleur personnalisée",
+      "reset": "Par défaut",
+      "presets": {
+        "violet": "Violet",
+        "blue": "Bleu",
+        "teal": "Turquoise",
+        "green": "Vert",
+        "amber": "Ambre",
+        "orange": "Orange",
+        "rose": "Rose",
+        "slate": "Ardoise"
+      }
+    },
+    "image": {
+      "open": "Enregistrer la carte en image",
+      "title": "Carte du profil",
+      "description": "Télécharge ta carte en image ou partage-la directement.",
+      "alt": "Carte du profil de @{username}",
+      "failed": "L'image n'a pas pu être créée.",
+      "download": "Télécharger",
+      "share": "Partager l'image"
+    },
+    "deck": {
+      "label": "Cartes de profil",
+      "show": "Voir la carte de {name}",
+      "previous": "Carte précédente",
+      "next": "Carte suivante",
+      "position": "{index} / {count}",
+      "open": "Ouvrir ce profil"
+    }
   },
   "settings": {
     "title": "Paramètres",
@@ -157,7 +271,7 @@
     },
     "profile": {
       "title": "Profil public",
-      "description": "Ton nom et ton pseudo apparaissent sur ton profil.",
+      "description": "Ces informations apparaissent sur ton profil.",
       "updated": "Profil mis à jour."
     },
     "password": {
@@ -192,6 +306,10 @@
       "revokeDescription": "L'accès de la plateforme à ton compte Strava sera supprimé, ainsi que toutes les activités importées depuis Strava. Tu pourras te reconnecter à tout moment.",
       "revokeConfirm": "Révoquer et supprimer",
       "revoked": "L'accès à Strava a été révoqué et tes activités importées ont été supprimées."
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "description": "Qui peut voir ton profil en détail."
     }
   },
   "terms": {
@@ -815,7 +933,9 @@
       "followBack": "Suivre en retour",
       "following": "Abonné",
       "unfollow": "Ne plus suivre",
-      "followsYou": "Te suit"
+      "followsYou": "Te suit",
+      "requested": "Demandé",
+      "cancelRequest": "Annuler la demande"
     },
     "counts": {
       "followers": "{count, plural, =0 {abonné} one {abonné} other {abonnés}}",
@@ -843,8 +963,12 @@
     "error": "Les notifications n'ont pas pu être chargées.",
     "follow": "<b>{name}</b> s'est abonné·e à toi.",
     "toast": {
-      "follow": "{name} s'est abonné·e à toi."
+      "follow": "{name} s'est abonné·e à toi.",
+      "follow_request": "{name} demande à s'abonner à toi.",
+      "follow_accepted": "{name} a accepté ta demande d'abonnement."
     },
-    "view": "Voir"
+    "view": "Voir",
+    "follow_request": "<b>{name}</b> demande à s'abonner à toi.",
+    "follow_accepted": "<b>{name}</b> a accepté ta demande d'abonnement."
   }
 }

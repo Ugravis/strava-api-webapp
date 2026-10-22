@@ -1,19 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { userProfileHref } from "@/config/routes";
 import type { ProfileSummary } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
-import { FollowButton } from "./follow-button";
+import { FollowButton, followStateOf } from "./follow-button";
 
-/** A user in a list: a link to their profile, and a button to follow them unless it is the current user. */
-export function UserRow({ user }: { user: ProfileSummary }) {
+/**
+ * A user in a list: a link to their profile, and a button to follow them
+ * unless it is the current user, or other actions in its place.
+ */
+export function UserRow({ user, actions }: { user: ProfileSummary; actions?: ReactNode }) {
   const currentUser = useCurrentUser();
-  const [followed, setFollowed] = useState(user.followed);
+  const [followState, setFollowState] = useState(() => followStateOf(user));
 
   return (
     <li className="flex items-center gap-3 py-2.5">
@@ -27,9 +30,9 @@ export function UserRow({ user }: { user: ProfileSummary }) {
           <span className="truncate text-sm text-muted-foreground">@{user.username}</span>
         </span>
       </Link>
-      {user.id !== currentUser.id && (
-        <FollowButton username={user.username} followed={followed} onChange={setFollowed} />
-      )}
+      {actions ?? (user.id !== currentUser.id && (
+        <FollowButton username={user.username} state={followState} onChange={setFollowState} />
+      ))}
     </li>
   );
 }

@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
-import { userProfileHref } from "@/config/routes";
+import { routes, userProfileHref } from "@/config/routes";
 import type { AppNotification } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,8 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
 
   return (
     <DropdownMenuItem
-      render={<Link href={userProfileHref(actor.username)} />}
+      // A request is answered from the own profile.
+      render={<Link href={notification.type === "follow_request" ? routes.profile : userProfileHref(actor.username)} />}
       className={cn("items-start gap-3 py-2", unread && "bg-primary/5")}
     >
       <UserAvatar user={actor} className="size-8" />

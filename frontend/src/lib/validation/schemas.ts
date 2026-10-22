@@ -52,6 +52,13 @@ export const googleSignupSchema = z.object({
 export const profileSchema = z.object({
   displayName: displayNameSchema,
   username: usernameSchema,
+  bio: z.string().trim().max(160, "bioMax"),
+  city: z.string().trim().max(60, "cityMax"),
+  favoriteSports: z.array(z.enum(["run", "hike", "ride", "swim"])),
+  profileColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable(),
 });
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });

@@ -1,10 +1,17 @@
 import { apiRequest } from "@/lib/api/client";
-import type { User } from "@/lib/api/types";
+import type { FavoriteSport, User } from "@/lib/api/types";
 
 export interface UpdateProfileInput {
   /** null clears the display name. */
   displayName: string | null;
   username: string;
+  /** null clears it. */
+  bio: string | null;
+  /** null clears it. */
+  city: string | null;
+  favoriteSports: FavoriteSport[];
+  /** `#rrggbb`; null restores the default hue. */
+  profileColor: string | null;
 }
 
 export interface ChangePasswordInput {
@@ -18,7 +25,7 @@ export interface DeleteAccountInput {
 }
 
 export const accountService = {
-  updateProfile: (input: UpdateProfileInput) =>
+  updateProfile: (input: Partial<UpdateProfileInput>) =>
     apiRequest<User>("/users/me", { method: "PATCH", body: { json: input } }),
 
   uploadAvatar: (file: File) => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/user/user-avatar";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { routes } from "@/config/routes";
 import type { ActivitiesOverview, ActivityStats } from "@/lib/api/types";
@@ -69,27 +70,35 @@ export function DashboardHero({ stats, overview, welcome }: DashboardHeroProps) 
       <HeroBackdrop />
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
-              {format.dateTime(now, { weekday: "long", day: "numeric", month: "long" })}
-            </p>
-            <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
-              {t(greeting, { name: publicNameOf(user) })}
-            </h1>
-            <div className="text-sm text-zinc-400">
-              {welcome ? (
-                t("welcome")
-              ) : !overview ? (
-                <Skeleton className="mt-1 h-4 w-56 max-w-full bg-white/10" />
-              ) : latest ? (
-                t.rich("latest", {
-                  name: latest.name,
-                  when: format.relativeTime(new Date(latest.startedAt), now),
-                  strong: (chunks) => <span className="font-medium text-zinc-200">{chunks}</span>,
-                })
-              ) : (
-                t("noActivity")
-              )}
+          <div className="flex min-w-0 items-center gap-4">
+            {/* Same target as the greeting, so kept out of the tab order. */}
+            <Link href={routes.profile} tabIndex={-1} aria-hidden className="shrink-0 rounded-full transition-opacity hover:opacity-80">
+              <UserAvatar user={user} className="size-14 ring-2 ring-white/15 sm:size-16" fallbackClassName="text-lg" />
+            </Link>
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
+                {format.dateTime(now, { weekday: "long", day: "numeric", month: "long" })}
+              </p>
+              <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
+                <Link href={routes.profile} className="rounded-sm underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none">
+                  {t(greeting, { name: publicNameOf(user) })}
+                </Link>
+              </h1>
+              <div className="text-sm text-zinc-400">
+                {welcome ? (
+                  t("welcome")
+                ) : !overview ? (
+                  <Skeleton className="mt-1 h-4 w-56 max-w-full bg-white/10" />
+                ) : latest ? (
+                  t.rich("latest", {
+                    name: latest.name,
+                    when: format.relativeTime(new Date(latest.startedAt), now),
+                    strong: (chunks) => <span className="font-medium text-zinc-200">{chunks}</span>,
+                  })
+                ) : (
+                  t("noActivity")
+                )}
+              </div>
             </div>
           </div>
           <div className="flex shrink-0 gap-2">

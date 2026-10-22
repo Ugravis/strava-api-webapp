@@ -52,8 +52,8 @@ export function ExplorationCard({ version }: { version: string }) {
           <Link
             href={`${routes.map}${searchOfModule("tiles")}`}
             title={t("openTiles")}
-            // Dark whatever the theme, as the header of the page.
-            className="flex flex-col gap-3 rounded-xl bg-linear-to-br from-zinc-800 to-zinc-950 py-3 text-zinc-50 ring-1 ring-white/10 outline-none transition-[box-shadow,translate] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+            // The violet of the stations and the railway on the map.
+            className="flex flex-col gap-3 rounded-xl bg-linear-to-br from-violet-600 to-violet-800 py-3 text-white ring-1 ring-violet-900/20 outline-none transition-[box-shadow,translate] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
           >
             <div className="grid grid-cols-2 divide-x divide-white/10">
               <TileLevel title={t("tiles")} stats={stats?.tiles ?? null} />
@@ -142,8 +142,8 @@ function TileLevel({ title, stats }: { title: string; stats: TileLevelStats | nu
 
   return (
     <div className="flex min-w-0 flex-col gap-1 px-3">
-      <span className="flex items-center gap-1.5 truncate text-xs text-zinc-400">
-        <span className="size-2 shrink-0 rounded-[2px] bg-green-500" aria-hidden />
+      <span className="flex items-center gap-1.5 truncate text-xs text-violet-200">
+        <span className="size-2 shrink-0 rounded-xs bg-green-500" aria-hidden />
         {title}
       </span>
       {stats === null ? (
@@ -151,16 +151,16 @@ function TileLevel({ title, stats }: { title: string; stats: TileLevelStats | nu
       ) : (
         <span className="text-2xl font-semibold tracking-tight tabular-nums">{format.number(stats.visited)}</span>
       )}
-      <dl className="flex flex-col gap-0.5 text-xs text-zinc-400">
+      <dl className="flex flex-col gap-0.5 text-xs text-violet-200">
         <div className="flex justify-between gap-2">
           <dt className="truncate">{t("maxSquare")}</dt>
-          <dd className="shrink-0 font-medium text-zinc-100 tabular-nums">
+          <dd className="shrink-0 font-medium text-white tabular-nums">
             {stats ? t("squareSize", { size: stats.maxSquare }) : "–"}
           </dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="truncate">{t("maxCluster")}</dt>
-          <dd className="shrink-0 font-medium text-zinc-100 tabular-nums">
+          <dd className="shrink-0 font-medium text-white tabular-nums">
             {stats ? format.number(stats.maxCluster) : "–"}
           </dd>
         </div>
@@ -184,10 +184,10 @@ function StationsSummary({ stations }: { stations: VisitedStations | null }) {
     <Link
       href={`${routes.map}${searchOfModule("stations")}`}
       title={t("openStations")}
-      // The violet of the stations and the railway on the map.
-      className="flex flex-col gap-2 rounded-xl bg-linear-to-br from-violet-600 to-violet-800 p-3 text-white ring-1 ring-violet-900/20 outline-none transition-[box-shadow,translate] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+      // Dark whatever the theme, as the header of the page.
+      className="flex flex-col gap-2 rounded-xl bg-linear-to-br from-zinc-800 to-zinc-950 p-3 text-zinc-50 ring-1 ring-white/10 outline-none transition-[box-shadow,translate] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
     >
-      <span className="flex items-center gap-1.5 text-xs text-violet-200">
+      <span className="flex items-center gap-1.5 text-xs text-zinc-400">
         <TrainFrontIcon className="size-3.5" aria-hidden />
         {t("stations")}
       </span>
@@ -198,7 +198,7 @@ function StationsSummary({ stations }: { stations: VisitedStations | null }) {
               <span className="text-2xl font-semibold tracking-tight tabular-nums">
                 {format.number(stations.stations.length)}
               </span>
-              <span className="text-xs text-violet-200">
+              <span className="text-xs text-zinc-400">
                 {t("stationCount", { count: stations.stations.length })}
               </span>
             </p>
@@ -206,14 +206,14 @@ function StationsSummary({ stations }: { stations: VisitedStations | null }) {
               <span className="text-2xl font-semibold tracking-tight tabular-nums">
                 {format.number(railwayM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })}
               </span>
-              <span className="text-xs text-violet-200">{t("railway")}</span>
+              <span className="text-xs text-zinc-400">{t("railway")}</span>
             </p>
           </>
         ) : (
-          <Skeleton className="h-8 w-40 bg-white/15" />
+          <Skeleton className="h-8 w-40 bg-white/10" />
         )}
       </div>
-      {latest?.name && <p className="truncate text-xs text-violet-200">{t("lastStation", { name: latest.name })}</p>}
+      {latest?.name && <p className="truncate text-xs text-zinc-400">{t("lastStation", { name: latest.name })}</p>}
     </Link>
   );
 }

@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN npm install -g pnpm@10.34.7
 WORKDIR /app
 
@@ -15,3 +15,27 @@ COPY packages packages
 WORKDIR /app/frontend
 EXPOSE 3000
 CMD ["pnpm", "dev"]
+
+FROM deps AS build
+# Read at build time: rewrites and public variables are compiled into the bundle.
+ARG API_INTERNAL_URL=http://backend:4000
+ARG NEXT_PUBLIC_SITE_URL
+ENV API_INTERNAL_URL=$API_INTERNAL_URL \
+  NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+  NEXT_TELEMETRY_DISABLED=1
+COPY frontend frontend
+COPY packages packages
+RUN pnpm --filter frontend build
+
+FROM node:24-alpine AS prod
+ENV NODE_ENV=production \
+  NEXT_TELEMETRY_DISABLED=1 \
+  HOSTNAME=0.0.0.0 \
+  PORT=3000
+WORKDIR /app
+COPY --from=build --chown=node:node /app/frontend/.next/standalone ./
+COPY --from=build --chown=node:node /app/frontend/.next/static frontend/.next/static
+COPY --from=build --chown=node:node /app/frontend/public frontend/public
+USER node
+EXPOSE 3000
+CMD ["node", "frontend/server.js"]

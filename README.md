@@ -1,4 +1,4 @@
-# Strava Webapp
+# Kilotrace
 
 Gamified web platform connected to Strava. Activities are displayed on a map with tile, municipality and point-of-interest completion, badges, beacons to collect and a community layer.
 
@@ -20,17 +20,21 @@ docker/           Dockerfiles
 
 ## Getting started
 
-Requirements: Docker, or Node.js 22 and pnpm 10.
+Requirements: Docker, or Node.js 24 and pnpm 10.
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
 - API health check: http://localhost:4000/api/health
+- API endpoint listing: http://localhost:3000/api (method, path, access, rate limit, status; not served in production)
+- Adminer (database UI): http://localhost:8088 — system `PostgreSQL`, server `db`, credentials from `.env` (default `postgres` / `postgres`, database `strava_webapp`)
+- Mailpit (outgoing emails): http://localhost:8025
+- RustFS console (S3-compatible storage): http://localhost:9001, credentials `rustfsadmin` / `rustfsadmin`
 
-Without Docker (a PostGIS instance must be reachable with the `.env` settings):
+Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be reachable with the `.env` settings):
 
 ```bash
 pnpm install
@@ -38,14 +42,278 @@ pnpm dev:backend
 pnpm dev:frontend
 ```
 
+Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
+applies the pending migrations, empties the user data tables but keeps the datasets (countries,
+stations, railway links, their tile locations and the badge catalog), imports the country
+boundaries when there are none yet (about 5 minutes, `--skip-countries` to skip it) and empties the
+object storage (uploaded avatars, map previews); it refuses to run when `NODE_ENV=production`.
+To manage migrations manually:
+
+```bash
+pnpm --filter backend migration:generate src/database/migrations/<Name>
+pnpm --filter backend migration:run
+pnpm --filter backend migration:revert
+```
+
+## Authentication
+
+- Email and password, with password reset links sent by email. Email address verification is
+  not implemented yet.
+- Google sign-in, working once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set (the button is
+  always shown, and explains that Google is unavailable otherwise). In the
+  Google Cloud console, create an OAuth client of type "Web application" with the authorized
+  redirect URI `http://localhost:3000/api/auth/google/callback`. A Google account whose email
+  matches an existing account is linked to it; a new one is asked to choose a username.
+- Sign-up only asks for an email, a username, a password and the acceptance of the terms of use
+  (recorded in `users.terms_accepted_at`); the display name is optional and set from the profile.
+- Sessions are stored in the database and identified by an httpOnly, `SameSite=Lax` cookie.
+  With "Stay signed in", the cookie lasts 30 days and is extended while used; otherwise it ends
+  with the browser and the session expires after 24 hours of inactivity.
+  The browser only talks to the frontend origin, which proxies `/api` to the backend.
+
+## Strava
+
+Activities are imported from Strava into the platform's own schema (`activities`, linked to
+their provider record through `activity_sources`), so that other sources (Garmin, GPX/FIT files)
+can be added later. **No GPS track or location is stored**: the
+[Strava API Policy](https://www.strava.com/legal/api_policy) of June 2026 forbids keeping
+location data beyond a 7-day cache.
+
+Setup: create an application on https://www.strava.com/settings/api with the authorization
+callback domain `localhost`, then fill `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in `.env`.
+A new Strava application only accepts its owner's account until it is reviewed by Strava.
+
+- **Connection**: OAuth 2.0 from the dashboard or the settings. Tokens are encrypted at rest
+  (`ENCRYPTION_SECRET`) and the access token (valid 6 hours) is refreshed automatically before it
+  expires. Revoking deletes the connection and every activity imported from Strava; so does a
+  revocation made from Strava, once confirmed.
+- **Synchronization**: a background worker processes a job queue stored in PostgreSQL, so jobs
+  survive restarts. The first import reads the whole history, 200 activities per request
+  (the largest page Strava returns); `STRAVA_SYNC_MAX_ACTIVITIES` caps it to the most recent
+  ones. The Strava quotas (100 read requests per
+  15 minutes, 1,000 per day, for the whole application) are tracked from the response headers:
+  when they run out, jobs wait for the next window instead of failing.
+- **Webhooks**: Strava pushes an event for each created, updated or deleted activity and for
+  revocations. Events are stored, acknowledged within the 2 seconds Strava allows, then processed.
+  They are not signed, so their content is never trusted: each one only triggers a read of the
+  activity from Strava. Strava gives up after 3 failed deliveries and offers no replay, so a
+  periodic reconciliation (every 6 hours and at startup) re-reads the last 30 days to catch events
+  missed while the backend was down.
+- **Tracks in the browser**: the list of the activities expected on the map
+  (`GET /api/activities/mappable`) is requested whenever the app opens; it has an entity tag and is
+  only downloaded again once the activities changed.
+- **Webhooks in development** need a public URL: `docker compose --profile tunnel up` starts a
+  Cloudflare quick tunnel, whose random address the backend registers with Strava at startup
+  (replacing a previous development tunnel subscription, Cloudflare or ngrok). Without it, the reconciliation and the
+  "Synchroniser" button keep the data up to date. Elsewhere, set `STRAVA_WEBHOOK_CALLBACK_URL`.
+
+## Tiles
+
+The tiles crossed by each activity are stored in `activity_tiles` (one row per activity and large
+tile, the small tiles as a 64-bit mask), so that they follow the deletion and the refinement of
+the activity. The reads never aggregate them:
+
+- **Union per user**: `user_tiles` holds every large tile of each user with all its small tiles.
+  A statement trigger on `activity_tiles` recomputes the cells touched by each insertion or
+  deletion (cascades included) and increments the version of the user's tiles
+  (`user_tile_metrics.version`). An advisory lock per user serializes the refreshes, so that
+  concurrent transactions lose no small tile.
+- **Metrics**: the largest square, the clusters and the counters are computed by a background
+  worker, in a worker thread (about 6 s for 500,000 small tiles, without blocking the API), once
+  the tiles of the user have settled for 2 seconds (at most every 30 seconds during an import).
+  They are stored in `user_tile_metrics`, and the cluster tiles and those of the largest clusters
+  are marked in `user_tiles`. `GET /api/tiles/summary` returns them with the version of the tiles, and whether
+  they are up to date.
+- **Map**: `GET /api/tiles/vector/:zoom/:x/:y` serves the tiles of the user as a vector tile (zoom 0
+  to 12, the map stretches them beyond): the visited large tiles merged into one area, its outline
+  (from zoom 10), the area of the largest cluster, that of the other clusters, and at zoom 12 the
+  small tiles, only to pick them
+  on the map. Zoomed out, the large tiles are grouped by ancestor, one pixel of a map tile (two
+  at zoom 5). The small tiles are drawn from images,
+  `GET /api/tiles/raster/:zoom/:x/:y?color=<rrggbbaa>&cluster=<rrggbbaa>[&clusters=<rrggbbaa>]`
+  (the other clusters drawn like the other small tiles without their color; 512 pixels PNG, zoom 5
+  to 12, tens of KB at most whatever the density), from the zoom of a whole country.
+- **Revalidation**: each map tile has an entity tag made of the number of rows of `user_tiles` it
+  covers and their greatest `changed_seq`, a sequence taken under the lock of the user by the
+  trigger and by the metrics worker, plus a revision of the content (`TILES_FORMAT`, to increment
+  when the content of the tiles changes). The browser revalidates every tile (`no-cache`): after a
+  synchronization, only the map tiles crossed by the new activities are rendered and downloaded
+  again, the others answer `304 Not Modified` in a few milliseconds.
+- **Display**: nothing floats over the map but its zoom buttons: a band below it holds the key
+  figures of each layer (visited tiles, largest square, largest and other clusters with their
+  share of the visited tiles, number of tracks), the keys of their colors, and the checkboxes of
+  the tracks and the small tiles, both shown by default; the large tiles are always drawn. The
+  other clusters are a little lighter than the large tiles and a little darker than the small
+  tiles, short of the largest cluster (mirrored in the dark theme). The base map is the OpenFreeMap Positron style, recolored for each
+  theme (`components/map/map-style.ts`): beige land, desaturated outside the visited countries,
+  flat grey roads, blue water, green tiles, pink largest squares and raspberry tracks. Text and
+  lines keep a contrast of 4.5:1 and 3:1 with the land.
+- **Layers**: the visited countries and the tiles are the ground of the map, right over its bare
+  land: vegetation (translucent), water, buildings, roads and names stay visible over them. The
+  roads appear later than in the base style (motorways from zoom 6, major roads from 9, minor
+  roads from 12, paths from 15), each class fading in from the zoom its data arrives at; the
+  waterways and rivers fade in between zooms 8 and 10, the buildings between 13 and 14.5.
+- **Zoom**: zoomed out, the tiles are drawn at their strongest. The largest cluster of large tiles is
+  opaque, the same color at every zoom; between zooms 11 and 12, the large tiles take its color and the small tiles lighten: zoomed in, the small
+  tiles stand out over a quiet ground. The small tiles fade in between zooms 5 and 6, the other
+  clusters of large tiles between zooms 5 and 6 (France on screen), those of small tiles from zoom 7
+  (a region on screen, drawn in their images by the server, which the map cross-fades), the grids
+  from zoom 11 (large tiles) and 14 (small tiles), the tracks between zooms 12 and 14. A click
+  picks the tile under the pointer or a few pixels from it.
+- **Details**: `GET /api/tiles/:zoom/:x/:y` returns the activities that crossed a tile and what
+  the map shows about it (cluster, largest square), without loading every tile in the browser.
+- **Large histories**: `pnpm db:seed:bench` (development only) creates the account `bench`
+  (`bench@example.com`, password `BenchPassword123!`) with a synthetic history of 500,000 small
+  tiles over about 50 countries (`pnpm db:seed:bench 100000` for another size), to measure the
+  map and the API. Running it again replaces the account.
+
+## Countries
+
+The tiles are grouped by country to show the completion of each visited country, on both levels.
+A tile belongs to every country it touches, even marginally, so a tile crossed by a border counts
+for each country. A country includes all its territories: the dependencies (La Réunion, French
+Polynesia, Svalbard…) are attached to their sovereign country, except Greenland, vast and
+self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes are not removed.
+
+- **Boundaries**: `pnpm countries:import [release]` reads the land boundaries of the countries
+  from [Overture Maps](https://overturemaps.org) (OpenStreetMap data, ODbL, public S3 bucket, no
+  account) with DuckDB, then stores them at full precision in PostGIS, subdivided in
+  `country_parts` (Web Mercator). It takes about 5 minutes and reads about 300 MB. Run it once
+  after setting up the database; `pnpm db:reset` runs it too when the table is empty
+  (`pnpm db:reset --skip-countries` to skip it). Without it, no country is shown.
+  The release is pinned in `overture-countries.ts`. `country_parts` is read by the worker, and
+  once per country by a user request, for the bounds of its main landmass (see Sectors).
+- **Location**: a background worker locates each visited large tile once: for every country it
+  touches, `tile_countries` stores the mask of its small tiles touching it. Between two complete
+  scans (at startup, then hourly), it only looks at the tiles saved recently. These tables only
+  hold geography, no user data. The completion is then computed in SQL from the masks
+  (`bit_count(user_mask & country_mask)`), without geometry.
+- **Totals and shapes**: when a country is visited for the first time, the worker counts the
+  tiles touching it by a quadtree descent (a tile inside the country counts with all its
+  descendants without being tested), and merges its large tiles into its tile shape
+  (`countries.tile_shape`): about 8 s for Switzerland, 45 s for France, several minutes for the
+  largest countries; once for every user.
+- **Map**: `GET /api/countries/shapes/:zoom/:x/:y?countries=CH,FR` serves, as a vector tile
+  (zoom 0 to 10, a few KB each), the union of the tile shapes of the given countries and its outer
+  borders: two visited neighbors are drawn as one area, and only the borders with the countries
+  not visited follow the tiles. Geography only, cached by the browser for each set of countries
+  until the shape of one of them is computed (`shapesVersion`). Copies of the water layers of the base map
+  (sea, lakes, rivers) are drawn over the area, so that the water keeps the same color everywhere.
+- **Sectors**: the sector tool of the map picks any country (`GET /api/countries/codes`).
+  `GET /api/countries/:code/sector` gives the tiles of the user in it out of its totals, their
+  first visit (`tile_first_visits`) and latest visit, and the bounds of its main landmass: its
+  parts touching one another are clustered (`ST_ClusterDBSCAN`) and the largest cluster is kept,
+  so that France is framed without its overseas regions. Computed once (about 1 s for the largest
+  countries) and stored in `countries.focus_bounds`. A country without totals is marked
+  `requested_at` and the worker computes it after the visited countries (about 20 s for
+  Mongolia, 40 s for Kazakhstan). `GET /api/countries/:code/outside/:zoom/:x/:y` serves the area
+  outside its tile shape and its border, as a vector tile, to dim the rest of the map; the
+  difference is taken in tile coordinates, after the simplification of `ST_AsMVTGeom` (at most
+  about 400 ms for Canada zoomed out). Cached by the browser until the shape changes.
+- The completion uses every tile of the user, hidden areas included: visible to the owner only.
+
+## Train stations
+
+The map can show the train stations of the world and unlock the railway between those the user
+visited. A station is visited once the small tile holding it is: the distance from which it is
+validated depends on where it lies in its tile. Two stations are linked when passenger tracks
+connect them without any other station between them; a link is unlocked once both are visited.
+
+- **Import**: `pnpm stations:import <file.osm.pbf>`, on the host (needs
+  [osmium](https://osmcode.org/osmium-tool/), `brew install osmium-tool`), from the OSM planet
+  or any extract. osmium keeps its railway once (stations, tracks, passenger train routes and
+  stop areas) in a `derived/` folder next to the file, reused while newer; the whole network is
+  then walked in memory and the result saved. On the planet (91 GB, on a USB disk), osmium reads
+  it four times, about 1 h 50; the rest takes about 5 minutes. Run it monthly with a new planet.
+- **Stations**: `railway=station|halt` nodes served by a passenger train route (`route=train`,
+  heritage and tourist trains included): a member of one, in a stop area with one of its stops,
+  or within 300 m of one of its stops or platforms. Where the routes are not mapped (most of Asia,
+  Eastern Europe, Africa), a station within 150 m of a passenger track that is neither a heritage
+  nor a tourist line is kept too. A metro, tram or light rail station is kept only when a train
+  route serves it directly (`train=yes` is not enough: the VAL of Lille carries it). Two kept
+  stations within 200 m are merged when their names match (equal, or one holding the other with
+  only generic words or abbreviations besides: `Brienz BRB`, `Gare de Lyon (RER)`) or a stop area
+  holds both; the station kept stands on the tracks of both points. Metro, tram, light rail, monorail, funicular
+  and miniature stations, and closed ones, are excluded; so are those no train serves, such as
+  park trains. Stored in `places` (generic, `kind = station`) with their small tile; they keep
+  their ids from one import to the next.
+- **Links** (`railway-network.ts`): only passenger tracks are walked (`railway=rail|narrow_gauge|
+  preserved`, without yards, sidings, spurs, industrial, military, test or freight-only lines,
+  unless part of a train route). A station stands on the nearest track within 400 m and on the
+  tracks at most 60 m farther; any other track within 150 m passes by it, and a walk along it
+  stops there without linking it (a bypass along a station). From each station, the walk stops
+  at the first station on each path, up to 300 km. A link longer than 1.5 times the straight
+  distance plus 5 km is rejected. A link is dropped when two kept links through a third station are
+  at most 10 % longer, the longest first: otherwise every station near the start of a high-speed
+  line would be linked to the station at its end. Stored in `rail_links`, and split by country in
+  `rail_link_countries` for the share of the network of a country (sector band).
+- **Report**: each import stores its report in `railway_imports`: stations kept (and how many
+  only through a nearby track) and excluded by reason, redundant links dropped, stations without a passenger track nearby, rejected detours, stations with many
+  neighbors, network per country. Shown in development at `/admin/railway`, with links to
+  OpenStreetMap.
+- **Map**: `GET /api/stations` gives the stations visited by the user, their first visit
+  (`tile_first_visits`) and the links between them. `GET /api/stations/vector/:zoom/:x/:y` serves
+  every station as a vector tile (zoom 6 to 14), cached by the browser until the next import.
+  `GET /api/stations/:id` gives a station, whether the user visited it, and its neighbors.
+- No location data of the user is stored: a station is visited by joining `places` with
+  `user_tiles`.
+
+## Development tools
+
+In development, a floating button at the bottom right of the app pages (next to the Next.js
+indicator) opens a temporary **Dev** panel: a read-only view of the database (webhook events,
+activities, sync jobs, connections, users) and of the Strava quotas, refreshed every 3 seconds
+while open, with the rows changed in the last minute highlighted. It is served by
+`GET /api/dev/overview`, which is never registered when `NODE_ENV=production`. To remove it:
+delete `backend/src/dev`, `frontend/src/components/dev` and their two references
+(`AppModule`, authenticated layout).
+
+## Production
+
+`docker-compose.prod.yml` runs the production images (`prod` targets of `docker/*.Dockerfile`,
+non-root, `NODE_ENV=production`) behind [Caddy](https://caddyserver.com) (`docker/Caddyfile`),
+which obtains the HTTPS certificates and adds HSTS. Only ports 80 and 443 are published; the
+database listens on the server loopback (`127.0.0.1:5432`), for SSH tunnels only. No Adminer,
+Mailpit or storage console.
+
+```bash
+cp .env.production.example .env   # then fill in every value, chmod 600 .env
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+- **Secrets**: the backend refuses to start in production when `COOKIE_SECRET`,
+  `ENCRYPTION_SECRET` or `STRAVA_WEBHOOK_VERIFY_TOKEN` is missing, a development default or
+  shorter than 32 characters, when a database or storage credential keeps its default, or when
+  `FRONTEND_URL` is not https (`backend/src/config/environment.validation.ts`).
+- **Cookies** are `Secure` whenever `FRONTEND_URL` is https.
+- **Email sign-in**: sign-up, sign-in and password reset by email answer
+  `EMAIL_SIGN_IN_DISABLED` in production unless `EMAIL_SIGN_IN_ENABLED=true` (the forms stay
+  visible); Google sign-in is unaffected. SMTP is only needed once it is turned on.
+- **Strava webhook**: events are not signed, so the verify token is the last segment of the
+  callback URL (`/api/strava/webhook/<token>`); any other URL answers 404.
+- **Headers**: Next.js sends the Content Security Policy, `X-Frame-Options: DENY`, `nosniff`,
+  `Referrer-Policy` and `Permissions-Policy` (`frontend/next.config.ts`).
+- **Geography**: `country_parts` and the stations tables are not created by any user action:
+  import them once (`pnpm countries:import`, `pnpm stations:import`) through an SSH tunnel to
+  the database, or copy them from another database with `pg_dump --data-only -t <table>`.
+
 ## Scripts
 
-| Command          | Description                    |
-| ---------------- | ------------------------------ |
-| `pnpm lint`      | Lint all packages              |
-| `pnpm typecheck` | Type-check all packages        |
-| `pnpm test`      | Run unit tests                 |
-| `pnpm build`     | Build all packages             |
+| Command                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `pnpm check-all`        | Run every CI check on all packages, sequentially        |
+| `pnpm check:backend`    | Backend: lint, type-check, unit tests, e2e tests, build |
+| `pnpm check:frontend`   | Frontend: lint, type-check, build                       |
+| `pnpm check:shared`     | Shared package: type-check                              |
+| `pnpm lint`             | Lint all packages                                       |
+| `pnpm typecheck`        | Type-check all packages                                 |
+| `pnpm test`             | Run unit tests                                          |
+| `pnpm build`            | Build all packages                                      |
+| `pnpm countries:import` | Import the country boundaries from Overture Maps        |
+| `pnpm stations:import`  | Import the train stations and links from an OSM file    |
+| `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
+
+The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.
 
 ## Workflow
 

@@ -1,26 +1,207 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --font-wordmark: var(--font-barlow);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-group: var(--sidebar-group);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  /* Hover and active entries, deeper than the background of a group of entries. */
+  --sidebar-accent: oklch(0.93 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-group: oklch(0.96 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.3 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-group: oklch(0.245 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
+/*
+ * The side panel of the map covers its right edge: the controls there move
+ * along its left edge while it is unfolded.
+ */
+.map-with-panel {
+  --map-panel-width: min(24rem, calc(100% - 3rem));
+  /* Floating from medium screens: its width counts the gap along the edge. */
+  @media (width >= 48rem) {
+    --map-panel-width: min(25rem, calc(100% - 3rem));
+  }
+}
+.map-with-panel .maplibregl-ctrl-top-right,
+.map-with-panel .maplibregl-ctrl-bottom-right {
+  @apply transition-[right] duration-200 ease-out motion-reduce:transition-none;
+}
+.map-with-panel[data-panel="open"] .maplibregl-ctrl-top-right,
+.map-with-panel[data-panel="open"] .maplibregl-ctrl-bottom-right {
+  right: var(--map-panel-width);
+}
+/* The bands cover the bottom of the map: its bottom controls stay above them. */
+.map-with-panel .maplibregl-ctrl-bottom-left,
+.map-with-panel .maplibregl-ctrl-bottom-right {
+  bottom: var(--map-bands-height, 0px);
+}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * Map controls in the colors of the app, in both themes. Outside the layers
+ * and under the map: they override the stylesheet of MapLibre, loaded with it.
+ */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-group {
+  @apply overflow-hidden rounded-lg border bg-background shadow-sm;
+}
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  @apply border-t-border;
+}
+.maplibregl-map .maplibregl-ctrl-group button:not(:disabled):hover {
+  @apply bg-muted;
+}
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  @apply bg-background/85 text-muted-foreground;
+}
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  @apply text-foreground;
+}
+/* The icons are dark images: they are inverted on the dark theme. */
+.dark .maplibregl-map .maplibregl-ctrl-icon,
+.dark .maplibregl-map .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}
+
+/* Die rolled to draw a random badge. */
+@theme {
+  --animate-dice-roll: dice-roll 1s cubic-bezier(0.3, 0.7, 0.4, 1);
+
+  @keyframes dice-roll {
+    0% {
+      transform: rotate(0) scale(1);
+    }
+    20% {
+      transform: translateY(-14%) rotate(160deg) scale(1.1);
+    }
+    45% {
+      transform: translateY(4%) rotate(380deg) scale(0.95);
+    }
+    70% {
+      transform: translateY(-5%) rotate(560deg) scale(1.04);
+    }
+    100% {
+      transform: rotate(720deg) scale(1);
+    }
+  }
 }

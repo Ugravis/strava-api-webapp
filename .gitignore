@@ -1,11 +1,28 @@
+# Dependencies
 node_modules/
-dist/
-.next/
-coverage/
-*.tsbuildinfo
+
+# Environment (the example file is tracked)
 .env
 .env.*
 !.env.example
+!.env.production.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
 .DS_Store
+
+# Editors
 .idea/
 .vscode/
+*.swp
+
+# Docker local overrides
+docker-compose.override.yml
+
+# Others
+notes.md
+notes/

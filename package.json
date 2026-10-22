@@ -1,14 +1,25 @@
 {
-  "name": "strava-api-webapp",
+  "name": "kilotrace",
+  "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.34.7",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev:backend": "pnpm --filter backend start:dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "check:backend": "pnpm --filter backend check",
+    "check:frontend": "pnpm --filter frontend check",
+    "check:shared": "pnpm --filter @kilotrace/shared check",
+    "check-all": "pnpm -r --workspace-concurrency=1 check",
+    "db:reset": "pnpm --filter backend db:reset",
+    "db:seed:bench": "pnpm --filter backend db:seed:bench",
+    "countries:import": "pnpm --filter backend countries:import",
+    "stations:import": "pnpm --filter backend stations:import"
   }
 }

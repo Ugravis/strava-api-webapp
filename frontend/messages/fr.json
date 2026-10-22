@@ -247,6 +247,7 @@
   },
   "errors": {
     "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
+    "EMAIL_SIGN_IN_DISABLED": "La connexion par email n'est pas encore disponible : utilisez Google.",
     "EMAIL_TAKEN": "Un compte existe déjà avec cette adresse email.",
     "USERNAME_TAKEN": "Ce pseudo est déjà pris.",
     "USERNAME_RESERVED": "Ce pseudo est réservé.",

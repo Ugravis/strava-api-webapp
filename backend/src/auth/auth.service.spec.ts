@@ -16,6 +16,7 @@ const config: AuthConfig = {
   cookieSecret: 'secret',
   encryptionSecret: 'encryption-secret',
   secureCookies: false,
+  emailSignInEnabled: true,
   sessionTtlDays: 30,
   browserSessionTtlHours: 24,
   passwordResetTtlMinutes: 60,

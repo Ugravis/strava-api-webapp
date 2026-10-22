@@ -22,6 +22,7 @@ export enum ApiErrorCode {
   InvalidImage = 'INVALID_IMAGE',
   OAuthSignupExpired = 'OAUTH_SIGNUP_EXPIRED',
   ProviderDisabled = 'PROVIDER_DISABLED',
+  EmailSignInDisabled = 'EMAIL_SIGN_IN_DISABLED',
   ProviderNotConnected = 'PROVIDER_NOT_CONNECTED',
   ProviderRateLimited = 'PROVIDER_RATE_LIMITED',
   Unauthenticated = 'UNAUTHENTICATED',

@@ -207,17 +207,28 @@ export class FollowsService {
         'Users cannot like their own profile',
       );
     }
+    if (await this.likes.existsBy({ userId: viewer.id, profileId: user.id })) {
+      return;
+    }
     await this.likes
       .createQueryBuilder()
       .insert()
       .values({ userId: viewer.id, profileId: user.id })
       .orIgnore()
       .execute();
+    // Notified once per like, anonymously.
+    await this.notifications.notify(user.id, 'profile_like', viewer);
   }
 
   async unlike(viewer: User, username: string): Promise<void> {
     const user = await this.findByUsername(username);
-    await this.likes.delete({ userId: viewer.id, profileId: user.id });
+    const { affected } = await this.likes.delete({
+      userId: viewer.id,
+      profileId: user.id,
+    });
+    if (affected) {
+      await this.notifications.withdraw(user.id, 'profile_like', viewer.id);
+    }
   }
 
   /** Unfollows a user, or cancels a request to follow them. */

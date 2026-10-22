@@ -4,6 +4,7 @@ import { Not, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { isUniqueViolation } from '../common/database-errors';
 import { EARLY_MEMBERS, UserDistinction } from './user-distinction.entity';
+import { randomProfileColor } from './profile-colors';
 import { User } from './user.entity';
 import {
   isReservedUsername,
@@ -86,6 +87,7 @@ export class UsersService {
       passwordHash: input.passwordHash ?? null,
       externalAvatarUrl: input.externalAvatarUrl ?? null,
       avatarKey: null,
+      profileColor: randomProfileColor(),
     });
     const saved = await this.save(user);
     if ((await this.users.count()) <= EARLY_MEMBERS) {

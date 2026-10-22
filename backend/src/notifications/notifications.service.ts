@@ -4,12 +4,17 @@ import { IsNull, Repository } from 'typeorm';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import { User } from '../users/user.entity';
 import { NotificationStreams } from './notification-streams';
-import { Notification, type NotificationType } from './notification.entity';
+import {
+  ANONYMOUS_NOTIFICATIONS,
+  Notification,
+  type NotificationType,
+} from './notification.entity';
 
 export interface NotificationResponse {
   id: string;
   type: NotificationType;
-  actor: PublicUser;
+  /** Null for an anonymous kind, e.g. a like. */
+  actor: PublicUser | null;
   read: boolean;
   createdAt: string;
 }
@@ -34,7 +39,9 @@ function toNotificationResponse(
   return {
     id: notification.id,
     type: notification.type,
-    actor: toPublicUser(actor),
+    actor: ANONYMOUS_NOTIFICATIONS.has(notification.type)
+      ? null
+      : toPublicUser(actor),
     read: notification.readAt !== null,
     createdAt: notification.createdAt.toISOString(),
   };

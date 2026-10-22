@@ -12,9 +12,16 @@ import { User } from '../users/user.entity';
 /**
  * `follow`: the actor follows the user. `follow_request`: the actor asks to
  * follow the private profile of the user. `follow_accepted`: the actor
- * accepted the request of the user.
+ * accepted the request of the user. `profile_like`: the actor liked the
+ * profile of the user, who is never told by whom.
  */
-export type NotificationType = 'follow' | 'follow_request' | 'follow_accepted';
+export type NotificationType =
+  'follow' | 'follow_request' | 'follow_accepted' | 'profile_like';
+
+/** Kinds whose actor is kept for the bookkeeping but never disclosed. */
+export const ANONYMOUS_NOTIFICATIONS: ReadonlySet<NotificationType> = new Set([
+  'profile_like',
+]);
 
 /** Something that happened to a user, caused by another one (the actor). */
 @Entity('notifications')

@@ -14,8 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { SIDEBAR_ACTION_BUTTON, useSidebarActionTooltip } from "@/components/app-shell/sidebar-action";
-import { SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { userProfileHref } from "@/config/routes";
@@ -149,28 +148,33 @@ export function HeaderNotificationsButton() {
   );
 }
 
-/** The bell in the row of actions of the sidebar. */
-export function SidebarNotificationsButton() {
+/** Notifications entry of the sidebar, with the unread count; on the bell once the sidebar is collapsed. */
+export function SidebarNotificationsItem() {
   const t = useTranslations("notifications");
   const { isMobile } = useSidebar();
   const { unreadCount } = useNotifications();
   const label = unreadCount > 0 ? t("unread", { count: unreadCount }) : t("label");
-  const tooltip = useSidebarActionTooltip(label);
 
   return (
-    <NotificationsMenu
-      side={isMobile ? "top" : "right"}
-      align="end"
-      trigger={
-        <SidebarMenuButton
-          tooltip={tooltip}
-          aria-label={label}
-          className={SIDEBAR_ACTION_BUTTON}
-        >
-          <BellIcon />
-          <UnreadDot count={unreadCount} className="absolute top-0 right-[calc(50%-1rem)] group-data-[collapsible=icon]:right-0" />
-        </SidebarMenuButton>
-      }
-    />
+    <SidebarMenuItem>
+      <NotificationsMenu
+        side={isMobile ? "top" : "right"}
+        align="end"
+        trigger={
+          <SidebarMenuButton
+            tooltip={label}
+            aria-label={label}
+            className="relative data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+          >
+            <BellIcon />
+            <span>{t("label")}</span>
+            <UnreadDot
+              count={unreadCount}
+              className="ml-auto group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-0 group-data-[collapsible=icon]:right-0"
+            />
+          </SidebarMenuButton>
+        }
+      />
+    </SidebarMenuItem>
   );
 }

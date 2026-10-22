@@ -22,6 +22,7 @@ import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
 import type { FavoriteSport, User } from "@/lib/api/types";
 import { profileSchema, type ProfileValues } from "@/lib/validation/schemas";
 import { accountService } from "@/services/account.service";
+import { CityField } from "./city-field";
 import { SettingsSection } from "./settings-section";
 
 const FAVORITE_SPORTS: FavoriteSport[] = ["run", "hike", "ride", "swim"];
@@ -31,6 +32,7 @@ const valuesOf = (user: User): ProfileValues => ({
   username: user.username,
   bio: user.bio ?? "",
   city: user.city ?? "",
+  countryCode: user.countryCode,
   favoriteSports: user.favoriteSports,
   profileColor: user.profileColor,
 });
@@ -53,6 +55,7 @@ export function ProfileSettings() {
         displayName: values.displayName || null,
         bio: values.bio || null,
         city: values.city || null,
+        countryCode: values.city ? values.countryCode : null,
         favoriteSports: values.favoriteSports,
         profileColor: values.profileColor,
       });
@@ -98,7 +101,16 @@ export function ProfileSettings() {
             description={t("fields.cityDescription")}
           >
             {(field) => (
-              <Input {...field} autoComplete="address-level2" maxLength={60} placeholder={t("fields.cityPlaceholder")} />
+              <CityField
+                id={field.id}
+                city={field.value}
+                countryCode={form.watch("countryCode")}
+                invalid={field["aria-invalid"]}
+                onChange={(city, countryCode) => {
+                  field.onChange(city);
+                  form.setValue("countryCode", countryCode, { shouldDirty: true });
+                }}
+              />
             )}
           </FormField>
           <FormField control={form.control} name="favoriteSports" label={t("fields.favoriteSports")}>

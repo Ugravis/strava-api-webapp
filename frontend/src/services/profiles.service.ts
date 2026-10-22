@@ -12,6 +12,8 @@ export const profilesService = {
   /** Follows a public profile, or asks to follow a private one. */
   follow: (username: string) => apiRequest<{ status: FollowStatus }>(`${profilePath(username)}/follow`, { method: "PUT" }),
   unfollow: (username: string) => apiRequest(`${profilePath(username)}/follow`, { method: "DELETE" }),
+  like: (username: string) => apiRequest(`${profilePath(username)}/like`, { method: "PUT" }),
+  unlike: (username: string) => apiRequest(`${profilePath(username)}/like`, { method: "DELETE" }),
   acceptFollower: (username: string) => apiRequest(`${profilePath(username)}/follower`, { method: "PUT" }),
   /** Removes a follower of the current user, or declines their request. */
   removeFollower: (username: string) => apiRequest(`${profilePath(username)}/follower`, { method: "DELETE" }),

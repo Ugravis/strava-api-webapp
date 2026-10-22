@@ -7,12 +7,22 @@ export interface User {
   avatarUrl: string | null;
   bio: string | null;
   city: string | null;
+  /** Country of the city, ISO 3166-1 alpha-2. */
+  countryCode: string | null;
   favoriteSports: FavoriteSport[];
   /** Hue of the profile, `#rrggbb`; null for the default one. */
   profileColor: string | null;
   profilePrivate: boolean;
   hasPassword: boolean;
   createdAt: string;
+}
+
+/** A city to pick for a profile. */
+export interface CitySuggestion {
+  name: string;
+  countryCode: string;
+  /** Region, to tell apart cities of the same name. */
+  region: string | null;
 }
 
 /** Sports a user may show as favorites: the families of the distance badges, `all` excepted. */
@@ -541,6 +551,7 @@ export interface PublicProfile extends ProfileSummary {
   createdAt: string;
   bio: string | null;
   city: string | null;
+  countryCode: string | null;
   favoriteSports: FavoriteSport[];
   /** `#rrggbb`; null for the default hue. */
   color: string | null;
@@ -551,6 +562,9 @@ export interface PublicProfile extends ProfileSummary {
   visible: boolean;
   followersCount: number;
   followingCount: number;
+  likesCount: number;
+  /** Whether the current user likes the profile; who likes it is never told. */
+  liked: boolean;
   /** Whether they follow the current user. */
   followsViewer: boolean;
   /** Whether it is the profile of the current user. */

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { ProfileCard, ProfileCardSkeleton } from "@/components/profile/profile-card";
+import { CARD_WIDTH, ProfileStage } from "@/components/profile/profile-stage";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import { usePublicProfile } from "@/hooks/use-public-profile";
@@ -33,22 +34,27 @@ export function PublicProfileView({ username }: { username: string }) {
     );
   }
 
-  if (!profile || profile.self) {
-    return <ProfileCardSkeleton />;
-  }
-
   return (
-    <ProfileCard
-      profile={profile}
-      onFollowsClosed={refresh}
-      action={
-        <FollowButton
-          username={profile.username}
-          state={followStateOf(profile)}
-          followsViewer={profile.followsViewer}
-          onChange={showFollowState}
-        />
-      }
-    />
+    <ProfileStage top={<p className="text-sm font-medium text-muted-foreground">@{username}</p>}>
+      <div className={CARD_WIDTH}>
+        {!profile || profile.self ? (
+          <ProfileCardSkeleton />
+        ) : (
+          <ProfileCard
+            profile={profile}
+            onFollowsClosed={refresh}
+            action={
+              <FollowButton
+                username={profile.username}
+                state={followStateOf(profile)}
+                followsViewer={profile.followsViewer}
+                onChange={showFollowState}
+                className="border-transparent shadow-none"
+              />
+            }
+          />
+        )}
+      </div>
+    </ProfileStage>
   );
 }

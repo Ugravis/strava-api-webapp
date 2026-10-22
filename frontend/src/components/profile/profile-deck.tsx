@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CARD_WIDTH } from "./profile-stage";
 
 export interface DeckItem {
   key: string;
@@ -22,11 +23,17 @@ interface ProfileDeckProps {
 /** Drag past which a swipe changes the card. */
 const SWIPE_PX = 50;
 
-/** Transform of a card by its place from the shown one: behind it, leaning out on each side. */
-const PLACES: Record<-1 | 0 | 1, string> = {
+/**
+ * Transform of a card by its place from the shown one: behind it, leaning
+ * out on each side, then hidden further out. The hidden ones stay rendered,
+ * so that a card coming in slides from there instead of popping up.
+ */
+const PLACES: Record<number, string> = {
+  [-2]: "-translate-x-[28%] -rotate-6 scale-75 opacity-0",
   [-1]: "-translate-x-[16%] -rotate-3 scale-90 opacity-60",
   0: "",
   1: "translate-x-[16%] rotate-3 scale-90 opacity-60",
+  2: "translate-x-[28%] rotate-6 scale-75 opacity-0",
 };
 
 /**
@@ -39,13 +46,10 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
   const count = items.length;
   const dragStart = useRef<number | null>(null);
   const go = (step: number) => onIndexChange((index + step + count) % count);
-  // With two cards, the other one peeks on the right only.
-  const placeOf = (itemIndex: number): -1 | 0 | 1 | null => {
+  /** Shortest way from the shown card, around the loop. */
+  const placeOf = (itemIndex: number) => {
     const offset = (itemIndex - index + count) % count;
-    if (offset === 0) return 0;
-    if (offset === 1) return 1;
-    if (offset === count - 1 && count > 2) return -1;
-    return null;
+    return offset > count / 2 ? offset - count : offset;
   };
 
   return (
@@ -61,7 +65,7 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
       tabIndex={count > 1 ? 0 : undefined}
     >
       <div
-        className="relative grid w-[88%] max-w-sm grid-cols-[minmax(0,1fr)] touch-pan-y sm:w-full"
+        className={cn("relative grid grid-cols-[minmax(0,1fr)] touch-pan-y", CARD_WIDTH)}
         onPointerDown={(event) => {
           dragStart.current = event.clientX;
         }}
@@ -74,14 +78,15 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
       >
         {items.map((item, itemIndex) => {
           const place = placeOf(itemIndex);
-          if (place === null) return null;
+          if (Math.abs(place) > 2) return null;
+          const peeking = Math.abs(place) === 1;
           return (
             <div
               key={item.key}
               // All the cards share the one cell of the grid, stretched to the tallest: they all have its size.
               className={cn(
-                "relative col-start-1 row-start-1 transition-[translate,rotate,scale,opacity] duration-300 ease-out motion-reduce:transition-none",
-                place === 0 ? "z-20" : "z-10",
+                "relative col-start-1 row-start-1 transition-[translate,rotate,scale,opacity] duration-300 ease-out will-change-transform motion-reduce:transition-none",
+                place === 0 ? "z-20" : peeking ? "z-10" : "pointer-events-none z-0",
                 PLACES[place],
               )}
               aria-hidden={place !== 0}
@@ -89,7 +94,7 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
               <div inert={place !== 0} className="h-full">
                 {item.content}
               </div>
-              {place !== 0 && (
+              {peeking && (
                 <button
                   type="button"
                   className="absolute inset-0 cursor-pointer rounded-xl"

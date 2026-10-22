@@ -49,17 +49,22 @@ export const googleSignupSchema = z.object({
   acceptTerms: acceptTermsSchema,
 });
 
-export const profileSchema = z.object({
+export const profileSchema = z
+  .object({
   displayName: displayNameSchema,
   username: usernameSchema,
   bio: z.string().trim().max(160, "bioMax"),
   city: z.string().trim().max(60, "cityMax"),
+  /** Set once a city is picked among the suggestions. */
+  countryCode: z.string().length(2).nullable(),
   favoriteSports: z.array(z.enum(["run", "hike", "ride", "swim"])),
   profileColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .nullable(),
-});
+  })
+  // A city typed but not picked may not exist.
+  .refine(({ city, countryCode }) => city === "" || countryCode !== null, { path: ["city"], message: "cityPick" });
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });
 

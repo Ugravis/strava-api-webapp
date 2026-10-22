@@ -9,7 +9,7 @@ import {
   TrainFrontIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useRef, useState } from "react";
 import { FollowCounts } from "@/components/community/follow-counts";
 import { BadgeMedal } from "@/components/distances/badge-medal";
@@ -22,10 +22,12 @@ import { UserAvatar } from "@/components/user/user-avatar";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import type { ProfileBadge, ProfileShowcase, PublicProfile, TileFigures } from "@/lib/api/types";
+import { countryName } from "@/lib/countries/country-format";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
 import { Distinctions } from "./distinctions";
 import { EXPORT_IGNORE } from "./card-image";
+import { LikeButton } from "./like-button";
 import { CardImageDialog } from "./card-image-dialog";
 import { ProfileBanner } from "./profile-banner";
 import { type ProfileColorStyles, profileColorStyles } from "./profile-color";
@@ -50,7 +52,9 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
   const tCommunity = useTranslations("community");
   const tFamilies = useTranslations("distances.families");
   const format = useFormatter();
+  const locale = useLocale();
   const memberSince = format.dateTime(new Date(profile.createdAt), { month: "short", year: "numeric" });
+  const place = profile.city && [profile.city, profile.countryCode && countryName(profile.countryCode, locale)].filter(Boolean).join(", ");
   const card = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [picturing, setPicturing] = useState(false);
@@ -100,7 +104,14 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
             className="size-20 shrink-0 shadow-lg ring-4 ring-card"
             fallbackClassName="text-2xl"
           />
-          <div className="min-w-0" {...EXPORT_IGNORE}>
+          <div className="flex min-w-0 items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-xs" {...EXPORT_IGNORE}>
+            <LikeButton
+              key={profile.username}
+              username={profile.username}
+              liked={profile.liked}
+              count={profile.likesCount}
+              self={profile.self}
+            />
             {action}
           </div>
         </div>
@@ -118,21 +129,23 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
           </h1>
           <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <span className="truncate">@{profile.username}</span>
-            {profile.city && (
+            {place && (
               <>
                 <span aria-hidden>·</span>
-                <span className="truncate">{profile.city}</span>
+                <span className="truncate">{place}</span>
               </>
             )}
             <span aria-hidden>·</span>
-            <span className="shrink-0">{t("since", { date: memberSince })}</span>
+            <span className="shrink-0" title={t("memberSince")}>
+              {memberSince}
+            </span>
           </p>
         </div>
         {/* Sections keep their height, a missing one is said so: every card of the deck has the same layout. */}
         <Distinctions distinctions={profile.distinctions} className="h-6" />
         <p
           className={cn(
-            "line-clamp-2 min-h-[2lh] text-sm break-words whitespace-pre-line",
+            "line-clamp-2 min-h-[2lh] text-sm wrap-break-word whitespace-pre-line",
             !profile.bio && "text-muted-foreground italic",
           )}
         >
@@ -386,7 +399,7 @@ function BadgeDialog({ badge, self, onClose }: { badge: ProfileBadge; self: bool
 
 export function ProfileCardSkeleton() {
   return (
-    <Card aria-busy className="gap-0 overflow-hidden py-0 shadow-xl">
+    <Card aria-busy className="h-full gap-0 overflow-hidden py-0 shadow-xl">
       <Skeleton className="h-28 rounded-none" />
       <div className="flex flex-col gap-4 px-5 pb-6">
         <div className="-mt-12 flex items-end justify-between">

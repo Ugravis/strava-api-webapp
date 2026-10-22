@@ -67,8 +67,8 @@
     "bioDescription": "160 caractères au plus.",
     "bioPlaceholder": "Quelques mots sur toi…",
     "city": "Ville",
-    "cityDescription": "Saisie libre, jamais déduite de tes activités.",
-    "cityPlaceholder": "Lyon",
+    "cityDescription": "Choisis ta ville dans la liste, jamais déduite de tes activités.",
+    "cityPlaceholder": "Rechercher une ville…",
     "favoriteSports": "Sports favoris",
     "profileColor": "Couleur du profil"
   },
@@ -85,7 +85,8 @@
     "usernameReserved": "Ce pseudo est réservé.",
     "termsRequired": "Tu dois accepter les conditions d'utilisation pour continuer.",
     "bioMax": "La bio doit contenir au plus 160 caractères.",
-    "cityMax": "La ville doit contenir au plus 60 caractères."
+    "cityMax": "La ville doit contenir au plus 60 caractères.",
+    "cityPick": "Choisis une ville dans la liste."
   },
   "errors": {
     "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
@@ -107,7 +108,8 @@
     "NOT_FOUND": "Introuvable.",
     "PRIVATE_PROFILE": "Ce profil est privé.",
     "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
-    "PROFILE_BADGES_FULL": "Tu as déjà épinglé 5 badges."
+    "PROFILE_BADGES_FULL": "Tu as déjà épinglé 5 badges.",
+    "CANNOT_LIKE_SELF": "Tu ne peux pas aimer ton propre profil."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -255,13 +257,20 @@
       "show": "Voir la carte de {name}",
       "previous": "Carte précédente",
       "next": "Carte suivante",
-      "position": "{index} / {count}",
-      "open": "Ouvrir ce profil"
+      "position": "Abonnements {index} / {count}",
+      "back": "Retourner à mon profil"
     },
-    "since": "depuis {date}",
     "empty": {
       "bio": "Pas encore de bio.",
       "sports": "Aucun sport favori"
+    },
+    "memberSince": "Membre depuis",
+    "likes": {
+      "like": "Aimer ce profil ({count, plural, one {# like} other {# likes}})",
+      "unlike": "Ne plus aimer ce profil ({count, plural, one {# like} other {# likes}})",
+      "count": "{count, plural, =0 {Aucun like} one {# like} other {# likes}}",
+      "anonymous": "Les likes sont anonymes : personne ne voit qui a aimé un profil.",
+      "anonymousOwn": "Les likes sont anonymes : tu vois combien de personnes aiment ton profil, jamais qui."
     }
   },
   "settings": {

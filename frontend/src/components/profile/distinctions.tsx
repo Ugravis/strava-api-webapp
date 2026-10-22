@@ -32,7 +32,7 @@ export function Distinctions({ distinctions, className }: { distinctions: Distin
               type="button"
               onClick={() => setOpen(distinction)}
               aria-haspopup="dialog"
-              className="flex h-6 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[11px] text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-6 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[11px] whitespace-nowrap text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Emblem kind={distinction.kind} className="size-3.5" />
               {t(`${distinction.kind}.name`)}

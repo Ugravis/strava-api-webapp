@@ -4,6 +4,7 @@ import { StarIcon, StarOffIcon, UserRoundCheckIcon, UserRoundIcon, XIcon } from 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
+import { errorCodeOf } from "@/lib/api/errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,7 +93,9 @@ function BadgeDialogBody({
   const toggleProfile = () => {
     setPending("profile");
     onProfileChange(badge, !badge.onProfile)
-      .catch(() => toast.error(t("dialog.profileError")))
+      .catch((error: unknown) =>
+        toast.error(errorCodeOf(error) === "PROFILE_BADGES_FULL" ? t("dialog.profileFull") : t("dialog.profileError")),
+      )
       .finally(() => setPending(null));
   };
 

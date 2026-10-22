@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   DownloadIcon,
   LockIcon,
-  MapPinIcon,
   Share2Icon,
   TrainFrontIcon,
 } from "lucide-react";
@@ -22,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { routes } from "@/config/routes";
+import { siteConfig } from "@/config/site";
 import type { ProfileBadge, ProfileShowcase, PublicProfile, TileFigures } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
@@ -51,7 +50,7 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
   const tCommunity = useTranslations("community");
   const tFamilies = useTranslations("distances.families");
   const format = useFormatter();
-  const memberSince = format.dateTime(new Date(profile.createdAt), { month: "long", year: "numeric" });
+  const memberSince = format.dateTime(new Date(profile.createdAt), { month: "short", year: "numeric" });
   const card = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [picturing, setPicturing] = useState(false);
@@ -59,9 +58,17 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
   const colors = profileColorStyles(profile.color);
 
   return (
-    <Card ref={card} className="relative isolate gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0" style={colors.border}>
-      <div className="pointer-events-none absolute inset-x-0 top-28 bottom-0 -z-10" style={colors.veil} aria-hidden />
-      <ProfileBanner seed={profile.username} style={colors.banner} className="h-28" />
+    <Card
+      ref={card}
+      className="relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0"
+      style={colors.border}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-24 bottom-0 -z-10" style={colors.veil} aria-hidden />
+      <ProfileBanner seed={profile.username} style={colors.banner} className="h-24" />
+      <span className="absolute top-3.5 left-4 flex items-center gap-1 text-[11px] font-semibold tracking-wide text-white/85">
+        <siteConfig.logo className="size-3.5" aria-hidden />
+        {siteConfig.domain}
+      </span>
       <div className="absolute top-3 right-3 flex gap-1.5" {...EXPORT_IGNORE}>
         <Button
           variant="ghost"
@@ -73,67 +80,79 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
         >
           <Share2Icon />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className={BANNER_BUTTON}
-          onClick={() => setPicturing(true)}
-          aria-label={t("image.open")}
-          title={t("image.open")}
-        >
-          <DownloadIcon />
-        </Button>
+        {profile.self && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={BANNER_BUTTON}
+            onClick={() => setPicturing(true)}
+            aria-label={t("image.open")}
+            title={t("image.open")}
+          >
+            <DownloadIcon />
+          </Button>
+        )}
       </div>
-      <div className="flex flex-col gap-4 px-5 pb-6">
-        <div className="-mt-12 flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <div className="-mt-10 flex items-end justify-between gap-3">
           <UserAvatar
             user={profile}
-            className="size-24 shrink-0 shadow-lg ring-4 ring-card"
-            fallbackClassName="text-3xl"
+            className="size-20 shrink-0 shadow-lg ring-4 ring-card"
+            fallbackClassName="text-2xl"
           />
           <div className="min-w-0" {...EXPORT_IGNORE}>
             {action}
           </div>
         </div>
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold tracking-tight">
             <span className="truncate">{name}</span>
             {profile.private && (
               <LockIcon className="size-4 shrink-0 text-muted-foreground" aria-label={t("private")} />
             )}
+            {profile.followsViewer && (
+              <Badge variant="secondary" className="shrink-0 font-normal">
+                {tCommunity("follow.followsYou")}
+              </Badge>
+            )}
           </h1>
-          <p className="flex min-w-0 items-center gap-2 text-muted-foreground">
+          <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <span className="truncate">@{profile.username}</span>
-            {profile.followsViewer && <Badge variant="secondary">{tCommunity("follow.followsYou")}</Badge>}
+            {profile.city && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="truncate">{profile.city}</span>
+              </>
+            )}
+            <span aria-hidden>·</span>
+            <span className="shrink-0">{t("since", { date: memberSince })}</span>
           </p>
         </div>
-        <Distinctions distinctions={profile.distinctions} />
-        {profile.bio && <p className="break-words whitespace-pre-line">{profile.bio}</p>}
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-          {profile.city && (
-            <li className="flex min-w-0 items-center gap-1.5">
-              <MapPinIcon className="size-4 shrink-0" aria-hidden />
-              <span className="truncate">{profile.city}</span>
-            </li>
+        {/* Sections keep their height, a missing one is said so: every card of the deck has the same layout. */}
+        <Distinctions distinctions={profile.distinctions} className="h-6" />
+        <p
+          className={cn(
+            "line-clamp-2 min-h-[2lh] text-sm break-words whitespace-pre-line",
+            !profile.bio && "text-muted-foreground italic",
           )}
-          <li className="flex items-center gap-1.5">
-            <CalendarIcon className="size-4 shrink-0" aria-hidden />
-            {t("memberSince", { date: memberSince })}
-          </li>
-        </ul>
-        {profile.favoriteSports.length > 0 && (
-          <ul
-            className="-mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"
-            aria-label={t("favoriteSports")}
-          >
-            {profile.favoriteSports.map((sport) => (
-              <li key={sport} className="flex items-center gap-1.5">
-                <FamilyIcon family={sport} className="size-4 shrink-0" aria-hidden />
+        >
+          {profile.bio ?? t("empty.bio")}
+        </p>
+        <ul
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+          aria-label={t("favoriteSports")}
+        >
+          {profile.favoriteSports.length === 0 ? (
+            <li className="italic">{t("empty.sports")}</li>
+          ) : (
+            profile.favoriteSports.map((sport) => (
+              <li key={sport} className="flex items-center gap-1">
+                <FamilyIcon family={sport} className="size-3.5 shrink-0" aria-hidden />
                 {tFamilies(sport)}
               </li>
-            ))}
-          </ul>
-        )}
+            ))
+          )}
+        </ul>
         <FollowCounts
           username={profile.username}
           counts={{ followers: profile.followersCount, following: profile.followingCount }}
@@ -144,7 +163,7 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
       {profile.visible ? (
         profile.showcase && <ShowcaseView showcase={profile.showcase} self={profile.self} colors={colors} />
       ) : (
-        <div className="flex flex-col items-center gap-2 border-t bg-muted/40 px-5 py-10 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 border-t bg-muted/40 px-5 py-8 text-center">
           <span className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground">
             <LockIcon className="size-5" aria-hidden />
           </span>
@@ -185,19 +204,19 @@ function ShowcaseView({
   const [opened, setOpened] = useState<ProfileBadge | null>(null);
 
   return (
-    <div className="flex flex-col gap-6 border-t px-5 py-6">
+    <div className="flex flex-1 flex-col gap-4 border-t px-4 py-4">
       <div className="grid grid-cols-2 gap-3">
         <TilesWidget tiles={tiles} colors={colors} />
         <StationsWidget stations={stations} />
       </div>
-      {(badges.length > 0 || self) && (
-        <section className="flex flex-col gap-3">
-          <h2 className="flex items-baseline gap-2 font-medium">
+      <section className="flex min-h-22 flex-col gap-2">
+          <h2 className="flex items-baseline gap-2 text-sm font-medium">
             {t("badges")}
-            {badges.length > 0 && <span className="text-sm text-muted-foreground tabular-nums">{badges.length}</span>}
+            {badges.length > 0 && <span className="text-xs text-muted-foreground tabular-nums">{badges.length}</span>}
           </h2>
           {badges.length > 0 ? (
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2">
+            // Up to five badges, as many as a profile shows, on one row.
+            <ul className="grid grid-cols-5 gap-1">
               {badges.map((badge, index) => (
                 <li key={badge.id}>
                   <button
@@ -205,16 +224,18 @@ function ShowcaseView({
                     onClick={() => setOpened(badge)}
                     aria-haspopup="dialog"
                     aria-label={badge.name}
-                    className="flex w-full flex-col items-center gap-2 rounded-xl p-2 text-center outline-none transition-[background-color,translate] hover:-translate-y-0.5 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+                    className="flex w-full min-w-0 flex-col items-center gap-1.5 rounded-lg px-0.5 py-1 text-center outline-none transition-[background-color,translate] hover:-translate-y-0.5 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
                   >
-                    <BadgeMedal badge={badge} index={index} />
-                    <span className="line-clamp-2 text-xs leading-tight">{badge.name}</span>
+                    <BadgeMedal badge={badge} index={index} className="w-11" />
+                    <span className="w-full truncate text-[10px] leading-tight">{badge.name}</span>
                   </button>
                 </li>
               ))}
             </ul>
+          ) : !self ? (
+            <p className="text-xs text-muted-foreground italic">{t("noBadgesOther")}</p>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t.rich("noBadges", {
                 link: (chunks) => (
                   <Link href={routes.achievements} className="underline underline-offset-4 hover:text-foreground">
@@ -224,8 +245,7 @@ function ShowcaseView({
               })}
             </p>
           )}
-        </section>
-      )}
+      </section>
       {opened && <BadgeDialog badge={opened} self={self} onClose={() => setOpened(null)} />}
     </div>
   );

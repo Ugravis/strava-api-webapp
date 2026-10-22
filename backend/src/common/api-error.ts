@@ -32,6 +32,7 @@ export enum ApiErrorCode {
   NotFollowing = 'NOT_FOLLOWING',
   PrivateProfile = 'PRIVATE_PROFILE',
   NoFollowRequest = 'NO_FOLLOW_REQUEST',
+  ProfileBadgesFull = 'PROFILE_BADGES_FULL',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

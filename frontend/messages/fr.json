@@ -106,7 +106,8 @@
     "NOT_FOLLOWING": "Tu ne suis pas cette personne.",
     "NOT_FOUND": "Introuvable.",
     "PRIVATE_PROFILE": "Ce profil est privé.",
-    "NO_FOLLOW_REQUEST": "Cette demande n'existe plus."
+    "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
+    "PROFILE_BADGES_FULL": "Tu as déjà épinglé 5 badges."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -153,7 +154,6 @@
   },
   "profile": {
     "title": "Profil",
-    "memberSince": "Membre depuis {date}",
     "private": "Profil privé",
     "edit": "Modifier le profil",
     "favoriteSports": "Sports favoris",
@@ -172,7 +172,8 @@
       "badgeLevel": "Niveau {level}",
       "badgeCompletions": "{count, plural, one {Réalisé # fois} other {Réalisé # fois}}",
       "badgeProgress": "En cours · {percent}",
-      "openAchievements": "Voir dans Succès"
+      "openAchievements": "Voir dans Succès",
+      "noBadgesOther": "Aucun badge épinglé pour le moment."
     },
     "visibility": {
       "label": "Profil privé",
@@ -256,6 +257,11 @@
       "next": "Carte suivante",
       "position": "{index} / {count}",
       "open": "Ouvrir ce profil"
+    },
+    "since": "depuis {date}",
+    "empty": {
+      "bio": "Pas encore de bio.",
+      "sports": "Aucun sport favori"
     }
   },
   "settings": {
@@ -583,7 +589,8 @@
       },
       "addToProfile": "Afficher sur le profil",
       "removeFromProfile": "Retirer du profil",
-      "profileError": "Impossible de modifier ton profil pour le moment."
+      "profileError": "Impossible de modifier ton profil pour le moment.",
+      "profileFull": "Tu as déjà épinglé 5 badges : retires-en un de ton profil pour en épingler un autre."
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",

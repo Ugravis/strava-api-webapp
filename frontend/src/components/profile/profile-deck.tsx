@@ -78,15 +78,17 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
           return (
             <div
               key={item.key}
-              // All the cards share the one cell of the grid: the deck is as tall as the tallest.
+              // All the cards share the one cell of the grid, stretched to the tallest: they all have its size.
               className={cn(
                 "relative col-start-1 row-start-1 transition-[translate,rotate,scale,opacity] duration-300 ease-out motion-reduce:transition-none",
-                place === 0 ? "z-20" : "z-10 self-start",
+                place === 0 ? "z-20" : "z-10",
                 PLACES[place],
               )}
               aria-hidden={place !== 0}
             >
-              <div inert={place !== 0}>{item.content}</div>
+              <div inert={place !== 0} className="h-full">
+                {item.content}
+              </div>
               {place !== 0 && (
                 <button
                   type="button"

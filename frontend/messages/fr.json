@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "title": "Kilotrace : chaque sortie dessine ta carte",
-    "description": "Course, vélo, randonnée : colore les tuiles que tu traverses, agrandis ton plus grand carré, relie des gares et débloque des badges. Explore le monde, une sortie à la fois.",
+    "title": "Kilotrace : chaque sortie dessine votre carte",
+    "description": "Course, vélo, randonnée : colorez les tuiles que vous traversez, agrandissez votre plus grand carré, reliez des gares et débloquez des badges. Explorez le monde, une sortie à la fois.",
     "keywords": [
       "Strava",
       "carte des activités",
@@ -23,19 +23,19 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "back": "Retour",
-    "unexpectedError": "Une erreur inattendue est survenue. Réessaie dans un instant."
+    "unexpectedError": "Une erreur inattendue est survenue. Réessayez dans un instant."
   },
   "landing": {
     "heroBadge": "Compatible avec Strava",
-    "title": "Chaque sortie dessine ta carte",
-    "description": "Course, vélo, randonnée : à chaque activité, le monde se colore. Complète des tuiles, agrandis ton plus grand carré, relie des gares et débloque des badges, un kilomètre après l’autre.",
+    "title": "Chaque sortie dessine votre carte",
+    "description": "Course, vélo, randonnée : à chaque activité, le monde se colore. Complétez des tuiles, agrandissez votre plus grand carré, reliez des gares et débloquez des badges, un kilomètre après l’autre.",
     "start": "Créer mon compte",
     "withGoogle": "Avec Google",
     "alreadyRegistered": "Déjà inscrit ?",
     "login": "Se connecter",
     "hero": {
       "newTiles": "+12 tuiles",
-      "newTilesLabel": "après ta sortie du jour",
+      "newTilesLabel": "après votre sortie du jour",
       "square": "Plus grand carré",
       "squareValue": "6 × 6",
       "badge": "Badge débloqué",
@@ -52,8 +52,8 @@
     },
     "features": {
       "eyebrow": "Fonctionnalités",
-      "title": "Tout ce que tes sorties racontent déjà",
-      "subtitle": "Tes activités existent. Kilotrace en fait un terrain de jeu à explorer.",
+      "title": "Tout ce que vos sorties racontent déjà",
+      "subtitle": "Vos activités existent. Kilotrace en fait un terrain de jeu à explorer.",
       "carouselLabel": "Fonctionnalités de Kilotrace",
       "previous": "Fonctionnalité précédente",
       "next": "Fonctionnalité suivante",
@@ -65,28 +65,28 @@
           "description": "La carte est découpée en tuiles. Chaque tracé colore celles qu’il traverse, des grandes tuiles d’environ 1,7 km aux petites d’environ 200 m pour les plus minutieux."
         },
         "square": {
-          "title": "Ton plus grand carré",
-          "description": "Agrandis le plus grand bloc carré de tuiles entièrement visitées. Une colonne de plus suffit parfois à franchir un cap : à toi de trouver laquelle."
+          "title": "Votre plus grand carré",
+          "description": "Agrandissez le plus grand bloc carré de tuiles entièrement visitées. Une colonne de plus suffit parfois à franchir un cap : à vous de trouver laquelle."
         },
         "countries": {
           "title": "Pays explorés",
-          "description": "Suis la part de chaque pays que tu as couverte, territoires d’outre-mer compris, au centième de pourcent près."
+          "description": "Suivez la part de chaque pays que vous avez couverte, territoires d’outre-mer compris, au centième de pourcent près."
         },
         "stations": {
           "title": "Gares et réseau ferré",
-          "description": "Visite les gares et débloque les lignes qui les relient. Des trains circulent sur la carte : clique sur l’un d’eux pour le suivre."
+          "description": "Visitez les gares et débloquez les lignes qui les relient. Des trains circulent sur la carte : cliquez sur l’un d’eux pour le suivre."
         },
         "badges": {
           "title": "Badges et succès",
-          "description": "Débloque des badges classés par thème et épingle tes préférés pour les mettre en avant sur ton profil."
+          "description": "Débloquez des badges classés par thème et épinglez vos préférés pour les mettre en avant sur votre profil."
         },
         "history": {
-          "title": "Remonte le temps",
-          "description": "Fais glisser la frise pour revoir ta carte telle qu’elle était il y a un mois, un an ou à ta toute première sortie."
+          "title": "Remontez le temps",
+          "description": "Faites glisser la frise pour revoir votre carte telle qu’elle était il y a un mois, un an ou à votre toute première sortie."
         },
         "community": {
-          "title": "Avance avec tes amis",
-          "description": "Suis d’autres explorateurs et découvre leurs profils. Le tien reste privé par défaut : tu choisis qui te suit."
+          "title": "Avancez avec vos amis",
+          "description": "Suivez d’autres explorateurs et découvrez leurs profils. Le vôtre reste privé par défaut : vous choisissez qui vous suit."
         }
       }
     },
@@ -94,26 +94,26 @@
       "eyebrow": "Comment ça marche",
       "title": "Prêt en trois étapes",
       "one": {
-        "title": "Crée ton compte",
-        "description": "Avec ton adresse e-mail ou ton compte Google, en moins d’une minute."
+        "title": "Créez votre compte",
+        "description": "Avec votre adresse e-mail ou votre compte Google, en moins d’une minute."
       },
       "two": {
-        "title": "Connecte tes activités",
-        "description": "Ton historique est importé, puis chaque nouvelle sortie arrive automatiquement."
+        "title": "Connectez vos activités",
+        "description": "Votre historique est importé, puis chaque nouvelle sortie arrive automatiquement."
       },
       "three": {
-        "title": "Sors explorer",
-        "description": "Ta carte se remplit, les badges tombent. Il ne reste qu’à choisir le prochain chemin."
+        "title": "Sortez explorer",
+        "description": "Votre carte se remplit, les badges tombent. Il ne reste qu’à choisir le prochain chemin."
       }
     },
     "progress": {
       "eyebrow": "Tableau de bord",
-      "title": "Ta progression, en un coup d’œil",
-      "description": "Tuiles visitées, plus grand carré, gares, pays : tes chiffres clés sont réunis dès l’ouverture, avec un aperçu de ta carte.",
+      "title": "Votre progression, en un coup d’œil",
+      "description": "Tuiles visitées, plus grand carré, gares, pays : vos chiffres clés sont réunis dès l’ouverture, avec un aperçu de votre carte.",
       "points": {
         "tiles": "Tuiles et plus grand carré mis à jour après chaque sortie",
-        "countries": "Pays classés selon la part que tu en as explorée",
-        "streak": "Ta série de jours actifs, pour garder le rythme"
+        "countries": "Pays classés selon la part que vous en avez explorée",
+        "streak": "Votre série de jours actifs, pour garder le rythme"
       },
       "mock": {
         "tiles": "Tuiles visitées",
@@ -130,17 +130,17 @@
     "faq": {
       "eyebrow": "FAQ",
       "title": "Questions fréquentes",
-      "description": "Tout ce qu’il faut savoir avant ta première sortie.",
+      "description": "Tout ce qu’il faut savoir avant votre première sortie.",
       "moreTitle": "Envie d’essayer ?",
-      "moreDescription": "Le plus simple reste de voir ta propre carte se remplir.",
+      "moreDescription": "Le plus simple reste de voir votre propre carte se remplir.",
       "items": {
         "what": {
           "question": "Qu’est-ce que Kilotrace ?",
-          "answer": "Kilotrace transforme tes activités sportives en carte à compléter. Chaque tracé colore les tuiles traversées, fait progresser tes pays, débloque des gares et des badges. Une bonne raison de sortir des sentiers battus."
+          "answer": "Kilotrace transforme vos activités sportives en carte à compléter. Chaque tracé colore les tuiles traversées, fait progresser vos pays, débloque des gares et des badges. Une bonne raison de sortir des sentiers battus."
         },
         "tiles": {
           "question": "Qu’est-ce qu’une tuile ?",
-          "answer": "La carte est découpée en carrés réguliers. Les grandes tuiles mesurent environ 1,7 km de côté en France, les petites environ 200 m. Une tuile est visitée dès qu’un de tes tracés la traverse."
+          "answer": "La carte est découpée en carrés réguliers. Les grandes tuiles mesurent environ 1,7 km de côté en France, les petites environ 200 m. Une tuile est visitée dès qu’un de vos tracés la traverse."
         },
         "square": {
           "question": "Qu’est-ce que le plus grand carré ?",
@@ -148,7 +148,7 @@
         },
         "sources": {
           "question": "Comment mes activités sont-elles importées ?",
-          "answer": "Tu connectes le compte d’un service compatible, comme Strava. Ton historique est importé, puis tes nouvelles sorties arrivent automatiquement. Tu peux révoquer l’accès à tout moment : les activités importées sont alors supprimées."
+          "answer": "Vous connectez le compte d’un service compatible, comme Strava. Votre historique est importé, puis vos nouvelles sorties arrivent automatiquement. Vous pouvez révoquer l’accès à tout moment : les activités importées sont alors supprimées."
         },
         "sports": {
           "question": "Quelles activités sont prises en compte ?",
@@ -156,7 +156,7 @@
         },
         "privacy": {
           "question": "Mon profil est-il public ?",
-          "answer": "Non. Ton profil est privé par défaut : les personnes qui veulent te suivre t’envoient une demande, que tu acceptes ou non."
+          "answer": "Non. Votre profil est privé par défaut : les personnes qui veulent vous suivre vous envoient une demande, que vous acceptez ou non."
         },
         "mobile": {
           "question": "Puis-je utiliser Kilotrace sur mobile ?",
@@ -164,13 +164,13 @@
         },
         "account": {
           "question": "Comment créer un compte ?",
-          "answer": "Avec ton adresse e-mail ou ton compte Google, en moins d’une minute. Tu connectes ensuite tes activités pour voir ta carte se remplir."
+          "answer": "Avec votre adresse e-mail ou votre compte Google, en moins d’une minute. Vous connectez ensuite vos activités pour voir votre carte se remplir."
         }
       }
     },
     "cta": {
-      "title": "Ta prochaine sortie colorera la carte",
-      "description": "Crée ton compte, connecte tes activités et découvre tout ce que tu as déjà parcouru."
+      "title": "Votre prochaine sortie colorera la carte",
+      "description": "Créez votre compte, connectez vos activités et découvrez tout ce que vous avez déjà parcouru."
     }
   },
   "navbar": {
@@ -204,13 +204,13 @@
   },
   "fields": {
     "email": "Email",
-    "emailPlaceholder": "toi@exemple.fr",
+    "emailPlaceholder": "vous@exemple.fr",
     "password": "Mot de passe",
     "newPassword": "Nouveau mot de passe",
     "currentPassword": "Mot de passe actuel",
-    "confirmPassword": "Confirme le mot de passe",
+    "confirmPassword": "Confirmez le mot de passe",
     "displayName": "Nom affiché",
-    "displayNameDescription": "Optionnel, visible par les autres utilisateurs. À défaut, ton pseudo est affiché.",
+    "displayNameDescription": "Optionnel, visible par les autres utilisateurs. À défaut, votre pseudo est affiché.",
     "username": "Pseudo",
     "usernamePlaceholder": "jean_dupont",
     "usernameDescription": "3 à 20 caractères : lettres minuscules, chiffres et _.",
@@ -222,28 +222,28 @@
     "acceptTerms": "J'accepte les <link>conditions d'utilisation</link>.",
     "bio": "Bio",
     "bioDescription": "160 caractères au plus.",
-    "bioPlaceholder": "Quelques mots sur toi…",
+    "bioPlaceholder": "Quelques mots sur vous…",
     "city": "Ville",
-    "cityDescription": "Choisis ta ville dans la liste, jamais déduite de tes activités.",
+    "cityDescription": "Choisissez votre ville dans la liste, jamais déduite de vos activités.",
     "cityPlaceholder": "Rechercher une ville…",
     "favoriteSports": "Sports favoris",
     "profileColor": "Couleur du profil"
   },
   "validation": {
-    "emailInvalid": "Saisis une adresse email valide.",
+    "emailInvalid": "Saisissez une adresse email valide.",
     "required": "Ce champ est requis.",
     "passwordMin": "Le mot de passe doit contenir au moins 8 caractères.",
     "passwordMax": "Le mot de passe doit contenir au plus 128 caractères.",
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "displayNameMax": "Le nom doit contenir au plus 50 caractères.",
     "usernameLength": "Le pseudo doit contenir entre 3 et 20 caractères.",
-    "usernamePattern": "Utilise uniquement des lettres minuscules, des chiffres et _.",
+    "usernamePattern": "Utilisez uniquement des lettres minuscules, des chiffres et _.",
     "usernameTaken": "Ce pseudo est déjà pris.",
     "usernameReserved": "Ce pseudo est réservé.",
-    "termsRequired": "Tu dois accepter les conditions d'utilisation pour continuer.",
+    "termsRequired": "Vous devez accepter les conditions d'utilisation pour continuer.",
     "bioMax": "La bio doit contenir au plus 160 caractères.",
     "cityMax": "La ville doit contenir au plus 60 caractères.",
-    "cityPick": "Choisis une ville dans la liste."
+    "cityPick": "Choisissez une ville dans la liste."
   },
   "errors": {
     "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
@@ -252,64 +252,64 @@
     "USERNAME_RESERVED": "Ce pseudo est réservé.",
     "INVALID_TOKEN": "Ce lien est invalide ou a expiré.",
     "INVALID_PASSWORD": "Le mot de passe est incorrect.",
-    "CONFIRMATION_MISMATCH": "La confirmation ne correspond pas à ton pseudo.",
+    "CONFIRMATION_MISMATCH": "La confirmation ne correspond pas à votre pseudo.",
     "INVALID_IMAGE": "Ce fichier n'est pas une image valide.",
-    "OAUTH_SIGNUP_EXPIRED": "L'inscription avec Google a expiré. Recommence depuis le début.",
-    "TOO_MANY_REQUESTS": "Trop de tentatives. Patiente une minute avant de réessayer.",
+    "OAUTH_SIGNUP_EXPIRED": "L'inscription avec Google a expiré. Recommencez depuis le début.",
+    "TOO_MANY_REQUESTS": "Trop de tentatives. Patientez une minute avant de réessayer.",
     "FILE_TOO_LARGE": "L'image ne doit pas dépasser 5 Mo.",
-    "UNEXPECTED": "Une erreur inattendue est survenue. Réessaie dans un instant.",
+    "UNEXPECTED": "Une erreur inattendue est survenue. Réessayez dans un instant.",
     "PROVIDER_NOT_CONNECTED": "Ce compte n'est pas connecté.",
-    "CANNOT_FOLLOW_SELF": "Tu ne peux pas te suivre toi-même.",
-    "ALREADY_FOLLOWING": "Tu suis déjà cette personne.",
-    "NOT_FOLLOWING": "Tu ne suis pas cette personne.",
+    "CANNOT_FOLLOW_SELF": "Vous ne pouvez pas vous suivre vous-même.",
+    "ALREADY_FOLLOWING": "Vous suivez déjà cette personne.",
+    "NOT_FOLLOWING": "Vous ne suivez pas cette personne.",
     "NOT_FOUND": "Introuvable.",
     "PRIVATE_PROFILE": "Ce profil est privé.",
     "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
-    "PROFILE_BADGES_FULL": "Tu as déjà épinglé 5 badges.",
-    "CANNOT_LIKE_SELF": "Tu ne peux pas aimer ton propre profil."
+    "PROFILE_BADGES_FULL": "Vous avez déjà épinglé 5 badges.",
+    "CANNOT_LIKE_SELF": "Vous ne pouvez pas aimer votre propre profil."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
     "login": {
       "title": "Connexion",
-      "description": "Content de te revoir !",
+      "description": "Content de vous revoir !",
       "submit": "Se connecter",
       "forgotPassword": "Mot de passe oublié ?",
       "noAccount": "Pas encore de compte ?",
-      "registerLink": "Inscris-toi",
-      "googleError": "La connexion avec Google a échoué. Réessaie.",
+      "registerLink": "Inscrivez-vous",
+      "googleError": "La connexion avec Google a échoué. Réessayez.",
       "googleDisabled": "La connexion avec Google n'est pas disponible pour le moment."
     },
     "register": {
       "title": "Inscription",
-      "description": "Crée ton compte en quelques secondes.",
+      "description": "Créez votre compte en quelques secondes.",
       "submit": "Créer mon compte",
       "hasAccount": "Déjà un compte ?",
-      "loginLink": "Connecte-toi"
+      "loginLink": "Connectez-vous"
     },
     "googleSignup": {
-      "title": "Finalise ton inscription",
-      "description": "Choisis ton pseudo pour terminer la création de ton compte {email}.",
+      "title": "Finalisez votre inscription",
+      "description": "Choisissez votre pseudo pour terminer la création de votre compte {email}.",
       "submit": "Terminer l'inscription",
       "expiredTitle": "Inscription expirée",
       "restart": "Revenir à la connexion"
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",
-      "description": "Saisis ton email : nous t'enverrons un lien pour choisir un nouveau mot de passe.",
+      "description": "Saisissez votre email : nous vous enverrons un lien pour choisir un nouveau mot de passe.",
       "submit": "Envoyer le lien",
-      "sentTitle": "Vérifie ta boîte mail",
+      "sentTitle": "Vérifiez votre boîte mail",
       "sentDescription": "Si un compte existe pour {email}, un lien de réinitialisation vient d'être envoyé. Il expire dans 1 heure.",
       "backToLogin": "Retour à la connexion"
     },
     "resetPassword": {
       "title": "Nouveau mot de passe",
-      "description": "Choisis un nouveau mot de passe pour ton compte.",
+      "description": "Choisissez un nouveau mot de passe pour votre compte.",
       "submit": "Changer le mot de passe",
-      "success": "Ton mot de passe a été changé. Tu peux maintenant te connecter.",
-      "missingToken": "Ce lien est incomplet. Utilise le lien reçu par email."
+      "success": "Votre mot de passe a été changé. Vous pouvez maintenant vous connecter.",
+      "missingToken": "Ce lien est incomplet. Utilisez le lien reçu par email."
     },
-    "sessionExpired": "Ta session a expiré. Connecte-toi à nouveau."
+    "sessionExpired": "Votre session a expiré. Connectez-vous à nouveau."
   },
   "profile": {
     "title": "Profil",
@@ -318,13 +318,13 @@
     "favoriteSports": "Sports favoris",
     "locked": {
       "title": "Ce profil est privé",
-      "description": "Abonne-toi à {name} pour voir ses badges et ses statistiques.",
-      "requested": "Ta demande d'abonnement est en attente."
+      "description": "Abonnez-vous à {name} pour voir ses badges et ses statistiques.",
+      "requested": "Votre demande d'abonnement est en attente."
     },
     "showcase": {
       "railway": "Voies",
       "badges": "Badges épinglés",
-      "noBadges": "Aucun badge épinglé. Choisis ceux à afficher depuis la page <link>Succès</link>.",
+      "noBadges": "Aucun badge épinglé. Choisissez ceux à afficher depuis la page <link>Succès</link>.",
       "stationsVisited": "Gares visitées",
       "previousLevel": "Grandes tuiles",
       "nextLevel": "Petites tuiles",
@@ -338,13 +338,13 @@
       "label": "Profil privé",
       "confirm": {
         "private": {
-          "title": "Passer ton profil en privé ?",
-          "description": "Seuls tes abonnés verront tes badges épinglés, tes statistiques et tes abonnements. Les nouveaux abonnés devront être acceptés. Ton nom, ta bio et tes distinctions restent visibles.",
+          "title": "Passer votre profil en privé ?",
+          "description": "Seuls vos abonnés verront vos badges épinglés, vos statistiques et vos abonnements. Les nouveaux abonnés devront être acceptés. Votre nom, votre bio et vos distinctions restent visibles.",
           "action": "Passer en privé"
         },
         "public": {
-          "title": "Rendre ton profil public ?",
-          "description": "Tout le monde verra tes badges épinglés, tes statistiques et tes abonnements. Les demandes d'abonnement en attente seront acceptées.",
+          "title": "Rendre votre profil public ?",
+          "description": "Tout le monde verra vos badges épinglés, vos statistiques et vos abonnements. Les demandes d'abonnement en attente seront acceptées.",
           "action": "Rendre public"
         }
       }
@@ -375,16 +375,16 @@
     "share": {
       "open": "Partager le profil",
       "title": "Partager le profil",
-      "description": "Invite d'autres membres à découvrir le profil de {name}.",
+      "description": "Invitez d'autres membres à découvrir le profil de {name}.",
       "link": "Lien",
       "qr": "QR code",
       "copy": "Copier le lien",
       "copyFailed": "Le lien n'a pas pu être copié.",
       "native": "Partager…",
       "qrLabel": "QR code du profil de {name}",
-      "qrHint": "Scanne-le avec l'appareil photo de ton téléphone."
+      "qrHint": "Scannez-le avec l'appareil photo de votre téléphone."
     },
-    "ownHint": "Voici ton profil tel que le voient les autres membres : c'est la seule chose qu'ils peuvent voir de toi.",
+    "ownHint": "Voici votre profil tel que le voient les autres membres : c'est la seule chose qu'ils peuvent voir de vous.",
     "color": {
       "label": "Couleur du profil",
       "custom": "Couleur personnalisée",
@@ -403,7 +403,7 @@
     "image": {
       "open": "Enregistrer la carte en image",
       "title": "Carte du profil",
-      "description": "Télécharge ta carte en image ou partage-la directement.",
+      "description": "Téléchargez votre carte en image ou partagez-la directement.",
       "alt": "Carte du profil de @{username}",
       "failed": "L'image n'a pas pu être créée.",
       "download": "Télécharger",
@@ -431,7 +431,7 @@
   },
   "settings": {
     "title": "Paramètres",
-    "description": "Gère ton profil, tes connexions et ton compte.",
+    "description": "Gérez votre profil, vos connexions et votre compte.",
     "avatar": {
       "title": "Photo de profil",
       "description": "JPG, PNG, WebP ou GIF, 5 Mo maximum. L'image est recadrée au format carré.",
@@ -442,45 +442,45 @@
     },
     "profile": {
       "title": "Profil public",
-      "description": "Ces informations apparaissent sur ton profil.",
+      "description": "Ces informations apparaissent sur votre profil.",
       "updated": "Profil mis à jour."
     },
     "password": {
       "title": "Mot de passe",
-      "description": "Tes autres sessions seront déconnectées.",
-      "descriptionNoPassword": "Ton compte utilise Google. Définis un mot de passe pour pouvoir aussi te connecter avec ton email.",
+      "description": "Vos autres sessions seront déconnectées.",
+      "descriptionNoPassword": "Votre compte utilise Google. Définissez un mot de passe pour pouvoir aussi vous connecter avec votre email.",
       "submit": "Changer le mot de passe",
       "submitNoPassword": "Définir un mot de passe",
       "updated": "Mot de passe mis à jour."
     },
     "danger": {
       "title": "Supprimer le compte",
-      "description": "Ton compte et toutes tes données seront définitivement supprimés.",
+      "description": "Votre compte et toutes vos données seront définitivement supprimés.",
       "action": "Supprimer mon compte",
-      "dialogTitle": "Supprimer définitivement ton compte ?",
-      "dialogDescription": "Cette action est irréversible. Toutes tes données seront perdues.",
-      "confirmWithPassword": "Saisis ton mot de passe pour confirmer.",
-      "confirmWithUsername": "Saisis ton pseudo « {username} » pour confirmer.",
+      "dialogTitle": "Supprimer définitivement votre compte ?",
+      "dialogDescription": "Cette action est irréversible. Toutes vos données seront perdues.",
+      "confirmWithPassword": "Saisissez votre mot de passe pour confirmer.",
+      "confirmWithUsername": "Saisissez votre pseudo « {username} » pour confirmer.",
       "confirm": "Supprimer définitivement",
-      "deleted": "Ton compte a été supprimé."
+      "deleted": "Votre compte a été supprimé."
     },
     "connections": {
       "title": "Connexions",
-      "description": "Les services d'où proviennent tes activités.",
+      "description": "Les services d'où proviennent vos activités.",
       "connected": "Connecté",
       "notConnected": "Non connecté",
       "connectedAs": "{name} · connecté depuis le {date}",
       "connectedSince": "Connecté depuis le {date}",
-      "notConnectedDescription": "Importe tes activités depuis Strava.",
+      "notConnectedDescription": "Importez vos activités depuis Strava.",
       "revoke": "Révoquer",
       "revokeTitle": "Révoquer l'accès à Strava ?",
-      "revokeDescription": "L'accès de la plateforme à ton compte Strava sera supprimé, ainsi que toutes les activités importées depuis Strava. Tu pourras te reconnecter à tout moment.",
+      "revokeDescription": "L'accès de la plateforme à votre compte Strava sera supprimé, ainsi que toutes les activités importées depuis Strava. Vous pourrez vous reconnecter à tout moment.",
       "revokeConfirm": "Révoquer et supprimer",
-      "revoked": "L'accès à Strava a été révoqué et tes activités importées ont été supprimées."
+      "revoked": "L'accès à Strava a été révoqué et vos activités importées ont été supprimées."
     },
     "privacy": {
       "title": "Confidentialité",
-      "description": "Qui peut voir ton profil en détail."
+      "description": "Qui peut voir votre profil en détail."
     }
   },
   "terms": {
@@ -494,7 +494,7 @@
       "evening": "Bonsoir {name}",
       "latest": "Dernière activité : <strong>{name}</strong>, {when}.",
       "noActivity": "Aucune activité importée pour le moment.",
-      "welcome": "Connecte ton compte Strava pour remplir ton tableau de bord.",
+      "welcome": "Connectez votre compte Strava pour remplir votre tableau de bord.",
       "map": "Carte",
       "achievements": "Succès",
       "distance": "Distance",
@@ -526,7 +526,7 @@
       "title": "Année {year}",
       "summary": "{activities, plural, =0 {Aucune activité} one {# activité} other {# activités}} sur {days, plural, one {# jour} other {# jours}} · {distance} · {time}",
       "label": "Calendrier de l'année : {days, plural, =0 {aucun jour actif} one {# jour actif} other {# jours actifs}}",
-      "hint": "Survole un jour pour voir son détail.",
+      "hint": "Survolez un jour pour voir son détail.",
       "day": "{count, plural, one {# activité} other {# activités}} · {distance} · {time}",
       "rest": "Repos",
       "less": "Moins",
@@ -538,7 +538,7 @@
       "nextYear": "Année suivante"
     },
     "sports": {
-      "title": "Tes sports",
+      "title": "Vos sports",
       "others": "{count, plural, one {# autre sport} other {# autres sports}}",
       "detail": "{count, plural, one {# activité} other {# activités}} · {time} · {distance}",
       "empty": "Aucun sport pour le moment."
@@ -557,18 +557,18 @@
       "maxSquare": "Carré max",
       "squareSize": "{size} × {size}",
       "maxCluster": "Cluster max",
-      "tilesError": "Impossible de charger tes tuiles pour le moment.",
+      "tilesError": "Impossible de charger vos tuiles pour le moment.",
       "countries": "Pays",
       "countriesCount": "{count, plural, one {{formatted} pays visité} other {{formatted} pays visités}}",
       "countryTiles": "{visited} tuiles",
-      "countriesPending": "Tes tuiles sont en cours de localisation.",
+      "countriesPending": "Vos tuiles sont en cours de localisation.",
       "countriesEmpty": "Aucun pays visité pour le moment.",
-      "countriesError": "Impossible de charger tes pays pour le moment.",
+      "countriesError": "Impossible de charger vos pays pour le moment.",
       "stations": "Gares et voies",
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
       "railway": "de voies débloquées",
       "lastStation": "Dernière : {name}",
-      "stationsError": "Impossible de charger tes gares pour le moment.",
+      "stationsError": "Impossible de charger vos gares pour le moment.",
       "openTiles": "Voir les tuiles sur la carte",
       "preview": "Aperçu de la zone la plus explorée",
       "openStations": "Voir les gares sur la carte"
@@ -577,7 +577,7 @@
       "all": "Tous",
       "favorites": {
         "title": "Badges favoris",
-        "description": "Les badges que tu suis de près."
+        "description": "Les badges que vous suivez de près."
       },
       "closest": {
         "title": "Presque débloqués",
@@ -586,8 +586,8 @@
       "empty": "Aucun badge en cours."
     },
     "evolution": {
-      "tilesTitle": "Évolution de tes tuiles",
-      "stationsTitle": "Évolution de tes gares",
+      "tilesTitle": "Évolution de vos tuiles",
+      "stationsTitle": "Évolution de vos gares",
       "modesLabel": "Valeur suivie",
       "tileModes": {
         "tiles": "Tuiles",
@@ -603,7 +603,7 @@
       },
       "squareSize": "{size} × {size}",
       "label": "Évolution : {name}, {value} aujourd'hui",
-      "hint": "Glisse sur le graphique pour zoomer.",
+      "hint": "Glissez sur le graphique pour zoomer.",
       "reset": "Réinitialiser",
       "empty": "Rien à afficher pour le moment.",
       "error": "Impossible de charger l'évolution pour le moment."
@@ -632,41 +632,41 @@
     "name": "Strava",
     "connect": "Se connecter avec Strava",
     "unavailable": "La connexion à Strava n'est pas disponible pour le moment.",
-    "statusError": "Impossible de récupérer l'état de ta connexion Strava.",
+    "statusError": "Impossible de récupérer l'état de votre connexion Strava.",
     "retry": "Réessayer",
     "connectCard": {
-      "title": "Connecte ton compte Strava",
-      "description": "Importe tes activités pour commencer à explorer la carte.",
-      "imported": "Nous importons le nom, le sport, la date, la distance, la durée et le dénivelé de tes activités, privées comprises si tu l'autorises.",
-      "noTracks": "Tes traces GPS ne sont pas conservées.",
-      "revocable": "Tu peux révoquer l'accès à tout moment depuis les paramètres : tes activités importées sont alors supprimées."
+      "title": "Connectez votre compte Strava",
+      "description": "Importez vos activités pour commencer à explorer la carte.",
+      "imported": "Nous importons le nom, le sport, la date, la distance, la durée et le dénivelé de vos activités, privées comprises si vous l'autorisez.",
+      "noTracks": "Vos traces GPS ne sont pas conservées.",
+      "revocable": "Vous pouvez révoquer l'accès à tout moment depuis les paramètres : vos activités importées sont alors supprimées."
     },
     "outcome": {
-      "connected": "Ton compte Strava est connecté. L'import de tes activités commence.",
-      "denied": "Tu as refusé l'accès à Strava. Tu peux réessayer quand tu veux.",
-      "missing_scope": "L'accès à tes activités est nécessaire : coche « Voir les données de tes activités » sur l'écran de Strava.",
+      "connected": "Votre compte Strava est connecté. L'import de vos activités commence.",
+      "denied": "Vous avez refusé l'accès à Strava. Vous pouvez réessayer quand vous voulez.",
+      "missing_scope": "L'accès à vos activités est nécessaire : cochez « Voir les données de vos activités » sur l'écran de Strava.",
       "already_linked": "Ce compte Strava est déjà connecté à un autre compte.",
       "unavailable": "La connexion à Strava n'est pas disponible pour le moment.",
-      "error": "La connexion à Strava a échoué. Réessaie dans un instant."
+      "error": "La connexion à Strava a échoué. Réessayez dans un instant."
     },
     "sync": {
-      "importing": "Import de tes activités en cours…",
+      "importing": "Import de vos activités en cours…",
       "importingCount": "{count, plural, =0 {Préparation de l'import…} one {# activité importée} other {# activités importées}}",
       "queued": "Synchronisation en attente…",
       "rateLimited": "Strava limite le nombre de requêtes : l'import reprendra automatiquement à {time}.",
       "retrying": "Une erreur est survenue, nouvelle tentative à {time}.",
       "failed": "La synchronisation a échoué.",
-      "failedDescription": "Strava n'a pas répondu correctement. Réessaie dans quelques minutes.",
-      "hint": "Tu peux quitter cette page : l'import continue en arrière-plan.",
+      "failedDescription": "Strava n'a pas répondu correctement. Réessayez dans quelques minutes.",
+      "hint": "Vous pouvez quitter cette page : l'import continue en arrière-plan.",
       "now": "Synchroniser",
       "requested": "Synchronisation lancée.",
       "lastSynced": "Dernière synchronisation {date}",
       "neverSynced": "Pas encore synchronisé",
       "connectedAs": "Connecté à Strava en tant que {name}",
       "connected": "Connecté à Strava",
-      "privateMissing": "Tes activités privées ne sont pas importées. Pour les inclure, révoque puis reconnecte Strava en cochant « Voir les données de tes activités privées ».",
+      "privateMissing": "Vos activités privées ne sont pas importées. Pour les inclure, révoquez puis reconnectez Strava en cochant « Voir les données de vos activités privées ».",
       "tiles": {
-        "computing": "Calcul de tes tuiles…",
+        "computing": "Calcul de vos tuiles…",
         "computedCount": "{computed} sur {total}",
         "refining": "Précision des tuiles",
         "refiningCount": "{count, plural, one {# activité à vérifier} other {# activités à vérifier}}",
@@ -684,9 +684,9 @@
       "time": "Temps",
       "elevation": "Dénivelé"
     },
-    "error": "Impossible de charger tes succès pour le moment.",
+    "error": "Impossible de charger vos succès pour le moment.",
     "retry": "Réessayer",
-    "empty": "Connecte Strava depuis le tableau de bord pour faire avancer tes badges.",
+    "empty": "Connectez Strava depuis le tableau de bord pour faire avancer vos badges.",
     "completions": "{count, plural, =0 {Pas encore accompli} one {Accompli # fois} other {Accompli # fois}}",
     "progressLabel": "{name} : {percent} de l'itération en cours",
     "families": {
@@ -699,13 +699,13 @@
     "favorite": "favori",
     "favoritesSection": {
       "title": "Favoris",
-      "empty": "Ajoute tes badges préférés aux favoris depuis leur fiche pour les retrouver ici.",
+      "empty": "Ajoutez vos badges préférés aux favoris depuis leur fiche pour les retrouver ici.",
       "reorder": "Réorganiser",
       "done": "Terminé",
-      "reorderHint": "Fais glisser tes favoris pour choisir leur ordre.",
-      "reorderError": "Impossible de modifier l'ordre de tes favoris pour le moment.",
+      "reorderHint": "Faites glisser vos favoris pour choisir leur ordre.",
+      "reorderError": "Impossible de modifier l'ordre de vos favoris pour le moment.",
       "drag": {
-        "instructions": "Pour déplacer un favori, appuie sur Espace ou Entrée, utilise les flèches, puis appuie de nouveau sur Espace ou Entrée pour le poser, ou sur Échap pour annuler.",
+        "instructions": "Pour déplacer un favori, appuyez sur Espace ou Entrée, utilisez les flèches, puis appuyez de nouveau sur Espace ou Entrée pour le poser, ou sur Échap pour annuler.",
         "start": "{name} saisi, en position {rank}.",
         "over": "{name} déplacé en position {rank}.",
         "end": "{name} posé en position {rank}.",
@@ -726,7 +726,7 @@
         "lastCompletedAt": "Dernière fois",
         "never": "Pas encore",
         "estimatedNext": "Prochaine fois, au rythme actuel",
-        "estimateHint": "Estimation selon ton rythme des 90 derniers jours",
+        "estimateHint": "Estimation selon votre rythme des 90 derniers jours",
         "noRecentActivity": "Aucune activité depuis 90 jours",
         "unavailable": "Indisponible",
         "tierReached": "Niveau atteint",
@@ -743,7 +743,7 @@
       },
       "addFavorite": "Ajouter aux favoris",
       "removeFavorite": "Retirer des favoris",
-      "favoriteError": "Impossible de modifier tes favoris pour le moment.",
+      "favoriteError": "Impossible de modifier vos favoris pour le moment.",
       "tier": "Niveau {number} sur {total}",
       "lastTier": "Dernier niveau atteint",
       "tiers": {
@@ -754,8 +754,8 @@
       },
       "addToProfile": "Afficher sur le profil",
       "removeFromProfile": "Retirer du profil",
-      "profileError": "Impossible de modifier ton profil pour le moment.",
-      "profileFull": "Tu as déjà épinglé 5 badges : retires-en un de ton profil pour en épingler un autre."
+      "profileError": "Impossible de modifier votre profil pour le moment.",
+      "profileFull": "Vous avez déjà épinglé 5 badges : retirez-en un de votre profil pour en épingler un autre."
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",
@@ -803,7 +803,7 @@
       "viewLabel": "Affichage"
     },
     "header": {
-      "label": "Résumé de tes succès",
+      "label": "Résumé de vos succès",
       "closest": "Le plus proche",
       "remaining": "encore {amount}",
       "carousel": "Badges à la une",
@@ -826,7 +826,7 @@
       "random": "Au hasard",
       "reroll": "Relancer le dé",
       "roll": "Lancer le dé pour tirer un badge",
-      "rollHint": "Lance le dé",
+      "rollHint": "Lancez le dé",
       "closestNew": "Prochain inédit",
       "closestNone": "Aucun badge en cours."
     },
@@ -834,12 +834,12 @@
   },
   "map": {
     "title": "Carte",
-    "label": "Carte de tes activités",
+    "label": "Carte de vos activités",
     "checking": "Recherche de nouveaux tracés…",
     "syncing": "Récupération des tracés : {fetched} sur {total}",
-    "empty": "Connecte Strava depuis le tableau de bord pour voir tes tracés ici.",
-    "error": "Impossible de récupérer tes tracés pour le moment.",
-    "rateLimited": "Le quota de requêtes Strava est atteint. Réessaie dans quelques minutes.",
+    "empty": "Connectez Strava depuis le tableau de bord pour voir vos tracés ici.",
+    "error": "Impossible de récupérer vos tracés pour le moment.",
+    "rateLimited": "Le quota de requêtes Strava est atteint. Réessayez dans quelques minutes.",
     "retry": "Réessayer",
     "invalidLink": "Certains réglages de ce lien sont invalides : ils ont été ignorés.",
     "stats": {
@@ -902,7 +902,7 @@
     "tilePanel": {
       "tile": "Tuile",
       "subtile": "Petite tuile",
-      "description": "Ce que tes activités ont exploré sur cette tuile.",
+      "description": "Ce que vos activités ont exploré sur cette tuile.",
       "inMaxSquare": "Plus grand carré",
       "inMaxCluster": "Plus grand cluster",
       "clustered": "Cluster",
@@ -917,7 +917,7 @@
       "activitiesError": "Impossible de charger les activités.",
       "retry": "Réessayer",
       "viewActivity": "Voir l'activité",
-      "notVisited": "Tu n'as pas encore visité cette tuile."
+      "notVisited": "Vous n'avez pas encore visité cette tuile."
     },
     "panel": {
       "label": "Détails",
@@ -1011,7 +1011,7 @@
       "error": "Impossible de charger le secteur.",
       "search": {
         "title": "Rechercher un secteur",
-        "description": "Choisis un pays pour centrer la carte dessus.",
+        "description": "Choisissez un pays pour centrer la carte dessus.",
         "placeholder": "Rechercher un pays…",
         "visited": "Pays visités",
         "others": "Autres pays",
@@ -1030,8 +1030,8 @@
       "unnamed": "Gare sans nom",
       "visited": "Visitée",
       "notVisited": "Pas encore visitée",
-      "visitedDescription": "Une de tes activités a traversé la petite tuile de cette gare.",
-      "notVisitedDescription": "Traverse la petite tuile de cette gare pour la débloquer.",
+      "visitedDescription": "Une de vos activités a traversé la petite tuile de cette gare.",
+      "notVisitedDescription": "Traversez la petite tuile de cette gare pour la débloquer.",
       "firstVisit": "Première visite",
       "links": "Liaisons débloquées",
       "neighbors": "Gares voisines",
@@ -1084,7 +1084,7 @@
       "follow": "Suivre le train",
       "following": "Suivi en cours",
       "gone": "Ce train a quitté la carte.",
-      "disclaimer": "Train fictif : il circule sur tes liaisons débloquées, ses chiffres sont inventés.",
+      "disclaimer": "Train fictif : il circule sur vos liaisons débloquées, ses chiffres sont inventés.",
       "moreStops": "{count, plural, one {# autre arrêt} other {# autres arrêts}}",
       "fewerStops": "Masquer les arrêts intermédiaires",
       "passed": "Desservi",
@@ -1096,7 +1096,7 @@
       "label": "Rechercher un utilisateur",
       "placeholder": "Rechercher un utilisateur…",
       "empty": "Aucun utilisateur trouvé.",
-      "error": "La recherche a échoué. Réessaie.",
+      "error": "La recherche a échoué. Réessayez.",
       "followed": "Suivis",
       "others": "Autres utilisateurs"
     },
@@ -1105,7 +1105,7 @@
       "followBack": "Suivre en retour",
       "following": "Abonné",
       "unfollow": "Ne plus suivre",
-      "followsYou": "Te suit",
+      "followsYou": "Vous suit",
       "requested": "Demandé",
       "cancelRequest": "Annuler la demande"
     },
@@ -1133,21 +1133,21 @@
     "unread": "{count, plural, one {# notification non lue} other {# notifications non lues}}",
     "empty": "Aucune notification pour l'instant.",
     "error": "Les notifications n'ont pas pu être chargées.",
-    "follow": "<b>{name}</b> s'est abonné·e à toi.",
+    "follow": "<b>{name}</b> s'est abonné·e à vous.",
     "toast": {
-      "follow": "{name} s'est abonné·e à toi.",
-      "follow_request": "{name} demande à s'abonner à toi.",
-      "follow_accepted": "{name} a accepté ta demande d'abonnement.",
-      "profile_like": "Quelqu'un a aimé ton profil."
+      "follow": "{name} s'est abonné·e à vous.",
+      "follow_request": "{name} demande à s'abonner à vous.",
+      "follow_accepted": "{name} a accepté votre demande d'abonnement.",
+      "profile_like": "Quelqu'un a aimé votre profil."
     },
     "view": "Voir",
-    "follow_request": "<b>{name}</b> demande à s'abonner à toi.",
-    "follow_accepted": "<b>{name}</b> a accepté ta demande d'abonnement.",
-    "profile_like": "Quelqu'un a aimé ton profil."
+    "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
+    "follow_accepted": "<b>{name}</b> a accepté votre demande d'abonnement.",
+    "profile_like": "Quelqu'un a aimé votre profil."
   },
   "footer": {
     "label": "Pied de page",
-    "tagline": "Chaque sortie dessine ta carte. Tuiles, gares, pays et badges à compléter, un kilomètre après l’autre.",
+    "tagline": "Chaque sortie dessine votre carte. Tuiles, gares, pays et badges à compléter, un kilomètre après l’autre.",
     "product": "Découvrir",
     "features": "Fonctionnalités",
     "steps": "Comment ça marche",

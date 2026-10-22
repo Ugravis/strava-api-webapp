@@ -10,6 +10,7 @@ import { DEFAULT_THROTTLE } from './auth/throttle';
 import { CountriesModule } from './countries/countries.module';
 import { DevModule } from './dev/dev.module';
 import { DistancesModule } from './distances/distances.module';
+import { FollowsModule } from './follows/follows.module';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import googleConfig from './config/google.config';
@@ -17,6 +18,7 @@ import mailConfig from './config/mail.config';
 import storageConfig from './config/storage.config';
 import stravaConfig from './config/strava.config';
 import { HealthController } from './health/health.controller';
+import { NotificationsModule } from './notifications/notifications.module';
 import { StationsModule } from './stations/stations.module';
 import { StravaModule } from './strava/strava.module';
 import { TilesModule } from './tiles/tiles.module';
@@ -49,6 +51,8 @@ import { UsersModule } from './users/users.module';
     TilesModule,
     CountriesModule,
     StationsModule,
+    FollowsModule,
+    NotificationsModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),

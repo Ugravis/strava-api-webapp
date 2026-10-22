@@ -139,6 +139,10 @@
  */
 .map-with-panel {
   --map-panel-width: min(24rem, calc(100% - 3rem));
+  /* Floating from medium screens: its width counts the gap along the edge. */
+  @media (width >= 48rem) {
+    --map-panel-width: min(25rem, calc(100% - 3rem));
+  }
 }
 .map-with-panel .maplibregl-ctrl-top-right,
 .map-with-panel .maplibregl-ctrl-bottom-right {

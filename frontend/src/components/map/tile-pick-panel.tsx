@@ -22,7 +22,7 @@ export function TilePickPanel({ pick, onZoomChange, onOpenActivity }: TilePickPa
   const tile = shownTile(pick);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <Tabs value={tile.zoom} onValueChange={(zoom: TileZoom) => onZoomChange(zoom)}>
         <TabsList className="w-full">
           <TabsTrigger value={TILE_ZOOM}>{t("tile")}</TabsTrigger>

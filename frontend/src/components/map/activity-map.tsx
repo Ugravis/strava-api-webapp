@@ -601,6 +601,7 @@ export function ActivityMap({
         <MapSidePanel
           ref={panelRef}
           contentKey={entryKey(entry)}
+          title={t(`kinds.${entry.kind}`)}
           collapsed={collapsed}
           onCollapsedChange={setCollapsed}
           canGoBack={history.canGoBack}

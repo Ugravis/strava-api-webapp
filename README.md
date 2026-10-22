@@ -43,9 +43,10 @@ pnpm dev:frontend
 ```
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
-drops every table, replays the migrations, imports the country boundaries again (about 5 minutes,
-`--skip-countries` to skip it) and empties the object storage (uploaded avatars); it refuses to run
-when `NODE_ENV=production`.
+applies the pending migrations, empties the user data tables but keeps the datasets (countries,
+stations, railway links, their tile locations and the badge catalog), imports the country
+boundaries when there are none yet (about 5 minutes, `--skip-countries` to skip it) and empties the
+object storage (uploaded avatars, map previews); it refuses to run when `NODE_ENV=production`.
 To manage migrations manually:
 
 ```bash
@@ -178,8 +179,8 @@ self-governing, counted as a country of its own (`SEPARATE_DEPENDENCIES`). Lakes
   from [Overture Maps](https://overturemaps.org) (OpenStreetMap data, ODbL, public S3 bucket, no
   account) with DuckDB, then stores them at full precision in PostGIS, subdivided in
   `country_parts` (Web Mercator). It takes about 5 minutes and reads about 300 MB. Run it once
-  after setting up the database; `pnpm db:reset` runs it too (`pnpm db:reset --skip-countries` to
-  skip it). Without it, no country is shown.
+  after setting up the database; `pnpm db:reset` runs it too when the table is empty
+  (`pnpm db:reset --skip-countries` to skip it). Without it, no country is shown.
   The release is pinned in `overture-countries.ts`. `country_parts` is read by the worker, and
   once per country by a user request, for the bounds of its main landmass (see Sectors).
 - **Location**: a background worker locates each visited large tile once: for every country it

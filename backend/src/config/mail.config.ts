@@ -15,5 +15,5 @@ export default registerAs('mail', (): MailConfig => ({
   secure: process.env.SMTP_SECURE === 'true',
   user: process.env.SMTP_USER || null,
   password: process.env.SMTP_PASSWORD || null,
-  from: process.env.MAIL_FROM ?? 'Strava Webapp <no-reply@localhost>',
+  from: process.env.MAIL_FROM ?? 'Kilotrace <no-reply@localhost>',
 }));

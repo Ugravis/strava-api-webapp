@@ -1,4 +1,4 @@
-# Strava Webapp
+# Kilotrace
 
 Gamified web platform connected to Strava. Activities are displayed on a map with tile, municipality and point-of-interest completion, badges, beacons to collect and a community layer.
 

@@ -1,9 +1,9 @@
 import { MapIcon, type LucideIcon } from "lucide-react";
 
-/** Branding placeholders, centralized so they can be replaced in one place. */
+/** Branding, centralized so it can be changed in one place. */
 export const siteConfig: { name: string; domain: string; logo: LucideIcon } = {
-  name: "Strava Webapp",
+  name: "Kilotrace",
   /** Shown on the profile cards, which may be shared as images. */
-  domain: "stravawebapp.com",
+  domain: "kilotrace.com",
   logo: MapIcon,
 };

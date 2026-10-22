@@ -40,12 +40,12 @@ export interface PendingSignupResponse {
 
 const COOKIE_PATH = '/api/auth/google';
 const stateCookie = new SignedCookie<AuthorizationState>(
-  'google_oauth_state',
+  'kilotrace_google_oauth_state',
   10 * 60 * 1000,
   COOKIE_PATH,
 );
 const pendingSignupCookie = new SignedCookie<PendingGoogleSignup>(
-  'google_pending_signup',
+  'kilotrace_google_pending_signup',
   30 * 60 * 1000,
   COOKIE_PATH,
 );

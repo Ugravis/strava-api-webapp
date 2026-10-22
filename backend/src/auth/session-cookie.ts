@@ -3,7 +3,8 @@ import type { CookieOptions, Request, Response } from 'express';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import type { CreatedSession } from './sessions/sessions.service';
 
-export const SESSION_COOKIE = 'session';
+/** Prefixed: cookies are shared by every port of a host, other apps included. */
+export const SESSION_COOKIE = 'kilotrace_session';
 
 @Injectable()
 export class SessionCookie {

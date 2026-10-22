@@ -5,11 +5,32 @@ import { S3StorageService } from '../storage/s3-storage.service';
 import dataSource from './data-source';
 
 /**
- * Development only: drops every table and type, replays the migrations,
- * imports the country boundaries again (about 5 minutes) and empties the
- * object storage (uploaded avatars).
+ * Tables kept by the reset: the imported datasets (country boundaries,
+ * stations and railway links), what is computed from them alone, the
+ * catalogs seeded by the migrations and the PostGIS and TypeORM tables.
+ */
+const KEPT_TABLES = [
+  'countries',
+  'country_parts',
+  'located_tiles',
+  'tile_countries',
+  'places',
+  'rail_links',
+  'rail_link_countries',
+  'railway_imports',
+  'badge_themes',
+  'badges',
+  'migrations',
+  'spatial_ref_sys',
+];
+
+/**
+ * Development only: applies the pending migrations, empties every table
+ * except the kept ones (user data), imports the country boundaries when
+ * there are none yet (about 5 minutes) and empties the object storage
+ * (uploaded avatars, map previews).
  * Usage: `pnpm db:reset` from the repository root;
- * `pnpm db:reset --skip-countries` keeps the database without countries.
+ * `pnpm db:reset --skip-countries` skips the country import.
  */
 async function reset(): Promise<void> {
   if (process.env.NODE_ENV === 'production') {
@@ -23,10 +44,26 @@ async function reset(): Promise<void> {
       database?: string;
     };
     console.log(`Resetting database "${database}" on ${host}…`);
-    await dataSource.dropDatabase();
     const migrations = await dataSource.runMigrations();
-    console.log(`Database ready: ${migrations.length} migration(s) applied.`);
-    if (!process.argv.includes('--skip-countries')) {
+    console.log(`${migrations.length} migration(s) applied.`);
+
+    const tables: { tablename: string }[] = await dataSource.query(
+      `SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename <> ALL($1)
+       ORDER BY tablename`,
+      [KEPT_TABLES],
+    );
+    // Without CASCADE, PostgreSQL refuses the whole statement if a kept
+    // table references an emptied one, so the kept tables stay intact.
+    await dataSource.query(
+      `TRUNCATE ${tables.map((t) => `"${t.tablename}"`).join(', ')} RESTART IDENTITY`,
+    );
+    console.log(`${tables.length} table(s) emptied, datasets kept.`);
+
+    const [{ count }]: { count: number }[] = await dataSource.query(
+      'SELECT count(*)::int AS count FROM countries',
+    );
+    if (count === 0 && !process.argv.includes('--skip-countries')) {
       await importCountries(dataSource);
     }
   } finally {

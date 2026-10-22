@@ -3,6 +3,7 @@ import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import { MailService } from '../mail/mail.service';
 import { StravaConnectionService } from '../strava/strava-connection.service';
+import { MapPreviewService } from '../tiles/map-preview.service';
 import { AvatarsService } from '../users/avatars.service';
 import type { ChangePasswordDto } from '../users/dto/change-password.dto';
 import type { DeleteAccountDto } from '../users/dto/delete-account.dto';
@@ -39,6 +40,7 @@ export class AuthService {
     private readonly mail: MailService,
     private readonly avatars: AvatarsService,
     private readonly strava: StravaConnectionService,
+    private readonly mapPreview: MapPreviewService,
     @Inject(authConfig.KEY) private readonly config: AuthConfig,
   ) {}
 
@@ -174,6 +176,7 @@ export class AuthService {
       );
     }
     await this.avatars.deleteQuietly(user.avatarKey);
+    await this.mapPreview.deleteFor(user.id);
     // Revokes the access at Strava: the cascade below only removes local data.
     await this.strava.disconnect(user.id);
     // Sessions, tokens, OAuth accounts, connections and activities are removed by cascade.

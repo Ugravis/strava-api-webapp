@@ -9,6 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { PREVIEW_THEMES, type PreviewTheme } from './map-preview.service';
 import { HISTORY_MODES, type HistoryMode } from './tile-history.service';
 import { RASTER_MIN_ZOOM, TILES_MAX_ZOOM } from './user-tiles.service';
 
@@ -89,4 +90,10 @@ export class TileHistoryRasterQueryDto extends TileHistoryQueryDto {
   @IsString()
   @Matches(RGBA_HEX)
   color!: string;
+}
+
+/** The theme of the preview of the map, as the map. */
+export class MapPreviewQueryDto {
+  @IsIn(PREVIEW_THEMES)
+  theme!: PreviewTheme;
 }

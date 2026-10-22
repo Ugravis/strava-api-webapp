@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { REAL_TRAIN_SPEED, useTrainSpeed } from "@/lib/trains/train-speed";
 import { cn } from "@/lib/utils";
-import { PanelFigure } from "./panel-figure";
+import { PanelFigure, PanelFigures, PanelSection } from "./panel-figure";
 import type { StationPick } from "./stations-layer";
 import type { TrainInfo, TrainStop } from "./train-traffic";
 
@@ -55,8 +55,8 @@ export function TrainPanel({
     });
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-2">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-2.5">
         <h2 className="text-lg leading-tight font-semibold">
           {t("title", { kind: t(`kinds.${info.kind}`), number: info.number })}
         </h2>
@@ -72,7 +72,7 @@ export function TrainPanel({
         </div>
       </header>
 
-      <dl className="grid grid-cols-3 gap-3">
+      <PanelFigures>
         <PanelFigure
           label={t("speed")}
           value={
@@ -101,12 +101,9 @@ export function TrainPanel({
           </>
         )}
         <PanelFigure label={t("onLine")} value={String(info.onLine)} />
-      </dl>
+      </PanelFigures>
 
-      <section className="flex flex-col gap-1">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">
-          {t("journey", { count: info.stops.length })}
-        </h3>
+      <PanelSection title={t("journey", { count: info.stops.length })}>
         <ol className="flex flex-col">
           {journey(info, allStops).map((row, index, rows) =>
             !("stop" in row) ? (
@@ -143,12 +140,11 @@ export function TrainPanel({
             {t("fewerStops")}
           </Button>
         )}
-      </section>
+      </PanelSection>
 
       <Button
         variant={info.following ? "secondary" : "outline"}
-        size="sm"
-        className="self-start"
+        className="w-full"
         aria-pressed={info.following}
         onClick={() => {
           onFollowChange(!info.following);
@@ -277,8 +273,8 @@ function JourneyStop({
           onOpenStation({ id: station.id, lon: station.lon, lat: station.lat })
         }
         className={cn(
-          "relative flex w-full items-center gap-2.5 py-1.5 text-left",
-          "hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+          "relative flex w-full items-center gap-2.5 rounded-md py-1.5 pr-1 text-left transition-colors",
+          "hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none",
         )}
       >
         <span

@@ -9,7 +9,7 @@ import { useActivityDetails } from "@/hooks/use-activity";
 import { isFootSport, useActivityFormat } from "@/hooks/use-activity-format";
 import type { ActivityDetails, ActivityTiles, LevelGains } from "@/lib/api/types";
 import { type ActivityView, hasGains } from "./activity-view";
-import { PanelFigure, PanelFiguresSkeleton } from "./panel-figure";
+import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
 import { StravaActivityLink } from "./strava-activity-link";
 
 interface ActivityPanelProps {
@@ -38,11 +38,11 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
         {activity ? (
           <>
-            <h2 className="font-heading text-base font-medium wrap-break-word">{activity.name}</h2>
+            <h2 className="text-lg leading-tight font-semibold wrap-break-word">{activity.name}</h2>
             <p className="text-muted-foreground">
               {format.sport(activity.sportType)} ·{" "}
               <time dateTime={activity.startedAt}>
@@ -64,10 +64,9 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
 
       {activity ? <ActivityFigures activity={activity} /> : <PanelFiguresSkeleton count={6} />}
 
-      <section className="flex flex-col gap-3">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">{t("gainsTitle")}</h3>
+      <PanelSection title={t("gainsTitle")}>
         {!tiles ? (
-          <PanelFiguresSkeleton count={4} />
+          <PanelFiguresSkeleton count={3} />
         ) : tiles.gains ? (
           <>
             <LevelGainsFigures title={t("tiles")} crossed={tiles.tiles.length} gains={tiles.gains.tiles} />
@@ -76,29 +75,30 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
         ) : (
           <p className="text-muted-foreground">{t("gainsPending")}</p>
         )}
-      </section>
+      </PanelSection>
 
-      <section className="flex flex-col gap-2">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">{t("mapTitle")}</h3>
-        <ViewSwitch
-          label={tiles?.gains && !gained ? t("nothingGained") : t("gainedOnly")}
-          checked={view.gainedOnly && gained}
-          disabled={!gained}
-          onChange={(gainedOnly) => onViewChange({ ...view, gainedOnly })}
-        />
-        <ViewSwitch label={t("showTiles")} checked={view.tiles} onChange={(value) => onViewChange({ ...view, tiles: value })} />
-        <ViewSwitch
-          label={t("showSubtiles")}
-          checked={view.subtiles}
-          onChange={(subtiles) => onViewChange({ ...view, subtiles })}
-        />
-        <ViewSwitch
-          label={hasTrack ? t("showTrack") : t("noTrack")}
-          checked={view.track && hasTrack}
-          disabled={!hasTrack}
-          onChange={(track) => onViewChange({ ...view, track })}
-        />
-      </section>
+      <PanelSection title={t("mapTitle")}>
+        <div className="flex flex-col divide-y rounded-lg border">
+          <ViewSwitch
+            label={tiles?.gains && !gained ? t("nothingGained") : t("gainedOnly")}
+            checked={view.gainedOnly && gained}
+            disabled={!gained}
+            onChange={(gainedOnly) => onViewChange({ ...view, gainedOnly })}
+          />
+          <ViewSwitch label={t("showTiles")} checked={view.tiles} onChange={(value) => onViewChange({ ...view, tiles: value })} />
+          <ViewSwitch
+            label={t("showSubtiles")}
+            checked={view.subtiles}
+            onChange={(subtiles) => onViewChange({ ...view, subtiles })}
+          />
+          <ViewSwitch
+            label={hasTrack ? t("showTrack") : t("noTrack")}
+            checked={view.track && hasTrack}
+            disabled={!hasTrack}
+            onChange={(track) => onViewChange({ ...view, track })}
+          />
+        </div>
+      </PanelSection>
 
       {activity?.stravaId && (
         <p className="text-xs">
@@ -116,7 +116,7 @@ function ActivityFigures({ activity }: { activity: ActivityDetails }) {
   const { distanceM, movingTimeS, elapsedTimeS, elevationGainM } = activity;
 
   return (
-    <dl className="grid grid-cols-3 gap-3">
+    <PanelFigures>
       <PanelFigure label={t("distance")} value={format.distance(distanceM)} />
       <PanelFigure label={t("movingTime")} value={format.duration(movingTimeS)} />
       <PanelFigure label={t("elapsedTime")} value={format.duration(elapsedTimeS)} />
@@ -127,7 +127,7 @@ function ActivityFigures({ activity }: { activity: ActivityDetails }) {
         <PanelFigure label={t("pauses")} value={format.duration(Math.max(0, elapsedTimeS - movingTimeS))} />
       )}
       <PanelFigure label={t("elevation")} value={elevationGainM !== null ? format.elevation(elevationGainM) : "–"} />
-    </dl>
+    </PanelFigures>
   );
 }
 
@@ -145,19 +145,19 @@ function LevelGainsFigures({ title, crossed, gains }: LevelGainsFiguresProps) {
   const gain = (value: number) => (value > 0 ? `+${formatter.number(value)}` : formatter.number(value));
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-3 rounded-lg border px-3 py-2.5">
       <p className="flex items-baseline justify-between gap-3 font-medium">
         {title}
         <span className="text-xs font-normal text-muted-foreground">
           {t("crossed", { count: crossed, formatted: formatter.number(crossed) })}
         </span>
       </p>
-      <dl className="grid grid-cols-4 gap-3">
-        <PanelFigure label={t("newTiles")} value={gain(gains.gained.length)} />
-        <PanelFigure label={t("maxSquare")} value={gain(gains.maxSquare)} />
-        <PanelFigure label={t("maxCluster")} value={gain(gains.maxCluster)} />
-        <PanelFigure label={t("otherClusters")} value={gain(gains.otherClusters)} />
-      </dl>
+      <PanelFigures className="grid-cols-4 gap-3">
+        <PanelFigure bare label={t("newTiles")} value={gain(gains.gained.length)} />
+        <PanelFigure bare label={t("maxSquare")} value={gain(gains.maxSquare)} />
+        <PanelFigure bare label={t("maxCluster")} value={gain(gains.maxCluster)} />
+        <PanelFigure bare label={t("otherClusters")} value={gain(gains.otherClusters)} />
+      </PanelFigures>
     </div>
   );
 }
@@ -172,8 +172,8 @@ interface ViewSwitchProps {
 function ViewSwitch({ label, checked, disabled, onChange }: ViewSwitchProps) {
   const id = useId();
   return (
-    <div className="flex items-center justify-between gap-3">
-      <Label htmlFor={id} className="font-normal text-muted-foreground">
+    <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+      <Label htmlFor={id} className="font-normal">
         {label}
       </Label>
       <Switch id={id} size="sm" checked={checked} disabled={disabled} onCheckedChange={onChange} />

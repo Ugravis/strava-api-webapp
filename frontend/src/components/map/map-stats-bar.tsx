@@ -9,25 +9,24 @@ import {
   type LucideIcon,
   SearchIcon,
   SunDimIcon,
-  VolumeXIcon,
+  Volume2Icon,
 } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
-import { type ComponentProps, type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useId } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 import type { TileLevelSummary, TilesSummary, VisitedStations } from "@/lib/api/types";
 import { updateSoundSettings, useSoundSettings } from "@/lib/sound/sound-settings";
 import { cn } from "@/lib/utils";
-import { ClusterKey, OtherClusterKey, RailKey, SquareKey, StationKey, TileKey, TrackKey } from "./map-keys";
 import { MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
 import { MAP_MODULE_ICONS } from "./map-module-icons";
-import { Stat, ValueSkeleton } from "./map-stat";
+import { BandHeading, Stat, ValueSkeleton } from "./map-stat";
 import { TrainSpeedControl } from "./train-speed-control";
 
 type TracksState = Pick<ActivityTracksState, "lines" | "status" | "progress" | "errorCode" | "retry">;
@@ -56,10 +55,10 @@ interface MapStatsBarProps {
 }
 
 /**
- * Band under the map, from left to right: the tools, the modules, each
- * selected or shown on the map by its button, and the figures of the module
- * selected. On narrow screens, the tools and modules share a row above the
- * figures, which scroll sideways.
+ * Band under the map: the modules, each selected or shown on the map by its
+ * tab, and the tools, in a block on the left of the figures of the module
+ * selected; in a row over them on narrow screens, where the tools keep only
+ * their icons. Below large screens, the figures scroll sideways.
  */
 export function MapStatsBar({
   tracks,
@@ -80,37 +79,48 @@ export function MapStatsBar({
 
   return (
     <section aria-label={t("stats.label")} className="flex shrink-0 flex-col border-t bg-background md:flex-row">
-      <div className="flex shrink-0 overflow-x-auto border-b scrollbar-none md:overflow-visible md:border-b-0 md:border-r">
-        <ControlsGroup title={t("stats.tools")}>
-          <SplitButton selected={historyOpen}>
-            <ToolPart
-              icon={HistoryIcon}
-              label={t("history.open")}
-              pressed={historyOpen}
-              onPressedChange={onHistoryOpenChange}
-            />
-          </SplitButton>
-          <SplitButton selected={sectorOpen}>
-            <ToolPart
+      {/* A row on narrow screens, the modules then the tools; from medium ones, two titled columns on the left. */}
+      <div className="flex shrink-0 items-center gap-2 border-b px-2 py-1.5 md:items-center md:gap-4 md:border-r md:border-b-0 md:px-4 md:py-4">
+        <ControlsGroup title={t("stats.tools")} className="max-md:ml-auto">
+          <ToolButton
+            icon={HistoryIcon}
+            label={t("history.open")}
+            pressed={historyOpen}
+            onPressedChange={onHistoryOpenChange}
+            className="md:justify-start"
+          />
+          <div className={cn("flex items-center rounded-lg", sectorOpen && TOOL_PRESSED)}>
+            <ToolButton
               icon={LocateFixedIcon}
               label={t("sector.open")}
               pressed={sectorOpen}
               onPressedChange={onSectorOpenChange}
+              className="rounded-r-none md:flex-1 md:justify-start"
             />
-            <SplitPart
-              selected={sectorOpen}
-              icon
-              aria-label={t("sector.search.title")}
-              title={t("sector.search.title")}
-              onClick={onSectorSearch}
-            >
-              <SearchIcon aria-hidden />
-            </SplitPart>
-          </SplitButton>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t("sector.search.title")}
+                    onClick={onSectorSearch}
+                    className={cn(
+                      "h-8 rounded-l-none border-l border-l-border md:h-7",
+                      sectorOpen && "border-l-blue-500/30 text-inherit hover:bg-blue-500/10 hover:text-inherit",
+                    )}
+                  />
+                }
+              >
+                <SearchIcon aria-hidden />
+              </TooltipTrigger>
+              <TooltipContent>{t("sector.search.title")}</TooltipContent>
+            </Tooltip>
+          </div>
         </ControlsGroup>
-        <ControlsGroup title={t("stats.modules")}>
+        <ControlsGroup title={t("stats.modules")} className="max-md:order-first">
           {MAP_MODULES.map((candidate) => (
-            <ModuleButton
+            <ModuleTab
               key={candidate}
               module={candidate}
               selected={candidate === module}
@@ -146,92 +156,58 @@ export function MapStatsBar({
   );
 }
 
-/**
- * Tools or modules: a row of buttons without their title on narrow screens,
- * a titled column from medium ones.
- */
-function ControlsGroup({ title, children }: { title: string; children: ReactNode }) {
+/** Tools or modules: their buttons in a row on narrow screens, in a column under their title from medium ones. */
+function ControlsGroup({ title, className, children }: { title: string; className?: string; children: ReactNode }) {
   return (
-    <div
-      role="group"
-      aria-label={title}
-      className="flex shrink-0 items-center gap-1.5 px-3 py-2 not-last:border-r md:flex-col md:items-stretch md:gap-2 md:px-4 md:py-3"
-    >
-      <span aria-hidden className="hidden text-xs font-medium text-muted-foreground md:block">
-        {title}
-      </span>
-      <div className="flex gap-1.5 md:flex-col">{children}</div>
+    <div role="group" aria-label={title} className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      <BandHeading className="hidden md:block">{title}</BandHeading>
+      <div className="flex items-center gap-1 md:flex-col md:items-stretch">{children}</div>
     </div>
   );
 }
 
-/**
- * Frame of the buttons of the tools and the modules: one or two actions side
- * by side, outlined together, shaded while selected.
- */
-function SplitButton({ selected, label, children }: { selected: boolean; label?: string; children: ReactNode }) {
-  return (
-    <div
-      role="group"
-      aria-label={label}
-      className={cn(
-        "flex h-7 shrink-0 items-stretch overflow-hidden rounded-[min(var(--radius-md),12px)] border border-input transition-colors",
-        selected && "border-foreground/30 bg-muted",
-      )}
-    >
-      {children}
-    </div>
-  );
-}
+/** A tool in use, tinted in the blue of the sliders. */
+const TOOL_PRESSED = "bg-blue-500/12 text-blue-700 dark:text-blue-300";
 
-/** One action of a `SplitButton`: the first one takes the width, the next ones are icons after a line. */
-function SplitPart({
-  selected,
-  icon = false,
-  className,
-  ...props
-}: ComponentProps<typeof Button> & { selected: boolean; icon?: boolean }) {
-  return (
-    <Button
-      variant="ghost"
-      size={icon ? "icon-sm" : "sm"}
-      className={cn(
-        "h-auto rounded-none border-0 active:not-aria-[haspopup]:translate-y-0",
-        icon ? "border-l border-l-input" : "flex-1 justify-start",
-        selected && "hover:bg-foreground/5",
-        selected && icon && "border-l-foreground/20",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-/** The main action of a tool, by its icon alone on narrow screens. */
-function ToolPart({
+/** A tool: its icon and, from small screens, its name; tinted while in use. */
+function ToolButton({
   icon: Icon,
   label,
   pressed,
   onPressedChange,
+  className,
 }: {
   icon: LucideIcon;
   label: string;
   pressed: boolean;
   onPressedChange: (pressed: boolean) => void;
+  className?: string;
 }) {
   return (
-    <SplitPart selected={pressed} aria-pressed={pressed} aria-label={label} onClick={() => onPressedChange(!pressed)}>
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-pressed={pressed}
+      aria-label={label}
+      title={label}
+      onClick={() => onPressedChange(!pressed)}
+      className={cn(
+        "h-8 px-2 sm:px-2.5 md:h-7",
+        pressed && cn(TOOL_PRESSED, "hover:bg-blue-500/20 hover:text-inherit"),
+        className,
+      )}
+    >
       <Icon aria-hidden />
       <span className="hidden sm:inline">{label}</span>
-    </SplitPart>
+    </Button>
   );
 }
 
 /**
- * Two actions in one button: its name selects the module, showing its
- * figures in the band, and its eye shows or hides it on the map.
+ * Tab of a module, with two actions: its name selects the module, showing
+ * its figures in the band, and its eye shows or hides it on the map.
  */
-function ModuleButton({
+function ModuleTab({
   module,
   selected,
   shown,
@@ -247,30 +223,46 @@ function ModuleButton({
   const t = useTranslations("map.modules");
   const Icon = MAP_MODULE_ICONS[module];
   const label = t(module);
+  const visibility = t(shown ? "hide" : "show", { module });
 
   return (
-    <SplitButton selected={selected} label={label}>
-      <SplitPart
-        selected={selected}
+    <div
+      role="group"
+      aria-label={label}
+      className={cn(
+        "flex h-8 shrink-0 items-center rounded-lg transition-colors md:h-7",
+        selected ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60",
+      )}
+    >
+      <button
+        type="button"
         aria-pressed={selected}
         onClick={onSelect}
-        className={cn(!shown && "text-muted-foreground")}
+        className="flex h-full flex-1 items-center gap-1.5 rounded-l-lg pr-1 pl-2.5 text-[0.8rem] font-medium outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-3.5"
       >
         <Icon aria-hidden />
-        {label}
-      </SplitPart>
-      <SplitPart
-        selected={selected}
-        icon
-        aria-pressed={shown}
-        aria-label={t(shown ? "hide" : "show", { module })}
-        title={t(shown ? "hide" : "show", { module })}
-        onClick={() => onShownChange(!shown)}
-        className={cn(!shown && "text-muted-foreground")}
-      >
-        {shown ? <EyeIcon aria-hidden /> : <EyeOffIcon aria-hidden />}
-      </SplitPart>
-    </SplitButton>
+        <span>{label}</span>
+      </button>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <button
+              type="button"
+              aria-pressed={shown}
+              aria-label={visibility}
+              onClick={() => onShownChange(!shown)}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-md outline-none md:size-6 hover:bg-foreground/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-3.5",
+                !shown && "text-muted-foreground",
+              )}
+            />
+          }
+        >
+          {shown ? <EyeIcon aria-hidden /> : <EyeOffIcon aria-hidden />}
+        </TooltipTrigger>
+        <TooltipContent>{visibility}</TooltipContent>
+      </Tooltip>
+    </div>
   );
 }
 
@@ -279,35 +271,39 @@ interface StatsSectionProps {
   /** Without it, the layer is drawn with its module. */
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
-  /** Figures in two columns from medium screens, rather than in a row: four do not fit a third of the band. */
+  /** Figures in a grid of two columns from large screens, rather than in a row. */
   columns?: boolean;
+  className?: string;
   children: ReactNode;
 }
 
-/** One layer of a module: its title, its checkbox if optional, and its figures, dimmed while hidden. */
-function StatsSection({ title, checked, onCheckedChange, columns = false, children }: StatsSectionProps) {
+/** One layer of a module: its title, its checkbox if optional, and its figures, dimmed while hidden; centered in its column from large screens. */
+function StatsSection({ title, checked, onCheckedChange, columns = false, className, children }: StatsSectionProps) {
   const optional = checked !== undefined && onCheckedChange !== undefined;
   const dimmed = optional && !checked;
-  const heading = <span className="text-xs font-medium text-muted-foreground">{title}</span>;
+  const heading = <BandHeading>{title}</BandHeading>;
 
   return (
-    <div className="flex shrink-0 snap-start flex-col gap-2 px-4 py-3 md:min-w-0 md:items-center md:px-6">
-      {optional ? (
-        <label className="flex w-fit cursor-pointer items-center gap-2">
-          <Checkbox checked={checked} onCheckedChange={onCheckedChange} />
-          {heading}
-        </label>
-      ) : (
-        heading
-      )}
-      <div
-        className={cn(
-          "flex gap-6 transition-opacity md:justify-center",
-          columns ? "md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-2 lg:gap-x-10" : "lg:gap-10",
-          dimmed && "opacity-40",
+    <div className={cn("flex shrink-0 snap-start flex-col justify-center px-4 py-3 md:px-5 md:py-4 lg:min-w-0 lg:items-center", className)}>
+      {/* Centered as a block, its title on the left of its figures. */}
+      <div className="flex flex-col gap-2">
+        {optional ? (
+          <label className="flex h-4 w-fit cursor-pointer items-center gap-2">
+            <Checkbox checked={checked} onCheckedChange={onCheckedChange} />
+            {heading}
+          </label>
+        ) : (
+          <div className="flex h-4 items-center">{heading}</div>
         )}
-      >
-        {children}
+        <div
+          className={cn(
+            "transition-opacity",
+            columns ? "flex gap-6 lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-2" : "flex gap-6",
+            dimmed && "opacity-40",
+          )}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -337,7 +333,7 @@ function TilesModule({
     });
 
   return (
-    <div className="flex snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none md:grid md:grid-cols-[repeat(2,minmax(0,1fr))_auto] md:overflow-visible">
+    <div className="flex snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none lg:grid lg:grid-cols-[repeat(2,minmax(0,1fr))_auto] lg:overflow-visible">
       <TilesSection level="tiles" summary={summary?.tiles} />
       <TilesSection
         level="subtiles"
@@ -387,26 +383,31 @@ function TilesSection({
   };
 
   return (
-    <StatsSection title={t(level)} checked={checked} onCheckedChange={onCheckedChange} columns>
+    <StatsSection
+      title={t(level)}
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+      columns
+    >
       <Stat
         value={value((s) => format.number(s.visited))}
         label={t("visited")}
-        colorKey={<TileKey subtiles={level === "subtiles"} />}
+        accent={level === "subtiles" ? "subtile" : "tile"}
       />
       <Stat
         value={value((s) => withShare(`${size(s)} × ${size(s)}`, size(s) ** 2, s))}
         label={t("maxSquare")}
-        colorKey={<SquareKey />}
+        accent="square"
       />
       <Stat
         value={value((s) => withShare(format.number(s.maxCluster), s.maxCluster, s))}
         label={t("maxCluster")}
-        colorKey={<ClusterKey subtiles={level === "subtiles"} />}
+        accent={level === "subtiles" ? "subtileCluster" : "cluster"}
       />
       <Stat
         value={value((s) => withShare(format.number(s.clustered - s.maxCluster), s.clustered - s.maxCluster, s))}
         label={t("otherClusters")}
-        colorKey={<OtherClusterKey subtiles={level === "subtiles"} />}
+        accent={level === "subtiles" ? "otherSubtileClusters" : "otherClusters"}
       />
     </StatsSection>
   );
@@ -454,7 +455,7 @@ function TracksSection({
       <Stat
         value={lines ? format.number(lines.length) : <ValueSkeleton />}
         label={t("stats.trackCount", { count: lines?.length ?? 0 })}
-        colorKey={<TrackKey />}
+        accent="track"
       />
       <div role="status" className="flex max-w-56 min-w-0 items-center text-xs text-muted-foreground">
         {syncing && lines ? (
@@ -482,7 +483,8 @@ function TracksSection({
 
 /**
  * The train stations visited and the kilometers of railway unlocked between
- * them, with the dimming of the map below them, which shows the module too.
+ * them, the settings of the map for them, of which the dimming of the map
+ * below them also shows the module, and the speed of the trains.
  */
 function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { stations: VisitedStations | null }) {
   const t = useTranslations("map.stats");
@@ -491,41 +493,12 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const sound = useSoundSettings();
 
   return (
-    <div className="flex h-full items-center gap-x-6 overflow-x-auto pr-4 scrollbar-none md:justify-evenly md:pr-6">
-      <div className="flex shrink-0 flex-col gap-1">
-        <Toggle
-          variant="outline"
-          size="sm"
-          pressed={layers.dimmed}
-          onPressedChange={(dimmed) =>
-            onLayersChange({
-              ...layers,
-              dimmed,
-              stations: layers.stations || dimmed,
-            })
-          }
-          className="justify-start"
-        >
-          <SunDimIcon aria-hidden />
-          {t("dim")}
-        </Toggle>
-        <Toggle
-          variant="outline"
-          size="sm"
-          pressed={!sound.enabled}
-          onPressedChange={(muted) => updateSoundSettings({ enabled: !muted })}
-          className="justify-start"
-        >
-          <VolumeXIcon aria-hidden />
-          {t("mute")}
-        </Toggle>
-      </div>
-      <Separator orientation="vertical" className="h-auto w-px self-stretch" />
+    <div className="flex h-full snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none lg:grid lg:grid-cols-3 lg:overflow-visible">
       <StatsSection title={t("stations")}>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
           label={t("stationCount", { count: stations?.stations.length ?? 0 })}
-          colorKey={<StationKey />}
+          accent="station"
         />
         <Stat
           value={
@@ -540,11 +513,62 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
             )
           }
           label={t("railway")}
-          colorKey={<RailKey />}
+          accent="railLink"
         />
       </StatsSection>
-      <Separator orientation="vertical" className="h-auto w-px self-stretch" />
-      <TrainSpeedControl />
+      {/* Titled from large screens only, where the band is taller: the band keeps its height below. Centered in the band. */}
+      <div className="flex shrink-0 snap-start flex-col justify-center px-4 py-3 md:px-5 md:py-4 lg:items-center">
+        <div className="flex flex-col gap-2">
+          <BandHeading className="flex h-4 items-center max-lg:hidden">{t("display")}</BandHeading>
+          <div className="flex flex-col gap-1.5">
+            <SettingSwitch
+              icon={SunDimIcon}
+              label={t("dim")}
+              checked={layers.dimmed}
+              onCheckedChange={(dimmed) =>
+                onLayersChange({
+                  ...layers,
+                  dimmed,
+                  stations: layers.stations || dimmed,
+                })
+              }
+            />
+            <SettingSwitch
+              icon={Volume2Icon}
+              label={t("sound")}
+              checked={sound.enabled}
+              onCheckedChange={(enabled) => updateSoundSettings({ enabled })}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="flex shrink-0 snap-start flex-col justify-center px-4 py-3 md:px-5 md:py-4 lg:items-center">
+        <TrainSpeedControl />
+      </div>
+    </div>
+  );
+}
+
+/** A setting of a module, its icon and name before its switch. */
+function SettingSwitch({
+  icon: Icon,
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  icon: LucideIcon;
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <label htmlFor={id} className="flex cursor-pointer items-center gap-2 text-[0.8rem] whitespace-nowrap">
+        <Icon className="size-3.5 text-muted-foreground" aria-hidden />
+        {label}
+      </label>
+      <Switch id={id} size="sm" checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }

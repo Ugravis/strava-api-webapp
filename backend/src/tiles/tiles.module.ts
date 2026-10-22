@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StationsModule } from '../stations/stations.module';
 import { StorageModule } from '../storage/storage.module';
 import { ActivityGain } from './activity-gain.entity';
 import { ActivityGainsService } from './activity-gains.service';
@@ -27,6 +28,7 @@ import { UserTilesService } from './user-tiles.service';
       UserTileMetrics,
     ]),
     StorageModule,
+    StationsModule,
   ],
   controllers: [TilesController],
   providers: [

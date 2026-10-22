@@ -13,6 +13,7 @@ import {
   useTrainSpeed,
 } from "@/lib/trains/train-speed";
 import { cn } from "@/lib/utils";
+import { BandHeading } from "./map-stat";
 
 /** The step closest to `speed`, by ratio: ×3 is nearer ×2 than ×5. */
 function nearestStep(speed: number): number {
@@ -48,9 +49,9 @@ export function TrainSpeedControl() {
   };
 
   return (
-    <div className="flex w-44 shrink-0 flex-col gap-1.5">
-      <div className="flex h-5 items-center gap-1 text-xs font-medium">
-        <span>{t("trainSpeed")}</span>
+    <div className="flex w-56 shrink-0 flex-col gap-2">
+      <div className="flex h-4 items-center gap-1.5 text-xs font-medium">
+        <BandHeading>{t("trainSpeed")}</BandHeading>
         {editing ? (
           <input
             type="number"
@@ -93,6 +94,7 @@ export function TrainSpeedControl() {
           <span className="text-muted-foreground">· {t("realSpeed")}</span>
         )}
       </div>
+      <div className="flex flex-col gap-1.5">
       <Slider
         className={cn(
           "transition-opacity",
@@ -119,6 +121,7 @@ export function TrainSpeedControl() {
         {TRAIN_SPEED_STEPS.map((step) => (
           <span key={step}>{factor(step)}</span>
         ))}
+      </div>
       </div>
     </div>
   );

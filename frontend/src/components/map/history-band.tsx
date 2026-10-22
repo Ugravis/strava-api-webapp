@@ -16,7 +16,7 @@ import {
   stepDay,
 } from "@/lib/tiles/history-period";
 import { cn } from "@/lib/utils";
-import { GainedKey, TileKey } from "./map-keys";
+import type { MapColor } from "./map-keys";
 import { Stat, ValueSkeleton } from "./map-stat";
 
 interface HistoryBandProps {
@@ -49,7 +49,8 @@ function dateOf(day: string): Date {
 /**
  * Band of the history tool, over the band of the key figures: the mode, the
  * day picked on a slider counting back from today or entered manually, and
- * the counts of the tiles drawn. Stacked on narrow screens, in a row on
+ * the counts of the tiles drawn and of the train stations and railway of
+ * the same period. Stacked on narrow screens, in a row on
  * larger ones.
  */
 export function HistoryBand({
@@ -88,8 +89,10 @@ export function HistoryBand({
       picker.focus();
     }
   };
-  const counted = (value: number) => (summary ? <span className={cn(loading && "opacity-50")}>{format.number(value)}</span> : <ValueSkeleton />);
-  const colorKey = (small: boolean) => (mode === "gained" ? <GainedKey subtiles={small} /> : <TileKey subtiles={small} />);
+  const counted = (value: number, formatted = (count: number) => format.number(count)) =>
+    summary ? <span className={cn(loading && "opacity-50")}>{formatted(value)}</span> : <ValueSkeleton />;
+  const accent = (small: boolean): MapColor =>
+    mode === "gained" ? (small ? "activitySubtile" : "activityTile") : small ? "subtile" : "tile";
 
   return (
     <section
@@ -120,8 +123,8 @@ export function HistoryBand({
         </Button>
       </div>
 
-      <div className={cn(SECTION, "min-w-0 flex-1 flex-col items-stretch gap-2")}>
-        <div className="flex items-center gap-1 text-xs font-medium">
+      <div className={cn(SECTION, "min-w-0 flex-1 flex-col items-stretch justify-center gap-2 md:min-w-64")}>
+        <div className="flex items-center gap-1 text-xs font-medium whitespace-nowrap">
           <span>
             {t.rich(mode === "gained" ? "since" : "at", {
               day: formattedDay,
@@ -184,9 +187,21 @@ export function HistoryBand({
         </div>
       </div>
 
-      <div className={cn(SECTION, "gap-6")}>
-        <Stat value={counted(summary?.tiles ?? 0)} label={t(`counts.${mode}.tiles`)} colorKey={colorKey(false)} />
-        {subtiles && <Stat value={counted(summary?.subtiles ?? 0)} label={t(`counts.${mode}.subtiles`)} colorKey={colorKey(true)} />}
+      {/* Scrolling sideways where every count does not fit, the button closing the band kept in view. */}
+      <div className={cn(SECTION, "min-w-0 gap-5 overflow-x-auto scrollbar-none *:shrink-0")}>
+        {/* As wide as one another: every count weighs the same. */}
+        <div className="grid auto-cols-fr grid-flow-col gap-6">
+          <Stat value={counted(summary?.tiles ?? 0)} label={t("counts.tiles")} accent={accent(false)} />
+          {subtiles && <Stat value={counted(summary?.subtiles ?? 0)} label={t("counts.subtiles")} accent={accent(true)} />}
+          <Stat value={counted(summary?.stations ?? 0)} label={t("counts.stations")} accent="station" />
+          <Stat
+            value={counted(summary?.railwayM ?? 0, (meters) =>
+              format.number(meters / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 }),
+            )}
+            label={t("counts.railway")}
+            accent="railLink"
+          />
+        </div>
         <div role="status" className="flex min-w-0 items-center text-xs text-muted-foreground">
           {error ? (
             <span className="flex items-center gap-1.5 text-destructive">
@@ -203,7 +218,7 @@ export function HistoryBand({
             )
           )}
         </div>
-        <Button size="icon-sm" variant="ghost" className="ml-auto hidden md:inline-flex" onClick={onClose} aria-label={t("close")} title={t("close")}>
+        <Button size="icon-sm" variant="ghost" className="sticky right-0 ml-auto hidden bg-background md:inline-flex" onClick={onClose} aria-label={t("close")} title={t("close")}>
           <XIcon />
         </Button>
       </div>

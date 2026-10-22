@@ -24,7 +24,7 @@ export function TileActivityList({ zoom, x, y, onOpenActivity }: TileActivityLis
     return error ? (
       <ListError onRetry={loadMore} />
     ) : (
-      <ul className="flex flex-col divide-y" aria-busy>
+      <ul className="flex flex-col" aria-busy>
         {Array.from({ length: 3 }, (_, index) => (
           <li key={index} className="flex flex-col gap-2 py-2.5">
             <div className="flex justify-between gap-3">
@@ -44,7 +44,7 @@ export function TileActivityList({ zoom, x, y, onOpenActivity }: TileActivityLis
 
   return (
     <div className="flex flex-col gap-2">
-      <ul className="flex flex-col divide-y">
+      <ul className="flex flex-col">
         {items.map((activity) => (
           <TileActivityItem key={activity.id} activity={activity} onOpen={onOpenActivity} />
         ))}
@@ -53,7 +53,7 @@ export function TileActivityList({ zoom, x, y, onOpenActivity }: TileActivityLis
         <ListError onRetry={loadMore} />
       ) : (
         hasMore && (
-          <Button variant="outline" size="sm" onClick={loadMore} disabled={loading} className="self-center">
+          <Button variant="outline" size="sm" onClick={loadMore} disabled={loading} className="w-full">
             {loading && <Loader2Icon className="animate-spin" aria-hidden />}
             {t("loadMore")}
           </Button>

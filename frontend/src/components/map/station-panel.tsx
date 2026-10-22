@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, ChevronRightIcon, CircleDashedIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleDashedIcon, TrainFrontIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useStation } from "@/hooks/use-station";
 import type { StationDetails, StationNeighbor } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { PanelFigure, PanelFiguresSkeleton } from "./panel-figure";
+import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
 import type { StationPick } from "./stations-layer";
 import type { TileRef } from "./tile-highlight";
 import { TileActivityList } from "./tile-activity-list";
@@ -51,16 +51,31 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
   const unlocked = station.visited ? station.neighbors.filter((neighbor) => neighbor.visited).length : 0;
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-2">
-        <h2 className="text-lg leading-tight font-semibold">{station.name ?? t("unnamed")}</h2>
-        <div>
-          <Badge variant={station.visited ? "default" : "outline"}>{station.visited ? t("visited") : t("notVisited")}</Badge>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-2.5">
+        <div className="flex items-start gap-3">
+          <span
+            aria-hidden
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-lg",
+              station.visited ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+            )}
+          >
+            <TrainFrontIcon className="size-5" />
+          </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <h2 className="text-lg leading-tight font-semibold wrap-break-word">{station.name ?? t("unnamed")}</h2>
+            <div>
+              <Badge variant={station.visited ? "default" : "outline"}>
+                {station.visited ? t("visited") : t("notVisited")}
+              </Badge>
+            </div>
+          </div>
         </div>
         <p className="text-muted-foreground">{station.visited ? t("visitedDescription") : t("notVisitedDescription")}</p>
       </header>
 
-      <dl className="grid grid-cols-3 gap-3">
+      <PanelFigures className="grid-cols-2">
         {station.firstVisitAt && (
           <PanelFigure
             label={t("firstVisit")}
@@ -68,23 +83,23 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
           />
         )}
         <PanelFigure label={t("links")} value={`${unlocked} / ${station.neighbors.length}`} />
-      </dl>
+      </PanelFigures>
 
-      <section className="flex flex-col gap-1">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase">{t("neighbors")}</h3>
+      <PanelSection title={t("neighbors")}>
         <NeighborList station={station} onOpenStation={onOpenStation} />
-      </section>
+      </PanelSection>
 
-      <section className="flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase">{t("activities")}</h3>
-          <Button variant="outline" size="xs" onClick={() => onOpenTile(station.tile)}>
+      <PanelSection
+        title={t("activities")}
+        action={
+          <Button variant="ghost" size="xs" onClick={() => onOpenTile(station.tile)}>
             {t("viewTile")}
             <ChevronRightIcon data-icon="inline-end" aria-hidden />
           </Button>
-        </div>
+        }
+      >
         <TileActivityList {...station.tile} onOpenActivity={onOpenActivity} />
-      </section>
+      </PanelSection>
 
       <p className="text-xs text-muted-foreground">
         {t.rich("attribution", {
@@ -115,7 +130,7 @@ function NeighborList({
     format.number(lengthM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: lengthM < 10_000 ? 1 : 0 });
 
   return (
-    <ul className="flex flex-col divide-y">
+    <ul className="flex flex-col">
       {station.neighbors.map((neighbor) => {
         const linked = station.visited && neighbor.visited;
         return (
@@ -124,8 +139,8 @@ function NeighborList({
               type="button"
               onClick={() => onOpenStation({ id: neighbor.id, lon: neighbor.lon, lat: neighbor.lat })}
               className={cn(
-                "flex w-full items-center gap-2.5 py-2.5 text-left",
-                "hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none",
+                "-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors",
+                "hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none",
               )}
             >
               {neighbor.visited ? (
@@ -148,10 +163,15 @@ function NeighborList({
 
 function StationPanelSkeleton() {
   return (
-    <div className="flex flex-col gap-5" aria-busy>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-6 w-48" />
-        <Skeleton className="h-5 w-20" />
+    <div className="flex flex-col gap-6" aria-busy>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex gap-3">
+          <Skeleton className="size-10 rounded-lg" />
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        </div>
         <Skeleton className="h-4 w-full" />
       </div>
       <PanelFiguresSkeleton count={2} />

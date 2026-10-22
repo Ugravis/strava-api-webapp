@@ -61,6 +61,19 @@ type MetricTimelines = Record<
   Record<DistanceFamily, FamilyTimeline>
 >;
 
+/** A badge shown on a profile, as other users see it: no amount nor date. */
+export type ProfileBadge = Pick<
+  BadgeView,
+  | 'id'
+  | 'name'
+  | 'description'
+  | 'icon'
+  | 'family'
+  | 'tiers'
+  | 'completions'
+  | 'progress'
+>;
+
 export interface DistancesOverview {
   /** Cumulated amount per metric and family, in the unit of the metric. */
   totals: Record<BadgeMetric, Record<DistanceFamily, number>>;
@@ -193,6 +206,36 @@ export class DistancesService {
 
   async removeFavorite(userId: string, badgeId: string): Promise<void> {
     await this.favorites.delete({ userId, badgeId });
+  }
+
+  /** Badges the user shows on their profile, in the order they were added. */
+  async shownOnProfile(userId: string): Promise<ProfileBadge[]> {
+    const shown = await this.profileBadges.find({
+      where: { userId },
+      relations: { badge: true },
+      order: { addedAt: 'ASC' },
+    });
+    if (shown.length === 0) {
+      return [];
+    }
+    const timelines = await this.timelines(userId);
+    return shown.map(({ badge }) => {
+      const { id, name, description, icon, family, tiers } = badge!;
+      const { completions, progress } = badgeProgress(
+        badge!,
+        timelines[badge!.metric][family],
+      );
+      return {
+        id,
+        name,
+        description,
+        icon,
+        family,
+        tiers,
+        completions,
+        progress,
+      };
+    });
   }
 
   /** Shows a badge on the profile of the user; showing it again changes nothing. */

@@ -116,6 +116,57 @@ export class NotificationsService {
     }
   }
 
+  /** Deletes a notification, read or not, once it no longer makes sense, e.g. a declined request. */
+  async discard(
+    userId: string,
+    type: NotificationType,
+    actorId: string,
+  ): Promise<void> {
+    const { affected } = await this.notifications.delete({
+      userId,
+      type,
+      actorId,
+    });
+    if (affected) {
+      this.streams.send(userId, {
+        unreadCount: await this.unreadCount(userId),
+      } satisfies NotificationEvent);
+    }
+  }
+
+  /**
+   * Turns the notifications of a kind into another one, from one actor or
+   * from all of them, marked read: the user acted on them, e.g. accepted
+   * follow requests become follows.
+   */
+  async convert(
+    userId: string,
+    from: NotificationType,
+    to: NotificationType,
+    actorId?: string,
+  ): Promise<void> {
+    const where = { userId, type: from, ...(actorId && { actorId }) };
+    // A notification of the target kind from the same actor would duplicate it.
+    await this.notifications
+      .createQueryBuilder()
+      .delete()
+      .where('user_id = :userId AND type = :to', { userId, to })
+      .andWhere(
+        `actor_id IN (SELECT actor_id FROM notifications WHERE user_id = :userId AND type = :from${actorId ? ' AND actor_id = :actorId' : ''})`,
+        { from, actorId },
+      )
+      .execute();
+    const { affected } = await this.notifications.update(where, {
+      type: to,
+      readAt: () => 'coalesce(read_at, now())',
+    });
+    if (affected) {
+      this.streams.send(userId, {
+        unreadCount: await this.unreadCount(userId),
+      } satisfies NotificationEvent);
+    }
+  }
+
   private unreadCount(userId: string): Promise<number> {
     return this.notifications.countBy({ userId, readAt: IsNull() });
   }

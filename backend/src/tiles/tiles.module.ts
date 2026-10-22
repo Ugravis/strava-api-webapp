@@ -38,6 +38,6 @@ import { UserTilesService } from './user-tiles.service';
     ActivityGainsService,
     ActivityGainsWorker,
   ],
-  exports: [TilesService, MapPreviewService],
+  exports: [TilesService, MapPreviewService, UserTilesService],
 })
 export class TilesModule {}

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { isUniqueViolation } from '../common/database-errors';
+import { EARLY_MEMBERS, UserDistinction } from './user-distinction.entity';
 import { User } from './user.entity';
 import {
   isReservedUsername,
@@ -35,6 +36,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    @InjectRepository(UserDistinction)
+    private readonly distinctions: Repository<UserDistinction>,
   ) {}
 
   findById(id: string): Promise<User | null> {
@@ -84,12 +87,29 @@ export class UsersService {
       externalAvatarUrl: input.externalAvatarUrl ?? null,
       avatarKey: null,
     });
-    return this.save(user);
+    const saved = await this.save(user);
+    if ((await this.users.count()) <= EARLY_MEMBERS) {
+      await this.distinctions.insert({
+        userId: saved.id,
+        kind: 'early_member',
+      });
+    }
+    return saved;
   }
 
   async updateProfile(
     user: User,
-    changes: { displayName?: string | null; username?: string },
+    changes: Partial<
+      Pick<
+        User,
+        | 'displayName'
+        | 'username'
+        | 'bio'
+        | 'city'
+        | 'favoriteSports'
+        | 'profileColor'
+      >
+    >,
   ): Promise<User> {
     if (changes.username !== undefined && changes.username !== user.username) {
       await this.assertUsernameAvailable(changes.username, user.id);
@@ -97,6 +117,18 @@ export class UsersService {
     }
     if (changes.displayName !== undefined) {
       user.displayName = changes.displayName;
+    }
+    if (changes.bio !== undefined) {
+      user.bio = changes.bio;
+    }
+    if (changes.city !== undefined) {
+      user.city = changes.city;
+    }
+    if (changes.favoriteSports !== undefined) {
+      user.favoriteSports = changes.favoriteSports;
+    }
+    if (changes.profileColor !== undefined) {
+      user.profileColor = changes.profileColor?.toLowerCase() ?? null;
     }
     return this.save(user);
   }

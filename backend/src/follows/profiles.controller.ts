@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -13,10 +14,12 @@ import type { User } from '../users/user.entity';
 import {
   FollowsPageQueryDto,
   SearchProfilesQueryDto,
+  SetPrivacyDto,
   UsernameParamsDto,
 } from './follows.dto';
 import {
   FollowsService,
+  type FollowStatus,
   type ProfileSummary,
   type PublicProfile,
 } from './follows.service';
@@ -34,6 +37,25 @@ export class ProfilesController {
     return this.follows.search(user, q);
   }
 
+  /** Users asking to follow the private profile of the current user. */
+  @Get('me/requests')
+  requests(
+    @CurrentUser() user: User,
+    @Query() { offset }: FollowsPageQueryDto,
+  ): Promise<ProfileSummary[]> {
+    return this.follows.requests(user, offset);
+  }
+
+  @Put('me/privacy')
+  @HttpCode(204)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  setPrivacy(
+    @CurrentUser() user: User,
+    @Body() { private: profilePrivate }: SetPrivacyDto,
+  ): Promise<void> {
+    return this.follows.setPrivate(user, profilePrivate);
+  }
+
   @Get(':username')
   profile(
     @CurrentUser() user: User,
@@ -43,13 +65,12 @@ export class ProfilesController {
   }
 
   @Put(':username/follow')
-  @HttpCode(204)
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
-  follow(
+  async follow(
     @CurrentUser() user: User,
     @Param() { username }: UsernameParamsDto,
-  ): Promise<void> {
-    return this.follows.follow(user, username);
+  ): Promise<{ status: FollowStatus }> {
+    return { status: await this.follows.follow(user, username) };
   }
 
   @Delete(':username/follow')
@@ -60,6 +81,28 @@ export class ProfilesController {
     @Param() { username }: UsernameParamsDto,
   ): Promise<void> {
     return this.follows.unfollow(user, username);
+  }
+
+  /** Accepts the request of the user to follow the current one. */
+  @Put(':username/follower')
+  @HttpCode(204)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  acceptFollower(
+    @CurrentUser() user: User,
+    @Param() { username }: UsernameParamsDto,
+  ): Promise<void> {
+    return this.follows.acceptFollower(user, username);
+  }
+
+  /** Removes a follower of the current user, or declines their request. */
+  @Delete(':username/follower')
+  @HttpCode(204)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  removeFollower(
+    @CurrentUser() user: User,
+    @Param() { username }: UsernameParamsDto,
+  ): Promise<void> {
+    return this.follows.removeFollower(user, username);
   }
 
   @Get(':username/followers')

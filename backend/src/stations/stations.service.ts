@@ -72,6 +72,11 @@ export interface StationDetails {
   neighbors: StationNeighbor[];
 }
 
+export interface StationTotals {
+  visited: number;
+  unlockedM: number;
+}
+
 /** The railway network of a country and the part the user unlocked. */
 export interface CountryRailway {
   /** Length of the links between two stations the user visited, in the country. */
@@ -124,6 +129,20 @@ export class StationsService {
        ORDER BY a.started_at, a.id`,
       [userId],
     );
+  }
+
+  /** Number of stations visited by the user, and length of the railway unlocked between them. */
+  async totals(userId: string): Promise<StationTotals> {
+    const [row]: { visited: number; unlocked_m: number | null }[] =
+      await this.dataSource.query(
+        `WITH visited AS (${VISITED_STATIONS})
+         SELECT (SELECT count(*)::int FROM visited) AS visited,
+           (SELECT sum(l.length_m) FROM rail_links l
+            WHERE l.station_a IN (SELECT id FROM visited)
+              AND l.station_b IN (SELECT id FROM visited)) AS unlocked_m`,
+        [userId],
+      );
+    return { visited: row.visited, unlockedM: Math.round(row.unlocked_m ?? 0) };
   }
 
   /** Stations visited by the user, with their first visit, and the links between them. */

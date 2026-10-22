@@ -22,5 +22,6 @@ import { UserProfileBadge } from './user-profile-badge.entity';
   ],
   controllers: [DistancesController],
   providers: [DistancesService],
+  exports: [DistancesService],
 })
 export class DistancesModule {}

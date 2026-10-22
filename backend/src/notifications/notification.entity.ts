@@ -9,7 +9,12 @@ import {
 } from 'typeorm';
 import { User } from '../users/user.entity';
 
-export type NotificationType = 'follow';
+/**
+ * `follow`: the actor follows the user. `follow_request`: the actor asks to
+ * follow the private profile of the user. `follow_accepted`: the actor
+ * accepted the request of the user.
+ */
+export type NotificationType = 'follow' | 'follow_request' | 'follow_accepted';
 
 /** Something that happened to a user, caused by another one (the actor). */
 @Entity('notifications')

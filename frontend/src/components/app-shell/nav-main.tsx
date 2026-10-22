@@ -24,7 +24,8 @@ export function NavMain({ items }: { items: NavigationItem[] }) {
   return (
     <SidebarGroup>
       <SidebarGroupContent>
-        <SidebarMenu>
+        {/* Spaced, so that two lit entries never touch. */}
+        <SidebarMenu className="gap-1">
           {items.map((item) => (
             <NavEntry key={item.href} item={item} />
           ))}
@@ -56,10 +57,10 @@ function NavEntry({ item }: { item: NavigationItem }) {
     <SidebarMenuItem
       className={cn(
         QuickAccess && "rounded-md transition-colors",
-        // Inside the group, already lit, hovering only brightens the text.
+        // The group is lit as a whole, at once on hover: its links mark themselves by their text only.
         QuickAccess &&
-          "[&_[data-sidebar=menu-button]]:text-sidebar-foreground/75 [&_[data-sidebar=menu-button]:not([data-active]):hover]:bg-transparent [&_[data-sidebar=menu-button]:hover]:text-sidebar-foreground [&_[data-sidebar=menu-button][data-active]]:text-sidebar-accent-foreground",
-        QuickAccess && (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group hover:delay-500 focus-within:bg-sidebar-group"),
+          (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group focus-within:bg-sidebar-group"),
+        QuickAccess && "[&_[data-sidebar=menu-button]]:bg-transparent! [&_[data-sidebar=menu-button][data-active]]:font-medium",
       )}
     >
       <SidebarMenuButton
@@ -86,7 +87,7 @@ function NavEntry({ item }: { item: NavigationItem }) {
               : "grid-rows-[0fr] group-focus-within/menu-item:grid-rows-[1fr] group-hover/menu-item:grid-rows-[1fr] group-hover/menu-item:delay-500",
           )}
         >
-          <div className="min-h-0 overflow-hidden">
+          <div className="min-h-0 overflow-hidden [&_[data-sidebar=menu-button]]:text-sidebar-foreground/55 [&_[data-sidebar=menu-button]:hover]:text-sidebar-foreground [&_[data-sidebar=menu-button][data-active]]:text-sidebar-foreground">
             <QuickAccess onNavigate={() => setOpenMobile(false)} />
           </div>
         </div>

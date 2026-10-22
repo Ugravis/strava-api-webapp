@@ -18,7 +18,8 @@ export function UserAvatar({ user, className, fallbackClassName }: UserAvatarPro
       )}
       <AvatarFallback
         className={cn(
-          "font-medium text-white",
+          // Kept white whatever the parent sets, e.g. a menu item on focus.
+          "font-medium text-white!",
           avatarColorOf(user.username),
           fallbackClassName,
         )}

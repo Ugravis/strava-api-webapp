@@ -271,10 +271,12 @@ delete `backend/src/dev`, `frontend/src/components/dev` and their two references
 ## Production
 
 `docker-compose.prod.yml` runs the production images (`prod` targets of `docker/*.Dockerfile`,
-non-root, `NODE_ENV=production`) behind [Caddy](https://caddyserver.com) (`docker/Caddyfile`),
-which obtains the HTTPS certificates and adds HSTS. Only ports 80 and 443 are published; the
-database listens on the server loopback (`127.0.0.1:5432`), for SSH tunnels only. No Adminer,
-Mailpit or storage console.
+non-root, `NODE_ENV=production`). Nothing is public: the frontend listens on
+`127.0.0.1:${FRONTEND_PORT}` (3100 by default) and the database on `127.0.0.1:${DB_HOST_PORT}` (5432), for SSH
+tunnels only. The web server of the host terminates HTTPS and proxies to the frontend, which
+forwards `/api` to the backend. On a server of its own, `--profile caddy` starts the bundled
+[Caddy](https://caddyserver.com) (`docker/Caddyfile`) on ports 80 and 443 instead, with
+automatic certificates and HSTS. No Adminer, Mailpit or storage console.
 
 ```bash
 cp .env.production.example .env   # then fill in every value, chmod 600 .env
@@ -285,7 +287,8 @@ docker compose -f docker-compose.prod.yml up -d --build
   `ENCRYPTION_SECRET` or `STRAVA_WEBHOOK_VERIFY_TOKEN` is missing, a development default or
   shorter than 32 characters, when a database or storage credential keeps its default, or when
   `FRONTEND_URL` is not https (`backend/src/config/environment.validation.ts`).
-- **Cookies** are `Secure` whenever `FRONTEND_URL` is https.
+- **Cookies** are `Secure` whenever `FRONTEND_URL` is https, and prefixed with `kilotrace_`:
+  browsers share cookies between all the ports of a host, other apps included.
 - **Email sign-in**: sign-up, sign-in and password reset by email answer
   `EMAIL_SIGN_IN_DISABLED` in production unless `EMAIL_SIGN_IN_ENABLED=true` (the forms stay
   visible); Google sign-in is unaffected. SMTP is only needed once it is turned on.

@@ -15,6 +15,7 @@ async function bootstrap(): Promise<void> {
 
   // The API is reached through the frontend proxy: trust it for the client IP.
   app.set('trust proxy', process.env.TRUST_PROXY ?? 'loopback, uniquelocal');
+  app.disable('x-powered-by');
   app.setGlobalPrefix(API_PREFIX);
   app.use(cookieParser(config.cookieSecret));
   app.use(originCheck(frontendOrigin));

@@ -13,6 +13,7 @@ import { DistancesModule } from './distances/distances.module';
 import { FollowsModule } from './follows/follows.module';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
+import { validateEnvironment } from './config/environment.validation';
 import googleConfig from './config/google.config';
 import mailConfig from './config/mail.config';
 import storageConfig from './config/storage.config';
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: validateEnvironment,
       load: [
         databaseConfig,
         authConfig,

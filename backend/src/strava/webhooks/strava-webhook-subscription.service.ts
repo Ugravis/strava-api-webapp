@@ -99,7 +99,15 @@ export class StravaWebhookSubscriptionService {
     );
   }
 
+  /** The verify token is appended: only Strava knows the full callback URL. */
   private async resolveCallbackUrl(): Promise<string | null> {
+    const base = await this.resolveCallbackBase();
+    return (
+      base && `${base.replace(/\/+$/, '')}/${this.config.webhookVerifyToken}`
+    );
+  }
+
+  private async resolveCallbackBase(): Promise<string | null> {
     if (this.config.webhookCallbackUrl) {
       return this.config.webhookCallbackUrl;
     }

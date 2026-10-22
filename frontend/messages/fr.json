@@ -1,6 +1,21 @@
 {
   "metadata": {
-    "description": "Explore le monde à chaque sortie : complète les tuiles et les communes traversées, collecte des balises et débloque des badges."
+    "title": "Kilotrace : chaque sortie dessine ta carte",
+    "description": "Course, vélo, randonnée : colore les tuiles que tu traverses, agrandis ton plus grand carré, relie des gares et débloque des badges. Explore le monde, une sortie à la fois.",
+    "keywords": [
+      "Strava",
+      "carte des activités",
+      "tuiles",
+      "squadrats",
+      "communes",
+      "gares",
+      "badges",
+      "course à pied",
+      "vélo",
+      "randonnée",
+      "exploration",
+      "défis sportifs"
+    ]
   },
   "common": {
     "or": "ou",
@@ -11,10 +26,152 @@
     "unexpectedError": "Une erreur inattendue est survenue. Réessaie dans un instant."
   },
   "landing": {
+    "heroBadge": "Compatible avec Strava",
     "title": "Chaque sortie dessine ta carte",
-    "description": "Connecte tes activités, complète les tuiles et les communes que tu traverses, collecte des balises et débloque des accomplissements.",
-    "login": "Connexion",
-    "withGoogle": "Avec Google"
+    "description": "Course, vélo, randonnée : à chaque activité, le monde se colore. Complète des tuiles, agrandis ton plus grand carré, relie des gares et débloque des badges, un kilomètre après l’autre.",
+    "start": "Créer mon compte",
+    "withGoogle": "Avec Google",
+    "alreadyRegistered": "Déjà inscrit ?",
+    "login": "Se connecter",
+    "hero": {
+      "newTiles": "+12 tuiles",
+      "newTilesLabel": "après ta sortie du jour",
+      "square": "Plus grand carré",
+      "squareValue": "6 × 6",
+      "badge": "Badge débloqué",
+      "badgeName": "Explorateur"
+    },
+    "sports": {
+      "label": "Toutes les activités avec un tracé GPS comptent",
+      "run": "Course à pied",
+      "ride": "Vélo",
+      "hike": "Randonnée",
+      "walk": "Marche",
+      "trail": "Trail",
+      "ski": "Ski de fond"
+    },
+    "features": {
+      "eyebrow": "Fonctionnalités",
+      "title": "Tout ce que tes sorties racontent déjà",
+      "subtitle": "Tes activités existent. Kilotrace en fait un terrain de jeu à explorer.",
+      "carouselLabel": "Fonctionnalités de Kilotrace",
+      "previous": "Fonctionnalité précédente",
+      "next": "Fonctionnalité suivante",
+      "goTo": "Aller à la fonctionnalité {index}",
+      "slideLabel": "{index} sur {total}",
+      "items": {
+        "tiles": {
+          "title": "Des tuiles à colorer",
+          "description": "La carte est découpée en tuiles. Chaque tracé colore celles qu’il traverse, des grandes tuiles d’environ 1,7 km aux petites d’environ 200 m pour les plus minutieux."
+        },
+        "square": {
+          "title": "Ton plus grand carré",
+          "description": "Agrandis le plus grand bloc carré de tuiles entièrement visitées. Une colonne de plus suffit parfois à franchir un cap : à toi de trouver laquelle."
+        },
+        "countries": {
+          "title": "Pays explorés",
+          "description": "Suis la part de chaque pays que tu as couverte, territoires d’outre-mer compris, au centième de pourcent près."
+        },
+        "stations": {
+          "title": "Gares et réseau ferré",
+          "description": "Visite les gares et débloque les lignes qui les relient. Des trains circulent sur la carte : clique sur l’un d’eux pour le suivre."
+        },
+        "badges": {
+          "title": "Badges et succès",
+          "description": "Débloque des badges classés par thème et épingle tes préférés pour les mettre en avant sur ton profil."
+        },
+        "history": {
+          "title": "Remonte le temps",
+          "description": "Fais glisser la frise pour revoir ta carte telle qu’elle était il y a un mois, un an ou à ta toute première sortie."
+        },
+        "community": {
+          "title": "Avance avec tes amis",
+          "description": "Suis d’autres explorateurs et découvre leurs profils. Le tien reste privé par défaut : tu choisis qui te suit."
+        }
+      }
+    },
+    "steps": {
+      "eyebrow": "Comment ça marche",
+      "title": "Prêt en trois étapes",
+      "one": {
+        "title": "Crée ton compte",
+        "description": "Avec ton adresse e-mail ou ton compte Google, en moins d’une minute."
+      },
+      "two": {
+        "title": "Connecte tes activités",
+        "description": "Ton historique est importé, puis chaque nouvelle sortie arrive automatiquement."
+      },
+      "three": {
+        "title": "Sors explorer",
+        "description": "Ta carte se remplit, les badges tombent. Il ne reste qu’à choisir le prochain chemin."
+      }
+    },
+    "progress": {
+      "eyebrow": "Tableau de bord",
+      "title": "Ta progression, en un coup d’œil",
+      "description": "Tuiles visitées, plus grand carré, gares, pays : tes chiffres clés sont réunis dès l’ouverture, avec un aperçu de ta carte.",
+      "points": {
+        "tiles": "Tuiles et plus grand carré mis à jour après chaque sortie",
+        "countries": "Pays classés selon la part que tu en as explorée",
+        "streak": "Ta série de jours actifs, pour garder le rythme"
+      },
+      "mock": {
+        "tiles": "Tuiles visitées",
+        "tilesValue": "1 248",
+        "square": "Plus grand carré",
+        "squareValue": "14 × 14",
+        "stations": "Gares visitées",
+        "stationsValue": "37",
+        "countries": "Pays explorés",
+        "countriesValue": "6",
+        "streak": "12 jours d’affilée"
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Questions fréquentes",
+      "description": "Tout ce qu’il faut savoir avant ta première sortie.",
+      "moreTitle": "Envie d’essayer ?",
+      "moreDescription": "Le plus simple reste de voir ta propre carte se remplir.",
+      "items": {
+        "what": {
+          "question": "Qu’est-ce que Kilotrace ?",
+          "answer": "Kilotrace transforme tes activités sportives en carte à compléter. Chaque tracé colore les tuiles traversées, fait progresser tes pays, débloque des gares et des badges. Une bonne raison de sortir des sentiers battus."
+        },
+        "tiles": {
+          "question": "Qu’est-ce qu’une tuile ?",
+          "answer": "La carte est découpée en carrés réguliers. Les grandes tuiles mesurent environ 1,7 km de côté en France, les petites environ 200 m. Une tuile est visitée dès qu’un de tes tracés la traverse."
+        },
+        "square": {
+          "question": "Qu’est-ce que le plus grand carré ?",
+          "answer": "C’est le plus grand bloc carré de tuiles toutes visitées. Il récompense l’exploration méthodique : pour l’agrandir, il faut aller chercher les tuiles qui manquent sur ses bords."
+        },
+        "sources": {
+          "question": "Comment mes activités sont-elles importées ?",
+          "answer": "Tu connectes le compte d’un service compatible, comme Strava. Ton historique est importé, puis tes nouvelles sorties arrivent automatiquement. Tu peux révoquer l’accès à tout moment : les activités importées sont alors supprimées."
+        },
+        "sports": {
+          "question": "Quelles activités sont prises en compte ?",
+          "answer": "Toutes celles qui ont un tracé GPS : course à pied, vélo, randonnée, marche, trail, ski de fond et bien d’autres. Les activités en intérieur, sans tracé, ne colorent pas la carte."
+        },
+        "privacy": {
+          "question": "Mon profil est-il public ?",
+          "answer": "Non. Ton profil est privé par défaut : les personnes qui veulent te suivre t’envoient une demande, que tu acceptes ou non."
+        },
+        "mobile": {
+          "question": "Puis-je utiliser Kilotrace sur mobile ?",
+          "answer": "Oui. Kilotrace fonctionne dans le navigateur, sur ordinateur comme sur téléphone, sans application à installer."
+        },
+        "account": {
+          "question": "Comment créer un compte ?",
+          "answer": "Avec ton adresse e-mail ou ton compte Google, en moins d’une minute. Tu connectes ensuite tes activités pour voir ta carte se remplir."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ta prochaine sortie colorera la carte",
+      "description": "Crée ton compte, connecte tes activités et découvre tout ce que tu as déjà parcouru."
+    }
   },
   "navbar": {
     "login": "Se connecter",
@@ -987,5 +1144,22 @@
     "follow_request": "<b>{name}</b> demande à s'abonner à toi.",
     "follow_accepted": "<b>{name}</b> a accepté ta demande d'abonnement.",
     "profile_like": "Quelqu'un a aimé ton profil."
+  },
+  "footer": {
+    "label": "Pied de page",
+    "tagline": "Chaque sortie dessine ta carte. Tuiles, gares, pays et badges à compléter, un kilomètre après l’autre.",
+    "product": "Découvrir",
+    "features": "Fonctionnalités",
+    "steps": "Comment ça marche",
+    "faq": "FAQ",
+    "app": "Application",
+    "account": "Compte",
+    "legal": "Informations",
+    "terms": "Conditions d’utilisation",
+    "stravaLegal": "Politique de l’API Strava",
+    "madeBy": "Conçu et développé par {name}",
+    "rights": "Tous droits réservés.",
+    "compatible": "Compatible avec Strava",
+    "stravaNotice": "Kilotrace n’est ni affilié ni approuvé par Strava. Strava est une marque de Strava, Inc."
   }
 }

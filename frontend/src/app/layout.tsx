@@ -28,8 +28,20 @@ const barlow = Barlow({
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return {
-    title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
+    metadataBase: new URL(siteConfig.url),
+    title: { default: t("title"), template: `%s · ${siteConfig.name}` },
     description: t("description"),
+    keywords: t.raw("keywords") as string[],
+    applicationName: siteConfig.name,
+    openGraph: {
+      type: "website",
+      siteName: siteConfig.name,
+      locale: "fr_FR",
+      title: t("title"),
+      description: t("description"),
+    },
+    twitter: { card: "summary_large_image", title: t("title"), description: t("description") },
+    robots: { index: true, follow: true },
   };
 }
 

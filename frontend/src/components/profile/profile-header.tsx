@@ -14,7 +14,7 @@ export function ProfileHeader() {
   const t = useTranslations("profile");
   const format = useFormatter();
   const user = useCurrentUser();
-  const { profile } = usePublicProfile(user.username);
+  const { profile, refresh } = usePublicProfile(user.username);
   const memberSince = format.dateTime(new Date(user.createdAt), { month: "long", year: "numeric" });
 
   return (
@@ -40,6 +40,7 @@ export function ProfileHeader() {
         <FollowCounts
           username={user.username}
           counts={profile && { followers: profile.followersCount, following: profile.followingCount }}
+          onDialogClosed={refresh}
           className="mt-1 justify-center sm:justify-start"
         />
       </div>

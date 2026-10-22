@@ -1,4 +1,4 @@
-import { HouseIcon, MapIcon, TrophyIcon, UserIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import { HouseIcon, MapIcon, TrophyIcon, UserIcon, type LucideIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 import { AchievementTabsNav } from "@/components/distances/achievement-tabs-nav";
@@ -15,7 +15,7 @@ export interface QuickAccessProps {
 export interface NavigationItem {
   href: string;
   /** Key in the `nav` translation namespace. */
-  labelKey: "dashboard" | "map" | "distances" | "community" | "profile";
+  labelKey: "dashboard" | "map" | "distances" | "profile";
   icon: LucideIcon;
   /** Links into the section, unfolded under its entry on hover and while in the section, together in a box. */
   quickAccess?: ComponentType<QuickAccessProps>;
@@ -40,6 +40,5 @@ export const mainNavigation: NavigationItem[] = [
     quickAccess: AchievementTabsNav,
     useQuickAccessActive: () => usePathname() === routes.achievements,
   },
-  { href: routes.community, labelKey: "community", icon: UsersIcon },
   { href: routes.profile, labelKey: "profile", icon: UserIcon },
 ];

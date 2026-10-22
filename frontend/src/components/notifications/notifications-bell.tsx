@@ -14,7 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { SIDEBAR_ACTION_BUTTON, useSidebarActionTooltip } from "@/components/app-shell/sidebar-action";
+import { SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { userProfileHref } from "@/config/routes";
@@ -31,7 +32,7 @@ function unreadLabel(count: number): string {
 interface NotificationsMenuProps {
   /** The bell, rendered by the caller to fit where it sits. */
   trigger: ReactElement;
-  side?: "bottom" | "right";
+  side?: "bottom" | "right" | "top";
   align?: "start" | "end";
 }
 
@@ -148,30 +149,28 @@ export function HeaderNotificationsButton() {
   );
 }
 
-/** The bell in the sidebar, on larger screens: on mobile, the top bar holds it. */
-export function SidebarNotificationsItem() {
+/** The bell in the row of actions of the sidebar. */
+export function SidebarNotificationsButton() {
   const t = useTranslations("notifications");
   const { isMobile } = useSidebar();
   const { unreadCount } = useNotifications();
-  if (isMobile) return null;
   const label = unreadCount > 0 ? t("unread", { count: unreadCount }) : t("label");
+  const tooltip = useSidebarActionTooltip(label);
 
   return (
-    <SidebarMenuItem>
-      <NotificationsMenu
-        side="right"
-        align="start"
-        trigger={
-          <SidebarMenuButton tooltip={label} aria-label={label} className="relative">
-            <BellIcon />
-            <span>{t("label")}</span>
-            <UnreadDot
-              count={unreadCount}
-              className="ml-auto group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-0 group-data-[collapsible=icon]:right-0 group-data-[collapsible=icon]:ml-0"
-            />
-          </SidebarMenuButton>
-        }
-      />
-    </SidebarMenuItem>
+    <NotificationsMenu
+      side={isMobile ? "top" : "right"}
+      align="end"
+      trigger={
+        <SidebarMenuButton
+          tooltip={tooltip}
+          aria-label={label}
+          className={SIDEBAR_ACTION_BUTTON}
+        >
+          <BellIcon />
+          <UnreadDot count={unreadCount} className="absolute top-0 right-[calc(50%-1rem)] group-data-[collapsible=icon]:right-0" />
+        </SidebarMenuButton>
+      }
+    />
   );
 }

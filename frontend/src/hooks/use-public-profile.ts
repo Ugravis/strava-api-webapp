@@ -10,6 +10,8 @@ export interface PublicProfileState {
   profile: PublicProfile | null;
   error: ApiErrorCode | null;
   retry: () => void;
+  /** Fetches the profile again, keeping it shown meanwhile. */
+  refresh: () => void;
   /** Shows the profile followed or not by the current user, its count of followers along. */
   showFollowed: (followed: boolean) => void;
 }
@@ -42,6 +44,8 @@ export function usePublicProfile(username: string): PublicProfileState {
     setAttempt((current) => current + 1);
   }, []);
 
+  const refresh = useCallback(() => setAttempt((current) => current + 1), []);
+
   const showFollowed = useCallback((followed: boolean) => {
     setProfile((current) =>
       current && current.followed !== followed
@@ -50,5 +54,5 @@ export function usePublicProfile(username: string): PublicProfileState {
     );
   }, []);
 
-  return { profile, error, retry, showFollowed };
+  return { profile, error, retry, refresh, showFollowed };
 }

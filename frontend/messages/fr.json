@@ -25,7 +25,6 @@
     "dashboard": "Tableau de bord",
     "map": "Carte",
     "distances": "Succès",
-    "community": "Communauté",
     "profile": "Profil",
     "settings": "Paramètres",
     "logout": "Déconnexion",
@@ -803,14 +802,13 @@
     }
   },
   "community": {
-    "title": "Communauté",
-    "subtitle": "Retrouve d'autres sportifs et suis leur progression.",
     "search": {
       "label": "Rechercher un utilisateur",
-      "placeholder": "Pseudo ou nom…",
-      "hint": "Tape au moins 2 caractères.",
+      "placeholder": "Rechercher un utilisateur…",
       "empty": "Aucun utilisateur trouvé.",
-      "error": "La recherche a échoué. Réessaie."
+      "error": "La recherche a échoué. Réessaie.",
+      "followed": "Suivis",
+      "others": "Autres utilisateurs"
     },
     "follow": {
       "follow": "Suivre",
@@ -832,7 +830,6 @@
       "label": "Abonnés et abonnements",
       "followers": "Abonnés",
       "following": "Abonnements",
-      "back": "Retour au profil",
       "emptyFollowers": "Personne ne suit encore {name}.",
       "emptyFollowing": "{name} ne suit encore personne.",
       "loadMore": "Voir plus",

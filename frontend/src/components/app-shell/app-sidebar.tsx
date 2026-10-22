@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { AppLogoMark } from "@/components/brand/app-logo";
-import { SidebarNotificationsItem } from "@/components/notifications/notifications-bell";
 import {
   Sidebar,
   SidebarContent,
@@ -19,8 +18,7 @@ import { siteConfig } from "@/config/site";
 import type { User } from "@/lib/api/types";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-import { SidebarToggleMenuItem } from "./sidebar-toggle-menu-item";
-import { SoundMenuItem } from "./sound-menu-item";
+import { SidebarActions } from "./sidebar-actions";
 import { ThemeMenuItem } from "./theme-menu-item";
 
 export function AppSidebar({ user }: { user: User }) {
@@ -38,7 +36,6 @@ export function AppSidebar({ user }: { user: User }) {
               <span className="truncate font-semibold">{siteConfig.name}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarNotificationsItem />
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
@@ -46,9 +43,8 @@ export function AppSidebar({ user }: { user: User }) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarToggleMenuItem />
           <ThemeMenuItem />
-          <SoundMenuItem />
+          <SidebarActions />
           <NavUser user={user} />
         </SidebarMenu>
       </SidebarFooter>

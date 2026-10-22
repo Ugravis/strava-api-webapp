@@ -20,7 +20,7 @@ export function PublicProfileView({ username }: { username: string }) {
   const tProfile = useTranslations("profile");
   const format = useFormatter();
   const router = useRouter();
-  const { profile, error, retry, showFollowed } = usePublicProfile(username);
+  const { profile, error, retry, refresh, showFollowed } = usePublicProfile(username);
 
   // The current user has their own profile page.
   useEffect(() => {
@@ -62,6 +62,7 @@ export function PublicProfileView({ username }: { username: string }) {
         <FollowCounts
           username={profile.username}
           counts={{ followers: profile.followersCount, following: profile.followingCount }}
+          onDialogClosed={refresh}
           className="mt-1"
         />
       </div>

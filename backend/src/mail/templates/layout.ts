@@ -45,7 +45,7 @@ export function renderActionEmail(content: ActionEmailContent): RenderedEmail {
                 <p style="margin:24px 0">
                   <a href="${url}" style="display:inline-block;background:#171717;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${escapeHtml(content.actionLabel)}</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:13px;color:#737373">Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur :</p>
+                <p style="margin:0 0 8px;font-size:13px;color:#737373">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :</p>
                 <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="${url}" style="color:#171717">${url}</a></p>
                 <p style="margin:0;font-size:13px;color:#737373">${escapeHtml(content.footer)}</p>
               </td>

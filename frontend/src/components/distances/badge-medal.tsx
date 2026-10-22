@@ -9,8 +9,12 @@ import { FamilyIcon } from "./family-icon";
 import { ProgressRing } from "./progress-ring";
 import { progressTier } from "./progress-tier";
 
+/** What a medal shows of a badge: the favorite and profile marks are optional, missing on other profiles. */
+export type MedalBadge = Pick<DistanceBadge, "name" | "icon" | "family" | "tiers" | "completions" | "progress"> &
+  Partial<Pick<DistanceBadge, "favoritePosition" | "onProfile">>;
+
 export interface BadgeMedalProps {
-  badge: DistanceBadge;
+  badge: MedalBadge;
   /** Rank in its group, to stagger the filling of the rings. */
   index: number;
   /** Marks the badge when a favorite. */
@@ -58,7 +62,7 @@ export function BadgeMedal({ badge, index, showFavorite, showFamily, className }
           {badge.tiers ? t("level", { level: badge.completions }) : `×${format.number(badge.completions)}`}
         </span>
       )}
-      {showFavorite && badge.favoritePosition !== null && (
+      {showFavorite && badge.favoritePosition != null && (
         <span className={cn(corner, "-top-1 -left-1")} aria-hidden>
           <StarIcon className="size-3 fill-amber-400 text-amber-500" />
         </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { FollowState } from "@/components/community/follow-button";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
 import type { PublicProfile } from "@/lib/api/types";
 import { profilesService } from "@/services/profiles.service";
@@ -12,8 +13,12 @@ export interface PublicProfileState {
   retry: () => void;
   /** Fetches the profile again, keeping it shown meanwhile. */
   refresh: () => void;
-  /** Shows the profile followed or not by the current user, its count of followers along. */
-  showFollowed: (followed: boolean) => void;
+  /**
+   * Shows the profile followed, requested or neither by the current user, its
+   * count of followers along. A private profile is fetched again: following
+   * it reveals its showcase, unfollowing it hides it.
+   */
+  showFollowState: (state: FollowState) => void;
 }
 
 /** The public profile of a user, with who follows whom. */
@@ -46,13 +51,21 @@ export function usePublicProfile(username: string): PublicProfileState {
 
   const refresh = useCallback(() => setAttempt((current) => current + 1), []);
 
-  const showFollowed = useCallback((followed: boolean) => {
-    setProfile((current) =>
-      current && current.followed !== followed
-        ? { ...current, followed, followersCount: current.followersCount + (followed ? 1 : -1) }
-        : current,
-    );
-  }, []);
+  const showFollowState = useCallback(
+    (state: FollowState) => {
+      const followed = state === "following";
+      if (profile?.private && profile.followed !== followed) refresh();
+      setProfile((current) =>
+        current && {
+          ...current,
+          followed,
+          requested: state === "requested",
+          followersCount: current.followersCount + (followed === current.followed ? 0 : followed ? 1 : -1),
+        },
+      );
+    },
+    [profile, refresh],
+  );
 
-  return { profile, error, retry, refresh, showFollowed };
+  return { profile, error, retry, refresh, showFollowState };
 }

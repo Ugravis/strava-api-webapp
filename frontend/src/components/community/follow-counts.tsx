@@ -11,13 +11,15 @@ interface FollowCountsProps {
   username: string;
   /** Null while loading. */
   counts: Record<FollowDirection, number> | null;
+  /** Shows the counts without opening the lists, those of a private profile. */
+  locked?: boolean;
   /** Called once the dialog closes: follows may have changed meanwhile. */
   onDialogClosed?: () => void;
   className?: string;
 }
 
 /** Counts of followers and followed users, each opening the lists in a dialog. */
-export function FollowCounts({ username, counts, onDialogClosed, className }: FollowCountsProps) {
+export function FollowCounts({ username, counts, locked, onDialogClosed, className }: FollowCountsProps) {
   const t = useTranslations("community.counts");
   const format = useFormatter();
   const [open, setOpen] = useState(false);
@@ -27,7 +29,12 @@ export function FollowCounts({ username, counts, onDialogClosed, className }: Fo
   return (
     <div className={cn("flex items-center gap-4 text-sm", className)}>
       {directions.map((tab) =>
-        counts ? (
+        counts && locked ? (
+          <span key={tab} className="text-muted-foreground">
+            <span className="font-semibold text-foreground tabular-nums">{format.number(counts[tab])}</span>{" "}
+            {t(tab, { count: counts[tab] })}
+          </span>
+        ) : counts ? (
           <button
             key={tab}
             type="button"
@@ -44,7 +51,7 @@ export function FollowCounts({ username, counts, onDialogClosed, className }: Fo
           <Skeleton key={tab} className="h-5 w-20" />
         ),
       )}
-      {counts && (
+      {counts && !locked && (
         <FollowsDialog
           username={username}
           counts={counts}

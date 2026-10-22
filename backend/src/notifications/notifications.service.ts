@@ -4,12 +4,17 @@ import { IsNull, Repository } from 'typeorm';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import { User } from '../users/user.entity';
 import { NotificationStreams } from './notification-streams';
-import { Notification, type NotificationType } from './notification.entity';
+import {
+  ANONYMOUS_NOTIFICATIONS,
+  Notification,
+  type NotificationType,
+} from './notification.entity';
 
 export interface NotificationResponse {
   id: string;
   type: NotificationType;
-  actor: PublicUser;
+  /** Null for an anonymous kind, e.g. a like. */
+  actor: PublicUser | null;
   read: boolean;
   createdAt: string;
 }
@@ -34,7 +39,9 @@ function toNotificationResponse(
   return {
     id: notification.id,
     type: notification.type,
-    actor: toPublicUser(actor),
+    actor: ANONYMOUS_NOTIFICATIONS.has(notification.type)
+      ? null
+      : toPublicUser(actor),
     read: notification.readAt !== null,
     createdAt: notification.createdAt.toISOString(),
   };
@@ -108,6 +115,57 @@ export class NotificationsService {
       type,
       actorId,
       readAt: IsNull(),
+    });
+    if (affected) {
+      this.streams.send(userId, {
+        unreadCount: await this.unreadCount(userId),
+      } satisfies NotificationEvent);
+    }
+  }
+
+  /** Deletes a notification, read or not, once it no longer makes sense, e.g. a declined request. */
+  async discard(
+    userId: string,
+    type: NotificationType,
+    actorId: string,
+  ): Promise<void> {
+    const { affected } = await this.notifications.delete({
+      userId,
+      type,
+      actorId,
+    });
+    if (affected) {
+      this.streams.send(userId, {
+        unreadCount: await this.unreadCount(userId),
+      } satisfies NotificationEvent);
+    }
+  }
+
+  /**
+   * Turns the notifications of a kind into another one, from one actor or
+   * from all of them, marked read: the user acted on them, e.g. accepted
+   * follow requests become follows.
+   */
+  async convert(
+    userId: string,
+    from: NotificationType,
+    to: NotificationType,
+    actorId?: string,
+  ): Promise<void> {
+    const where = { userId, type: from, ...(actorId && { actorId }) };
+    // A notification of the target kind from the same actor would duplicate it.
+    await this.notifications
+      .createQueryBuilder()
+      .delete()
+      .where('user_id = :userId AND type = :to', { userId, to })
+      .andWhere(
+        `actor_id IN (SELECT actor_id FROM notifications WHERE user_id = :userId AND type = :from${actorId ? ' AND actor_id = :actorId' : ''})`,
+        { from, actorId },
+      )
+      .execute();
+    const { affected } = await this.notifications.update(where, {
+      type: to,
+      readAt: () => 'coalesce(read_at, now())',
     });
     if (affected) {
       this.streams.send(userId, {

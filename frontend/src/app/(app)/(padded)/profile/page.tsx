@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { ProfileHeader } from "@/components/profile/profile-header";
+import { OwnProfile } from "@/components/profile/own-profile";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("profile");
@@ -9,8 +9,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function ProfilePage() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-2 sm:py-4">
-      <ProfileHeader />
-    </div>
+    <OwnProfile />
   );
 }

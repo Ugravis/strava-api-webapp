@@ -30,6 +30,10 @@ export enum ApiErrorCode {
   CannotFollowSelf = 'CANNOT_FOLLOW_SELF',
   AlreadyFollowing = 'ALREADY_FOLLOWING',
   NotFollowing = 'NOT_FOLLOWING',
+  PrivateProfile = 'PRIVATE_PROFILE',
+  NoFollowRequest = 'NO_FOLLOW_REQUEST',
+  ProfileBadgesFull = 'PROFILE_BADGES_FULL',
+  CannotLikeSelf = 'CANNOT_LIKE_SELF',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

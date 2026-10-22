@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { userProfileHref } from "@/config/routes";
+import { routes, userProfileHref } from "@/config/routes";
 import type { AppNotification, NotificationEvent, NotificationsOverview } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { NOTIFICATIONS_STREAM_URL, notificationsService } from "@/services/notifications.service";
@@ -57,13 +57,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           notifications: [
             added,
             ...(current?.notifications ?? []).filter(
-              ({ type, actor }) => type !== added.type || actor.id !== added.actor.id,
+              ({ type, actor }) => type !== added.type || !actor || actor.id !== added.actor?.id,
             ),
           ],
           unreadCount: event.unreadCount,
         }));
-        toast(t(`toast.${added.type}`, { name: publicNameOf(added.actor) }), {
-          action: { label: t("view"), onClick: () => router.push(userProfileHref(added.actor.username)) },
+        const { actor } = added;
+        toast(t(`toast.${added.type}`, { name: actor ? publicNameOf(actor) : "" }), {
+          action: {
+            label: t("view"),
+            onClick: () => router.push(actor ? userProfileHref(actor.username) : routes.profile),
+          },
         });
       } else if (event.unreadCount === 0) {
         // Read from another tab.

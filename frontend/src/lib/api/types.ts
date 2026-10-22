@@ -5,9 +5,28 @@ export interface User {
   /** Optional: use `publicNameOf` to display a user. */
   displayName: string | null;
   avatarUrl: string | null;
+  bio: string | null;
+  city: string | null;
+  /** Country of the city, ISO 3166-1 alpha-2. */
+  countryCode: string | null;
+  favoriteSports: FavoriteSport[];
+  /** Hue of the profile, `#rrggbb`; null for the default one. */
+  profileColor: string | null;
+  profilePrivate: boolean;
   hasPassword: boolean;
   createdAt: string;
 }
+
+/** A city to pick for a profile. */
+export interface CitySuggestion {
+  name: string;
+  countryCode: string;
+  /** Region, to tell apart cities of the same name. */
+  region: string | null;
+}
+
+/** Sports a user may show as favorites: the families of the distance badges, `all` excepted. */
+export type FavoriteSport = Exclude<DistanceFamily, "all">;
 
 export interface PendingGoogleSignup {
   email: string;
@@ -496,26 +515,78 @@ export interface PublicUser {
 export interface ProfileSummary extends PublicUser {
   /** Whether the current user follows them. */
   followed: boolean;
+  /** Whether the current user asked to follow their private profile, not accepted yet. */
+  requested: boolean;
+}
+
+/** Badge owed to the membership, not to sport: `founder` and `team` by hand, `early_member` for the first 100 accounts. */
+export type DistinctionKind = "founder" | "team" | "early_member";
+
+export interface Distinction {
+  kind: DistinctionKind;
+  awardedAt: string;
+}
+
+/** A badge shown on a profile, as other users see it. */
+export type ProfileBadge = Pick<
+  DistanceBadge,
+  "id" | "name" | "description" | "icon" | "family" | "tiers" | "completions" | "progress"
+>;
+
+/** Figures of the tiles at one level. */
+export interface TileFigures {
+  visited: number;
+  maxCluster: number;
+  maxSquare: number;
+}
+
+/** Badges chosen by the user and overall figures, never an activity nor a place. */
+export interface ProfileShowcase {
+  badges: ProfileBadge[];
+  tiles: { large: TileFigures; small: TileFigures };
+  stations: { visited: number; unlockedKm: number };
 }
 
 export interface PublicProfile extends ProfileSummary {
   createdAt: string;
+  bio: string | null;
+  city: string | null;
+  countryCode: string | null;
+  favoriteSports: FavoriteSport[];
+  /** `#rrggbb`; null for the default hue. */
+  color: string | null;
+  private: boolean;
+  /** Badges of the membership, shown even on a private profile. */
+  distinctions: Distinction[];
+  /** False for a private profile the current user does not follow: its showcase and follows are hidden. */
+  visible: boolean;
   followersCount: number;
   followingCount: number;
+  likesCount: number;
+  /** Whether the current user likes the profile; who likes it is never told. */
+  liked: boolean;
   /** Whether they follow the current user. */
   followsViewer: boolean;
   /** Whether it is the profile of the current user. */
   self: boolean;
+  /** Null when hidden, or when showcases are disabled. */
+  showcase: ProfileShowcase | null;
+  /** Follow requests waiting for the current user; null on the profile of someone else. */
+  requestsCount: number | null;
 }
+
+/** Following a public profile is immediate; following a private one is a request. */
+export type FollowStatus = "following" | "requested";
 
 export type FollowDirection = "followers" | "following";
 
-export type NotificationType = "follow";
+export type NotificationType = "follow" | "follow_request" | "follow_accepted" | "profile_like";
 
 export interface AppNotification {
   id: string;
   type: NotificationType;
-  actor: PublicUser;
+  /** Null for an anonymous kind: who liked a profile is never told. */
+  actor: PublicUser | null;
   read: boolean;
   createdAt: string;
 }

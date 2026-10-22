@@ -61,6 +61,22 @@ type MetricTimelines = Record<
   Record<DistanceFamily, FamilyTimeline>
 >;
 
+/** Badges a profile shows at most. */
+export const PROFILE_BADGES_MAX = 5;
+
+/** A badge shown on a profile, as other users see it: no amount nor date. */
+export type ProfileBadge = Pick<
+  BadgeView,
+  | 'id'
+  | 'name'
+  | 'description'
+  | 'icon'
+  | 'family'
+  | 'tiers'
+  | 'completions'
+  | 'progress'
+>;
+
 export interface DistancesOverview {
   /** Cumulated amount per metric and family, in the unit of the metric. */
   totals: Record<BadgeMetric, Record<DistanceFamily, number>>;
@@ -195,9 +211,53 @@ export class DistancesService {
     await this.favorites.delete({ userId, badgeId });
   }
 
-  /** Shows a badge on the profile of the user; showing it again changes nothing. */
+  /** Badges the user shows on their profile, in the order they were added. */
+  async shownOnProfile(userId: string): Promise<ProfileBadge[]> {
+    const shown = await this.profileBadges.find({
+      where: { userId },
+      relations: { badge: true },
+      order: { addedAt: 'ASC' },
+      take: PROFILE_BADGES_MAX,
+    });
+    if (shown.length === 0) {
+      return [];
+    }
+    const timelines = await this.timelines(userId);
+    return shown.map(({ badge }) => {
+      const { id, name, description, icon, family, tiers } = badge!;
+      const { completions, progress } = badgeProgress(
+        badge!,
+        timelines[badge!.metric][family],
+      );
+      return {
+        id,
+        name,
+        description,
+        icon,
+        family,
+        tiers,
+        completions,
+        progress,
+      };
+    });
+  }
+
+  /**
+   * Shows a badge on the profile of the user, up to `PROFILE_BADGES_MAX`;
+   * showing it again changes nothing.
+   */
   async addToProfile(userId: string, badgeId: string): Promise<void> {
     await this.findBadge(badgeId);
+    const shown = await this.profileBadgeIds(userId);
+    if (shown.has(badgeId)) {
+      return;
+    }
+    if (shown.size >= PROFILE_BADGES_MAX) {
+      throw ApiErrors.conflict(
+        ApiErrorCode.ProfileBadgesFull,
+        `At most ${PROFILE_BADGES_MAX} badges are shown on a profile`,
+      );
+    }
     await this.profileBadges
       .createQueryBuilder()
       .insert()

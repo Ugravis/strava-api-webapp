@@ -11,6 +11,8 @@ export const routes = {
   profile: "/profile",
   users: "/users",
   settings: "/settings",
+  /** The profile section of the settings. */
+  settingsProfile: "/settings#profile",
   sessionExpired: "/session-expired",
 } as const;
 

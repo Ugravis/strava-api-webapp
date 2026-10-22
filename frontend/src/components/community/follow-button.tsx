@@ -1,29 +1,39 @@
 "use client";
 
-import { UserCheckIcon, UserPlusIcon } from "lucide-react";
+import { ClockIcon, UserCheckIcon, UserPlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { errorCodeOf } from "@/lib/api/errors";
+import type { ProfileSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { profilesService } from "@/services/profiles.service";
 
+/** Whether the current user follows a user, asked to follow their private profile, or neither. */
+export type FollowState = "none" | "requested" | "following";
+
+export const followStateOf = ({ followed, requested }: Pick<ProfileSummary, "followed" | "requested">): FollowState =>
+  followed ? "following" : requested ? "requested" : "none";
+
 interface FollowButtonProps {
   username: string;
-  followed: boolean;
+  state: FollowState;
   /** Whether they follow the current user: offers to follow back. */
   followsViewer?: boolean;
-  /** Called at once with the new state, and with the previous one if the server refuses. */
-  onChange?: (followed: boolean) => void;
+  /** Called with the new state, and with the previous one if the server refuses. */
+  onChange?: (state: FollowState) => void;
   size?: "sm" | "default";
   className?: string;
 }
 
-/** Follows or unfollows a user at once; back as it was if the server refuses. */
+/**
+ * Follows a user, or asks to when their profile is private; unfollows them or
+ * cancels the request at once, back as it was if the server refuses.
+ */
 export function FollowButton({
   username,
-  followed,
+  state,
   followsViewer = false,
   onChange,
   size = "sm",
@@ -34,13 +44,22 @@ export function FollowButton({
   const [pending, setPending] = useState(false);
 
   const toggle = async () => {
-    const next = !followed;
     setPending(true);
-    onChange?.(next);
     try {
-      await (next ? profilesService.follow(username) : profilesService.unfollow(username));
+      if (state === "none") {
+        // Whether the profile is private is only known from the answer.
+        const { status } = await profilesService.follow(username);
+        onChange?.(status);
+      } else {
+        onChange?.("none");
+        try {
+          await profilesService.unfollow(username);
+        } catch (error) {
+          onChange?.(state);
+          throw error;
+        }
+      }
     } catch (error) {
-      onChange?.(!next);
       toast.error(tErrors(errorCodeOf(error)));
     } finally {
       setPending(false);
@@ -51,23 +70,25 @@ export function FollowButton({
     <Button
       type="button"
       size={size}
-      variant={followed ? "outline" : "default"}
+      variant={state === "none" ? "default" : "outline"}
       disabled={pending}
-      aria-pressed={followed}
+      aria-pressed={state !== "none"}
       onClick={() => void toggle()}
-      // Says what a click does once hovered: unfollowing.
+      // Says what a click does once hovered: unfollowing, or cancelling the request.
       className={cn("group/follow shrink-0", className)}
     >
-      {followed ? (
-        <>
-          <UserCheckIcon aria-hidden />
-          <span className="group-hover/follow:hidden">{t("following")}</span>
-          <span className="hidden group-hover/follow:inline">{t("unfollow")}</span>
-        </>
-      ) : (
+      {state === "none" ? (
         <>
           <UserPlusIcon aria-hidden />
           {followsViewer ? t("followBack") : t("follow")}
+        </>
+      ) : (
+        <>
+          {state === "following" ? <UserCheckIcon aria-hidden /> : <ClockIcon aria-hidden />}
+          <span className="group-hover/follow:hidden">{t(state === "following" ? "following" : "requested")}</span>
+          <span className="hidden group-hover/follow:inline">
+            {t(state === "following" ? "unfollow" : "cancelRequest")}
+          </span>
         </>
       )}
     </Button>

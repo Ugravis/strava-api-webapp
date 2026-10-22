@@ -38,7 +38,7 @@ export function BadgeCardContent({
   layout,
   showKind,
   ...medal
-}: Omit<BadgeMedalProps, "className"> & { layout: BadgeCardLayout; showKind?: boolean }) {
+}: Omit<BadgeMedalProps, "className" | "badge"> & { badge: DistanceBadge; layout: BadgeCardLayout; showKind?: boolean }) {
   if (layout === "compact") {
     return <CompactBadgeContent badge={badge} showFavorite={medal.showFavorite} showKind={showKind} />;
   }
@@ -135,7 +135,8 @@ export const BADGE_CARD_LAYOUT_CLASS: Record<BadgeCardLayout, string> = {
   compact: "flex-col p-2",
 };
 
-interface BadgeCardProps extends Omit<BadgeMedalProps, "className"> {
+interface BadgeCardProps extends Omit<BadgeMedalProps, "className" | "badge"> {
+  badge: DistanceBadge;
   layout: BadgeCardLayout;
   onOpen: (badgeId: string) => void;
   /** Outlines the badge, e.g. once found by the search. */

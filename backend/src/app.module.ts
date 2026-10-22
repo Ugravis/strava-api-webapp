@@ -16,6 +16,7 @@ import databaseConfig from './config/database.config';
 import googleConfig from './config/google.config';
 import mailConfig from './config/mail.config';
 import storageConfig from './config/storage.config';
+import profilesConfig from './config/profiles.config';
 import stravaConfig from './config/strava.config';
 import { HealthController } from './health/health.controller';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
         mailConfig,
         storageConfig,
         stravaConfig,
+        profilesConfig,
       ],
     }),
     TypeOrmModule.forRootAsync({

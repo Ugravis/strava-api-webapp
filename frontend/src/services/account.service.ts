@@ -1,10 +1,18 @@
 import { apiRequest } from "@/lib/api/client";
-import type { User } from "@/lib/api/types";
+import type { CitySuggestion, FavoriteSport, User } from "@/lib/api/types";
 
 export interface UpdateProfileInput {
   /** null clears the display name. */
   displayName: string | null;
   username: string;
+  /** null clears it. */
+  bio: string | null;
+  /** null clears it, and its country along. */
+  city: string | null;
+  countryCode: string | null;
+  favoriteSports: FavoriteSport[];
+  /** `#rrggbb`; null restores the default hue. */
+  profileColor: string | null;
 }
 
 export interface ChangePasswordInput {
@@ -18,7 +26,9 @@ export interface DeleteAccountInput {
 }
 
 export const accountService = {
-  updateProfile: (input: UpdateProfileInput) =>
+  searchCities: (query: string) => apiRequest<CitySuggestion[]>(`/users/cities?q=${encodeURIComponent(query)}`),
+
+  updateProfile: (input: Partial<UpdateProfileInput>) =>
     apiRequest<User>("/users/me", { method: "PATCH", body: { json: input } }),
 
   uploadAvatar: (file: File) => {

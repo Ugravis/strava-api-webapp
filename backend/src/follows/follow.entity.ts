@@ -1,5 +1,6 @@
 import {
   Check,
+  Column,
   CreateDateColumn,
   Entity,
   Index,
@@ -13,12 +14,19 @@ import { User } from '../users/user.entity';
 @Entity('follows')
 @Check('CHK_follows_not_self', '"follower_id" <> "followed_id"')
 @Index('IDX_follows_followed', ['followedId', 'createdAt'])
+@Index('IDX_follows_requests', ['followedId', 'createdAt'], {
+  where: '"pending"',
+})
 export class Follow {
   @PrimaryColumn({ name: 'follower_id', type: 'uuid' })
   followerId!: string;
 
   @PrimaryColumn({ name: 'followed_id', type: 'uuid' })
   followedId!: string;
+
+  /** A request to follow a private profile, until its owner accepts it. */
+  @Column({ type: 'boolean', default: false })
+  pending!: boolean;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'follower_id' })

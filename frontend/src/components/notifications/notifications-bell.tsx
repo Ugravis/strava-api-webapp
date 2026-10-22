@@ -70,7 +70,7 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
           ) : notifications.length === 0 ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>
           ) : (
-            <DropdownMenuGroup>
+            <DropdownMenuGroup className="flex flex-col gap-1.5 p-1">
               {notifications.map((notification) => (
                 <NotificationItem
                   key={notification.id}
@@ -130,7 +130,7 @@ function UnreadDot({ count, className }: { count: number; className?: string }) 
     <span
       aria-hidden
       className={cn(
-        "flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-semibold text-primary-foreground tabular-nums",
+        "flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] leading-none font-semibold text-white tabular-nums",
         className,
       )}
     >

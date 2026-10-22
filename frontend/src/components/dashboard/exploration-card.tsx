@@ -3,6 +3,8 @@
 import { ChevronRightIcon, CompassIcon, TrainFrontIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
+import { useState } from "react";
 import { searchOfModule } from "@/components/map/map-address";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +20,9 @@ import { countryFlag, countryName, percentDecimals } from "@/lib/countries/count
 const SHOWN_COUNTRIES = 6;
 
 /**
- * Tiles explored on both levels, train stations and railway unlocked, and the
- * most visited countries; `version` refreshes them while the tiles are computed.
+ * Tiles explored on both levels, train stations and railway unlocked, the
+ * most visited countries and a preview of the map; `version` refreshes them
+ * while the tiles are computed.
  */
 export function ExplorationCard({ version }: { version: string }) {
   const t = useTranslations("dashboard.exploration");
@@ -50,10 +53,13 @@ export function ExplorationCard({ version }: { version: string }) {
             href={`${routes.map}${searchOfModule("tiles")}`}
             title={t("openTiles")}
             // Dark whatever the theme, as the header of the page.
-            className="grid grid-cols-2 divide-x divide-white/10 rounded-xl bg-linear-to-br from-zinc-800 to-zinc-950 py-3 text-zinc-50 ring-1 ring-white/10 outline-none transition-[box-shadow,translate] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+            className="flex flex-col gap-3 rounded-xl bg-linear-to-br from-zinc-800 to-zinc-950 py-3 text-zinc-50 ring-1 ring-white/10 outline-none transition-[box-shadow,translate] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
           >
-            <TileLevel title={t("tiles")} stats={stats?.tiles ?? null} />
-            <TileLevel title={t("subtiles")} stats={stats?.subtiles ?? null} />
+            <div className="grid grid-cols-2 divide-x divide-white/10">
+              <TileLevel title={t("tiles")} stats={stats?.tiles ?? null} />
+              <TileLevel title={t("subtiles")} stats={stats?.subtiles ?? null} />
+            </div>
+            {stats && stats.tiles.visited > 0 && <MapPreview key={version} version={version} />}
           </Link>
         )}
         {stationsError ? (
@@ -92,6 +98,40 @@ export function ExplorationCard({ version }: { version: string }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Image of the area where the most tiles were explored, drawn by the server
+ * in the theme of the map, under the counters of the tiles; hidden if it
+ * fails to load.
+ */
+function MapPreview({ version }: { version: string }) {
+  const t = useTranslations("dashboard.exploration");
+  const { resolvedTheme } = useTheme();
+  const [state, setState] = useState<"loading" | "loaded" | "failed">("loading");
+  const theme = resolvedTheme === "dark" ? "dark" : "light";
+
+  if (state === "failed") {
+    return null;
+  }
+  return (
+    <div className="relative mx-3 aspect-5/3 overflow-hidden rounded-lg ring-1 ring-white/10">
+      {state === "loading" && <Skeleton className="absolute inset-0 rounded-none bg-white/10" />}
+      {resolvedTheme && (
+        // Drawn and cached by the API: nothing for the image optimizer to do.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/api/tiles/preview?theme=${theme}&v=${encodeURIComponent(version)}`}
+          alt={t("preview")}
+          width={800}
+          height={480}
+          className="size-full object-cover"
+          onLoad={() => setState("loaded")}
+          onError={() => setState("failed")}
+        />
+      )}
+    </div>
   );
 }
 

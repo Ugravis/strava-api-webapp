@@ -422,6 +422,10 @@ export interface TileHistorySummary {
   tiles: number;
   /** Small tiles (zoom 17) gained since the date, or visited before it. */
   subtiles: number;
+  /** Train stations first visited since the date, or before it. */
+  stations: number;
+  /** Meters of railway unlocked since the date, or before it. */
+  railwayM: number;
 }
 
 /** What the activities of one day brought to the tiles. */

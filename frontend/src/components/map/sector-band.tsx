@@ -4,12 +4,14 @@ import { CircleAlertIcon, ContrastIcon, FocusIcon, LoaderCircleIcon, SearchIcon,
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { CountryLevelCompletion, CountryRailway, CountrySector, CountryStations } from "@/lib/api/types";
+import type { CountryLevelCompletion, CountrySector } from "@/lib/api/types";
 import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
 import { cn } from "@/lib/utils";
-import { RailKey, StationKey, TileKey } from "./map-keys";
-import { Stat, ValueSkeleton } from "./map-stat";
+import { accentStyle, type MapColor } from "./map-keys";
+import { ValueSkeleton } from "./map-stat";
 
 interface SectorBandProps {
   /** Code of the country picked, known before its details. */
@@ -28,12 +30,13 @@ interface SectorBandProps {
 }
 
 /** A section of the band, separated from the others by a line, like those of the band of the key figures. */
-const SECTION = "flex items-center px-4 py-3 md:px-6";
+const SECTION = "flex items-center px-4 py-3";
 
 /**
  * Band of the sector tool, over the band of the key figures: the sector
  * picked, the tiles of the user in it out of its total, the train stations
- * visited and the railway unlocked out of its network, their first and
+ * visited and the railway unlocked out of its network, each with a bar of
+ * its completion, their first and
  * latest visits, and buttons
  * to search for another sector or frame this one again. Stacked on narrow
  * screens, in a row on larger ones.
@@ -44,7 +47,7 @@ export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, 
   const locale = useLocale();
   const computing = sector !== null && sector.shapeVersion === null;
   const visit = (at: string | null | undefined) =>
-    at === undefined ? <ValueSkeleton /> : at === null ? t("never") : format.dateTime(new Date(at), { dateStyle: "medium" });
+    at === undefined ? <Skeleton className="h-3.5 w-20" /> : at === null ? t("never") : format.dateTime(new Date(at), { dateStyle: "medium" });
   const status = error ? (
     <span className="flex items-center gap-1.5 text-destructive">
       <CircleAlertIcon className="size-3.5 shrink-0" aria-hidden />
@@ -102,9 +105,10 @@ export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, 
   return (
     <section
       aria-label={t("label")}
-      className="flex shrink-0 flex-col divide-y border-t bg-background md:flex-row md:divide-x md:divide-y-0"
+      // As tall as the band of the history tool, its slider and labels included.
+      className="flex shrink-0 flex-col divide-y border-t bg-background md:min-h-[5.625rem] md:flex-row md:divide-x md:divide-y-0"
     >
-      <div className={cn(SECTION, "min-w-0 justify-between gap-2")}>
+      <div className={cn(SECTION, "min-w-0 justify-between gap-2 md:max-w-80 md:shrink-0")}>
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
           <span aria-hidden className="text-lg leading-none">
             {countryFlag(code)}
@@ -122,50 +126,50 @@ export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, 
         </div>
       </div>
 
-      {/* Scrolling sideways on narrow screens, where four figures do not fit. */}
-      <div
-        className={cn(
-          SECTION,
-          "gap-6 overflow-x-auto scrollbar-none *:shrink-0 md:flex-1 md:justify-center md:overflow-visible",
-        )}
-      >
-        <Stat
-          value={<Completion level={sector?.tiles} />}
-          label={t("tiles")}
-          colorKey={<TileKey />}
-        />
+      {/* Scrolling sideways where the four figures do not fit. */}
+      <div className={cn(SECTION, "min-w-0 gap-8 overflow-x-auto scrollbar-none *:shrink-0 md:flex-1 md:justify-center-safe")}>
+        <CompletionStat label={t("tiles")} accent="tile" completion={levelCompletion(sector?.tiles)} />
         {subtiles && (
-          <Stat
-            value={<Completion level={sector?.subtiles} />}
+          <CompletionStat
             label={t("subtiles")}
-            colorKey={<TileKey subtiles />}
+            accent="subtile"
+            completion={levelCompletion(sector?.subtiles)}
           />
         )}
         {/* Hidden once loaded for a country without stations. */}
         {(!sector || sector.stations) && (
-          <Stat
-            value={sector?.stations ? <StationsCompletion stations={sector.stations} /> : <ValueSkeleton />}
+          <CompletionStat
             label={t("stations")}
-            colorKey={<StationKey />}
+            accent="station"
+            completion={sector?.stations ? { ...sector.stations, unit: null } : undefined}
           />
         )}
         {/* Hidden once loaded for a country without railway. */}
         {(!sector || sector.railway) && (
-          <Stat
-            value={sector?.railway ? <RailwayCompletion railway={sector.railway} /> : <ValueSkeleton />}
+          <CompletionStat
             label={t("railway")}
-            colorKey={<RailKey />}
+            accent="railLink"
+            completion={
+              sector?.railway
+                ? { visited: sector.railway.unlockedM / 1000, total: sector.railway.totalM / 1000, unit: "kilometer" }
+                : undefined
+            }
           />
         )}
       </div>
 
-      <div className={cn(SECTION, "gap-6")}>
-        <Stat value={visit(sector?.firstVisitAt)} label={t("firstVisit")} colorKey={null} />
-        <Stat value={visit(sector?.lastVisitAt)} label={t("lastVisit")} colorKey={null} />
+      {/* Two short lines, as tall as the figures. */}
+      <div className={cn(SECTION, "shrink-0")}>
+        <dl className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1.5 text-xs whitespace-nowrap">
+          <dt className="text-muted-foreground">{t("firstVisit")}</dt>
+          <dd className="font-medium tabular-nums">{visit(sector?.firstVisitAt)}</dd>
+          <dt className="text-muted-foreground">{t("lastVisit")}</dt>
+          <dd className="font-medium tabular-nums">{visit(sector?.lastVisitAt)}</dd>
+        </dl>
       </div>
 
       {/* On narrow screens, only while there is something to tell. */}
-      <div className={cn(SECTION, "gap-2", !status && "max-md:hidden")}>
+      <div className={cn(SECTION, "gap-2 md:pr-3", !status && "max-md:hidden md:pl-3")}>
         <div role="status" className="flex min-w-0 flex-1 items-center text-xs text-muted-foreground md:max-w-64">
           {status}
         </div>
@@ -175,74 +179,74 @@ export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, 
   );
 }
 
-/** Train stations visited out of those of the country, and the share. */
-function StationsCompletion({ stations: { visited, total } }: { stations: CountryStations }): ReactNode {
-  const format = useFormatter();
-  const share = visited / total;
-  return (
-    <>
-      {format.number(visited)}
-      <span className="text-xs font-normal text-muted-foreground">
-        {" / "}
-        {format.number(total)}
-      </span>
-      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-        {format.number(share, {
-          style: "percent",
-          minimumFractionDigits: percentDecimals(share),
-          maximumFractionDigits: percentDecimals(share),
-        })}
-      </span>
-    </>
-  );
+/** Done out of the total of a sector, in kilometers or a count; the total may still be computed. */
+interface SectorCompletion {
+  visited: number;
+  total: number | null;
+  unit: "kilometer" | null;
 }
 
-/** Kilometers of railway unlocked out of the network of the country, and the share. */
-function RailwayCompletion({ railway: { unlockedM, totalM } }: { railway: CountryRailway }): ReactNode {
-  const format = useFormatter();
-  const share = totalM > 0 ? unlockedM / totalM : 0;
-  const km = (meters: number) => format.number(meters / 1000, { maximumFractionDigits: 0 });
-  return (
-    <>
-      {km(unlockedM)}
-      <span className="text-xs font-normal text-muted-foreground">
-        {" / "}
-        {format.number(totalM / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 })}
-      </span>
-      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-        {format.number(share, {
-          style: "percent",
-          minimumFractionDigits: percentDecimals(share),
-          maximumFractionDigits: percentDecimals(share),
-        })}
-      </span>
-    </>
-  );
+/** Completion of one level of tiles; undefined while loading. */
+function levelCompletion(level: CountryLevelCompletion | undefined): SectorCompletion | undefined {
+  return level && { ...level, unit: null };
 }
 
-/** Tiles of one level visited out of the total, and the share completed; the total may still be computed. */
-function Completion({ level }: { level: CountryLevelCompletion | undefined }): ReactNode {
+/**
+ * Done out of the total of the sector under its label and the share
+ * completed, over a bar of its completion in the color of what it counts on
+ * the map; the total may still be computed.
+ */
+function CompletionStat({
+  label,
+  accent,
+  completion,
+}: {
+  label: string;
+  accent: MapColor;
+  /** Undefined while loading. */
+  completion: SectorCompletion | undefined;
+}) {
   const t = useTranslations("map.sector");
   const format = useFormatter();
-  if (!level) return <ValueSkeleton />;
-  const { visited, total } = level;
-  const share = total ? visited / total : null;
+  const share = completion?.total ? completion.visited / completion.total : null;
+  const number = (value: number) => format.number(value, { maximumFractionDigits: 0 });
+
   return (
-    <>
-      {format.number(visited)}
-      <span className="text-xs font-normal text-muted-foreground">
-        {" / "}
-        {total === null ? t("computingTotal") : format.number(total)}
+    <div className="flex min-w-32 flex-col gap-1">
+      <span className="flex items-baseline justify-between gap-3 text-xs leading-4 whitespace-nowrap text-muted-foreground">
+        {label}
+        {share !== null && (
+          <span className="font-medium text-foreground tabular-nums">
+            {format.number(share, {
+              style: "percent",
+              minimumFractionDigits: percentDecimals(share),
+              maximumFractionDigits: percentDecimals(share),
+            })}
+          </span>
+        )}
       </span>
-      {share !== null && (
-        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-          {format.number(share, {
-            style: "percent",
-            minimumFractionDigits: percentDecimals(share),
-            maximumFractionDigits: percentDecimals(share),
-          })}
+      {completion ? (
+        <span className="h-4 text-base leading-none font-semibold tracking-tight whitespace-nowrap tabular-nums">
+          {number(completion.visited)}
+          <span className="text-xs font-normal tracking-normal text-muted-foreground">
+            {" / "}
+            {completion.total === null
+              ? t("computingTotal")
+              : completion.unit
+                ? format.number(completion.total, { style: "unit", unit: completion.unit, maximumFractionDigits: 0 })
+                : number(completion.total)}
+          </span>
         </span>
+      ) : (
+        <ValueSkeleton />
       )}
-    </>
+      {/* In the color of what it counts on the map. */}
+      <Progress
+        value={share === null ? 0 : Math.min(100, share * 100)}
+        aria-label={label}
+        style={accentStyle(accent)}
+        className="[&_[data-slot=progress-indicator]]:bg-(--accent) dark:[&_[data-slot=progress-indicator]]:bg-(--accent-dark)"
+      />
+    </div>
   );
 }

@@ -1,149 +1,32 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { MAP_PALETTES, type MapPalette } from "./map-style";
 
-type ColorKey = { [K in keyof MapPalette]: MapPalette[K] extends string ? K : never }[keyof MapPalette];
+/** A color of the map, in both themes. */
+export type MapColor = { [K in keyof MapPalette]: MapPalette[K] extends string ? K : never }[keyof MapPalette];
 
 /**
- * Colors of both themes as CSS variables, `--key` in light and `--key-dark`
- * in dark: the keys follow the theme in CSS, the same on the server and in
- * the browser.
+ * A color of the map as CSS variables, `--accent` in light and
+ * `--accent-dark` in dark: it follows the theme in CSS, the same on the
+ * server and in the browser.
  */
-function themed(keys: Partial<Record<string, ColorKey>>): CSSProperties {
-  const style: Record<string, string> = {};
-  for (const [name, key] of Object.entries(keys)) {
-    if (!key) continue;
-    style[`--${name}`] = MAP_PALETTES.light[key];
-    style[`--${name}-dark`] = MAP_PALETTES.dark[key];
-  }
-  return style as CSSProperties;
+export function accentStyle(color: MapColor): CSSProperties {
+  return { "--accent": MAP_PALETTES.light[color], "--accent-dark": MAP_PALETTES.dark[color] } as CSSProperties;
 }
 
-const SWATCH = "inline-block size-3 shrink-0 rounded-[3px]";
-
-/** Visited tiles: the light large tiles with their outline, or the deeper small tiles. */
-export function TileKey({
-  subtiles = false,
-  className,
-  children,
-}: {
-  subtiles?: boolean;
-  className?: string;
-  children?: ReactNode;
-}) {
-  return (
-    <span
-      aria-hidden
-      style={themed(subtiles ? { fill: "subtile", line: "subtile" } : { fill: "tile", line: "tileOutline" })}
-      className={cn(
-        SWATCH,
-        "border border-(--line) dark:border-(--line-dark)",
-        subtiles ? "bg-(--fill)/75 dark:bg-(--fill-dark)/75" : "bg-(--fill)/35 dark:bg-(--fill-dark)/35",
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-/** Largest cluster: opaque and quiet over the large tiles, prominent over the small ones; a faint edge keeps it visible on the band. */
-export function ClusterKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      style={themed({ fill: subtiles ? "subtileCluster" : "cluster" })}
-      className={cn(
-        SWATCH,
-        "border border-foreground/15",
-        subtiles ? "bg-(--fill)/55 dark:bg-(--fill-dark)/65" : "bg-(--fill) dark:bg-(--fill-dark)",
-        className,
-      )}
-    />
-  );
-}
+/** Background in the accent set by `accentStyle`. */
+export const ACCENT_BG = "bg-(--accent) dark:bg-(--accent-dark)";
 
 /**
- * Other clusters: a light wash over the large tiles, whose look it takes
- * with their outline, or small tiles a little deeper than the others.
+ * Bar along a figure, in the color of what it counts on the map; a faint
+ * edge keeps the palest colors visible on the band.
  */
-export function OtherClusterKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
-  if (subtiles) {
-    return (
-      <span
-        aria-hidden
-        style={themed({ fill: "otherSubtileClusters" })}
-        className={cn(SWATCH, "border border-foreground/15 bg-(--fill)/75 dark:bg-(--fill-dark)/75", className)}
-      />
-    );
-  }
-  return (
-    <TileKey className={cn("relative overflow-hidden", className)}>
-      <span
-        style={themed({ wash: "otherClusters" })}
-        className="absolute inset-0 bg-(--wash)/45 dark:bg-(--wash-dark)/55"
-      />
-    </TileKey>
-  );
-}
-
-/** Largest square: its outline. */
-export function SquareKey({ className }: { className?: string }) {
+export function AccentBar({ color, className }: { color: MapColor; className?: string }) {
   return (
     <span
       aria-hidden
-      style={themed({ line: "square" })}
-      className={cn(SWATCH, "border-2 border-(--line) dark:border-(--line-dark)", className)}
-    />
-  );
-}
-
-/** Tracks: a raspberry line over its thin dark edge. */
-export function TrackKey({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      style={themed({ line: "track", edge: "trackCasing" })}
-      className={cn(
-        "inline-block h-1.5 w-3 shrink-0 rounded-full border border-(--edge) bg-(--line) dark:border-(--edge-dark) dark:bg-(--line-dark)",
-        className,
-      )}
-    />
-  );
-}
-
-/** Tiles gained over a period: the opaque pink of the gains, deeper on the small tiles. */
-export function GainedKey({ subtiles = false, className }: { subtiles?: boolean; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      style={themed({ fill: subtiles ? "activitySubtile" : "activityTile" })}
-      className={cn(SWATCH, "border border-foreground/15 bg-(--fill) dark:bg-(--fill-dark)", className)}
-    />
-  );
-}
-
-/** Visited station: a violet dot in its ring. */
-export function StationKey({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      style={themed({ fill: "station", ring: "stationCasing" })}
-      className={cn(
-        "inline-block size-2.5 shrink-0 rounded-full bg-(--fill) ring-1 ring-foreground/20 dark:bg-(--fill-dark)",
-        className,
-      )}
-    />
-  );
-}
-
-/** Railway unlocked between two visited stations: a violet line. */
-export function RailKey({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      style={themed({ line: "railLink" })}
-      className={cn("inline-block h-1 w-3 shrink-0 rounded-full bg-(--line) dark:bg-(--line-dark)", className)}
+      style={accentStyle(color)}
+      className={cn("w-[3px] shrink-0 self-stretch rounded-full ring-1 ring-foreground/10", ACCENT_BG, className)}
     />
   );
 }

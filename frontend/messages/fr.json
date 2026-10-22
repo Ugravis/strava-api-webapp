@@ -862,7 +862,8 @@
       "speedValue": "×{factor, number}",
       "realSpeed": "réelle",
       "editSpeed": "Saisir une vitesse, de ×{min, number} à ×{max, number}",
-      "mute": "Couper le son"
+      "display": "Affichage",
+      "sound": "Son des trains"
     },
     "modules": {
       "tiles": "Tuiles",
@@ -926,7 +927,13 @@
       "close": "Fermer le panneau",
       "collapse": "Replier le panneau",
       "expand": "Déplier le panneau",
-      "invalidLink": "Ce lien ne désigne aucune tuile, activité ni gare."
+      "invalidLink": "Ce lien ne désigne aucune tuile, activité ni gare.",
+      "kinds": {
+        "tile": "Tuiles",
+        "station": "Gare",
+        "activity": "Activité",
+        "train": "Train"
+      }
     },
     "activityPanel": {
       "distance": "Distance",
@@ -980,14 +987,10 @@
         "year": "{count, plural, one {# an} other {# ans}}"
       },
       "counts": {
-        "gained": {
-          "tiles": "Grandes tuiles gagnées",
-          "subtiles": "Petites tuiles gagnées"
-        },
-        "state": {
-          "tiles": "Grandes tuiles",
-          "subtiles": "Petites tuiles"
-        }
+        "tiles": "Grandes tuiles",
+        "subtiles": "Petites tuiles",
+        "stations": "Gares",
+        "railway": "Voies"
       },
       "pending": "Mise à jour de l'historique…",
       "error": "Impossible de charger l'historique.",

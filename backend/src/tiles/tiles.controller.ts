@@ -30,7 +30,9 @@ import {
   UserTilesService,
 } from './user-tiles.service';
 import type { Rgba } from './subtile-raster';
+import { MapPreviewService } from './map-preview.service';
 import {
+  MapPreviewQueryDto,
   RasterTileParamsDto,
   RasterTileQueryDto,
   TileHistoryQueryDto,
@@ -87,6 +89,7 @@ export class TilesController {
     private readonly gains: ActivityGainsService,
     private readonly userTiles: UserTilesService,
     private readonly tileHistory: TileHistoryService,
+    private readonly mapPreview: MapPreviewService,
   ) {}
 
   /** Counters and achievements of the user, and the version of the tiles for the vector tiles. */
@@ -153,6 +156,33 @@ export class TilesController {
           clusters ? rgba(clusters) : null,
         ),
     });
+  }
+
+  /**
+   * Image of the area where the user visited the most large tiles, for the
+   * dashboard. Revalidated from its entity tag, which changes with the
+   * tiles; not found without any tile.
+   */
+  @Get('preview')
+  async preview(
+    @CurrentUser() user: User,
+    @Query() { theme }: MapPreviewQueryDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    const tag = await this.mapPreview.tag(user.id, theme);
+    if (tag) {
+      response.set({ ETag: tag, 'Cache-Control': 'private, no-cache' });
+      if (request.fresh) {
+        response.status(304).end();
+        return;
+      }
+    }
+    const preview = tag ? await this.mapPreview.preview(user.id, theme) : null;
+    if (!preview) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No tiles yet');
+    }
+    response.type('image/webp').send(preview.image);
   }
 
   /** Gains of the tiles day by day, for the evolution of the counters. */

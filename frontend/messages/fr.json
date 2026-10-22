@@ -277,6 +277,7 @@
       "lastStation": "Dernière : {name}",
       "stationsError": "Impossible de charger tes gares pour le moment.",
       "openTiles": "Voir les tuiles sur la carte",
+      "preview": "Aperçu de la zone la plus explorée",
       "openStations": "Voir les gares sur la carte"
     },
     "badges": {

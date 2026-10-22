@@ -2,6 +2,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import type { AuthConfig } from '../config/auth.config';
 import type { MailService } from '../mail/mail.service';
 import type { StravaConnectionService } from '../strava/strava-connection.service';
+import type { MapPreviewService } from '../tiles/map-preview.service';
 import type { AvatarsService } from '../users/avatars.service';
 import type { User } from '../users/user.entity';
 import type { UsersService } from '../users/users.service';
@@ -55,6 +56,7 @@ describe('AuthService', () => {
   let mail: jest.Mocked<Pick<MailService, 'sendPasswordReset'>>;
   let avatars: jest.Mocked<Pick<AvatarsService, 'deleteQuietly'>>;
   let strava: jest.Mocked<Pick<StravaConnectionService, 'disconnect'>>;
+  let mapPreview: jest.Mocked<Pick<MapPreviewService, 'deleteFor'>>;
   let service: AuthService;
 
   beforeEach(() => {
@@ -76,6 +78,7 @@ describe('AuthService', () => {
     mail = { sendPasswordReset: jest.fn() };
     avatars = { deleteQuietly: jest.fn() };
     strava = { disconnect: jest.fn() };
+    mapPreview = { deleteFor: jest.fn() };
     service = new AuthService(
       users as unknown as UsersService,
       sessions as unknown as SessionsService,
@@ -84,6 +87,7 @@ describe('AuthService', () => {
       mail as unknown as MailService,
       avatars as unknown as AvatarsService,
       strava as unknown as StravaConnectionService,
+      mapPreview as unknown as MapPreviewService,
       config,
     );
   });
@@ -326,7 +330,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({ response: { code: 'CONFIRMATION_MISMATCH' } });
     });
 
-    it('deletes the user and its avatar', async () => {
+    it('deletes the user, its avatar and its map preview', async () => {
       const user = buildUser({ avatarKey: 'avatars/user-id/abc.webp' });
 
       await service.deleteAccount(user, { usernameConfirmation: 'jean' });
@@ -334,6 +338,7 @@ describe('AuthService', () => {
       expect(avatars.deleteQuietly).toHaveBeenCalledWith(
         'avatars/user-id/abc.webp',
       );
+      expect(mapPreview.deleteFor).toHaveBeenCalledWith('user-id');
       expect(strava.disconnect).toHaveBeenCalledWith('user-id');
       expect(users.delete).toHaveBeenCalledWith('user-id');
     });

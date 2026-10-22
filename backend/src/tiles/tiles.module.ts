@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StorageModule } from '../storage/storage.module';
 import { ActivityGain } from './activity-gain.entity';
 import { ActivityGainsService } from './activity-gains.service';
 import { ActivityGainsWorker } from './activity-gains.worker';
 import { ActivityTile } from './activity-tile.entity';
 import { ActivityTileState } from './activity-tile-state.entity';
 import { TileFirstVisit } from './tile-first-visit.entity';
+import { MapPreviewService } from './map-preview.service';
 import { TileHistoryService } from './tile-history.service';
 import { TileMetricsWorker } from './tile-metrics.worker';
 import { TilesController } from './tiles.controller';
@@ -24,16 +26,18 @@ import { UserTilesService } from './user-tiles.service';
       UserTile,
       UserTileMetrics,
     ]),
+    StorageModule,
   ],
   controllers: [TilesController],
   providers: [
     TilesService,
     UserTilesService,
     TileHistoryService,
+    MapPreviewService,
     TileMetricsWorker,
     ActivityGainsService,
     ActivityGainsWorker,
   ],
-  exports: [TilesService],
+  exports: [TilesService, MapPreviewService],
 })
 export class TilesModule {}

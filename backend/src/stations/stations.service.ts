@@ -77,6 +77,12 @@ export interface StationTotals {
   unlockedM: number;
 }
 
+/** Stations and railway of the history at a date: gained since it, or visited before it. */
+export interface StationHistoryTotals {
+  stations: number;
+  railwayM: number;
+}
+
 /** The railway network of a country and the part the user unlocked. */
 export interface CountryRailway {
   /** Length of the links between two stations the user visited, in the country. */
@@ -129,6 +135,41 @@ export class StationsService {
        ORDER BY a.started_at, a.id`,
       [userId],
     );
+  }
+
+  /**
+   * Stations first visited since `date`, or before it, and the railway
+   * unlocked in the same period: a link is unlocked at the later first
+   * visit of its two stations. Stations whose first visit is not replayed
+   * yet are left out, as their tiles are from the history.
+   */
+  async historyTotals(
+    userId: string,
+    gained: boolean,
+    date: Date,
+  ): Promise<StationHistoryTotals> {
+    const inPeriod = (at: string) => `${at} ${gained ? '>=' : '<'} $2`;
+    const [row]: { stations: number; railway_m: number | null }[] =
+      await this.dataSource.query(
+        `WITH visited AS (${VISITED_STATIONS}),
+         first_visits AS (
+           SELECT v.id, min(f.visited_at) AS at
+           FROM visited v
+           JOIN tile_first_visits f ON f.user_id = $1 AND f.x = v.x AND f.y = v.y
+             AND f.mask & (1::bigint << v.bit) <> 0
+           GROUP BY v.id
+         )
+         SELECT (SELECT count(*)::int FROM first_visits WHERE ${inPeriod('at')}) AS stations,
+           (SELECT sum(l.length_m) FROM rail_links l
+            JOIN first_visits a ON a.id = l.station_a
+            JOIN first_visits b ON b.id = l.station_b
+            WHERE ${inPeriod('greatest(a.at, b.at)')}) AS railway_m`,
+        [userId, date],
+      );
+    return {
+      stations: row.stations,
+      railwayM: Math.round(row.railway_m ?? 0),
+    };
   }
 
   /** Number of stations visited by the user, and length of the railway unlocked between them. */

@@ -268,6 +268,35 @@ while open, with the rows changed in the last minute highlighted. It is served b
 delete `backend/src/dev`, `frontend/src/components/dev` and their two references
 (`AppModule`, authenticated layout).
 
+## Production
+
+`docker-compose.prod.yml` runs the production images (`prod` targets of `docker/*.Dockerfile`,
+non-root, `NODE_ENV=production`) behind [Caddy](https://caddyserver.com) (`docker/Caddyfile`),
+which obtains the HTTPS certificates and adds HSTS. Only ports 80 and 443 are published; the
+database listens on the server loopback (`127.0.0.1:5432`), for SSH tunnels only. No Adminer,
+Mailpit or storage console.
+
+```bash
+cp .env.production.example .env   # then fill in every value, chmod 600 .env
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+- **Secrets**: the backend refuses to start in production when `COOKIE_SECRET`,
+  `ENCRYPTION_SECRET` or `STRAVA_WEBHOOK_VERIFY_TOKEN` is missing, a development default or
+  shorter than 32 characters, when a database or storage credential keeps its default, or when
+  `FRONTEND_URL` is not https (`backend/src/config/environment.validation.ts`).
+- **Cookies** are `Secure` whenever `FRONTEND_URL` is https.
+- **Email sign-in**: sign-up, sign-in and password reset by email answer
+  `EMAIL_SIGN_IN_DISABLED` in production unless `EMAIL_SIGN_IN_ENABLED=true` (the forms stay
+  visible); Google sign-in is unaffected. SMTP is only needed once it is turned on.
+- **Strava webhook**: events are not signed, so the verify token is the last segment of the
+  callback URL (`/api/strava/webhook/<token>`); any other URL answers 404.
+- **Headers**: Next.js sends the Content Security Policy, `X-Frame-Options: DENY`, `nosniff`,
+  `Referrer-Policy` and `Permissions-Policy` (`frontend/next.config.ts`).
+- **Geography**: `country_parts` and the stations tables are not created by any user action:
+  import them once (`pnpm countries:import`, `pnpm stations:import`) through an SSH tunnel to
+  the database, or copy them from another database with `pg_dump --data-only -t <table>`.
+
 ## Scripts
 
 | Command                 | Description                                             |

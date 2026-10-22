@@ -4,6 +4,6 @@ import { MapIcon, type LucideIcon } from "lucide-react";
 export const siteConfig: { name: string; domain: string; logo: LucideIcon } = {
   name: "Kilotrace",
   /** Shown on the profile cards, which may be shared as images. */
-  domain: "kilotrace.com",
+  domain: "kilotrace.app",
   logo: MapIcon,
 };

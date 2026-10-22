@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDownIcon, LogOutIcon, SettingsIcon } from "lucide-react";
+import { EllipsisIcon, LogOutIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user/user-avatar";
@@ -17,6 +17,8 @@ import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/
 import { routes } from "@/config/routes";
 import type { User } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
+import { SoundSubmenu } from "./sound-submenu";
+import { ThemeMenuItem } from "./theme-menu-item";
 import { useLogout } from "./use-logout";
 
 function UserSummary({ user }: { user: User }) {
@@ -44,12 +46,12 @@ export function NavUser({ user }: { user: User }) {
             <SidebarMenuButton
               size="lg"
               aria-label={t("userMenu")}
-              className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+              className="data-popup-open:bg-sidebar-group"
             />
           }
         >
           <UserSummary user={user} />
-          <ChevronsUpDownIcon className="ml-auto" />
+          <EllipsisIcon className="ml-auto" />
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="min-w-56"
@@ -70,6 +72,11 @@ export function NavUser({ user }: { user: User }) {
               <SettingsIcon />
               {t("settings")}
             </DropdownMenuItem>
+            <ThemeMenuItem />
+            <SoundSubmenu />
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
             <DropdownMenuItem variant="destructive" onClick={() => void logout()}>
               <LogOutIcon />
               {t("logout")}

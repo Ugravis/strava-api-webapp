@@ -27,6 +27,9 @@ export enum ApiErrorCode {
   Unauthenticated = 'UNAUTHENTICATED',
   CrossOriginRejected = 'CROSS_ORIGIN_REJECTED',
   NotFound = 'NOT_FOUND',
+  CannotFollowSelf = 'CANNOT_FOLLOW_SELF',
+  AlreadyFollowing = 'ALREADY_FOLLOWING',
+  NotFollowing = 'NOT_FOLLOWING',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

@@ -482,3 +482,51 @@ export interface CountryRailway {
   unlockedM: number;
   totalM: number;
 }
+
+/** What any signed-in user may see of another one. */
+export interface PublicUser {
+  id: string;
+  username: string;
+  /** Optional: use `publicNameOf` to display a user. */
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
+/** Another user as the current one sees them in a list. */
+export interface ProfileSummary extends PublicUser {
+  /** Whether the current user follows them. */
+  followed: boolean;
+}
+
+export interface PublicProfile extends ProfileSummary {
+  createdAt: string;
+  followersCount: number;
+  followingCount: number;
+  /** Whether they follow the current user. */
+  followsViewer: boolean;
+  /** Whether it is the profile of the current user. */
+  self: boolean;
+}
+
+export type FollowDirection = "followers" | "following";
+
+export type NotificationType = "follow";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  actor: PublicUser;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsOverview {
+  notifications: AppNotification[];
+  unreadCount: number;
+}
+
+/** Event received in real time: the new unread count, with the notification that changed it, if one was added. */
+export interface NotificationEvent {
+  unreadCount: number;
+  notification?: AppNotification;
+}

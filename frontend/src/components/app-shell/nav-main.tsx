@@ -24,7 +24,8 @@ export function NavMain({ items }: { items: NavigationItem[] }) {
   return (
     <SidebarGroup>
       <SidebarGroupContent>
-        <SidebarMenu>
+        {/* Spaced, so that two lit entries never touch. */}
+        <SidebarMenu className="gap-1">
           {items.map((item) => (
             <NavEntry key={item.href} item={item} />
           ))}
@@ -56,7 +57,10 @@ function NavEntry({ item }: { item: NavigationItem }) {
     <SidebarMenuItem
       className={cn(
         QuickAccess && "rounded-md transition-colors",
-        QuickAccess && (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group hover:delay-500 focus-within:bg-sidebar-group"),
+        // The group is lit as a whole, at once on hover: its links mark themselves by their text only.
+        QuickAccess &&
+          (unfolded ? "bg-sidebar-group" : "hover:bg-sidebar-group focus-within:bg-sidebar-group"),
+        QuickAccess && "[&_[data-sidebar=menu-button]]:bg-transparent! [&>[data-sidebar=menu-button][data-active]]:font-medium",
       )}
     >
       <SidebarMenuButton
@@ -83,7 +87,8 @@ function NavEntry({ item }: { item: NavigationItem }) {
               : "grid-rows-[0fr] group-focus-within/menu-item:grid-rows-[1fr] group-hover/menu-item:grid-rows-[1fr] group-hover/menu-item:delay-500",
           )}
         >
-          <div className="min-h-0 overflow-hidden">
+          {/* Links kept lighter, underlined on hover and when active. */}
+          <div className="min-h-0 overflow-hidden [&_[data-sidebar=menu-button]]:text-sidebar-foreground/55! [&_[data-sidebar=menu-button]>span]:underline-offset-4 [&_[data-sidebar=menu-button]:hover>span]:underline [&_[data-sidebar=menu-button][data-active]>span]:underline">
             <QuickAccess onNavigate={() => setOpenMobile(false)} />
           </div>
         </div>

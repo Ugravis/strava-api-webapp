@@ -3,15 +3,18 @@
 import { CalendarIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
+import { FollowCounts } from "@/components/community/follow-counts";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { routes } from "@/config/routes";
+import { usePublicProfile } from "@/hooks/use-public-profile";
 import { publicNameOf } from "@/lib/user";
 
 export function ProfileHeader() {
   const t = useTranslations("profile");
   const format = useFormatter();
   const user = useCurrentUser();
+  const { profile, refresh } = usePublicProfile(user.username);
   const memberSince = format.dateTime(new Date(user.createdAt), { month: "long", year: "numeric" });
 
   return (
@@ -34,6 +37,12 @@ export function ProfileHeader() {
           <CalendarIcon className="size-4" aria-hidden />
           {t("memberSince", { date: memberSince })}
         </p>
+        <FollowCounts
+          username={user.username}
+          counts={profile && { followers: profile.followersCount, following: profile.followingCount }}
+          onDialogClosed={refresh}
+          className="mt-1 justify-center sm:justify-start"
+        />
       </div>
     </section>
   );

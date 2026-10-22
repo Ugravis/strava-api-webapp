@@ -15,6 +15,15 @@ export function AppLogoMark({ className }: { className?: string }) {
   );
 }
 
+/** The app name set as a bold italic uppercase wordmark. */
+export function AppWordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn("truncate pr-[0.1em] font-wordmark leading-none font-extrabold tracking-wide uppercase italic", className)}>
+      {siteConfig.name}
+    </span>
+  );
+}
+
 interface AppLogoProps {
   className?: string;
   /** Shows only the mark on small screens, where space is scarce. */
@@ -25,9 +34,7 @@ export function AppLogo({ className, compact = false }: AppLogoProps) {
   return (
     <span className={cn("flex items-center gap-2 font-semibold", className)}>
       <AppLogoMark />
-      <span className={cn("truncate", compact && "sr-only sm:not-sr-only")}>
-        {siteConfig.name}
-      </span>
+      <AppWordmark className={cn(compact && "sr-only sm:not-sr-only")} />
     </span>
   );
 }

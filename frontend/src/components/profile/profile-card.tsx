@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useRef, useState } from "react";
 import { FollowCounts } from "@/components/community/follow-counts";
+import { AppWordmark } from "@/components/brand/app-logo";
 import { BadgeMedal } from "@/components/distances/badge-medal";
 import { FamilyIcon } from "@/components/distances/family-icon";
 import { Badge } from "@/components/ui/badge";
@@ -69,9 +70,12 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
     >
       <div className="pointer-events-none absolute inset-x-0 top-24 bottom-0 -z-10" style={colors.veil} aria-hidden />
       <ProfileBanner seed={profile.username} style={colors.banner} className="h-24" />
-      <span className="absolute top-3.5 left-4 flex items-center gap-1 text-[11px] font-semibold tracking-wide text-white/85">
+      <span className="absolute top-3.5 left-4 flex items-center gap-1 text-[10px] text-white/90">
         <siteConfig.logo className="size-3.5" aria-hidden />
-        {siteConfig.domain}
+        <span className="flex items-baseline">
+          <AppWordmark />
+          <span className="font-semibold">{siteConfig.domain.slice(siteConfig.name.length)}</span>
+        </span>
       </span>
       <div className="absolute top-3 right-3 flex gap-1.5" {...EXPORT_IGNORE}>
         <Button

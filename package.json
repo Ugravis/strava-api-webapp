@@ -1,5 +1,5 @@
 {
-  "name": "strava-api-webapp",
+  "name": "kilotrace",
   "private": true,
   "packageManager": "pnpm@10.34.7",
   "engines": {
@@ -14,7 +14,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "check:backend": "pnpm --filter backend check",
     "check:frontend": "pnpm --filter frontend check",
-    "check:shared": "pnpm --filter @strava-webapp/shared check",
+    "check:shared": "pnpm --filter @kilotrace/shared check",
     "check-all": "pnpm -r --workspace-concurrency=1 check",
     "db:reset": "pnpm --filter backend db:reset",
     "db:seed:bench": "pnpm --filter backend db:seed:bench",

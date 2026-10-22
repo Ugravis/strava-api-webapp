@@ -3,11 +3,10 @@
 import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AppLogoMark } from "@/components/brand/app-logo";
+import { AppLogoMark, AppWordmark } from "@/components/brand/app-logo";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
-import { siteConfig } from "@/config/site";
 
 /**
  * Logo and name of the app, with the button collapsing the sidebar beside
@@ -43,7 +42,7 @@ export function SidebarBrand() {
         className="min-w-0 flex-1 hover:bg-transparent active:bg-transparent"
       >
         <AppLogoMark />
-        <span className="truncate font-semibold">{siteConfig.name}</span>
+        <AppWordmark />
       </SidebarMenuButton>
       {!isMobile && (
         <Tooltip>

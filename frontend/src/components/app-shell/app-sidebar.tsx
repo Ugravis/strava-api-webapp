@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AppLogoMark } from "@/components/brand/app-logo";
+import { SidebarNotificationsItem } from "@/components/notifications/notifications-bell";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +38,7 @@ export function AppSidebar({ user }: { user: User }) {
               <span className="truncate font-semibold">{siteConfig.name}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarNotificationsItem />
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>

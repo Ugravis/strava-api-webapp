@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AppLogo } from "@/components/brand/app-logo";
+import { HeaderNotificationsButton } from "@/components/notifications/notifications-bell";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 
 /**
- * Top bar on mobile only, where the sidebar is a drawer: its button and the
- * logo. On larger screens, the sidebar holds its own button.
+ * Top bar on mobile only, where the sidebar is a drawer: its button, the
+ * logo and the notifications. On larger screens, the sidebar holds its own button.
  */
 export function AppHeader() {
   const t = useTranslations("nav");
@@ -21,6 +22,9 @@ export function AppHeader() {
       <Link href={DEFAULT_AUTHENTICATED_ROUTE} className="min-w-0">
         <AppLogo />
       </Link>
+      <div className="ml-auto">
+        <HeaderNotificationsButton />
+      </div>
     </header>
   );
 }

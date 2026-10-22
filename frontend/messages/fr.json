@@ -25,6 +25,7 @@
     "dashboard": "Tableau de bord",
     "map": "Carte",
     "distances": "Succès",
+    "community": "Communauté",
     "profile": "Profil",
     "settings": "Paramètres",
     "logout": "Déconnexion",
@@ -90,7 +91,11 @@
     "TOO_MANY_REQUESTS": "Trop de tentatives. Patiente une minute avant de réessayer.",
     "FILE_TOO_LARGE": "L'image ne doit pas dépasser 5 Mo.",
     "UNEXPECTED": "Une erreur inattendue est survenue. Réessaie dans un instant.",
-    "PROVIDER_NOT_CONNECTED": "Ce compte n'est pas connecté."
+    "PROVIDER_NOT_CONNECTED": "Ce compte n'est pas connecté.",
+    "CANNOT_FOLLOW_SELF": "Tu ne peux pas te suivre toi-même.",
+    "ALREADY_FOLLOWING": "Tu suis déjà cette personne.",
+    "NOT_FOLLOWING": "Tu ne suis pas cette personne.",
+    "NOT_FOUND": "Introuvable."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -796,5 +801,53 @@
       "passed": "Desservi",
       "estimated": "Horaire estimé"
     }
+  },
+  "community": {
+    "title": "Communauté",
+    "subtitle": "Retrouve d'autres sportifs et suis leur progression.",
+    "search": {
+      "label": "Rechercher un utilisateur",
+      "placeholder": "Pseudo ou nom…",
+      "hint": "Tape au moins 2 caractères.",
+      "empty": "Aucun utilisateur trouvé.",
+      "error": "La recherche a échoué. Réessaie."
+    },
+    "follow": {
+      "follow": "Suivre",
+      "followBack": "Suivre en retour",
+      "following": "Abonné",
+      "unfollow": "Ne plus suivre",
+      "followsYou": "Te suit"
+    },
+    "counts": {
+      "followers": "{count, plural, =0 {abonné} one {abonné} other {abonnés}}",
+      "following": "{count, plural, =0 {abonnement} one {abonnement} other {abonnements}}"
+    },
+    "profile": {
+      "notFound": "Cet utilisateur n'existe pas.",
+      "error": "Le profil n'a pas pu être chargé.",
+      "retry": "Réessayer"
+    },
+    "lists": {
+      "label": "Abonnés et abonnements",
+      "followers": "Abonnés",
+      "following": "Abonnements",
+      "back": "Retour au profil",
+      "emptyFollowers": "Personne ne suit encore {name}.",
+      "emptyFollowing": "{name} ne suit encore personne.",
+      "loadMore": "Voir plus",
+      "error": "La liste n'a pas pu être chargée."
+    }
+  },
+  "notifications": {
+    "label": "Notifications",
+    "unread": "{count, plural, one {# notification non lue} other {# notifications non lues}}",
+    "empty": "Aucune notification pour l'instant.",
+    "error": "Les notifications n'ont pas pu être chargées.",
+    "follow": "<b>{name}</b> s'est abonné·e à toi.",
+    "toast": {
+      "follow": "{name} s'est abonné·e à toi."
+    },
+    "view": "Voir"
   }
 }

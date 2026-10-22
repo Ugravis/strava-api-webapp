@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
+import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
@@ -18,14 +19,16 @@ export async function AppShell({ children }: { children: ReactNode }) {
   return (
     <UserProvider user={user}>
       <TrackSyncProvider userId={user.id}>
-        <SidebarProvider defaultOpen={sidebarOpen}>
-          <AppSidebar user={user} />
-          {/* Never wider than the space beside the sidebar, whatever its content: no sideways scroll. */}
-          <SidebarInset className="min-w-0">
-            <AppHeader />
-            {children}
-          </SidebarInset>
-        </SidebarProvider>
+        <NotificationsProvider>
+          <SidebarProvider defaultOpen={sidebarOpen}>
+            <AppSidebar user={user} />
+            {/* Never wider than the space beside the sidebar, whatever its content: no sideways scroll. */}
+            <SidebarInset className="min-w-0">
+              <AppHeader />
+              {children}
+            </SidebarInset>
+          </SidebarProvider>
+        </NotificationsProvider>
       </TrackSyncProvider>
     </UserProvider>
   );

@@ -2,11 +2,13 @@ import {
   ArrayUnique,
   IsArray,
   IsIn,
+  IsISO31661Alpha2,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { TrimToNull } from '../../common/transformers';
 import { FAVORITE_SPORTS, type FavoriteSport } from '../favorite-sports';
 import { OptionalDisplayNameField, UsernameField } from './user-fields';
@@ -37,6 +39,14 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(CITY_MAX_LENGTH)
   city?: string | null;
+
+  /** Country of the city, picked along with it; cleared with it. */
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() || null : value,
+  )
+  @IsOptional()
+  @IsISO31661Alpha2()
+  countryCode?: string | null;
 
   @IsOptional()
   @IsArray()

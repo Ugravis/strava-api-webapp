@@ -83,6 +83,26 @@ export class ProfilesController {
     return this.follows.unfollow(user, username);
   }
 
+  @Put(':username/like')
+  @HttpCode(204)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  like(
+    @CurrentUser() user: User,
+    @Param() { username }: UsernameParamsDto,
+  ): Promise<void> {
+    return this.follows.like(user, username);
+  }
+
+  @Delete(':username/like')
+  @HttpCode(204)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  unlike(
+    @CurrentUser() user: User,
+    @Param() { username }: UsernameParamsDto,
+  ): Promise<void> {
+    return this.follows.unlike(user, username);
+  }
+
   /** Accepts the request of the user to follow the current one. */
   @Put(':username/follower')
   @HttpCode(204)

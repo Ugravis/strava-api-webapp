@@ -17,6 +17,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { AVATAR_MAX_UPLOAD_BYTES, AvatarsService } from './avatars.service';
+import { type CitySuggestion, CitySearchService } from './city-search.service';
+import { SearchCitiesQueryDto } from './dto/search-cities.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsernameAvailabilityQueryDto } from './dto/username-availability.dto';
 import { toUserResponse, type UserResponse } from './dto/user-response';
@@ -28,7 +30,17 @@ export class UsersController {
   constructor(
     private readonly users: UsersService,
     private readonly avatars: AvatarsService,
+    private readonly cities: CitySearchService,
   ) {}
+
+  /** Cities matching a name, to pick the one of the profile. */
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Get('cities')
+  searchCities(
+    @Query() { q }: SearchCitiesQueryDto,
+  ): Promise<CitySuggestion[]> {
+    return this.cities.search(q);
+  }
 
   @Public()
   @Throttle({ default: { limit: 30, ttl: 60_000 } })

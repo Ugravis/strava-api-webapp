@@ -39,6 +39,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     externalAvatarUrl: null,
     bio: null,
     city: null,
+    countryCode: null,
     favoriteSports: [],
     profileColor: null,
     profilePrivate: true,

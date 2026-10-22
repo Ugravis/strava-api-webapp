@@ -7,13 +7,14 @@ import { TilesModule } from '../tiles/tiles.module';
 import { UserDistinction } from '../users/user-distinction.entity';
 import { User } from '../users/user.entity';
 import { Follow } from './follow.entity';
+import { ProfileLike } from './profile-like.entity';
 import { FollowsService } from './follows.service';
 import { ProfileShowcaseService } from './profile-showcase.service';
 import { ProfilesController } from './profiles.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Follow, User, UserDistinction]),
+    TypeOrmModule.forFeature([Follow, User, UserDistinction, ProfileLike]),
     NotificationsModule,
     DistancesModule,
     StationsModule,

@@ -54,6 +54,10 @@ export class User {
   @Column({ type: 'varchar', length: 60, nullable: true })
   city!: string | null;
 
+  /** Country of the city, ISO 3166-1 alpha-2; set along with it. */
+  @Column({ name: 'country_code', type: 'char', length: 2, nullable: true })
+  countryCode!: string | null;
+
   @Column({
     name: 'favorite_sports',
     type: 'varchar',

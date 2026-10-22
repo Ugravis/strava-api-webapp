@@ -12,6 +12,7 @@ import {
 } from '../users/user-distinction.entity';
 import { User } from '../users/user.entity';
 import { Follow } from './follow.entity';
+import { ProfileLike } from './profile-like.entity';
 import {
   type ProfileShowcase,
   ProfileShowcaseService,
@@ -29,6 +30,7 @@ export interface PublicProfile extends ProfileSummary {
   createdAt: string;
   bio: string | null;
   city: string | null;
+  countryCode: string | null;
   favoriteSports: FavoriteSport[];
   /** `#rrggbb`; null for the default hue. */
   color: string | null;
@@ -42,6 +44,9 @@ export interface PublicProfile extends ProfileSummary {
   visible: boolean;
   followersCount: number;
   followingCount: number;
+  likesCount: number;
+  /** Whether the viewer likes the profile; who likes it is never told. */
+  liked: boolean;
   /** Whether they follow the viewer. */
   followsViewer: boolean;
   /** Whether it is the profile of the viewer. */
@@ -72,6 +77,8 @@ export class FollowsService {
     private readonly users: Repository<User>,
     @InjectRepository(UserDistinction)
     private readonly distinctions: Repository<UserDistinction>,
+    @InjectRepository(ProfileLike)
+    private readonly likes: Repository<ProfileLike>,
     private readonly notifications: NotificationsService,
     private readonly showcases: ProfileShowcaseService,
   ) {}
@@ -105,6 +112,8 @@ export class FollowsService {
       viewerFollow,
       followsViewer,
       distinctions,
+      likesCount,
+      liked,
     ] = await Promise.all([
       this.follows.countBy({ followedId: user.id, pending: false }),
       this.follows.countBy({ followerId: user.id, pending: false }),
@@ -118,6 +127,8 @@ export class FollowsService {
         where: { userId: user.id },
         order: { awardedAt: 'ASC' },
       }),
+      this.likes.countBy({ profileId: user.id }),
+      this.likes.existsBy({ userId: viewer.id, profileId: user.id }),
     ]);
     const followed = viewerFollow?.pending === false;
     const visible = self || !user.profilePrivate || followed;
@@ -134,6 +145,7 @@ export class FollowsService {
       createdAt: user.createdAt.toISOString(),
       bio: user.bio,
       city: user.city,
+      countryCode: user.countryCode,
       favoriteSports: user.favoriteSports,
       color: user.profileColor,
       private: user.profilePrivate,
@@ -144,6 +156,8 @@ export class FollowsService {
       visible,
       followersCount,
       followingCount,
+      likesCount,
+      liked,
       followsViewer,
       self,
       showcase,
@@ -182,6 +196,28 @@ export class FollowsService {
       viewer,
     );
     return pending ? 'requested' : 'following';
+  }
+
+  /** Likes the profile of another user; liking it again changes nothing. */
+  async like(viewer: User, username: string): Promise<void> {
+    const user = await this.findByUsername(username);
+    if (user.id === viewer.id) {
+      throw ApiErrors.badRequest(
+        ApiErrorCode.CannotLikeSelf,
+        'Users cannot like their own profile',
+      );
+    }
+    await this.likes
+      .createQueryBuilder()
+      .insert()
+      .values({ userId: viewer.id, profileId: user.id })
+      .orIgnore()
+      .execute();
+  }
+
+  async unlike(viewer: User, username: string): Promise<void> {
+    const user = await this.findByUsername(username);
+    await this.likes.delete({ userId: viewer.id, profileId: user.id });
   }
 
   /** Unfollows a user, or cancels a request to follow them. */

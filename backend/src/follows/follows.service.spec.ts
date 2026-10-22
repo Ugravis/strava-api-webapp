@@ -9,6 +9,7 @@ import type { ProfileShowcaseService } from './profile-showcase.service';
 import type { UserDistinction } from '../users/user-distinction.entity';
 import type { User } from '../users/user.entity';
 import type { Follow } from './follow.entity';
+import type { ProfileLike } from './profile-like.entity';
 import { FollowsService } from './follows.service';
 
 function buildUser(overrides: Partial<User> = {}): User {
@@ -22,6 +23,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     externalAvatarUrl: null,
     bio: null,
     city: null,
+    countryCode: null,
     favoriteSports: [],
     profileColor: null,
     profilePrivate: true,
@@ -73,6 +75,7 @@ describe('FollowsService', () => {
       follows as unknown as Repository<Follow>,
       users as unknown as Repository<User>,
       {} as Repository<UserDistinction>,
+      {} as Repository<ProfileLike>,
       notifications as unknown as NotificationsService,
       {} as ProfileShowcaseService,
     );

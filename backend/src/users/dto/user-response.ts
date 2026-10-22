@@ -9,6 +9,7 @@ export interface UserResponse {
   avatarUrl: string | null;
   bio: string | null;
   city: string | null;
+  countryCode: string | null;
   favoriteSports: FavoriteSport[];
   profileColor: string | null;
   profilePrivate: boolean;
@@ -32,6 +33,7 @@ export function toUserResponse(user: User): UserResponse {
     avatarUrl: avatarUrlFor(user),
     bio: user.bio,
     city: user.city,
+    countryCode: user.countryCode,
     favoriteSports: user.favoriteSports,
     profileColor: user.profileColor,
     profilePrivate: user.profilePrivate,

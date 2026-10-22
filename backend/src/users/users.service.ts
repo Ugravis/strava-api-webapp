@@ -106,6 +106,7 @@ export class UsersService {
         | 'username'
         | 'bio'
         | 'city'
+        | 'countryCode'
         | 'favoriteSports'
         | 'profileColor'
       >
@@ -123,6 +124,9 @@ export class UsersService {
     }
     if (changes.city !== undefined) {
       user.city = changes.city;
+      // A country without its city means nothing.
+      user.countryCode =
+        changes.city === null ? null : (changes.countryCode ?? null);
     }
     if (changes.favoriteSports !== undefined) {
       user.favoriteSports = changes.favoriteSports;

@@ -6,6 +6,7 @@ const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: { agentUpgrade: "security" },
   // Keeps the development indicator away from the sidebar footer.
   devIndicators: { position: "bottom-right" },
   turbopack: {

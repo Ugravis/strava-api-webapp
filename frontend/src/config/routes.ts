@@ -28,7 +28,8 @@ export const userProfileHref = (username: string) => `${routes.users}/${encodeUR
 /** Landing route once signed in. */
 export const DEFAULT_AUTHENTICATED_ROUTE = routes.dashboard;
 
-export const SESSION_COOKIE = "session";
+/** Same name as the backend cookie (backend/src/auth/session-cookie.ts). */
+export const SESSION_COOKIE = "kilotrace_session";
 
 /**
  * Accepts only same-origin relative paths, to prevent open redirects. Browsers

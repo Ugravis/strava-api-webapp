@@ -57,7 +57,7 @@ interface AuthorizationState {
 }
 
 const stateCookie = new SignedCookie<AuthorizationState>(
-  'strava_oauth_state',
+  'kilotrace_strava_oauth_state',
   10 * 60 * 1000,
   '/api/connections/strava',
 );

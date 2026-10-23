@@ -1,7 +1,9 @@
 # Production stack: `docker compose -f docker-compose.prod.yml up -d --build`.
-# Reads `.env` next to this file (template: .env.production.example). Only
-# Caddy is reachable from the Internet; the database listens on the loopback
-# of the server, for SSH tunnels (backups, imports), never on a public port.
+# Reads `.env` next to this file (template: .env.production.example).
+# Nothing is reachable from the Internet directly: the frontend and the
+# database listen on the loopback of the server. Put the web server already
+# running on the host in front of FRONTEND_PORT, or start the bundled Caddy on
+# a server of its own (`--profile caddy`, needs ports 80 and 443).
 name: kilotrace
 
 x-logging: &logging
@@ -19,7 +21,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-strava_webapp}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DB_HOST_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -93,15 +95,18 @@ services:
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://backend:4000
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3100}:3000"
     depends_on:
       - backend
     logging: *logging
 
   caddy:
     image: caddy:2.10-alpine
+    profiles: [caddy]
     restart: unless-stopped
     environment:
-      DOMAIN: ${DOMAIN:?DOMAIN is required}
+      DOMAIN: ${DOMAIN:-}
     ports:
       - "80:80"
       - "443:443"

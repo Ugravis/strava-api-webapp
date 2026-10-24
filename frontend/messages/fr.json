@@ -1147,7 +1147,19 @@
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
     "follow_accepted": "<b>{name}</b> a accepté votre demande d'abonnement.",
-    "profile_like": "Quelqu'un a aimé votre profil."
+    "profile_like": "Quelqu'un a aimé votre profil.",
+    "category": {
+      "all": "Toutes",
+      "likes": "Likes",
+      "follows": "Abonnements"
+    },
+    "period": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "week": "Cette semaine",
+      "month": "Ce mois-ci",
+      "older": "Plus ancien"
+    }
   },
   "footer": {
     "label": "Pied de page",

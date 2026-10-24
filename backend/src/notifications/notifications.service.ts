@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import { User } from '../users/user.entity';
 import { NotificationStreams } from './notification-streams';
 import {
   ANONYMOUS_NOTIFICATIONS,
+  NOTIFICATION_CATEGORY_TYPES,
   Notification,
+  type NotificationCategory,
   type NotificationType,
 } from './notification.entity';
 
@@ -19,18 +21,25 @@ export interface NotificationResponse {
   createdAt: string;
 }
 
-export interface NotificationsOverview {
+export interface NotificationsPage {
   notifications: NotificationResponse[];
+  /** Whether older notifications follow. */
+  hasMore: boolean;
   unreadCount: number;
 }
 
-/** Event sent in real time: the new unread count, with the notification that changed it, if one was added. */
+/**
+ * Event sent in real time: the new unread count, with the notification that
+ * changed it, if one was added, or the ones marked read.
+ */
 export interface NotificationEvent {
   unreadCount: number;
   notification?: NotificationResponse;
+  /** Marked read; every notification when empty. */
+  read?: string[];
 }
 
-const LATEST_LIMIT = 30;
+export const NOTIFICATIONS_PAGE_SIZE = 20;
 
 function toNotificationResponse(
   notification: Notification,
@@ -55,32 +64,51 @@ export class NotificationsService {
     private readonly streams: NotificationStreams,
   ) {}
 
-  /** Latest notifications of the user, the newest first. */
-  async overview(userId: string): Promise<NotificationsOverview> {
-    const [latest, unreadCount] = await Promise.all([
+  /** A page of the notifications of the user in a category, the newest first. */
+  async page(
+    userId: string,
+    category: NotificationCategory,
+    offset: number,
+  ): Promise<NotificationsPage> {
+    const [rows, unreadCount] = await Promise.all([
       this.notifications.find({
-        where: { userId },
+        where: {
+          userId,
+          ...(category !== 'all' && {
+            type: In(NOTIFICATION_CATEGORY_TYPES[category]),
+          }),
+        },
         relations: { actor: true },
-        order: { createdAt: 'DESC' },
-        take: LATEST_LIMIT,
+        order: { createdAt: 'DESC', id: 'DESC' },
+        skip: offset,
+        // One more tells whether another page follows.
+        take: NOTIFICATIONS_PAGE_SIZE + 1,
       }),
       this.unreadCount(userId),
     ]);
     return {
-      notifications: latest.map((notification) =>
-        toNotificationResponse(notification, notification.actor!),
-      ),
+      notifications: rows
+        .slice(0, NOTIFICATIONS_PAGE_SIZE)
+        .map((notification) =>
+          toNotificationResponse(notification, notification.actor!),
+        ),
+      hasMore: rows.length > NOTIFICATIONS_PAGE_SIZE,
       unreadCount,
     };
   }
 
-  async markAllRead(userId: string): Promise<void> {
+  /** Marks the given notifications read, or all of them. */
+  async markRead(userId: string, ids?: string[]): Promise<void> {
+    if (ids?.length === 0) return;
     const { affected } = await this.notifications.update(
-      { userId, readAt: IsNull() },
+      { userId, readAt: IsNull(), ...(ids && { id: In(ids) }) },
       { readAt: new Date() },
     );
     if (affected) {
-      this.streams.send(userId, { unreadCount: 0 } satisfies NotificationEvent);
+      this.streams.send(userId, {
+        unreadCount: await this.unreadCount(userId),
+        read: ids ?? [],
+      } satisfies NotificationEvent);
     }
   }
 

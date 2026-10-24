@@ -18,6 +18,19 @@ import { User } from '../users/user.entity';
 export type NotificationType =
   'follow' | 'follow_request' | 'follow_accepted' | 'profile_like';
 
+/** Filters of the notifications list. */
+export const NOTIFICATION_CATEGORIES = ['all', 'likes', 'follows'] as const;
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+/** Kinds listed under each filter; `all` is not filtered. */
+export const NOTIFICATION_CATEGORY_TYPES: Record<
+  Exclude<NotificationCategory, 'all'>,
+  NotificationType[]
+> = {
+  likes: ['profile_like'],
+  follows: ['follow', 'follow_request', 'follow_accepted'],
+};
+
 /** Kinds whose actor is kept for the bookkeeping but never disclosed. */
 export const ANONYMOUS_NOTIFICATIONS: ReadonlySet<NotificationType> = new Set([
   'profile_like',

@@ -31,7 +31,7 @@ import { EXPORT_IGNORE } from "./card-image";
 import { LikeButton } from "./like-button";
 import { CardImageDialog } from "./card-image-dialog";
 import { ProfileBanner } from "./profile-banner";
-import { type ProfileColorStyles, profileColorStyles } from "./profile-color";
+import { DEFAULT_PROFILE_COLOR, type ProfileColorStyles, profileColorStyles } from "./profile-color";
 import { ShareProfileDialog } from "./share-profile-dialog";
 import { ShowcaseDialog } from "./showcase-dialog";
 
@@ -67,8 +67,12 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false 
   return (
     <Card
       ref={card}
-      className={cn("relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0", outside && "border-dashed")}
-      style={colors.border}
+      className={cn(
+        "relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0",
+        outside && "border-[3px] border-dashed",
+      )}
+      // The dashes in the full hue, to stand out.
+      style={outside ? { borderColor: profile.color ?? DEFAULT_PROFILE_COLOR } : colors.border}
     >
       <div className="pointer-events-none absolute inset-x-0 top-24 bottom-0 -z-10" style={colors.veil} aria-hidden />
       <ProfileBanner seed={profile.username} style={colors.banner} className="h-24" />

@@ -4,7 +4,7 @@ import { EyeIcon, EyeOffIcon, LayersIcon, PencilIcon, UndoIcon } from "lucide-re
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FollowButton, type FollowState, followStateOf } from "@/components/community/follow-button";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { RequestAnswerButtons } from "@/components/community/request-answer-buttons";
@@ -18,7 +18,9 @@ import type { ProfileSummary, PublicProfile } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { profilesService } from "@/services/profiles.service";
 import { FollowRequestsDialog } from "./follow-requests-dialog";
+import { ProfileBanner } from "./profile-banner";
 import { ProfileCard, ProfileCardSkeleton } from "./profile-card";
+import { profileColorStyles } from "./profile-color";
 import { ProfileColorButton } from "./profile-color-button";
 import { type DeckItem, ProfileDeck } from "./profile-deck";
 import { ProfileSearchDialog } from "./profile-search-dialog";
@@ -27,6 +29,7 @@ import { ProfileVisibilitySwitch } from "./profile-visibility-switch";
 
 /** Key of the card standing for the follows while there are none. */
 const EMPTY_KEY = "~empty";
+const EMPTY_COLOR = "#71717a";
 
 /**
  * The profile of the current user, as others see it, with its visibility, its
@@ -41,7 +44,9 @@ export function ProfilesView() {
   /** The user shown, unless it is the current one. */
   const shownName = asked === user.username ? null : asked;
   const { profile, refresh } = usePublicProfile(user.username);
-  const requestsCount = useFollowsSummary().summary?.requestsCount;
+  const { summary } = useFollowsSummary();
+  const requestsCount = summary?.requestsCount;
+  const followingCount = summary?.followingCount;
   const [lastRequestsCount, setLastRequestsCount] = useState(requestsCount);
   // A request answered elsewhere, e.g. in the notifications, may add a follower.
   if (requestsCount !== lastRequestsCount) {
@@ -66,6 +71,13 @@ export function ProfilesView() {
   useEffect(() => {
     void loadFollowed();
   }, [loadFollowed]);
+  // A user followed or unfollowed, here or elsewhere, joins or leaves the deck.
+  const seenFollowingCount = useRef(followingCount);
+  useEffect(() => {
+    if (followingCount === undefined) return;
+    if (seenFollowingCount.current !== undefined && seenFollowingCount.current !== followingCount) void loadFollowed();
+    seenFollowingCount.current = followingCount;
+  }, [followingCount, loadFollowed]);
 
   const followedIndex = shownName && followed ? followed.findIndex(({ username }) => username === shownName) : -1;
   const outside = shownName !== null && followed !== null && followedIndex === -1;
@@ -132,15 +144,11 @@ export function ProfilesView() {
 
   const outsider = outside ? others.profiles[shownName] : undefined;
   const outsiderError = outside ? others.errors[shownName] : undefined;
-  // Followed from in front of the deck, they join it.
-  const onOutsiderFollow = (state: FollowState) => {
-    others.reload(shownName!);
-    if (state === "following") void loadFollowed();
-  };
+  const onOutsiderFollow = () => others.reload(shownName!);
 
   const shown = shownName === null ? null : (outsider ?? others.profiles[shownName]);
   const self = shownName === null;
-  const shownColor = self ? (color === undefined ? profile?.color : color) : shown?.color;
+  const shownColor = emptyShown ? EMPTY_COLOR : self ? (color === undefined ? profile?.color : color) : shown?.color;
   // While the follows load, the user named is not known to be among them yet.
   const pending = shownName !== null && followed === null;
 
@@ -186,7 +194,7 @@ export function ProfilesView() {
         )
       }
       bottom={
-        self ? (
+        self && !emptyShown ? (
           <p className="max-w-sm text-center text-sm text-balance text-muted-foreground">
             <EyeIcon className="mr-1.5 inline size-4 -translate-y-px" aria-hidden />
             {t("ownHint")}
@@ -229,14 +237,21 @@ export function ProfilesView() {
   );
 }
 
-/** Stands for the follows while there are none. */
+/** Gray, as the cards of the profiles but for no one. */
+const EMPTY_COLORS = profileColorStyles(EMPTY_COLOR);
+
+/** Stands for the follows while there are none, styled as a profile card. */
 function EmptyFollowsCard() {
   const t = useTranslations("profile.deck.empty");
   return (
-    <Card className="h-full items-center justify-center gap-3 border-2 px-8 py-12 text-center shadow-xl ring-0">
-      <LayersIcon className="size-8 text-muted-foreground" aria-hidden />
-      <p className="font-medium">{t("title")}</p>
-      <p className="text-sm text-balance text-muted-foreground">{t("description")}</p>
+    <Card className="relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0" style={EMPTY_COLORS.border}>
+      <div className="pointer-events-none absolute inset-x-0 top-24 bottom-0 -z-10" style={EMPTY_COLORS.veil} aria-hidden />
+      <ProfileBanner seed={EMPTY_KEY} style={EMPTY_COLORS.banner} className="h-24" />
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-12 text-center">
+        <LayersIcon className="size-8 text-muted-foreground" aria-hidden />
+        <p className="font-medium">{t("title")}</p>
+        <p className="text-sm text-balance text-muted-foreground">{t("description")}</p>
+      </div>
     </Card>
   );
 }
@@ -269,6 +284,18 @@ function useProfiles(users: ProfileSummary[], index: number, front: string | nul
   useEffect(() => {
     if (front && !(front in profiles) && !(front in errors)) reload(front);
   }, [front, profiles, errors, reload]);
+
+  // Those joining or leaving the deck are fetched again: whether they are followed changed.
+  const previousUsers = useRef(users);
+  useEffect(() => {
+    if (previousUsers.current === users) return;
+    const before = new Set(previousUsers.current.map(({ username }) => username));
+    const after = new Set(users.map(({ username }) => username));
+    previousUsers.current = users;
+    for (const username of [...before, ...after]) {
+      if (before.has(username) !== after.has(username) && username in profiles) reload(username);
+    }
+  }, [users, profiles, reload]);
 
   useEffect(() => {
     // The own card comes first in the deck: the followed users start at 1.

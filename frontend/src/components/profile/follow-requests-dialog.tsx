@@ -1,6 +1,6 @@
 "use client";
 
-import { InboxIcon } from "lucide-react";
+import { HistoryIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type FollowsListState, usePagedUsers } from "@/hooks/use-follows-list";
 import { cn } from "@/lib/utils";
+import { notificationsService } from "@/services/notifications.service";
 import { profilesService } from "@/services/profiles.service";
 
 type RequestsTab = "received" | "sent";
@@ -25,7 +26,8 @@ function countLabel(count: number): string {
 /**
  * A button opening the follow requests of the current user: those to answer,
  * counted on the button (in red while one was never seen in the
- * notifications), and those they sent, in a second tab.
+ * notifications, which opening it marks seen there too), and those they
+ * sent, in a second tab.
  */
 export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: string) => void }) {
   const t = useTranslations("profile.requests");
@@ -33,14 +35,22 @@ export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: s
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<RequestsTab>("received");
   const count = summary?.requestsCount ?? 0;
+  const counts: Record<RequestsTab, number> = { received: count, sent: summary?.sentRequestsCount ?? 0 };
   const label = count > 0 ? t("openCount", { count }) : t("open");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        // The stream then updates the notifications and the summary.
+        if (next && summary?.unseenRequests) notificationsService.markReadOfType("follow_request").catch(() => {});
+      }}
+    >
       <DialogTrigger
         render={<Button variant="ghost" size="icon-sm" aria-label={label} title={label} className="relative" />}
       >
-        <InboxIcon />
+        <HistoryIcon />
         {count > 0 && (
           <span
             aria-hidden
@@ -62,9 +72,7 @@ export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: s
             {TABS.map((each) => (
               <TabsTrigger key={each} value={each}>
                 {t(each)}
-                {each === "received" && count > 0 && (
-                  <span className="text-muted-foreground tabular-nums">{count}</span>
-                )}
+                <span className="text-muted-foreground tabular-nums">{counts[each]}</span>
               </TabsTrigger>
             ))}
           </TabsList>

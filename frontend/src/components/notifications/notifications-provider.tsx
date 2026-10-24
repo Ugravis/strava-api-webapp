@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { routes, userProfileHref } from "@/config/routes";
 import type {
@@ -15,6 +15,9 @@ import type {
 import { publicNameOf } from "@/lib/user";
 import { NOTIFICATIONS_STREAM_URL, notificationsService } from "@/services/notifications.service";
 
+/** Filters of the list, all loaded up front so that switching is instant. */
+export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = ["all", "likes", "follows"];
+
 /** Kinds listed under each filter; `all` is not filtered. */
 const CATEGORY_TYPES: Record<Exclude<NotificationCategory, "all">, readonly NotificationType[]> = {
   likes: ["profile_like"],
@@ -25,6 +28,27 @@ function inCategory({ type }: AppNotification, category: NotificationCategory): 
   return category === "all" || CATEGORY_TYPES[category].includes(type);
 }
 
+type Page = Omit<NotificationsPage, "unreadCount">;
+type Pages = Record<NotificationCategory, Page | null>;
+
+const NO_PAGES: Pages = { all: null, likes: null, follows: null };
+
+/** Applies a change to the notifications of every category. */
+function mapPages(pages: Pages, change: (notifications: AppNotification[], category: NotificationCategory) => AppNotification[]): Pages {
+  return Object.fromEntries(
+    NOTIFICATION_CATEGORIES.map((category) => {
+      const page = pages[category];
+      return [category, page && { ...page, notifications: change(page.notifications, category) }];
+    }),
+  ) as Pages;
+}
+
+function markedRead(notifications: AppNotification[], ids?: ReadonlySet<string>): AppNotification[] {
+  return notifications.map((notification) =>
+    notification.read || (ids && !ids.has(notification.id)) ? notification : { ...notification, read: true },
+  );
+}
+
 interface NotificationsState {
   category: NotificationCategory;
   setCategory: (category: NotificationCategory) => void;
@@ -33,83 +57,80 @@ interface NotificationsState {
   /** Whether older notifications are left to load. */
   hasMore: boolean;
   loadingMore: boolean;
-  /** Loads the next page, if any. */
+  /** Loads the next page of the category, if any. */
   loadMore: () => void;
   unreadCount: number;
   error: boolean;
-  /** Marks the given notifications read. */
-  markRead: (ids: readonly string[]) => void;
+  /** Unread when the panel opened, still shown as such while it is open. */
+  highlighted: ReadonlySet<string>;
+  /** Clears the unread count at once, keeping the unread notifications highlighted. */
+  openPanel: () => void;
+  /** Marks read what came in while the panel was open, and drops the highlight. */
+  closePanel: () => void;
 }
 
 const NotificationsContext = createContext<NotificationsState | null>(null);
 
 /**
- * Notifications of the current user, a page at a time and filtered by
- * category, kept up to date in real time through server-sent events; a new one
- * is also announced by a toast. The browser reconnects by itself after a drop:
- * what was missed meanwhile is fetched again.
+ * Notifications of the current user, a page at a time for each category,
+ * kept up to date in real time through server-sent events; a new one is also
+ * announced by a toast. The browser reconnects by itself after a drop: what
+ * was missed meanwhile is fetched again.
  */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const t = useTranslations("notifications");
   const router = useRouter();
-  const [category, setCategoryState] = useState<NotificationCategory>("all");
-  const [page, setPage] = useState<Omit<NotificationsPage, "unreadCount"> | null>(null);
+  const [category, setCategory] = useState<NotificationCategory>("all");
+  const [pages, setPages] = useState<Pages>(NO_PAGES);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState<NotificationCategory | null>(null);
   const [error, setError] = useState(false);
-  // Read by the event handler and to drop the responses of a former category.
-  const categoryRef = useRef(category);
+  const [highlighted, setHighlighted] = useState<ReadonlySet<string>>(new Set());
 
-  const refresh = useCallback(() => {
-    const requested = categoryRef.current;
-    return notificationsService.getPage(requested).then(
-      ({ unreadCount: count, ...next }) => {
-        setUnreadCount(count);
-        if (requested !== categoryRef.current) return;
-        setPage(next);
-        setError(false);
-      },
-      () => setError(true),
-    );
-  }, []);
-
-  const setCategory = useCallback(
-    (next: NotificationCategory) => {
-      if (next === categoryRef.current) return;
-      categoryRef.current = next;
-      setCategoryState(next);
-      setPage(null);
-      setLoadingMore(false);
-      void refresh();
-    },
-    [refresh],
+  const refresh = useCallback(
+    () =>
+      Promise.all(NOTIFICATION_CATEGORIES.map((each) => notificationsService.getPage(each))).then(
+        (responses) => {
+          setPages(
+            Object.fromEntries(
+              responses.map(({ notifications, hasMore }, index) => [NOTIFICATION_CATEGORIES[index], { notifications, hasMore }]),
+            ) as Pages,
+          );
+          setUnreadCount(responses[0]?.unreadCount ?? 0);
+          setError(false);
+        },
+        () => setError(true),
+      ),
+    [],
   );
 
   const loadMore = useCallback(() => {
+    const page = pages[category];
     if (!page?.hasMore || loadingMore) return;
-    const requested = categoryRef.current;
-    setLoadingMore(true);
-    notificationsService.getPage(requested, page.notifications.length).then(
-      ({ unreadCount: count, notifications, hasMore }) => {
-        setUnreadCount(count);
-        if (requested !== categoryRef.current) return;
-        setPage((current) => {
-          if (!current) return current;
+    setLoadingMore(category);
+    notificationsService.getPage(category, page.notifications.length).then(
+      ({ notifications, hasMore }) => {
+        setPages((current) => {
+          const loaded = current[category];
+          if (!loaded) return current;
           // A notification received meanwhile shifts the pages: skip the repeated ones.
-          const known = new Set(current.notifications.map(({ id }) => id));
+          const known = new Set(loaded.notifications.map(({ id }) => id));
           return {
-            notifications: [...current.notifications, ...notifications.filter(({ id }) => !known.has(id))],
-            hasMore,
+            ...current,
+            [category]: {
+              notifications: [...loaded.notifications, ...notifications.filter(({ id }) => !known.has(id))],
+              hasMore,
+            },
           };
         });
-        setLoadingMore(false);
+        setLoadingMore(null);
       },
       () => {
         setError(true);
-        setLoadingMore(false);
+        setLoadingMore(null);
       },
     );
-  }, [page, loadingMore]);
+  }, [pages, category, loadingMore]);
 
   useEffect(() => {
     void refresh();
@@ -121,21 +142,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       const added = event.notification;
       setUnreadCount(event.unreadCount);
       if (added) {
-        if (inCategory(added, categoryRef.current)) {
-          setPage(
-            (current) =>
-              current && {
-                ...current,
-                // Replaces the previous notification of the same kind from the same actor, as the server does.
-                notifications: [
+        setPages((current) =>
+          mapPages(current, (notifications, each) =>
+            inCategory(added, each)
+              ? [
                   added,
-                  ...current.notifications.filter(
+                  // Replaces the previous notification of the same kind from the same actor, as the server does.
+                  ...notifications.filter(
                     ({ type, actor }) => type !== added.type || !actor || actor.id !== added.actor?.id,
                   ),
-                ],
-              },
-          );
-        }
+                ]
+              : notifications,
+          ),
+        );
         const { actor } = added;
         toast(t(`toast.${added.type}`, { name: actor ? publicNameOf(actor) : "" }), {
           action: {
@@ -145,16 +164,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         });
       } else if (event.read) {
         // Read here or from another tab; none listed means all of them.
-        const read = new Set(event.read);
-        setPage(
-          (current) =>
-            current && {
-              ...current,
-              notifications: current.notifications.map((notification) =>
-                read.size === 0 || read.has(notification.id) ? { ...notification, read: true } : notification,
-              ),
-            },
-        );
+        const read = event.read.length > 0 ? new Set(event.read) : undefined;
+        setPages((current) => mapPages(current, (notifications) => markedRead(notifications, read)));
       } else {
         // A notification was withdrawn.
         void refresh();
@@ -170,39 +181,47 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     return () => source.close();
   }, [refresh, router, t]);
 
-  const markRead = useCallback(
-    (ids: readonly string[]) => {
-      if (ids.length === 0) return;
-      const marked = new Set(ids);
-      setPage(
-        (current) =>
-          current && {
-            ...current,
-            notifications: current.notifications.map((notification) =>
-              marked.has(notification.id) ? { ...notification, read: true } : notification,
-            ),
-          },
-      );
-      // The server sends the exact count back.
-      setUnreadCount((count) => Math.max(0, count - marked.size));
-      notificationsService.markRead([...marked]).catch(() => void refresh());
-    },
-    [refresh],
+  const unreadIds = useCallback(
+    () =>
+      new Set(
+        NOTIFICATION_CATEGORIES.flatMap((each) =>
+          (pages[each]?.notifications ?? []).filter(({ read }) => !read).map(({ id }) => id),
+        ),
+      ),
+    [pages],
   );
+
+  const openPanel = useCallback(() => {
+    setHighlighted(unreadIds());
+    if (unreadCount === 0) return;
+    setUnreadCount(0);
+    setPages((current) => mapPages(current, (notifications) => markedRead(notifications)));
+    notificationsService.markRead().catch(() => void refresh());
+  }, [unreadIds, unreadCount, refresh]);
+
+  const closePanel = useCallback(() => {
+    const arrived = unreadIds();
+    setHighlighted(new Set());
+    if (arrived.size === 0) return;
+    setPages((current) => mapPages(current, (notifications) => markedRead(notifications, arrived)));
+    notificationsService.markRead([...arrived]).catch(() => void refresh());
+  }, [unreadIds, refresh]);
 
   const state = useMemo<NotificationsState>(
     () => ({
       category,
       setCategory,
-      notifications: page?.notifications ?? null,
-      hasMore: page?.hasMore ?? false,
-      loadingMore,
+      notifications: pages[category]?.notifications ?? null,
+      hasMore: pages[category]?.hasMore ?? false,
+      loadingMore: loadingMore === category,
       loadMore,
       unreadCount,
       error,
-      markRead,
+      highlighted,
+      openPanel,
+      closePanel,
     }),
-    [category, setCategory, page, loadingMore, loadMore, unreadCount, error, markRead],
+    [category, pages, loadingMore, loadMore, unreadCount, error, highlighted, openPanel, closePanel],
   );
 
   return <NotificationsContext value={state}>{children}</NotificationsContext>;

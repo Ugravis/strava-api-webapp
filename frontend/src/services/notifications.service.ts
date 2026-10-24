@@ -7,6 +7,7 @@ export const NOTIFICATIONS_STREAM_URL = "/api/notifications/stream";
 export const notificationsService = {
   getPage: (category: NotificationCategory, offset = 0) =>
     apiRequest<NotificationsPage>(`/notifications?${new URLSearchParams({ category, offset: String(offset) })}`),
-  markRead: (ids: string[]) =>
-    apiRequest("/notifications/read", { method: "POST", body: { json: { ids } } }),
+  /** Marks the given notifications read, or all of them. */
+  markRead: (ids?: string[]) =>
+    apiRequest("/notifications/read", { method: "POST", body: { json: ids ? { ids } : {} } }),
 };

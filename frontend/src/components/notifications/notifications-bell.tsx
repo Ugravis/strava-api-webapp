@@ -3,7 +3,7 @@
 import { BellIcon, HeartIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,9 +26,18 @@ import { routes, userProfileHref } from "@/config/routes";
 import type { AppNotification, NotificationCategory } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
-import { useNotifications } from "./notifications-provider";
+import { NOTIFICATION_CATEGORIES, useNotifications } from "./notifications-provider";
 
-const CATEGORIES: readonly NotificationCategory[] = ["all", "likes", "follows"];
+/** A wavy line, drawn with the background color of the element. */
+const WAVE_STYLE: CSSProperties = {
+  maskImage:
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6'%3E%3Cpath d='M0 3q3-3 6 0t6 0' fill='none' stroke='black'/%3E%3C/svg%3E\")",
+  maskRepeat: "repeat-x",
+  maskSize: "12px 6px",
+};
+
+/** Item content is recolored on focus: the heart keeps its own color, inline. */
+const HEART_STYLE: CSSProperties = { color: "var(--color-rose-500)" };
 
 /** Count shown on the bell, capped. */
 function unreadLabel(count: number): string {
@@ -71,26 +80,19 @@ interface NotificationsMenuProps {
 
 /**
  * The notifications in a menu, opened from the given trigger, a page at a
- * time as the list is scrolled. Those shown while it is open are marked read
- * once it closes.
+ * time as the list is scrolled. Opening it clears the unread count; those
+ * unread stay highlighted until it closes.
  */
 export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: NotificationsMenuProps) {
   const t = useTranslations("notifications");
   const now = useNow({ updateInterval: 60_000 });
-  const { category, setCategory, notifications, hasMore, loadingMore, loadMore, error, markRead } =
+  const { category, setCategory, notifications, hasMore, loadingMore, loadMore, error, highlighted, openPanel, closePanel } =
     useNotifications();
-  const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  // Unread notifications shown since the menu opened, whatever the filter.
-  const seen = useRef(new Set<string>());
   const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    for (const { id, read } of notifications ?? []) {
-      if (!read) seen.current.add(id);
-    }
-  }, [open, notifications]);
+  const list = useRef<HTMLDivElement>(null);
+  // Height kept when the filter changes, so that the menu does not jump while open.
+  const [minHeight, setMinHeight] = useState<number>();
 
   // Loads the next page once the end of the list scrolls into view.
   useEffect(() => {
@@ -105,12 +107,13 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
 
   return (
     <DropdownMenu
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) return;
-        markRead([...seen.current]);
-        seen.current = new Set();
+      onOpenChange={(open) => {
+        if (open) {
+          openPanel();
+        } else {
+          closePanel();
+          setMinHeight(undefined);
+        }
       }}
     >
       <DropdownMenuTrigger render={trigger} />
@@ -126,16 +129,17 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
             >
               {t(`category.${category}`)}
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent side="bottom" align="end" alignOffset={0} sideOffset={4}>
+            <DropdownMenuSubContent side="bottom" align="center" alignOffset={0} sideOffset={4}>
               <DropdownMenuRadioGroup
                 value={category}
                 onValueChange={(value: NotificationCategory) => {
+                  setMinHeight(list.current?.offsetHeight);
                   setCategory(value);
                   // Closes the filter list alone, not the menu.
                   setFilterOpen(false);
                 }}
               >
-                {CATEGORIES.map((value) => (
+                {NOTIFICATION_CATEGORIES.map((value) => (
                   <DropdownMenuRadioItem key={value} value={value}>
                     {t(`category.${value}`)}
                   </DropdownMenuRadioItem>
@@ -145,7 +149,7 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
           </DropdownMenuSub>
         </div>
         <DropdownMenuSeparator />
-        <div className="max-h-96 overflow-y-auto">
+        <div ref={list} style={{ minHeight }} className="max-h-96 overflow-y-auto">
           {error && !notifications ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">{t("error")}</p>
           ) : !notifications ? (
@@ -159,11 +163,17 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
             <>
               {groupByPeriod(notifications, now).map(({ period, items }) => (
                 <DropdownMenuGroup key={period} className="flex flex-col gap-1.5 p-1">
-                  <DropdownMenuLabel className="flex items-center gap-2 px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground after:h-px after:flex-1 after:bg-border">
+                  <DropdownMenuLabel className="flex items-center gap-2 px-1.5 py-0 text-[10px] font-normal text-muted-foreground/70">
+                    <span aria-hidden className="h-1.5 flex-1 bg-border/70" style={WAVE_STYLE} />
                     {t(`period.${period}`)}
+                    <span aria-hidden className="h-1.5 flex-1 bg-border/70" style={WAVE_STYLE} />
                   </DropdownMenuLabel>
                   {items.map((notification) => (
-                    <NotificationItem key={notification.id} notification={notification} />
+                    <NotificationItem
+                      key={notification.id}
+                      notification={notification}
+                      unread={!notification.read || highlighted.has(notification.id)}
+                    />
                   ))}
                 </DropdownMenuGroup>
               ))}
@@ -181,11 +191,11 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
   );
 }
 
-function NotificationItem({ notification }: { notification: AppNotification }) {
+function NotificationItem({ notification, unread }: { notification: AppNotification; unread: boolean }) {
   const t = useTranslations("notifications");
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
-  const { actor, read } = notification;
+  const { actor } = notification;
 
   return (
     <DropdownMenuItem
@@ -195,15 +205,14 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
       }
       className={cn(
         "items-start gap-3 py-2 pr-3",
-        !read && "bg-rose-500/5 focus:bg-rose-500/10 dark:bg-rose-500/10 dark:focus:bg-rose-500/15",
+        unread && "bg-rose-500/5 focus:bg-rose-500/10 dark:bg-rose-500/10 dark:focus:bg-rose-500/15",
       )}
     >
       {actor ? (
         <UserAvatar user={actor} className="size-8" />
       ) : (
-        // Kept rose on focus, which recolors the item content.
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-rose-500/10 text-rose-500!">
-          <HeartIcon className="size-4 fill-current text-rose-500!" aria-hidden />
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-rose-500/10">
+          <HeartIcon className="size-4 fill-current" style={HEART_STYLE} aria-hidden />
         </span>
       )}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -217,7 +226,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
           {format.relativeTime(new Date(notification.createdAt), now)}
         </span>
       </span>
-      {!read && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-rose-500" aria-hidden />}
+      {unread && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-rose-500" aria-hidden />}
     </DropdownMenuItem>
   );
 }

@@ -584,6 +584,8 @@ export interface FollowsSummary {
   followingCount: number;
   /** Requests waiting for the current user. */
   requestsCount: number;
+  /** Requests sent by the current user, not accepted yet. */
+  sentRequestsCount: number;
   /** Whether one of them was never seen in the notifications. */
   unseenRequests: boolean;
 }
@@ -602,6 +604,8 @@ export interface AppNotification {
   actor: PublicUser | null;
   read: boolean;
   createdAt: string;
+  /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */
+  followBack: boolean;
 }
 
 /** Filters of the notifications list. */

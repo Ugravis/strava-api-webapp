@@ -3,7 +3,7 @@
 import { BellIcon, HeartIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
+import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,9 +90,6 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
     useNotifications();
   const [filterOpen, setFilterOpen] = useState(false);
   const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
-  const list = useRef<HTMLDivElement>(null);
-  // Height kept when the filter changes, so that the menu does not jump while open.
-  const [minHeight, setMinHeight] = useState<number>();
 
   // Loads the next page once the end of the list scrolls into view.
   useEffect(() => {
@@ -109,10 +106,11 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
     <DropdownMenu
       onOpenChange={(open) => {
         if (open) {
+          // Always opens on every notification.
+          setCategory("all");
           openPanel();
         } else {
           closePanel();
-          setMinHeight(undefined);
         }
       }}
     >
@@ -133,7 +131,6 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
               <DropdownMenuRadioGroup
                 value={category}
                 onValueChange={(value: NotificationCategory) => {
-                  setMinHeight(list.current?.offsetHeight);
                   setCategory(value);
                   // Closes the filter list alone, not the menu.
                   setFilterOpen(false);
@@ -149,7 +146,7 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
           </DropdownMenuSub>
         </div>
         <DropdownMenuSeparator />
-        <div ref={list} style={{ minHeight }} className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto">
           {error && !notifications ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">{t("error")}</p>
           ) : !notifications ? (

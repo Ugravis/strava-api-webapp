@@ -43,7 +43,13 @@ export function RequestAnswerButtons({ username, onAnswered, className }: Reques
 
   return (
     <div className={cn("flex shrink-0 gap-1.5", className)}>
-      <Button size="sm" disabled={pending} onClick={(event) => void answer(event, true)}>
+      <Button
+        size="sm"
+        disabled={pending}
+        onClick={(event) => void answer(event, true)}
+        // Kept within menu items, which recolor their content on focus.
+        className="text-primary-foreground! *:text-primary-foreground!"
+      >
         <CheckIcon aria-hidden />
         {t("accept")}
       </Button>

@@ -1131,7 +1131,11 @@
       "unfollow": "Ne plus suivre",
       "followsYou": "Vous suit",
       "requested": "Demande envoyée",
-      "cancelRequest": "Annuler la demande"
+      "cancelRequest": "Annuler la demande",
+      "confirm": {
+        "title": "Ne plus suivre @{username} ?",
+        "description": "Son profil quittera votre pile de cartes. S'il est privé, il faudra de nouveau demander à le suivre."
+      }
     },
     "counts": {
       "followers": "{count, plural, =0 {abonné} one {abonné} other {abonnés}}",

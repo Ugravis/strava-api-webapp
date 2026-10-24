@@ -4,6 +4,16 @@ import { ClockIcon, UserCheckIcon, UserPlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { errorCodeOf } from "@/lib/api/errors";
 import type { ProfileSummary } from "@/lib/api/types";
@@ -41,8 +51,10 @@ export function FollowButton({
   className,
 }: FollowButtonProps) {
   const t = useTranslations("community.follow");
+  const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
   const [pending, setPending] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const { refresh: refreshSummary } = useFollowsSummary();
 
   const toggle = async () => {
@@ -70,30 +82,57 @@ export function FollowButton({
   };
 
   return (
-    <Button
-      type="button"
-      size={size}
-      variant={state === "none" ? "default" : "outline"}
-      disabled={pending}
-      aria-pressed={state !== "none"}
-      onClick={() => void toggle()}
-      // Says what a click does once hovered: unfollowing, or cancelling the request.
-      className={cn("group/follow shrink-0", className)}
-    >
-      {state === "none" ? (
-        <>
-          <UserPlusIcon aria-hidden />
-          {followsViewer ? t("followBack") : t("follow")}
-        </>
-      ) : (
-        <>
-          {state === "following" ? <UserCheckIcon aria-hidden /> : <ClockIcon aria-hidden />}
-          <span className="group-hover/follow:hidden">{t(state === "following" ? "following" : "requested")}</span>
-          <span className="hidden group-hover/follow:inline">
-            {t(state === "following" ? "unfollow" : "cancelRequest")}
-          </span>
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        type="button"
+        size={size}
+        variant={state === "none" ? "default" : "outline"}
+        disabled={pending}
+        aria-pressed={state !== "none"}
+        // Unfollowing is confirmed first.
+        onClick={() => (state === "following" ? setConfirming(true) : void toggle())}
+        // Says what a click does once hovered: unfollowing, or cancelling the request.
+        className={cn(
+          "group/follow shrink-0",
+          // Kept within menu items, which recolor their content on focus.
+          state === "none" && "text-primary-foreground! *:text-primary-foreground!",
+          className,
+        )}
+      >
+        {state === "none" ? (
+          <>
+            <UserPlusIcon aria-hidden />
+            {followsViewer ? t("followBack") : t("follow")}
+          </>
+        ) : (
+          <>
+            {state === "following" ? <UserCheckIcon aria-hidden /> : <ClockIcon aria-hidden />}
+            <span className="group-hover/follow:hidden">{t(state === "following" ? "following" : "requested")}</span>
+            <span className="hidden group-hover/follow:inline">
+              {t(state === "following" ? "unfollow" : "cancelRequest")}
+            </span>
+          </>
+        )}
+      </Button>
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirm.title", { username })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirm.description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirming(false);
+                void toggle();
+              }}
+            >
+              {t("unfollow")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -36,8 +36,15 @@ const WAVE_STYLE: CSSProperties = {
   maskSize: "12px 6px",
 };
 
-/** Item content is recolored on focus: the heart keeps its own color, inline. */
+/**
+ * Item content is recolored on focus and its background tinted: the heart
+ * keeps its own colors, inline, on an opaque disc.
+ */
 const HEART_STYLE: CSSProperties = { color: "var(--color-rose-500)" };
+const HEART_DISC_STYLE: CSSProperties = {
+  ...HEART_STYLE,
+  backgroundColor: "color-mix(in oklab, var(--color-rose-500) 10%, var(--popover))",
+};
 
 /** Count shown on the bell, capped. */
 function unreadLabel(count: number): string {
@@ -208,7 +215,7 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
       {actor ? (
         <UserAvatar user={actor} className="size-8" />
       ) : (
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-rose-500/10">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full" style={HEART_DISC_STYLE}>
           <HeartIcon className="size-4 fill-current" style={HEART_STYLE} aria-hidden />
         </span>
       )}

@@ -60,9 +60,20 @@ export function ProfilesView() {
   /** Whether the card standing for the follows is shown, which no URL names. */
   const [emptyShown, setEmptyShown] = useState(false);
   const [lastAsked, setLastAsked] = useState(asked);
+  /** The user named by the last move through the deck. */
+  const [moved, setMoved] = useState<string | null>(asked);
+  /**
+   * Bumped when the URL names another user than a move through the deck did,
+   * e.g. from a notification: the page is drawn anew, its dialogs closed.
+   */
+  const [generation, setGeneration] = useState(0);
   if (asked !== lastAsked) {
     setLastAsked(asked);
     setEmptyShown(false);
+    if (asked !== moved) {
+      setMoved(asked);
+      setGeneration((current) => current + 1);
+    }
   }
 
   const loadFollowed = useCallback(
@@ -89,6 +100,7 @@ export function ProfilesView() {
   const showCard = (next: number) => {
     const target = next === 0 ? null : (followed?.[next - 1]?.username ?? null);
     setEmptyShown(next !== 0 && target === null);
+    setMoved(target);
     window.history.replaceState(null, "", target ? userProfileHref(target) : routes.profiles);
   };
 
@@ -169,6 +181,7 @@ export function ProfilesView() {
 
   return (
     <ProfileStage
+      key={generation}
       color={shownColor ?? null}
       top={
         self ? (

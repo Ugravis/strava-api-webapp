@@ -1,6 +1,6 @@
 "use client";
 
-import { HistoryIcon } from "lucide-react";
+import { InboxIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
@@ -50,7 +50,7 @@ export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: s
       <DialogTrigger
         render={<Button variant="ghost" size="icon-sm" aria-label={label} title={label} className="relative" />}
       >
-        <HistoryIcon />
+        <InboxIcon />
         {count > 0 && (
           <span
             aria-hidden

@@ -20,9 +20,10 @@ interface ProfileDeckProps {
   onIndexChange: (index: number) => void;
   /**
    * A card shown in front of the deck, which is then blurred and left still,
-   * with what goes under it in place of the chevrons.
+   * with what goes under it in place of the chevrons; a click on the deck
+   * calls `onBack`.
    */
-  front?: { content: ReactNode; footer: ReactNode };
+  front?: { content: ReactNode; footer: ReactNode; onBack?: () => void };
 }
 
 /** Drag past which a swipe changes the card. */
@@ -95,8 +96,9 @@ export function ProfileDeck({ items, index, onIndexChange, front }: ProfileDeckP
                 "relative col-start-1 row-start-1 transition-[translate,rotate,scale,opacity,filter] duration-300 ease-out will-change-transform motion-reduce:transition-none",
                 place === 0 ? "z-20" : peeking ? "z-10" : "pointer-events-none z-0",
                 PLACES[place],
-                front && "pointer-events-none blur-[3px]",
+                front && "cursor-pointer blur-[3px]",
               )}
+              onClick={front?.onBack}
               aria-hidden={place !== 0 || front !== undefined}
             >
               <div inert={place !== 0 || front !== undefined} className="h-full">

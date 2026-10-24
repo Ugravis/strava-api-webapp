@@ -7,10 +7,11 @@ import {
   LockIcon,
   Share2Icon,
   TrainFrontIcon,
+  XIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { type ReactNode, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useRef, useState } from "react";
 import { FollowCounts } from "@/components/community/follow-counts";
 import { AppWordmark } from "@/components/brand/app-logo";
 import { BadgeMedal } from "@/components/distances/badge-medal";
@@ -43,14 +44,29 @@ interface ProfileCardProps {
   onFollowsClosed?: () => void;
   /** Outside of the follows of the current user: drawn with a dashed border. */
   outside?: boolean;
+  /** Shows a button closing the card, e.g. back to the deck. */
+  onClose?: () => void;
 }
+
+/**
+ * Long dashes around the card, which a dashed border cannot draw: a rounded
+ * rectangle as wide as the card, its stroke half outside of it, so that the
+ * half left fills the transparent border.
+ */
+const dashedOutline = (color: string): CSSProperties => ({
+  borderColor: "transparent",
+  backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' rx='14' fill='none' stroke='${color}' stroke-width='6' stroke-dasharray='18 10'/></svg>`,
+  )}")`,
+  backgroundOrigin: "border-box",
+});
 
 /** Glass buttons over the banner, readable whatever its hue. */
 const BANNER_BUTTON =
   "bg-black/25 text-white backdrop-blur-sm hover:bg-black/40 hover:text-white dark:hover:bg-black/40";
 
 /** A profile as every user sees it: who they are, who follows whom, and their showcase unless private. */
-export function ProfileCard({ profile, action, onFollowsClosed, outside = false }: ProfileCardProps) {
+export function ProfileCard({ profile, action, onFollowsClosed, outside = false, onClose }: ProfileCardProps) {
   const t = useTranslations("profile");
   const tCommunity = useTranslations("community");
   const tFamilies = useTranslations("distances.families");
@@ -69,10 +85,10 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false 
       ref={card}
       className={cn(
         "relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0",
-        outside && "border-[3px] border-dashed",
+        outside && "border-[3px]",
       )}
       // The dashes in the full hue, to stand out.
-      style={outside ? { borderColor: profile.color ?? DEFAULT_PROFILE_COLOR } : colors.border}
+      style={outside ? dashedOutline(profile.color ?? DEFAULT_PROFILE_COLOR) : colors.border}
     >
       <div className="pointer-events-none absolute inset-x-0 top-24 bottom-0 -z-10" style={colors.veil} aria-hidden />
       <ProfileBanner seed={profile.username} style={colors.banner} className="h-24" />
@@ -104,6 +120,18 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false 
             title={t("image.open")}
           >
             <DownloadIcon />
+          </Button>
+        )}
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={BANNER_BUTTON}
+            onClick={onClose}
+            aria-label={t("close")}
+            title={t("close")}
+          >
+            <XIcon />
           </Button>
         )}
       </div>

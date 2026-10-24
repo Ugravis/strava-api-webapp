@@ -4,10 +4,11 @@ import { EyeIcon, EyeOffIcon, LayersIcon, PencilIcon, UndoIcon } from "lucide-re
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { FollowButton, type FollowState, followStateOf } from "@/components/community/follow-button";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { RequestAnswerButtons } from "@/components/community/request-answer-buttons";
+import { useNotifications } from "@/components/notifications/notifications-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCurrentUser } from "@/components/user/user-provider";
@@ -91,10 +92,24 @@ export function ProfilesView() {
     window.history.replaceState(null, "", target ? userProfileHref(target) : routes.profiles);
   };
 
+  // Shown again whenever named, and on every notification: a request may have come in or been withdrawn.
+  const { revision } = useNotifications();
+  const refreshShown = useEffectEvent(() => {
+    if (shownName && shownName in others.profiles) others.reload(shownName);
+  });
+  useEffect(() => refreshShown(), [shownName, revision]);
+
+  /** Unfollowed, a user leaves the deck: back to it, without them. */
+  const onDeckFollow = (username: string) => (state: FollowState) => {
+    others.reload(username);
+    if (state === "none") showCard(0);
+  };
+
   const otherCard = (other: PublicProfile, onFollowChange: (state: FollowState) => void, isOutside = false) => (
     <ProfileCard
       profile={other}
       outside={isOutside}
+      onClose={isOutside ? () => showCard(0) : undefined}
       onFollowsClosed={() => others.reload(other.username)}
       action={
         <FollowButton
@@ -134,7 +149,7 @@ export function ProfilesView() {
             key: summary.username,
             label: publicNameOf(summary),
             content: other ? (
-              otherCard(other, () => others.reload(summary.username))
+              otherCard(other, onDeckFollow(summary.username))
             ) : (
               <ProfileCardSkeleton />
             ),
@@ -223,6 +238,7 @@ export function ProfilesView() {
                   ) : (
                     <ProfileCardSkeleton />
                   ),
+                  onBack: () => showCard(0),
                   footer: (
                     <p className="flex items-center gap-1.5 text-center text-xs text-balance text-muted-foreground">
                       <EyeOffIcon className="size-3.5 shrink-0" aria-hidden />

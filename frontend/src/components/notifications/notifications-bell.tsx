@@ -37,12 +37,12 @@ const WAVE_STYLE: CSSProperties = {
 };
 
 /**
- * Item content is recolored on focus and its background tinted: the heart
- * keeps its own colors, inline, on an opaque disc.
+ * Item content, down to the icon paths, is recolored on focus: the heart is
+ * painted with the color itself, as `currentColor` would follow, on an opaque
+ * disc that the tinted background does not show through.
  */
-const HEART_STYLE: CSSProperties = { color: "var(--color-rose-500)" };
+const HEART_STYLE: CSSProperties = { fill: "var(--color-rose-500)", stroke: "var(--color-rose-500)" };
 const HEART_DISC_STYLE: CSSProperties = {
-  ...HEART_STYLE,
   backgroundColor: "color-mix(in oklab, var(--color-rose-500) 10%, var(--popover))",
 };
 
@@ -216,7 +216,7 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
         <UserAvatar user={actor} className="size-8" />
       ) : (
         <span className="grid size-8 shrink-0 place-items-center rounded-full" style={HEART_DISC_STYLE}>
-          <HeartIcon className="size-4 fill-current" style={HEART_STYLE} aria-hidden />
+          <HeartIcon className="size-4" style={HEART_STYLE} aria-hidden />
         </span>
       )}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">

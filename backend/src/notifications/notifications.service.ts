@@ -202,6 +202,10 @@ export class NotificationsService {
     }
   }
 
+  hasUnread(userId: string, type: NotificationType): Promise<boolean> {
+    return this.notifications.existsBy({ userId, type, readAt: IsNull() });
+  }
+
   private unreadCount(userId: string): Promise<number> {
     return this.notifications.countBy({ userId, readAt: IsNull() });
   }

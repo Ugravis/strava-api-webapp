@@ -49,11 +49,17 @@ describe('FollowsService', () => {
     profilePrivate: false,
   });
   let follows: jest.Mocked<
-    Pick<Repository<Follow>, 'insert' | 'delete' | 'findOneBy' | 'update'>
+    Pick<
+      Repository<Follow>,
+      'insert' | 'delete' | 'findOneBy' | 'update' | 'countBy'
+    >
   >;
   let users: jest.Mocked<Pick<Repository<User>, 'findOneBy'>>;
   let notifications: jest.Mocked<
-    Pick<NotificationsService, 'notify' | 'withdraw' | 'discard' | 'convert'>
+    Pick<
+      NotificationsService,
+      'notify' | 'withdraw' | 'discard' | 'convert' | 'hasUnread'
+    >
   >;
   let service: FollowsService;
 
@@ -63,6 +69,7 @@ describe('FollowsService', () => {
       delete: jest.fn(),
       findOneBy: jest.fn(),
       update: jest.fn(),
+      countBy: jest.fn(),
     };
     users = { findOneBy: jest.fn() };
     notifications = {
@@ -70,6 +77,7 @@ describe('FollowsService', () => {
       withdraw: jest.fn(),
       discard: jest.fn(),
       convert: jest.fn(),
+      hasUnread: jest.fn(),
     };
     service = new FollowsService(
       follows as unknown as Repository<Follow>,
@@ -202,6 +210,29 @@ describe('FollowsService', () => {
       'other-id',
       'follow_request',
       'viewer-id',
+    );
+  });
+
+  it('sums up the follows and the requests of the viewer', async () => {
+    follows.countBy.mockResolvedValueOnce(4).mockResolvedValueOnce(2);
+    notifications.hasUnread.mockResolvedValue(true);
+
+    await expect(service.summary(viewer)).resolves.toEqual({
+      followingCount: 4,
+      requestsCount: 2,
+      unseenRequests: true,
+    });
+    expect(follows.countBy).toHaveBeenCalledWith({
+      followerId: 'viewer-id',
+      pending: false,
+    });
+    expect(follows.countBy).toHaveBeenCalledWith({
+      followedId: 'viewer-id',
+      pending: true,
+    });
+    expect(notifications.hasUnread).toHaveBeenCalledWith(
+      'viewer-id',
+      'follow_request',
     );
   });
 });

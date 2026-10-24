@@ -2,8 +2,10 @@
 
 import { BellIcon, HeartIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
+import { RequestAnswerButtons } from "@/components/community/request-answer-buttons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -199,16 +201,18 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
   const t = useTranslations("notifications");
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
+  const router = useRouter();
   const { actor } = notification;
+  // An anonymous like is counted on the own profile.
+  const href = actor ? userProfileHref(actor.username) : routes.profiles;
+  // A request is answered from the notification itself: no buttons within a link.
+  const request = actor && notification.type === "follow_request";
 
   return (
     <DropdownMenuItem
-      // A request is answered from the own profile, where an anonymous like is counted.
-      render={
-        <Link href={actor && notification.type !== "follow_request" ? userProfileHref(actor.username) : routes.profile} />
-      }
+      {...(request ? { onClick: () => router.push(href) } : { render: <Link href={href} /> })}
       className={cn(
-        "items-start gap-3 py-2 pr-3",
+        "group/notification items-start gap-3 py-2 pr-3",
         unread && "bg-rose-500/5 focus:bg-rose-500/10 dark:bg-rose-500/10 dark:focus:bg-rose-500/15",
       )}
     >
@@ -223,12 +227,17 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
         <span className="text-sm leading-snug whitespace-normal">
           {t.rich(notification.type, {
             name: actor ? publicNameOf(actor) : "",
-            b: (chunks) => <span className="font-semibold">{chunks}</span>,
+            b: (chunks) => (
+              <span className="font-semibold underline-offset-2 group-hover/notification:underline group-data-highlighted/notification:underline">
+                {chunks}
+              </span>
+            ),
           })}
         </span>
         <span className="text-xs text-muted-foreground">
           {format.relativeTime(new Date(notification.createdAt), now)}
         </span>
+        {request && <RequestAnswerButtons username={actor.username} className="mt-1" />}
       </span>
       {unread && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-rose-500" aria-hidden />}
     </DropdownMenuItem>

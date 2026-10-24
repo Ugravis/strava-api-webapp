@@ -595,13 +595,23 @@ export interface AppNotification {
   createdAt: string;
 }
 
-export interface NotificationsOverview {
+/** Filters of the notifications list. */
+export type NotificationCategory = "all" | "likes" | "follows";
+
+export interface NotificationsPage {
   notifications: AppNotification[];
+  /** Whether older notifications follow. */
+  hasMore: boolean;
   unreadCount: number;
 }
 
-/** Event received in real time: the new unread count, with the notification that changed it, if one was added. */
+/**
+ * Event received in real time: the new unread count, with the notification
+ * that changed it, if one was added, or the ones marked read.
+ */
 export interface NotificationEvent {
   unreadCount: number;
   notification?: AppNotification;
+  /** Marked read; every notification when empty. */
+  read?: string[];
 }

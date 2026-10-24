@@ -94,21 +94,35 @@ export class FollowsService {
     private readonly showcases: ProfileShowcaseService,
   ) {}
 
-  /** Users whose username or display name contains the text, those starting with it first. */
-  async search(viewer: User, text: string): Promise<ProfileSummary[]> {
+  /**
+   * A page of the users whose username or display name contains the text,
+   * those the viewer follows first, then those starting with it.
+   */
+  async search(
+    viewer: User,
+    text: string,
+    offset: number,
+  ): Promise<ProfileSummary[]> {
     const lowered = text.toLowerCase();
     const found = await this.users
       .createQueryBuilder('user')
+      .leftJoin(
+        Follow,
+        'follow',
+        'follow.followed_id = user.id AND follow.follower_id = :viewerId AND NOT follow.pending',
+      )
       .where('user.id <> :viewerId', { viewerId: viewer.id })
       .andWhere(
         '(user.username LIKE :contains OR lower(user.display_name) LIKE :contains)',
         { contains: `%${likeEscaped(lowered)}%` },
       )
-      .orderBy(
+      .orderBy('CASE WHEN follow.follower_id IS NULL THEN 1 ELSE 0 END')
+      .addOrderBy(
         'CASE WHEN user.username LIKE :prefix OR lower(user.display_name) LIKE :prefix THEN 0 ELSE 1 END',
       )
       .addOrderBy('user.username')
       .setParameter('prefix', `${likeEscaped(lowered)}%`)
+      .offset(offset)
       .limit(SEARCH_LIMIT)
       .getMany();
     return this.summaries(viewer, found);

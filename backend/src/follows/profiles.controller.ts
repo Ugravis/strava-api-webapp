@@ -33,9 +33,9 @@ export class ProfilesController {
   @Get()
   search(
     @CurrentUser() user: User,
-    @Query() { q }: SearchProfilesQueryDto,
+    @Query() { q, offset }: SearchProfilesQueryDto,
   ): Promise<ProfileSummary[]> {
-    return this.follows.search(user, q);
+    return this.follows.search(user, q, offset);
   }
 
   /** Users asking to follow the private profile of the current user. */

@@ -31,7 +31,7 @@ function countLabel(count: number): string {
  */
 export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: string) => void }) {
   const t = useTranslations("profile.requests");
-  const { summary } = useFollowsSummary();
+  const { summary, refresh } = useFollowsSummary();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<RequestsTab>("received");
   const count = summary?.requestsCount ?? 0;
@@ -43,8 +43,11 @@ export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: s
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        if (!next) return;
+        // A request sent may have been declined meanwhile, which nothing tells.
+        refresh();
         // The stream then updates the notifications and the summary.
-        if (next && summary?.unseenRequests) notificationsService.markReadOfType("follow_request").catch(() => {});
+        if (summary?.unseenRequests) notificationsService.markReadOfType("follow_request").catch(() => {});
       }}
     >
       <DialogTrigger

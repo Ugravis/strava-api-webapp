@@ -448,7 +448,11 @@
     },
     "search": {
       "open": "Rechercher un utilisateur",
-      "title": "Rechercher"
+      "title": "Rechercher",
+      "following": "Vos abonnements",
+      "followers": "Vos abonnés",
+      "noSuggestions": "Vous ne suivez personne et personne ne vous suit encore.",
+      "error": "Les suggestions n'ont pas pu être chargées."
     },
     "close": "Retourner à la pile de cartes"
   },

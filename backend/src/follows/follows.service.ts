@@ -49,12 +49,23 @@ export interface PublicProfile extends ProfileSummary {
   liked: boolean;
   /** Whether they follow the viewer. */
   followsViewer: boolean;
+  /** Whether they asked to follow the private profile of the viewer, not accepted yet. */
+  requestedViewer: boolean;
   /** Whether it is the profile of the viewer. */
   self: boolean;
   /** Null when hidden, or when showcases are disabled. */
   showcase: ProfileShowcase | null;
-  /** Follow requests waiting for the viewer; null on the profile of someone else. */
-  requestsCount: number | null;
+}
+
+/** What the navigation and the profile page tell about the follows of the viewer. */
+export interface FollowsSummary {
+  followingCount: number;
+  /** Requests waiting for the viewer. */
+  requestsCount: number;
+  /** Requests sent by the viewer, not accepted yet. */
+  sentRequestsCount: number;
+  /** Whether one of them was never seen in the notifications. */
+  unseenRequests: boolean;
 }
 
 export type FollowDirection = 'followers' | 'following';
@@ -83,21 +94,35 @@ export class FollowsService {
     private readonly showcases: ProfileShowcaseService,
   ) {}
 
-  /** Users whose username or display name contains the text, those starting with it first. */
-  async search(viewer: User, text: string): Promise<ProfileSummary[]> {
+  /**
+   * A page of the users whose username or display name contains the text,
+   * those the viewer follows first, then those starting with it.
+   */
+  async search(
+    viewer: User,
+    text: string,
+    offset: number,
+  ): Promise<ProfileSummary[]> {
     const lowered = text.toLowerCase();
     const found = await this.users
       .createQueryBuilder('user')
+      .leftJoin(
+        Follow,
+        'follow',
+        'follow.followed_id = user.id AND follow.follower_id = :viewerId AND NOT follow.pending',
+      )
       .where('user.id <> :viewerId', { viewerId: viewer.id })
       .andWhere(
         '(user.username LIKE :contains OR lower(user.display_name) LIKE :contains)',
         { contains: `%${likeEscaped(lowered)}%` },
       )
-      .orderBy(
+      .orderBy('CASE WHEN follow.follower_id IS NULL THEN 1 ELSE 0 END')
+      .addOrderBy(
         'CASE WHEN user.username LIKE :prefix OR lower(user.display_name) LIKE :prefix THEN 0 ELSE 1 END',
       )
       .addOrderBy('user.username')
       .setParameter('prefix', `${likeEscaped(lowered)}%`)
+      .offset(offset)
       .limit(SEARCH_LIMIT)
       .getMany();
     return this.summaries(viewer, found);
@@ -110,7 +135,7 @@ export class FollowsService {
       followersCount,
       followingCount,
       viewerFollow,
-      followsViewer,
+      followOfViewer,
       distinctions,
       likesCount,
       liked,
@@ -118,11 +143,7 @@ export class FollowsService {
       this.follows.countBy({ followedId: user.id, pending: false }),
       this.follows.countBy({ followerId: user.id, pending: false }),
       this.follows.findOneBy({ followerId: viewer.id, followedId: user.id }),
-      this.follows.existsBy({
-        followerId: user.id,
-        followedId: viewer.id,
-        pending: false,
-      }),
+      this.follows.findOneBy({ followerId: user.id, followedId: viewer.id }),
       this.distinctions.find({
         where: { userId: user.id },
         order: { awardedAt: 'ASC' },
@@ -132,12 +153,7 @@ export class FollowsService {
     ]);
     const followed = viewerFollow?.pending === false;
     const visible = self || !user.profilePrivate || followed;
-    const [showcase, requestsCount] = await Promise.all([
-      visible ? this.showcases.of(user.id) : null,
-      self
-        ? this.follows.countBy({ followedId: user.id, pending: true })
-        : null,
-    ]);
+    const showcase = visible ? await this.showcases.of(user.id) : null;
     return {
       ...toPublicUser(user),
       followed,
@@ -158,10 +174,10 @@ export class FollowsService {
       followingCount,
       likesCount,
       liked,
-      followsViewer,
+      followsViewer: followOfViewer?.pending === false,
+      requestedViewer: followOfViewer?.pending === true,
       self,
       showcase,
-      requestsCount,
     };
   }
 
@@ -286,6 +302,32 @@ export class FollowsService {
       viewer,
       page.map((follow) => follow.follower!),
     );
+  }
+
+  /** A page of the users the viewer asked to follow, not accepted yet, the latest first. */
+  async sentRequests(viewer: User, offset: number): Promise<ProfileSummary[]> {
+    const page = await this.follows.find({
+      where: { followerId: viewer.id, pending: true },
+      relations: { followed: true },
+      order: { createdAt: 'DESC' },
+      skip: offset,
+      take: FOLLOWS_PAGE_SIZE,
+    });
+    return this.summaries(
+      viewer,
+      page.map((follow) => follow.followed!),
+    );
+  }
+
+  async summary(viewer: User): Promise<FollowsSummary> {
+    const [followingCount, requestsCount, sentRequestsCount, unseenRequests] =
+      await Promise.all([
+        this.follows.countBy({ followerId: viewer.id, pending: false }),
+        this.follows.countBy({ followedId: viewer.id, pending: true }),
+        this.follows.countBy({ followerId: viewer.id, pending: true }),
+        this.notifications.hasUnread(viewer.id, 'follow_request'),
+      ]);
+    return { followingCount, requestsCount, sentRequestsCount, unseenRequests };
   }
 
   /** Makes the profile of the viewer private, or public: pending requests are then accepted. */

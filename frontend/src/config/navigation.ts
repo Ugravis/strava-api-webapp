@@ -1,6 +1,7 @@
-import { HouseIcon, MapIcon, TrophyIcon, UserIcon, type LucideIcon } from "lucide-react";
+import { HouseIcon, MapIcon, TrophyIcon, UsersIcon, type LucideIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
+import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { AchievementTabsNav } from "@/components/distances/achievement-tabs-nav";
 import { useOpenMapModule } from "@/components/map/map-module-channel";
 import { MapModulesNav } from "@/components/map/map-modules-nav";
@@ -15,12 +16,14 @@ export interface QuickAccessProps {
 export interface NavigationItem {
   href: string;
   /** Key in the `nav` translation namespace. */
-  labelKey: "dashboard" | "map" | "distances" | "profile";
+  labelKey: "dashboard" | "map" | "distances" | "profiles";
   icon: LucideIcon;
   /** Links into the section, unfolded under its entry on hover and while in the section, together in a box. */
   quickAccess?: ComponentType<QuickAccessProps>;
   /** Whether one of the links of the quick access is active: the entry itself is then not marked active. */
   useQuickAccessActive?: () => boolean;
+  /** Count shown at the end of the entry; null for none. */
+  useCount?: () => number | null;
 }
 
 /** Main sidebar entries. New sections only need to be declared here. */
@@ -40,5 +43,14 @@ export const mainNavigation: NavigationItem[] = [
     quickAccess: AchievementTabsNav,
     useQuickAccessActive: () => usePathname() === routes.achievements,
   },
-  { href: routes.profile, labelKey: "profile", icon: UserIcon },
+  {
+    href: routes.profiles,
+    labelKey: "profiles",
+    icon: UsersIcon,
+    // The cards of the deck: the own one, then one per followed user.
+    useCount: () => {
+      const { summary } = useFollowsSummary();
+      return summary && summary.followingCount + 1;
+    },
+  },
 ];

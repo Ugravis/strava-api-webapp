@@ -60,6 +60,8 @@ interface NotificationsState {
   /** Loads the next page of the category, if any. */
   loadMore: () => void;
   unreadCount: number;
+  /** Bumped on every event of the stream, for what depends on the notifications to fetch itself again. */
+  revision: number;
   error: boolean;
   /** Unread when the panel opened, still shown as such while it is open. */
   highlighted: ReadonlySet<string>;
@@ -86,6 +88,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [loadingMore, setLoadingMore] = useState<NotificationCategory | null>(null);
   const [error, setError] = useState(false);
   const [highlighted, setHighlighted] = useState<ReadonlySet<string>>(new Set());
+  const [revision, setRevision] = useState(0);
 
   const refresh = useCallback(
     () =>
@@ -141,6 +144,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       const event = JSON.parse(message.data) as NotificationEvent;
       const added = event.notification;
       setUnreadCount(event.unreadCount);
+      setRevision((current) => current + 1);
       if (added) {
         setPages((current) =>
           mapPages(current, (notifications, each) =>
@@ -159,7 +163,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         toast(t(`toast.${added.type}`, { name: actor ? publicNameOf(actor) : "" }), {
           action: {
             label: t("view"),
-            onClick: () => router.push(actor ? userProfileHref(actor.username) : routes.profile),
+            onClick: () => router.push(actor ? userProfileHref(actor.username) : routes.profiles),
           },
         });
       } else if (event.read) {
@@ -216,12 +220,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       loadingMore: loadingMore === category,
       loadMore,
       unreadCount,
+      revision,
       error,
       highlighted,
       openPanel,
       closePanel,
     }),
-    [category, pages, loadingMore, loadMore, unreadCount, error, highlighted, openPanel, closePanel],
+    [category, pages, loadingMore, loadMore, unreadCount, revision, error, highlighted, openPanel, closePanel],
   );
 
   return <NotificationsContext value={state}>{children}</NotificationsContext>;

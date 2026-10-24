@@ -18,6 +18,12 @@ interface ProfileDeckProps {
   items: DeckItem[];
   index: number;
   onIndexChange: (index: number) => void;
+  /**
+   * A card shown in front of the deck, which is then blurred and left still,
+   * with what goes under it in place of the chevrons; a click on the deck
+   * calls `onBack`.
+   */
+  front?: { content: ReactNode; footer: ReactNode; onBack?: () => void };
 }
 
 /** Drag past which a swipe changes the card. */
@@ -41,9 +47,11 @@ const PLACES: Record<number, string> = {
  * behind it on each side, in a loop. Changed by the chevrons, a click on a
  * card behind, a swipe or the arrow keys.
  */
-export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
+export function ProfileDeck({ items, index, onIndexChange, front }: ProfileDeckProps) {
   const t = useTranslations("profile.deck");
   const count = items.length;
+  // The deck is still behind a card in front.
+  const movable = !front && count > 1;
   const dragStart = useRef<number | null>(null);
   const go = (step: number) => onIndexChange((index + step + count) % count);
   /** Shortest way from the shown card, around the loop. */
@@ -58,11 +66,11 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
       aria-label={t("label")}
       className="flex w-full flex-col items-center gap-3"
       onKeyDown={(event) => {
-        if (count < 2 || event.target !== event.currentTarget) return;
+        if (!movable || event.target !== event.currentTarget) return;
         if (event.key === "ArrowLeft") go(-1);
         if (event.key === "ArrowRight") go(1);
       }}
-      tabIndex={count > 1 ? 0 : undefined}
+      tabIndex={movable ? 0 : undefined}
     >
       <div
         className={cn("relative grid grid-cols-[minmax(0,1fr)] touch-pan-y", CARD_WIDTH)}
@@ -70,7 +78,7 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
           dragStart.current = event.clientX;
         }}
         onPointerUp={(event) => {
-          if (dragStart.current === null || count < 2) return;
+          if (dragStart.current === null || !movable) return;
           const dragged = event.clientX - dragStart.current;
           dragStart.current = null;
           if (Math.abs(dragged) > SWIPE_PX) go(dragged < 0 ? 1 : -1);
@@ -85,16 +93,18 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
               key={item.key}
               // All the cards share the one cell of the grid, stretched to the tallest: they all have its size.
               className={cn(
-                "relative col-start-1 row-start-1 transition-[translate,rotate,scale,opacity] duration-300 ease-out will-change-transform motion-reduce:transition-none",
+                "relative col-start-1 row-start-1 transition-[translate,rotate,scale,opacity,filter] duration-300 ease-out will-change-transform motion-reduce:transition-none",
                 place === 0 ? "z-20" : peeking ? "z-10" : "pointer-events-none z-0",
                 PLACES[place],
+                front && "cursor-pointer blur-[3px]",
               )}
-              aria-hidden={place !== 0}
+              onClick={front?.onBack}
+              aria-hidden={place !== 0 || front !== undefined}
             >
-              <div inert={place !== 0} className="h-full">
+              <div inert={place !== 0 || front !== undefined} className="h-full">
                 {item.content}
               </div>
-              {peeking && (
+              {peeking && !front && (
                 <button
                   type="button"
                   className="absolute inset-0 cursor-pointer rounded-xl"
@@ -106,8 +116,10 @@ export function ProfileDeck({ items, index, onIndexChange }: ProfileDeckProps) {
             </div>
           );
         })}
+        {front && <div className="relative z-30 col-start-1 row-start-1">{front.content}</div>}
       </div>
-      {count > 1 && (
+      {front?.footer}
+      {movable && (
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon-sm" onClick={() => go(-1)} aria-label={t("previous")}>
             <ChevronLeftIcon />

@@ -68,7 +68,7 @@ export function SiteFooter({ authenticated = false }: { authenticated?: boolean 
         {
           title: t("account"),
           links: [
-            { label: tNav("profile"), href: routes.profile },
+            { label: tNav("profiles"), href: routes.profiles },
             { label: tNav("settings"), href: routes.settings },
           ],
         },

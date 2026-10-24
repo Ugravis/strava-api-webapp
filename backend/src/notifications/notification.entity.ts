@@ -15,8 +15,13 @@ import { User } from '../users/user.entity';
  * accepted the request of the user. `profile_like`: the actor liked the
  * profile of the user, who is never told by whom.
  */
-export type NotificationType =
-  'follow' | 'follow_request' | 'follow_accepted' | 'profile_like';
+export const NOTIFICATION_TYPES = [
+  'follow',
+  'follow_request',
+  'follow_accepted',
+  'profile_like',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** Filters of the notifications list. */
 export const NOTIFICATION_CATEGORIES = ['all', 'likes', 'follows'] as const;

@@ -25,6 +25,13 @@ export class SearchProfilesQueryDto {
   @MinLength(2)
   @MaxLength(50)
   q!: string;
+
+  /** Users skipped, in the order of the results. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset: number = 0;
 }
 
 export class FollowsPageQueryDto {

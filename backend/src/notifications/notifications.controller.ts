@@ -38,9 +38,9 @@ export class NotificationsController {
   @HttpCode(204)
   markRead(
     @CurrentUser() user: User,
-    @Body() { ids }: MarkReadDto,
+    @Body() { ids, type }: MarkReadDto,
   ): Promise<void> {
-    return this.notifications.markRead(user.id, ids);
+    return this.notifications.markRead(user.id, ids, type);
   }
 
   /** Server-sent events: the unread count and new notifications, as they happen. */

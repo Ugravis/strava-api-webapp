@@ -62,6 +62,8 @@ export interface FollowsSummary {
   followingCount: number;
   /** Requests waiting for the viewer. */
   requestsCount: number;
+  /** Requests sent by the viewer, not accepted yet. */
+  sentRequestsCount: number;
   /** Whether one of them was never seen in the notifications. */
   unseenRequests: boolean;
 }
@@ -304,12 +306,14 @@ export class FollowsService {
   }
 
   async summary(viewer: User): Promise<FollowsSummary> {
-    const [followingCount, requestsCount, unseenRequests] = await Promise.all([
-      this.follows.countBy({ followerId: viewer.id, pending: false }),
-      this.follows.countBy({ followedId: viewer.id, pending: true }),
-      this.notifications.hasUnread(viewer.id, 'follow_request'),
-    ]);
-    return { followingCount, requestsCount, unseenRequests };
+    const [followingCount, requestsCount, sentRequestsCount, unseenRequests] =
+      await Promise.all([
+        this.follows.countBy({ followerId: viewer.id, pending: false }),
+        this.follows.countBy({ followedId: viewer.id, pending: true }),
+        this.follows.countBy({ followerId: viewer.id, pending: true }),
+        this.notifications.hasUnread(viewer.id, 'follow_request'),
+      ]);
+    return { followingCount, requestsCount, sentRequestsCount, unseenRequests };
   }
 
   /** Makes the profile of the viewer private, or public: pending requests are then accepted. */

@@ -214,12 +214,16 @@ describe('FollowsService', () => {
   });
 
   it('sums up the follows and the requests of the viewer', async () => {
-    follows.countBy.mockResolvedValueOnce(4).mockResolvedValueOnce(2);
+    follows.countBy
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(1);
     notifications.hasUnread.mockResolvedValue(true);
 
     await expect(service.summary(viewer)).resolves.toEqual({
       followingCount: 4,
       requestsCount: 2,
+      sentRequestsCount: 1,
       unseenRequests: true,
     });
     expect(follows.countBy).toHaveBeenCalledWith({

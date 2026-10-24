@@ -32,7 +32,11 @@ export function FollowRequestBox({ username, onAnswered, onClose }: FollowReques
       aria-expanded={!folded}
       aria-label={t(folded ? "unfold" : "fold")}
       title={t(folded ? "unfold" : "fold")}
-      className={cn("text-muted-foreground", !folded && "absolute top-1.5 left-1.5")}
+      // No background for being expanded, as ghost buttons have: only on hover.
+      className={cn(
+        "text-muted-foreground not-hover:aria-expanded:bg-transparent not-hover:aria-expanded:text-muted-foreground",
+        !folded && "absolute top-1.5 left-1.5",
+      )}
     >
       {folded ? <ChevronDownIcon /> : <ChevronUpIcon />}
     </Button>

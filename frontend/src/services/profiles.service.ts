@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { FollowDirection, FollowStatus, ProfileSummary, PublicProfile } from "@/lib/api/types";
+import type { FollowDirection, FollowStatus, FollowsSummary, ProfileSummary, PublicProfile } from "@/lib/api/types";
 
 const profilePath = (username: string) => `/profiles/${encodeURIComponent(username)}`;
 
@@ -19,6 +19,9 @@ export const profilesService = {
   removeFollower: (username: string) => apiRequest(`${profilePath(username)}/follower`, { method: "DELETE" }),
   /** Users asking to follow the current one, after the `offset` latest ones. */
   requests: (offset: number) => apiRequest<ProfileSummary[]>(`/profiles/me/requests?offset=${offset}`),
+  /** Users the current one asked to follow, not accepted yet, after the `offset` latest ones. */
+  sentRequests: (offset: number) => apiRequest<ProfileSummary[]>(`/profiles/me/sent-requests?offset=${offset}`),
+  summary: () => apiRequest<FollowsSummary>("/profiles/me/summary"),
   setPrivacy: (isPrivate: boolean) =>
     apiRequest("/profiles/me/privacy", { method: "PUT", body: { json: { private: isPrivate } } }),
   /** Followers of the user, or the users they follow, after the `offset` latest ones. */

@@ -9,6 +9,7 @@ import { errorCodeOf } from "@/lib/api/errors";
 import type { ProfileSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { profilesService } from "@/services/profiles.service";
+import { useFollowsSummary } from "./follows-summary-provider";
 
 /** Whether the current user follows a user, asked to follow their private profile, or neither. */
 export type FollowState = "none" | "requested" | "following";
@@ -42,6 +43,7 @@ export function FollowButton({
   const t = useTranslations("community.follow");
   const tErrors = useTranslations("errors");
   const [pending, setPending] = useState(false);
+  const { refresh: refreshSummary } = useFollowsSummary();
 
   const toggle = async () => {
     setPending(true);
@@ -63,6 +65,7 @@ export function FollowButton({
       toast.error(tErrors(errorCodeOf(error)));
     } finally {
       setPending(false);
+      refreshSummary();
     }
   };
 

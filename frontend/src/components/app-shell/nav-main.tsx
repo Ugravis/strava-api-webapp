@@ -7,6 +7,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -19,6 +20,7 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 const noQuickAccessActive = () => false;
+const noCount = () => null;
 
 export function NavMain({ items }: { items: NavigationItem[] }) {
   return (
@@ -46,6 +48,8 @@ function NavEntry({ item }: { item: NavigationItem }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const useQuickAccessActive = item.useQuickAccessActive ?? noQuickAccessActive;
   const quickAccessActive = useQuickAccessActive();
+  const useCount = item.useCount ?? noCount;
+  const count = useCount();
   const label = t(item.labelKey);
   const inSection = isActive(pathname, item.href);
   const active = inSection && !quickAccessActive;
@@ -76,7 +80,13 @@ function NavEntry({ item }: { item: NavigationItem }) {
       >
         <item.icon />
         <span>{label}</span>
+        {count !== null && <span className="sr-only">{t("cards", { count })}</span>}
       </SidebarMenuButton>
+      {count !== null && (
+        <SidebarMenuBadge className="text-sidebar-foreground/55" aria-hidden>
+          {count}
+        </SidebarMenuBadge>
+      )}
       {QuickAccess && (
         // Unfolded on hover after a short delay, so that the pointer passing by does not move the entries below.
         <div

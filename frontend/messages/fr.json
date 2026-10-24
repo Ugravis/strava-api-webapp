@@ -366,7 +366,10 @@
       "decline": "Refuser",
       "asked": "<b>@{username}</b> a demandé à vous suivre",
       "error": "Les demandes n'ont pas pu être chargées.",
-      "loadMore": "Voir plus"
+      "loadMore": "Voir plus",
+      "fold": "Replier",
+      "unfold": "Déplier",
+      "later": "Plus tard : retourner à la pile de cartes"
     },
     "distinctions": {
       "label": "Distinctions",

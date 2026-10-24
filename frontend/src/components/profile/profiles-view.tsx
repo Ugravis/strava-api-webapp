@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { FollowButton, type FollowState, followStateOf } from "@/components/community/follow-button";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
-import { RequestAnswerButtons } from "@/components/community/request-answer-buttons";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +17,7 @@ import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
 import type { ProfileSummary, PublicProfile } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { profilesService } from "@/services/profiles.service";
+import { FollowRequestBox } from "./follow-request-box";
 import { FollowRequestsDialog } from "./follow-requests-dialog";
 import { ProfileBanner } from "./profile-banner";
 import { ProfileCard, ProfileCardSkeleton } from "./profile-card";
@@ -186,24 +186,14 @@ export function ProfilesView() {
             />
           </div>
         ) : shown?.requestedViewer ? (
-          // As tall as the line it takes the place of, so that the card does not move: the box overlaps it if need be.
-          <div className="relative h-8">
-            <div className="absolute top-0 left-1/2 z-40 flex w-max max-w-60 -translate-x-1/2 flex-col items-center gap-2.5 rounded-xl border bg-popover/95 p-3 text-center shadow-lg backdrop-blur-sm">
-              <p className="text-sm text-balance text-muted-foreground">
-                {t.rich("requests.asked", {
-                  username: shown.username,
-                  b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
-                })}
-              </p>
-              <RequestAnswerButtons
-                username={shown.username}
-                onAnswered={() => {
-                  others.reload(shown.username);
-                  refresh();
-                }}
-              />
-            </div>
-          </div>
+          <FollowRequestBox
+            username={shown.username}
+            onAnswered={() => {
+              others.reload(shown.username);
+              refresh();
+            }}
+            onClose={() => showCard(0)}
+          />
         ) : (
           <div className="flex items-center gap-1">
             <p className="text-sm font-medium text-muted-foreground">@{shownName}</p>

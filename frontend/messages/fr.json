@@ -432,7 +432,8 @@
       "empty": {
         "title": "Vos abonnements",
         "description": "Les profils que vous suivez apparaîtront ici, sous la forme d'une pile de cartes."
-      }
+      },
+      "backToDeck": "Retourner à la pile de cartes"
     },
     "empty": {
       "bio": "Pas encore de bio.",
@@ -448,7 +449,8 @@
     "search": {
       "open": "Rechercher un utilisateur",
       "title": "Rechercher"
-    }
+    },
+    "close": "Retourner à la pile de cartes"
   },
   "settings": {
     "title": "Paramètres",

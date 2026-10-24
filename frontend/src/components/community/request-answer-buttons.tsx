@@ -47,21 +47,21 @@ export function RequestAnswerButtons({ username, onAnswered, className }: Reques
         size="sm"
         disabled={pending}
         onClick={(event) => void answer(event, true)}
-        // Kept within menu items, which recolor their content on focus.
-        className="text-primary-foreground! *:text-primary-foreground!"
+        // Kept within menu items, which recolor their content on focus, down to the icon paths.
+        className="text-primary-foreground! **:text-inherit!"
       >
         <CheckIcon aria-hidden />
         {t("accept")}
       </Button>
       <Button
-        size="icon-sm"
+        size="sm"
         variant="outline"
         disabled={pending}
         onClick={(event) => void answer(event, false)}
-        aria-label={t("decline")}
-        title={t("decline")}
+        className="**:text-inherit!"
       >
         <XIcon aria-hidden />
+        {t("decline")}
       </Button>
     </div>
   );

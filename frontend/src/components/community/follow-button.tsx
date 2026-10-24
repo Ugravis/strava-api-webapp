@@ -94,8 +94,9 @@ export function FollowButton({
         // Says what a click does once hovered: unfollowing, or cancelling the request.
         className={cn(
           "group/follow shrink-0",
-          // Kept within menu items, which recolor their content on focus.
-          state === "none" && "text-primary-foreground! *:text-primary-foreground!",
+          // Kept within menu items, which recolor their content on focus, down to the icon paths.
+          state === "none" && "text-primary-foreground!",
+          "**:text-inherit!",
           className,
         )}
       >

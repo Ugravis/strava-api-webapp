@@ -119,24 +119,31 @@ function FollowsTab({ username, direction }: { username: string; direction: Foll
 /** Every user matching the query, those the current user follows first, apart. */
 export function SearchResults({ query }: { query: string }) {
   const t = useTranslations("community.search");
-  const { results, loading, error } = useProfileSearch(query);
+  const tLists = useTranslations("community.lists");
+  const { results, loading, error, hasMore, loadingMore, loadMore } = useProfileSearch(query);
 
   if (loading) return <UserRowsSkeleton count={3} />;
   if (error) return <p className="py-6 text-center text-sm text-destructive">{t("error")}</p>;
   if (!results || results.length === 0) {
     return <p className="py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>;
   }
+  // The followed users come first in every page: the groups stay apart as pages load.
   const followed = results.filter((user) => user.followed);
   const others = results.filter((user) => !user.followed);
   return (
     <div className="flex flex-col gap-3 pb-1">
       {followed.length > 0 && <ResultSection title={t("followed")} users={followed} />}
       {others.length > 0 && <ResultSection title={t("others")} users={others} />}
+      {hasMore && (
+        <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore} className="self-center">
+          {tLists("loadMore")}
+        </Button>
+      )}
     </div>
   );
 }
 
-function ResultSection({ title, users }: { title: string; users: ProfileSummary[] }) {
+export function ResultSection({ title, users }: { title: string; users: ProfileSummary[] }) {
   return (
     <section>
       <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</h3>

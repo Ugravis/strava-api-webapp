@@ -6,8 +6,13 @@ const profilePath = (username: string) => `/profiles/${encodeURIComponent(userna
 /** Users per page of followers or followed users. */
 export const FOLLOWS_PAGE_SIZE = 30;
 
+/** Users per page of search results. */
+export const SEARCH_PAGE_SIZE = 20;
+
 export const profilesService = {
-  search: (query: string) => apiRequest<ProfileSummary[]>(`/profiles?q=${encodeURIComponent(query)}`),
+  /** Users matching the query, those followed first, after the `offset` first ones. */
+  search: (query: string, offset = 0) =>
+    apiRequest<ProfileSummary[]>(`/profiles?${new URLSearchParams({ q: query, offset: String(offset) })}`),
   get: (username: string) => apiRequest<PublicProfile>(profilePath(username)),
   /** Follows a public profile, or asks to follow a private one. */
   follow: (username: string) => apiRequest<{ status: FollowStatus }>(`${profilePath(username)}/follow`, { method: "PUT" }),

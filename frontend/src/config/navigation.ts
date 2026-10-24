@@ -18,6 +18,8 @@ export interface NavigationItem {
   /** Key in the `nav` translation namespace. */
   labelKey: "dashboard" | "map" | "distances" | "profiles";
   icon: LucideIcon;
+  /** Classes colouring the icon while in the section. */
+  activeIconClass: string;
   /** Links into the section, unfolded under its entry on hover and while in the section, together in a box. */
   quickAccess?: ComponentType<QuickAccessProps>;
   /** Whether one of the links of the quick access is active: the entry itself is then not marked active. */
@@ -28,11 +30,12 @@ export interface NavigationItem {
 
 /** Main sidebar entries. New sections only need to be declared here. */
 export const mainNavigation: NavigationItem[] = [
-  { href: routes.dashboard, labelKey: "dashboard", icon: HouseIcon },
+  { href: routes.dashboard, labelKey: "dashboard", icon: HouseIcon, activeIconClass: "text-blue-500 dark:text-blue-400" },
   {
     href: routes.map,
     labelKey: "map",
     icon: MapIcon,
+    activeIconClass: "text-violet-500 dark:text-violet-400",
     quickAccess: MapModulesNav,
     useQuickAccessActive: () => useOpenMapModule() !== null,
   },
@@ -40,6 +43,7 @@ export const mainNavigation: NavigationItem[] = [
     href: routes.achievements,
     labelKey: "distances",
     icon: TrophyIcon,
+    activeIconClass: "text-yellow-600 dark:text-yellow-400",
     quickAccess: AchievementTabsNav,
     useQuickAccessActive: () => usePathname() === routes.achievements,
   },
@@ -47,6 +51,7 @@ export const mainNavigation: NavigationItem[] = [
     href: routes.profiles,
     labelKey: "profiles",
     icon: UsersIcon,
+    activeIconClass: "text-green-600 dark:text-green-400",
     // The cards of the deck: the own one, then one per followed user.
     useCount: () => {
       const { summary } = useFollowsSummary();

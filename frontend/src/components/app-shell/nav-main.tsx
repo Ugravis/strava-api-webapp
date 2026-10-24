@@ -78,7 +78,7 @@ function NavEntry({ item }: { item: NavigationItem }) {
           />
         }
       >
-        <item.icon />
+        <item.icon className={cn(inSection && item.activeIconClass)} />
         <span>{label}</span>
         {count !== null && <span className="sr-only">{t("cards", { count })}</span>}
       </SidebarMenuButton>

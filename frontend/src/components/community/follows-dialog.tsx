@@ -117,7 +117,7 @@ function FollowsTab({ username, direction }: { username: string; direction: Foll
 }
 
 /** Every user matching the query, those the current user follows first, apart. */
-function SearchResults({ query }: { query: string }) {
+export function SearchResults({ query }: { query: string }) {
   const t = useTranslations("community.search");
   const { results, loading, error } = useProfileSearch(query);
 

@@ -53,6 +53,13 @@ const nextConfig: NextConfig = {
   },
   // The browser only talks to this origin: the API is proxied so that the
   // session cookie stays first-party and no CORS setup is needed.
+  // The former profile pages, whose links may have been shared.
+  async redirects() {
+    return [
+      { source: "/profile", destination: "/profiles", permanent: true },
+      { source: "/users/:username", destination: "/profiles?user=:username", permanent: true },
+    ];
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },

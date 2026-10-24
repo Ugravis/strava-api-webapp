@@ -1,5 +1,6 @@
 "use client";
 
+import { LockIcon, LockOpenIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
@@ -14,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/components/user/user-provider";
@@ -23,6 +25,8 @@ import { profilesService } from "@/services/profiles.service";
 
 interface ProfileVisibilitySwitchProps {
   onChange?: (isPrivate: boolean) => void;
+  /** A labelled switch, or a lock alone, closed while private. */
+  variant?: "switch" | "lock";
   className?: string;
 }
 
@@ -31,7 +35,7 @@ interface ProfileVisibilitySwitchProps {
  * a dialog telling what changes. Turning it public accepts the pending follow
  * requests.
  */
-export function ProfileVisibilitySwitch({ onChange, className }: ProfileVisibilitySwitchProps) {
+export function ProfileVisibilitySwitch({ onChange, variant = "switch", className }: ProfileVisibilitySwitchProps) {
   const t = useTranslations("profile.visibility");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
@@ -67,10 +71,26 @@ export function ProfileVisibilitySwitch({ onChange, className }: ProfileVisibili
   };
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Label htmlFor={id} className="text-sm font-normal text-muted-foreground">
-        {t("label")}
-      </Label>
-      <Switch id={id} size="sm" checked={isPrivate} disabled={pending} onCheckedChange={ask} />
+      {variant === "lock" ? (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={pending}
+          aria-pressed={isPrivate}
+          aria-label={t(isPrivate ? "lock.private" : "lock.public")}
+          title={t(isPrivate ? "lock.private" : "lock.public")}
+          onClick={() => ask(!isPrivate)}
+        >
+          {isPrivate ? <LockIcon aria-hidden /> : <LockOpenIcon aria-hidden />}
+        </Button>
+      ) : (
+        <>
+          <Label htmlFor={id} className="text-sm font-normal text-muted-foreground">
+            {t("label")}
+          </Label>
+          <Switch id={id} size="sm" checked={isPrivate} disabled={pending} onCheckedChange={ask} />
+        </>
+      )}
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>

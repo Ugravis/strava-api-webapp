@@ -41,6 +41,8 @@ interface ProfileCardProps {
   action: ReactNode;
   /** Called once the dialog of the follows closes: they may have changed meanwhile. */
   onFollowsClosed?: () => void;
+  /** Outside of the follows of the current user: drawn with a dashed border. */
+  outside?: boolean;
 }
 
 /** Glass buttons over the banner, readable whatever its hue. */
@@ -48,7 +50,7 @@ const BANNER_BUTTON =
   "bg-black/25 text-white backdrop-blur-sm hover:bg-black/40 hover:text-white dark:hover:bg-black/40";
 
 /** A profile as every user sees it: who they are, who follows whom, and their showcase unless private. */
-export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardProps) {
+export function ProfileCard({ profile, action, onFollowsClosed, outside = false }: ProfileCardProps) {
   const t = useTranslations("profile");
   const tCommunity = useTranslations("community");
   const tFamilies = useTranslations("distances.families");
@@ -65,7 +67,7 @@ export function ProfileCard({ profile, action, onFollowsClosed }: ProfileCardPro
   return (
     <Card
       ref={card}
-      className="relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0"
+      className={cn("relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0", outside && "border-dashed")}
       style={colors.border}
     >
       <div className="pointer-events-none absolute inset-x-0 top-24 bottom-0 -z-10" style={colors.veil} aria-hidden />

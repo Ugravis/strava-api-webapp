@@ -136,26 +136,17 @@ export function TracksMap() {
       setSectorCode(centerCountry.code);
       setVeil(false);
     }
-    if (awaitingCenter) {
-      setAwaitingCenter(false);
-      // At sea, without a sector shown before: the search.
-      if (centerCountry.code === null && sectorCode === null) {
-        setTool(null);
-        setSearchOpen(true);
-      }
-    }
+    if (awaitingCenter) setAwaitingCenter(false);
   }
   const openSectorAtCenter = () => {
     setTool("sector");
     setVeil(false);
     setIgnoredCenter(0);
     if (center) setAwaitingCenter(true);
-    else if (sectorCode === null) {
-      setTool(null);
-      setSearchOpen(true);
-    }
   };
-  const shownSector = tool === "sector" && !awaitingCenter ? sectorCode : null;
+  // At sea, without a sector shown before, the band opens empty.
+  const sectorShown = tool === "sector" && !awaitingCenter;
+  const shownSector = sectorShown ? sectorCode : null;
   const { sector, error: sectorError } = useCountrySector(shownSector, summary?.version ?? null);
   const sectorShapeVersion = sector?.shapeVersion ?? null;
   const sectorBounds = sector?.bounds ?? null;
@@ -234,9 +225,9 @@ export function TracksMap() {
             subtiles={layers.subtiles}
           />
         )}
-        {shownSector && (
+        {sectorShown && (
           <SectorBand
-            code={shownSector}
+            code={sectorCode}
             sector={sector}
             error={sectorError}
             subtiles={layers.subtiles}

@@ -269,7 +269,16 @@ export function ActivityMap({
       ]);
       onCenterChangeRef.current([lng, lat]);
     };
-    map.on("load", reportCenter);
+    // Once, from the style rather than `load`, which waits for every tile
+    // and may come late: the sector tool needs the center before any move.
+    let centerReported = false;
+    const reportFirstCenter = () => {
+      if (centerReported) return;
+      centerReported = true;
+      reportCenter();
+    };
+    map.on("style.load", reportFirstCenter);
+    map.on("load", reportFirstCenter);
     map.on("moveend", (event) => {
       if (!(SECTOR_FRAME_EVENT in event) && !(TRAIN_FOLLOW_EVENT in event)) reportCenter();
     });

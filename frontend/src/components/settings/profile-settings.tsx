@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -126,9 +127,14 @@ export function ProfileSettings() {
                 aria-invalid={field["aria-invalid"]}
               >
                 {FAVORITE_SPORTS.map((sport) => (
-                  <ToggleGroupItem key={sport} value={sport}>
+                  <ToggleGroupItem
+                    key={sport}
+                    value={sport}
+                    className="data-pressed:border-primary data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary/90"
+                  >
                     <FamilyIcon family={sport} aria-hidden />
                     {t(`distances.families.${sport}`)}
+                    {value.includes(sport) && <CheckIcon aria-hidden />}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>

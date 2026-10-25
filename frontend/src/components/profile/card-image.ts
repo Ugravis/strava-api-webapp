@@ -46,6 +46,27 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * The picture of the card cut inside its border, along its rounded corners:
+ * translucent, rounded to whole pixels, the border made a pale edge on the
+ * background. The shadow sets the card apart instead.
+ */
+function withoutBorder(card: HTMLImageElement, style: CSSStyleDeclaration): HTMLCanvasElement {
+  // A pixel more, for the width rounded by the library.
+  const inset = (parseFloat(style.borderRightWidth) + 1) * PIXEL_RATIO;
+  const radius = Math.max(0, parseFloat(style.borderTopLeftRadius) * PIXEL_RATIO - inset);
+  const canvas = document.createElement("canvas");
+  canvas.width = card.width;
+  canvas.height = card.height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas unavailable");
+  context.beginPath();
+  context.roundRect(inset, inset, card.width - inset * 2, card.height - inset * 2, radius);
+  context.clip();
+  context.drawImage(card, 0, 0);
+  return canvas;
+}
+
+/**
  * Picture of a profile card, without the elements marked `EXPORT_IGNORE`,
  * framed by a margin on a background in the hue of the profile.
  */
@@ -63,7 +84,7 @@ export async function cardImage(element: HTMLElement, color: string | null): Pro
   } finally {
     restore();
   }
-  const card = await loadImage(cardUrl);
+  const card = withoutBorder(await loadImage(cardUrl), getComputedStyle(element));
   const margin = Math.round(card.width * MARGIN);
   const canvas = document.createElement("canvas");
   canvas.width = card.width + margin * 2;

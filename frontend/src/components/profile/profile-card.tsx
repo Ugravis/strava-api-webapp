@@ -85,9 +85,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false,
       ref={card}
       className={cn(
         "relative isolate h-full gap-0 overflow-hidden border-2 py-0 shadow-xl ring-0",
-        // The dashes are drawn over the border; the translucent border otherwise shows what is behind
-        // the card, not its own background, which made a pale outline on the picture of the card.
-        outside ? "border-[3px]" : "bg-clip-padding",
+        outside && "border-[3px]",
       )}
       // The dashes in the full hue, to stand out.
       style={outside ? dashedOutline(profile.color ?? DEFAULT_PROFILE_COLOR) : colors.border}

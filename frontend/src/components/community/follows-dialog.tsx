@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFollowsList } from "@/hooks/use-follows-list";
 import { PROFILE_SEARCH_MIN_LENGTH, useProfileSearch } from "@/hooks/use-profile-search";
 import type { FollowDirection, ProfileSummary } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
 import { UserRow, UserRowsSkeleton } from "./user-row";
 
 const DIRECTIONS: FollowDirection[] = ["followers", "following"];
@@ -42,7 +43,8 @@ export function FollowsDialog({ username, counts, direction, open, onDirectionCh
         if (!next) setQuery("");
       }}
     >
-      <DialogContent className="flex max-h-[min(40rem,calc(100dvh-2rem))] flex-col gap-3 sm:max-w-md">
+      {/* A fixed height: centred, the dialog would jump as its skeleton gives way to the list. */}
+      <DialogContent className="flex h-[min(40rem,calc(100dvh-2rem))] flex-col gap-3 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="truncate pr-8">@{username}</DialogTitle>
         </DialogHeader>
@@ -122,7 +124,7 @@ export function SearchResults({ query }: { query: string }) {
   const tLists = useTranslations("community.lists");
   const { results, loading, error, hasMore, loadingMore, loadMore } = useProfileSearch(query);
 
-  if (loading) return <UserRowsSkeleton count={3} />;
+  if (loading && !results) return <UserRowsSkeleton count={3} />;
   if (error) return <p className="py-6 text-center text-sm text-destructive">{t("error")}</p>;
   if (!results || results.length === 0) {
     return <p className="py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>;
@@ -131,7 +133,7 @@ export function SearchResults({ query }: { query: string }) {
   const followed = results.filter((user) => user.followed);
   const others = results.filter((user) => !user.followed);
   return (
-    <div className="flex flex-col gap-3 pb-1">
+    <div className={cn("flex flex-col gap-3 pb-1 transition-opacity", loading && "opacity-60")}>
       {followed.length > 0 && <ResultSection title={t("followed")} users={followed} />}
       {others.length > 0 && <ResultSection title={t("others")} users={others} />}
       {hasMore && (

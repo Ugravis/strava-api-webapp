@@ -5,6 +5,7 @@ import { AppLogo } from "@/components/brand/app-logo";
 import { StravaIcon } from "@/components/strava/strava-icon";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
+import packageJson from "../../../package.json";
 
 const STRAVA_API_POLICY = "https://www.strava.com/legal/api_policy";
 
@@ -116,6 +117,8 @@ export function SiteFooter({ authenticated = false }: { authenticated?: boolean 
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>
             © <CurrentYear /> {siteConfig.name} · {AUTHOR}. {t("rights")}
+            {/* The latest release: its number is set in the package at each one. */}
+            <span className="ml-2 tabular-nums">v{packageJson.version}</span>
           </p>
           <p className="flex items-start gap-1.5 md:items-center">
             <StravaIcon className="mt-px size-3.5 shrink-0 text-[#FC4C02] md:mt-0" />

@@ -60,7 +60,9 @@ export function MapSidePanel({
         aria-expanded={!collapsed}
         aria-label={collapsed ? t("expand") : t("collapse")}
         className={cn(
-          "absolute top-1/2 -translate-y-1/2 rounded-r-none border-r-0 bg-background shadow-md",
+          // Centred by its margins: a translation would be replaced by the one of the button pressed,
+          // moving it from under the pointer before the click.
+          "absolute inset-y-0 my-auto rounded-r-none border-r-0 bg-background shadow-md",
           // Discreet beside the open panel, larger once folded, to find it again.
           collapsed ? "-left-7 h-12 w-7" : "-left-4 h-9 w-4 [&_svg:not([class*='size-'])]:size-3",
         )}

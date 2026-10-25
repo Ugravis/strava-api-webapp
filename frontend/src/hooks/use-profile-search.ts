@@ -9,7 +9,7 @@ import { useDebouncedValue } from "./use-debounced-value";
 export const PROFILE_SEARCH_MIN_LENGTH = 2;
 
 export interface ProfileSearchState {
-  /** Null while no query is long enough or the search is under way. */
+  /** Null while no query is long enough or the first search is under way; those of the previous query while the next one is. */
   results: ProfileSummary[] | null;
   loading: boolean;
   error: boolean;
@@ -75,10 +75,10 @@ export function useProfileSearch(query: string): ProfileSearchState {
   if (!searchable) {
     return { results: null, loading: false, error: false, hasMore: false, loadingMore: false, loadMore };
   }
-  // Results of an older query are not shown.
+  // Results of an older query stay shown, and only them, while the new one is searched: no skeleton at every key.
   const settled = state.query === debounced && query.trim() === debounced;
   return {
-    results: settled ? state.results : null,
+    results: settled || state.query.length >= PROFILE_SEARCH_MIN_LENGTH ? state.results : null,
     loading: !settled,
     error: settled && state.error,
     hasMore: settled && state.hasMore,

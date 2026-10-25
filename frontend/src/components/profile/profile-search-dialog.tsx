@@ -31,7 +31,8 @@ export function ProfileSearchDialog() {
       <DialogTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("open")} title={t("open")} />}>
         <SearchIcon />
       </DialogTrigger>
-      <DialogContent className="flex max-h-[min(40rem,calc(100dvh-2rem))] flex-col gap-3 sm:max-w-md">
+      {/* A fixed height: centred, the dialog would jump as its skeleton gives way to the list. */}
+      <DialogContent className="flex h-[min(40rem,calc(100dvh-2rem))] flex-col gap-3 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>

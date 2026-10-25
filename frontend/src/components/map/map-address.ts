@@ -31,8 +31,8 @@ export interface MapAddress {
 /**
  * Search parameters of the map: `?sector=FR`, `?history=gained&date=3m` (a
  * step, or a day `yyyy-mm-dd`), `module=stations` for the module selected,
- * `tiles=0`, `tracks=0` or `subtiles=0` for a hidden layer, and
- * `stations=1` or `dim=1` for a layer hidden by default, shown. Defaults
+ * `tiles=0`, `tracks=0`, `subtiles=0` or `stations=0` for a hidden layer,
+ * and `dim=1` for the dimming, off by default, on. Defaults
  * are left out.
  */
 const PARAMS = {

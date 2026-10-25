@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AppLogoMark, AppWordmark } from "@/components/brand/app-logo";
@@ -28,7 +28,7 @@ export function SidebarBrand() {
           className="group/brand hover:bg-transparent active:bg-transparent"
         >
           <AppLogoMark className="group-hover/brand:hidden group-focus-visible/brand:hidden" />
-          <PanelLeftOpenIcon className="mx-auto hidden size-4! group-hover/brand:block group-focus-visible/brand:block" />
+          <MenuIcon className="mx-auto hidden size-4! group-hover/brand:block group-focus-visible/brand:block" />
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
@@ -57,7 +57,7 @@ export function SidebarBrand() {
               />
             }
           >
-            <PanelLeftCloseIcon className="size-4" />
+            <MenuIcon className="size-4" />
           </TooltipTrigger>
           <TooltipContent side="right">{t("collapseMenu")}</TooltipContent>
         </Tooltip>

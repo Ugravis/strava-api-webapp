@@ -1042,6 +1042,7 @@
       "never": "Jamais",
       "computing": "Calcul de la forme du secteur, ce qui peut prendre plusieurs minutes pour un grand pays…",
       "error": "Impossible de charger le secteur.",
+      "atSea": "Aucun pays au centre de la carte : déplacez-la ou recherchez un secteur.",
       "search": {
         "title": "Rechercher un secteur",
         "description": "Choisissez un pays pour centrer la carte dessus.",

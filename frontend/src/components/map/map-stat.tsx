@@ -41,4 +41,4 @@ export function ToolIcon({ children }: { children: ReactNode }) {
 }
 
 /** A figure still loading. */
-export const ValueSkeleton = () => <Skeleton className="h-[1.125rem] w-12" />;
+export const ValueSkeleton = () => <Skeleton className="h-4.5 w-12" />;

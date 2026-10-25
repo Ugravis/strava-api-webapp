@@ -26,7 +26,7 @@ export function AccentBar({ color, className }: { color: MapColor; className?: s
     <span
       aria-hidden
       style={accentStyle(color)}
-      className={cn("w-[3px] shrink-0 self-stretch rounded-full ring-1 ring-foreground/10", ACCENT_BG, className)}
+      className={cn("w-0.75 shrink-0 self-stretch rounded-full ring-1 ring-foreground/10", ACCENT_BG, className)}
     />
   );
 }

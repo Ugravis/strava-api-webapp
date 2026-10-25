@@ -43,7 +43,7 @@ export const mainNavigation: NavigationItem[] = [
     href: routes.achievements,
     labelKey: "distances",
     icon: TrophyIcon,
-    activeIconClass: "text-yellow-600 dark:text-yellow-400",
+    activeIconClass: "text-yellow-500 dark:text-yellow-400",
     quickAccess: AchievementTabsNav,
     useQuickAccessActive: () => usePathname() === routes.achievements,
   },

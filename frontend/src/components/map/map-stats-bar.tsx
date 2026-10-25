@@ -173,8 +173,9 @@ const TOOL_PRESSED = "bg-blue-500/12 text-blue-700 dark:text-blue-300";
 /**
  * A part of a button in two: the tint in use is that of their container,
  * changing for both at once, and a part pressed does not move from the other.
+ * Its hover tint fills its border, up to the separator, and comes with no fade.
  */
-const SPLIT_PART = "bg-transparent active:not-aria-[haspopup]:translate-y-0";
+const SPLIT_PART = "bg-transparent bg-clip-border transition-none active:not-aria-[haspopup]:translate-y-0";
 
 /** A tool: its icon and, from small screens, its name; tinted while in use. */
 function ToolButton({

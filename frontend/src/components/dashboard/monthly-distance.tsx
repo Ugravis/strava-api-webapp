@@ -2,7 +2,7 @@
 
 import { BarChart3Icon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type PointerEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -197,6 +197,12 @@ function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
   const totalCurve = curve((month) => month.distanceM);
   const pointedMonth = pointed === null ? null : months[pointed];
 
+  const point = (event: PointerEvent<SVGSVGElement>) => {
+    const left = event.currentTarget.getBoundingClientRect().left;
+    const index = Math.floor((event.clientX - left - MARGIN.left) / slot);
+    setPointed(index >= 0 && index < months.length ? index : null);
+  };
+
   return (
     <div className="relative w-full select-none">
       <div ref={container} style={{ height: HEIGHT }}>
@@ -207,12 +213,10 @@ function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
             width={width}
             height={HEIGHT}
             className="block"
-            onPointerMove={(event) => {
-              const left = event.currentTarget.getBoundingClientRect().left;
-              const index = Math.floor((event.clientX - left - MARGIN.left) / slot);
-              setPointed(index >= 0 && index < months.length ? index : null);
-            }}
-            onPointerLeave={() => setPointed(null)}
+            onPointerDown={point}
+            onPointerMove={point}
+            // A finger lifted leaves the bar: its details stay until another one is tapped.
+            onPointerLeave={(event) => event.pointerType === "mouse" && setPointed(null)}
           >
             {Array.from({ length: Math.round(high / step) + 1 }, (_, index) => index * step).map((value) => (
               <g key={value}>

@@ -158,7 +158,7 @@ export function ActivityCalendar({ firstActivityAt, version, className }: Activi
             // One column per week, filling the width of the card, scrolled on a narrow screen.
             className="grid min-w-xl gap-[3px]"
             style={{ gridTemplateColumns: `auto repeat(${weeks.length}, minmax(0, 1fr))` }}
-            onPointerLeave={() => setPointed(null)}
+            onPointerLeave={(event) => event.pointerType === "mouse" && setPointed(null)}
           >
             <span />
             {months.map((month, index) => (

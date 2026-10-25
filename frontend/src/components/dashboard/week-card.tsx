@@ -152,7 +152,7 @@ function WeekChart({ current, previous, averages, today }: WeekChartProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative" onPointerLeave={() => setPointed(null)}>
+      <div className="relative" onPointerLeave={(event) => event.pointerType === "mouse" && setPointed(null)}>
         <ol className="grid h-32 grid-cols-7 gap-1 border-b border-dashed pt-5" aria-label={t("daysLabel")}>
           {current.map((day, index) => (
             <li

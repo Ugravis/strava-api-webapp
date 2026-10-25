@@ -20,6 +20,7 @@ import {
 import {
   FollowsService,
   type FollowStatus,
+  type FollowsSummary,
   type ProfileSummary,
   type PublicProfile,
 } from './follows.service';
@@ -32,9 +33,9 @@ export class ProfilesController {
   @Get()
   search(
     @CurrentUser() user: User,
-    @Query() { q }: SearchProfilesQueryDto,
+    @Query() { q, offset }: SearchProfilesQueryDto,
   ): Promise<ProfileSummary[]> {
-    return this.follows.search(user, q);
+    return this.follows.search(user, q, offset);
   }
 
   /** Users asking to follow the private profile of the current user. */
@@ -44,6 +45,20 @@ export class ProfilesController {
     @Query() { offset }: FollowsPageQueryDto,
   ): Promise<ProfileSummary[]> {
     return this.follows.requests(user, offset);
+  }
+
+  /** Users the current one asked to follow, not accepted yet. */
+  @Get('me/sent-requests')
+  sentRequests(
+    @CurrentUser() user: User,
+    @Query() { offset }: FollowsPageQueryDto,
+  ): Promise<ProfileSummary[]> {
+    return this.follows.sentRequests(user, offset);
+  }
+
+  @Get('me/summary')
+  summary(@CurrentUser() user: User): Promise<FollowsSummary> {
+    return this.follows.summary(user);
   }
 
   @Put('me/privacy')

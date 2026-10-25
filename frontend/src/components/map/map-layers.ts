@@ -18,14 +18,11 @@ export interface MapLayers {
   dimmed: boolean;
 }
 
-export const DEFAULT_MAP_LAYERS: MapLayers = { tiles: true, tracks: true, subtiles: true, stations: false, dimmed: false };
+export const DEFAULT_MAP_LAYERS: MapLayers = { tiles: true, tracks: true, subtiles: true, stations: true, dimmed: false };
 
-/**
- * The layers once `module` is opened from the navigation: shown, and for the
- * stations, the map dimmed below them.
- */
+/** The layers once `module` is opened from the navigation: shown, the dimming left as it was. */
 export function withModuleOpened(layers: MapLayers, module: MapModule): MapLayers {
-  return { ...layers, [module]: true, dimmed: module === "stations" || layers.dimmed };
+  return { ...layers, [module]: true };
 }
 
 /** Levels of tiles drawn for the layers chosen. */

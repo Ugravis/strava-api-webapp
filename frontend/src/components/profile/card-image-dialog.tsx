@@ -58,9 +58,9 @@ export function CardImageDialog({ card, color, username, open, onOpenChange }: C
         ) : ready ? (
           // A local blob: nothing for the image optimizer to do.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={ready.url} alt={t("alt", { username })} className="max-h-[60svh] w-full rounded-lg object-contain" />
+          <img src={ready.url} alt={t("alt", { username })} className="w-full rounded-2xl" />
         ) : (
-          <Skeleton className="aspect-[4/5] w-full rounded-lg" />
+          <Skeleton className="aspect-[4/5] w-full rounded-2xl" />
         )}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {canShare && (

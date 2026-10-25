@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
+import { Follow } from '../follows/follow.entity';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import { User } from '../users/user.entity';
 import { NotificationStreams } from './notification-streams';
 import {
   ANONYMOUS_NOTIFICATIONS,
+  NOTIFICATION_CATEGORY_TYPES,
   Notification,
+  type NotificationCategory,
   type NotificationType,
 } from './notification.entity';
 
@@ -17,24 +20,34 @@ export interface NotificationResponse {
   actor: PublicUser | null;
   read: boolean;
   createdAt: string;
+  /** Whether the actor follows the user, who neither follows them nor asked to: offers to follow back. */
+  followBack: boolean;
 }
 
-export interface NotificationsOverview {
+export interface NotificationsPage {
   notifications: NotificationResponse[];
+  /** Whether older notifications follow. */
+  hasMore: boolean;
   unreadCount: number;
 }
 
-/** Event sent in real time: the new unread count, with the notification that changed it, if one was added. */
+/**
+ * Event sent in real time: the new unread count, with the notification that
+ * changed it, if one was added, or the ones marked read.
+ */
 export interface NotificationEvent {
   unreadCount: number;
   notification?: NotificationResponse;
+  /** Marked read; every notification when empty. */
+  read?: string[];
 }
 
-const LATEST_LIMIT = 30;
+export const NOTIFICATIONS_PAGE_SIZE = 20;
 
 function toNotificationResponse(
   notification: Notification,
   actor: User,
+  followBack = false,
 ): NotificationResponse {
   return {
     id: notification.id,
@@ -44,6 +57,7 @@ function toNotificationResponse(
       : toPublicUser(actor),
     read: notification.readAt !== null,
     createdAt: notification.createdAt.toISOString(),
+    followBack: notification.type === 'follow' && followBack,
   };
 }
 
@@ -52,35 +66,76 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notifications: Repository<Notification>,
+    @InjectRepository(Follow)
+    private readonly follows: Repository<Follow>,
     private readonly streams: NotificationStreams,
   ) {}
 
-  /** Latest notifications of the user, the newest first. */
-  async overview(userId: string): Promise<NotificationsOverview> {
-    const [latest, unreadCount] = await Promise.all([
+  /** A page of the notifications of the user in a category, the newest first. */
+  async page(
+    userId: string,
+    category: NotificationCategory,
+    offset: number,
+  ): Promise<NotificationsPage> {
+    const [rows, unreadCount] = await Promise.all([
       this.notifications.find({
-        where: { userId },
+        where: {
+          userId,
+          ...(category !== 'all' && {
+            type: In(NOTIFICATION_CATEGORY_TYPES[category]),
+          }),
+        },
         relations: { actor: true },
-        order: { createdAt: 'DESC' },
-        take: LATEST_LIMIT,
+        order: { createdAt: 'DESC', id: 'DESC' },
+        skip: offset,
+        // One more tells whether another page follows.
+        take: NOTIFICATIONS_PAGE_SIZE + 1,
       }),
       this.unreadCount(userId),
     ]);
+    const page = rows.slice(0, NOTIFICATIONS_PAGE_SIZE);
+    const followed = await this.followedAmong(
+      userId,
+      page
+        .filter(({ type }) => type === 'follow')
+        .map(({ actorId }) => actorId),
+    );
     return {
-      notifications: latest.map((notification) =>
-        toNotificationResponse(notification, notification.actor!),
+      notifications: page.map((notification) =>
+        toNotificationResponse(
+          notification,
+          notification.actor!,
+          !followed.has(notification.actorId),
+        ),
       ),
+      hasMore: rows.length > NOTIFICATIONS_PAGE_SIZE,
       unreadCount,
     };
   }
 
-  async markAllRead(userId: string): Promise<void> {
+  /** Marks the given notifications read, or those of a kind, or all of them. */
+  async markRead(
+    userId: string,
+    ids?: string[],
+    type?: NotificationType,
+  ): Promise<void> {
+    if (type) {
+      const unread = await this.notifications.find({
+        select: { id: true },
+        where: { userId, type, readAt: IsNull(), ...(ids && { id: In(ids) }) },
+      });
+      ids = unread.map(({ id }) => id);
+    }
+    if (ids?.length === 0) return;
     const { affected } = await this.notifications.update(
-      { userId, readAt: IsNull() },
+      { userId, readAt: IsNull(), ...(ids && { id: In(ids) }) },
       { readAt: new Date() },
     );
     if (affected) {
-      this.streams.send(userId, { unreadCount: 0 } satisfies NotificationEvent);
+      this.streams.send(userId, {
+        unreadCount: await this.unreadCount(userId),
+        read: ids ?? [],
+      } satisfies NotificationEvent);
     }
   }
 
@@ -100,7 +155,12 @@ export class NotificationsService {
     );
     this.streams.send(userId, {
       unreadCount: await this.unreadCount(userId),
-      notification: toNotificationResponse(notification, actor),
+      notification: toNotificationResponse(
+        notification,
+        actor,
+        type === 'follow' &&
+          (await this.followedAmong(userId, [actor.id])).size === 0,
+      ),
     } satisfies NotificationEvent);
   }
 
@@ -172,6 +232,23 @@ export class NotificationsService {
         unreadCount: await this.unreadCount(userId),
       } satisfies NotificationEvent);
     }
+  }
+
+  hasUnread(userId: string, type: NotificationType): Promise<boolean> {
+    return this.notifications.existsBy({ userId, type, readAt: IsNull() });
+  }
+
+  /** Those of the users the user follows, or asked to. */
+  private async followedAmong(
+    userId: string,
+    ids: string[],
+  ): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const follows = await this.follows.find({
+      select: { followedId: true },
+      where: { followerId: userId, followedId: In(ids) },
+    });
+    return new Set(follows.map(({ followedId }) => followedId));
   }
 
   private unreadCount(userId: string): Promise<number> {

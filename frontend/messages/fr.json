@@ -182,7 +182,8 @@
     "dashboard": "Tableau de bord",
     "map": "Carte",
     "distances": "Succès",
-    "profile": "Profil",
+    "profiles": "Profils",
+    "cards": "{count, plural, one {# carte} other {# cartes}}",
     "settings": "Paramètres",
     "logout": "Déconnexion",
     "openMenu": "Ouvrir le menu",
@@ -313,7 +314,7 @@
     "sessionExpired": "Votre session a expiré. Connectez-vous à nouveau."
   },
   "profile": {
-    "title": "Profil",
+    "title": "Profils",
     "private": "Profil privé",
     "edit": "Modifier le profil",
     "favoriteSports": "Sports favoris",
@@ -348,14 +349,27 @@
           "description": "Tout le monde verra vos badges épinglés, vos statistiques et vos abonnements. Les demandes d'abonnement en attente seront acceptées.",
           "action": "Rendre public"
         }
+      },
+      "lock": {
+        "private": "Profil privé · le rendre public",
+        "public": "Profil public · le passer en privé"
       }
     },
     "requests": {
-      "title": "{count, plural, one {# demande d'abonnement} other {# demandes d'abonnement}}",
+      "open": "Demandes d'abonnement",
+      "openCount": "{count, plural, one {# demande d'abonnement} other {# demandes d'abonnement}}",
+      "received": "Reçues",
+      "sent": "Envoyées",
+      "emptyReceived": "Aucune demande en attente.",
+      "emptySent": "Aucune demande envoyée en attente.",
       "accept": "Accepter",
       "decline": "Refuser",
+      "asked": "<b>@{username}</b> a demandé à vous suivre",
       "error": "Les demandes n'ont pas pu être chargées.",
-      "more": "{count, plural, one {# autre demande} other {# autres demandes}} en attente."
+      "loadMore": "Voir plus",
+      "fold": "Replier",
+      "unfold": "Déplier",
+      "later": "Plus tard : retourner à la pile de cartes"
     },
     "distinctions": {
       "label": "Distinctions",
@@ -416,7 +430,13 @@
       "previous": "Carte précédente",
       "next": "Carte suivante",
       "position": "Abonnements {index} / {count}",
-      "back": "Retourner à mon profil"
+      "back": "Retourner à mon profil",
+      "outside": "Ce profil ne fait pas partie de vos abonnements",
+      "empty": {
+        "title": "Vos abonnements",
+        "description": "Les profils que vous suivez apparaîtront ici, sous la forme d'une pile de cartes."
+      },
+      "backToDeck": "Retourner à la pile de cartes"
     },
     "empty": {
       "bio": "Pas encore de bio.",
@@ -428,7 +448,16 @@
       "unlike": "Ne plus aimer ce profil ({count, plural, one {# like} other {# likes}})",
       "count": "{count, plural, =0 {Aucun like} one {# like} other {# likes}}",
       "anonymous": "Les likes sont anonymes."
-    }
+    },
+    "search": {
+      "open": "Rechercher un utilisateur",
+      "title": "Rechercher",
+      "following": "Vos abonnements",
+      "followers": "Vos abonnés",
+      "noSuggestions": "Vous ne suivez personne et personne ne vous suit encore.",
+      "error": "Les suggestions n'ont pas pu être chargées."
+    },
+    "close": "Retourner à la pile de cartes"
   },
   "settings": {
     "title": "Paramètres",
@@ -1013,6 +1042,7 @@
       "never": "Jamais",
       "computing": "Calcul de la forme du secteur, ce qui peut prendre plusieurs minutes pour un grand pays…",
       "error": "Impossible de charger le secteur.",
+      "atSea": "Aucun pays au centre de la carte : déplacez-la ou recherchez un secteur.",
       "search": {
         "title": "Rechercher un secteur",
         "description": "Choisissez un pays pour centrer la carte dessus.",
@@ -1110,8 +1140,12 @@
       "following": "Abonné",
       "unfollow": "Ne plus suivre",
       "followsYou": "Vous suit",
-      "requested": "Demandé",
-      "cancelRequest": "Annuler la demande"
+      "requested": "Demande envoyée",
+      "cancelRequest": "Annuler la demande",
+      "confirm": {
+        "title": "Ne plus suivre @{username} ?",
+        "description": "Son profil quittera votre pile de cartes. S'il est privé, il faudra de nouveau demander à le suivre."
+      }
     },
     "counts": {
       "followers": "{count, plural, =0 {abonné} one {abonné} other {abonnés}}",
@@ -1147,7 +1181,19 @@
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
     "follow_accepted": "<b>{name}</b> a accepté votre demande d'abonnement.",
-    "profile_like": "Quelqu'un a aimé votre profil."
+    "profile_like": "Quelqu'un a aimé votre profil.",
+    "category": {
+      "all": "Toutes",
+      "likes": "Likes",
+      "follows": "Abonnements"
+    },
+    "period": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "week": "Cette semaine",
+      "month": "Ce mois-ci",
+      "older": "Plus ancien"
+    }
   },
   "footer": {
     "label": "Pied de page",

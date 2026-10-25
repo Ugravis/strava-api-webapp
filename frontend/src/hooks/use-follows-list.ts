@@ -15,6 +15,15 @@ export interface FollowsListState {
 
 /** Followers of a user, or the users they follow, the latest first, a page at a time. */
 export function useFollowsList(username: string, direction: FollowDirection): FollowsListState {
+  const fetchPage = useCallback(
+    (offset: number) => profilesService.list(username, direction, offset),
+    [username, direction],
+  );
+  return usePagedUsers(fetchPage);
+}
+
+/** Users a page at a time, from the given fetch, kept stable: a new one starts over. */
+export function usePagedUsers(fetchPage: (offset: number) => Promise<ProfileSummary[]>): FollowsListState {
   const [users, setUsers] = useState<ProfileSummary[] | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -22,7 +31,7 @@ export function useFollowsList(username: string, direction: FollowDirection): Fo
 
   useEffect(() => {
     let cancelled = false;
-    profilesService.list(username, direction, 0).then(
+    fetchPage(0).then(
       (page) => {
         if (cancelled) return;
         setUsers(page);
@@ -35,13 +44,12 @@ export function useFollowsList(username: string, direction: FollowDirection): Fo
     return () => {
       cancelled = true;
     };
-  }, [username, direction]);
+  }, [fetchPage]);
 
   const loadMore = useCallback(() => {
     if (!users) return;
     setLoadingMore(true);
-    profilesService
-      .list(username, direction, users.length)
+    fetchPage(users.length)
       .then(
         (page) => {
           // A user followed meanwhile shifts the pages: not listed twice.
@@ -54,7 +62,7 @@ export function useFollowsList(username: string, direction: FollowDirection): Fo
         () => setError(true),
       )
       .finally(() => setLoadingMore(false));
-  }, [username, direction, users]);
+  }, [fetchPage, users]);
 
   return { users, hasMore, loadingMore, error, loadMore };
 }

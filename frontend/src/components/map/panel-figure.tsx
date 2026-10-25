@@ -25,7 +25,7 @@ export function PanelFiguresSkeleton({ count }: { count: number }) {
   return (
     <div className="grid grid-cols-3 gap-2" aria-busy>
       {Array.from({ length: count }, (_, index) => (
-        <Skeleton key={index} className="h-[3.75rem] rounded-lg" />
+        <Skeleton key={index} className="h-15 rounded-lg" />
       ))}
     </div>
   );

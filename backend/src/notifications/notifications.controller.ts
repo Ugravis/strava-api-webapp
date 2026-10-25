@@ -1,9 +1,11 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
   type MessageEvent,
   Post,
+  Query,
   Sse,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -11,9 +13,10 @@ import type { Observable } from 'rxjs';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '../users/user.entity';
 import { NotificationStreams } from './notification-streams';
+import { MarkReadDto, NotificationsPageQueryDto } from './notifications.dto';
 import {
   NotificationsService,
-  type NotificationsOverview,
+  type NotificationsPage,
 } from './notifications.service';
 
 @Controller('notifications')
@@ -24,14 +27,20 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  overview(@CurrentUser() user: User): Promise<NotificationsOverview> {
-    return this.notifications.overview(user.id);
+  page(
+    @CurrentUser() user: User,
+    @Query() { category, offset }: NotificationsPageQueryDto,
+  ): Promise<NotificationsPage> {
+    return this.notifications.page(user.id, category, offset);
   }
 
   @Post('read')
   @HttpCode(204)
-  markAllRead(@CurrentUser() user: User): Promise<void> {
-    return this.notifications.markAllRead(user.id);
+  markRead(
+    @CurrentUser() user: User,
+    @Body() { ids, type }: MarkReadDto,
+  ): Promise<void> {
+    return this.notifications.markRead(user.id, ids, type);
   }
 
   /** Server-sent events: the unread count and new notifications, as they happen. */

@@ -571,12 +571,23 @@ export interface PublicProfile extends ProfileSummary {
   liked: boolean;
   /** Whether they follow the current user. */
   followsViewer: boolean;
+  /** Whether they asked to follow the private profile of the current user, not accepted yet. */
+  requestedViewer: boolean;
   /** Whether it is the profile of the current user. */
   self: boolean;
   /** Null when hidden, or when showcases are disabled. */
   showcase: ProfileShowcase | null;
-  /** Follow requests waiting for the current user; null on the profile of someone else. */
-  requestsCount: number | null;
+}
+
+/** What the navigation and the profile page tell about the follows of the current user. */
+export interface FollowsSummary {
+  followingCount: number;
+  /** Requests waiting for the current user. */
+  requestsCount: number;
+  /** Requests sent by the current user, not accepted yet. */
+  sentRequestsCount: number;
+  /** Whether one of them was never seen in the notifications. */
+  unseenRequests: boolean;
 }
 
 /** Following a public profile is immediate; following a private one is a request. */
@@ -593,15 +604,27 @@ export interface AppNotification {
   actor: PublicUser | null;
   read: boolean;
   createdAt: string;
+  /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */
+  followBack: boolean;
 }
 
-export interface NotificationsOverview {
+/** Filters of the notifications list. */
+export type NotificationCategory = "all" | "likes" | "follows";
+
+export interface NotificationsPage {
   notifications: AppNotification[];
+  /** Whether older notifications follow. */
+  hasMore: boolean;
   unreadCount: number;
 }
 
-/** Event received in real time: the new unread count, with the notification that changed it, if one was added. */
+/**
+ * Event received in real time: the new unread count, with the notification
+ * that changed it, if one was added, or the ones marked read.
+ */
 export interface NotificationEvent {
   unreadCount: number;
   notification?: AppNotification;
+  /** Marked read; every notification when empty. */
+  read?: string[];
 }

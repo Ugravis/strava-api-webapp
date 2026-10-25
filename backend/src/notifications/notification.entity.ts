@@ -15,8 +15,26 @@ import { User } from '../users/user.entity';
  * accepted the request of the user. `profile_like`: the actor liked the
  * profile of the user, who is never told by whom.
  */
-export type NotificationType =
-  'follow' | 'follow_request' | 'follow_accepted' | 'profile_like';
+export const NOTIFICATION_TYPES = [
+  'follow',
+  'follow_request',
+  'follow_accepted',
+  'profile_like',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+/** Filters of the notifications list. */
+export const NOTIFICATION_CATEGORIES = ['all', 'likes', 'follows'] as const;
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+/** Kinds listed under each filter; `all` is not filtered. */
+export const NOTIFICATION_CATEGORY_TYPES: Record<
+  Exclude<NotificationCategory, 'all'>,
+  NotificationType[]
+> = {
+  likes: ['profile_like'],
+  follows: ['follow', 'follow_request', 'follow_accepted'],
+};
 
 /** Kinds whose actor is kept for the bookkeeping but never disclosed. */
 export const ANONYMOUS_NOTIFICATIONS: ReadonlySet<NotificationType> = new Set([

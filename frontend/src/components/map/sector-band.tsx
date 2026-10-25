@@ -2,7 +2,6 @@
 
 import { CircleAlertIcon, ContrastIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +13,8 @@ import { accentStyle, type MapColor } from "./map-keys";
 import { ValueSkeleton } from "./map-stat";
 
 interface SectorBandProps {
-  /** Code of the country picked, known before its details. */
-  code: string;
+  /** Code of the country picked, known before its details; null while the center of the map is at sea. */
+  code: string | null;
   /** Null while loading. */
   sector: CountrySector | null;
   error: boolean;
@@ -102,11 +101,30 @@ export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, 
     </Button>
   );
 
+  // The center of the map is at sea and no sector was shown before.
+  if (code === null) {
+    return (
+      <section
+        aria-label={t("label")}
+        className="flex shrink-0 items-center justify-between gap-2 border-t bg-background px-4 py-3 md:min-h-22.5"
+      >
+        <p className="min-w-0 text-sm text-muted-foreground">{t("atSea")}</p>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="outline" onClick={onSearch}>
+            <SearchIcon />
+            {t("search.title")}
+          </Button>
+          {closeButton("")}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-label={t("label")}
       // As tall as the band of the history tool, its slider and labels included.
-      className="flex shrink-0 flex-col divide-y border-t bg-background md:min-h-[5.625rem] md:flex-row md:divide-x md:divide-y-0"
+      className="flex shrink-0 flex-col divide-y border-t bg-background md:min-h-22.5 md:flex-row md:divide-x md:divide-y-0"
     >
       <div className={cn(SECTION, "min-w-0 justify-between gap-2 md:max-w-80 md:shrink-0")}>
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
@@ -245,7 +263,7 @@ function CompletionStat({
         value={share === null ? 0 : Math.min(100, share * 100)}
         aria-label={label}
         style={accentStyle(accent)}
-        className="[&_[data-slot=progress-indicator]]:bg-(--accent) dark:[&_[data-slot=progress-indicator]]:bg-(--accent-dark)"
+        className="**:data-[slot=progress-indicator]:bg-accent dark:**:data-[slot=progress-indicator]:bg-(--accent-dark)"
       />
     </div>
   );

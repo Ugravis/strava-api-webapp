@@ -11,8 +11,8 @@ export const routes = {
   dashboard: "/dashboard",
   achievements: "/achievements",
   map: "/map",
-  profile: "/profile",
-  users: "/users",
+  /** The own profile, then those followed, in a deck; any other one through `?user=`. */
+  profiles: "/profiles",
   settings: "/settings",
   /** The profile section of the settings. */
   settingsProfile: "/settings#profile",
@@ -20,10 +20,13 @@ export const routes = {
 } as const;
 
 /** Routes requiring a session, checked optimistically by the proxy. */
-export const PROTECTED_PREFIXES = [routes.dashboard, routes.achievements, routes.map, routes.profile, routes.users, routes.settings];
+export const PROTECTED_PREFIXES = [routes.dashboard, routes.achievements, routes.map, routes.profiles, routes.settings];
 
-/** The public profile of a user. */
-export const userProfileHref = (username: string) => `${routes.users}/${encodeURIComponent(username)}`;
+/** Query parameter of the profiles page naming the profile shown. */
+export const PROFILE_PARAM = "user";
+
+/** The public profile of a user, on the profiles page. */
+export const userProfileHref = (username: string) => `${routes.profiles}?${PROFILE_PARAM}=${encodeURIComponent(username)}`;
 
 /** Landing route once signed in. */
 export const DEFAULT_AUTHENTICATED_ROUTE = routes.dashboard;

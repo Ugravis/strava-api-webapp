@@ -3,9 +3,9 @@
 import {
   EyeIcon,
   EyeOffIcon,
+  FlagIcon,
   HistoryIcon,
   LoaderCircleIcon,
-  LocateFixedIcon,
   type LucideIcon,
   SearchIcon,
   SunDimIcon,
@@ -91,11 +91,11 @@ export function MapStatsBar({
           />
           <div className={cn("flex items-center rounded-lg", sectorOpen && TOOL_PRESSED)}>
             <ToolButton
-              icon={LocateFixedIcon}
+              icon={FlagIcon}
               label={t("sector.open")}
               pressed={sectorOpen}
               onPressedChange={onSectorOpenChange}
-              className="rounded-r-none md:flex-1 md:justify-start"
+              className={cn("rounded-r-none md:flex-1 md:justify-start", SPLIT_PART)}
             />
             <Tooltip>
               <TooltipTrigger
@@ -107,6 +107,7 @@ export function MapStatsBar({
                     onClick={onSectorSearch}
                     className={cn(
                       "h-8 rounded-l-none border-l border-l-border md:h-7",
+                      SPLIT_PART,
                       sectorOpen && "border-l-blue-500/30 text-inherit hover:bg-blue-500/10 hover:text-inherit",
                     )}
                   />
@@ -168,6 +169,13 @@ function ControlsGroup({ title, className, children }: { title: string; classNam
 
 /** A tool in use, tinted in the blue of the sliders. */
 const TOOL_PRESSED = "bg-blue-500/12 text-blue-700 dark:text-blue-300";
+
+/**
+ * A part of a button in two: the tint in use is that of their container,
+ * changing for both at once, and a part pressed does not move from the other.
+ * Its hover tint fills its border, up to the separator, and comes with no fade.
+ */
+const SPLIT_PART = "bg-transparent bg-clip-border transition-none active:not-aria-[haspopup]:translate-y-0";
 
 /** A tool: its icon and, from small screens, its name; tinted while in use. */
 function ToolButton({

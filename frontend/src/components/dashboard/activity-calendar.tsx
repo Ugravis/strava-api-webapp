@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityFormat } from "@/hooks/use-activity-format";
+import { usePointed } from "@/hooks/use-pointed";
 import { useYearDays } from "@/hooks/use-year-days";
 import type { ActivityDay } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -51,8 +52,8 @@ export function ActivityCalendar({ firstActivityAt, version, className }: Activi
   const format = useFormatter();
   const activityFormat = useActivityFormat();
   const now = useNow({ updateInterval: 60_000 });
-  const [pointed, setPointed] = useState<CalendarCell | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const { pointed, point, leave } = usePointed<CalendarCell>(scroller, (a, b) => a.key === b.key);
 
   const today = dayKey(now);
   const currentYear = now.getFullYear();
@@ -158,7 +159,7 @@ export function ActivityCalendar({ firstActivityAt, version, className }: Activi
             // One column per week, filling the width of the card, scrolled on a narrow screen.
             className="grid min-w-xl gap-[3px]"
             style={{ gridTemplateColumns: `auto repeat(${weeks.length}, minmax(0, 1fr))` }}
-            onPointerLeave={(event) => event.pointerType === "mouse" && setPointed(null)}
+            onPointerLeave={leave}
           >
             <span />
             {months.map((month, index) => (
@@ -179,7 +180,8 @@ export function ActivityCalendar({ firstActivityAt, version, className }: Activi
                   return (
                     <span
                       key={cell.key}
-                      onPointerEnter={() => setPointed(cell.future || cell.outside ? null : cell)}
+                      onPointerEnter={(event) => point(event, cell.future || cell.outside ? null : cell)}
+                      onPointerDown={(event) => point(event, cell.future || cell.outside ? null : cell)}
                       className={cn(
                         "aspect-square w-full rounded-[3px]",
                         days === null

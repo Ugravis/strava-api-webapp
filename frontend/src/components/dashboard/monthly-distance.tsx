@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthlyDistances } from "@/hooks/use-monthly-distances";
+import { usePointed } from "@/hooks/use-pointed";
 import type { MonthDistance, MonthlyFamily } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { monotonePath } from "./chart-path";
@@ -169,7 +170,8 @@ function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
   const format = useFormatter();
   const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const [pointed, setPointed] = useState<number | null>(null);
+  const chart = useRef<HTMLDivElement>(null);
+  const { pointed, point, leave } = usePointed<number>(chart);
 
   // Measured before the first paint, so that the chart never shows empty.
   useLayoutEffect(() => {
@@ -197,14 +199,14 @@ function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
   const totalCurve = curve((month) => month.distanceM);
   const pointedMonth = pointed === null ? null : months[pointed];
 
-  const point = (event: PointerEvent<SVGSVGElement>) => {
+  const pointMonth = (event: PointerEvent<SVGSVGElement>) => {
     const left = event.currentTarget.getBoundingClientRect().left;
     const index = Math.floor((event.clientX - left - MARGIN.left) / slot);
-    setPointed(index >= 0 && index < months.length ? index : null);
+    point(event, index >= 0 && index < months.length ? index : null);
   };
 
   return (
-    <div className="relative w-full select-none">
+    <div ref={chart} className="relative w-full select-none">
       <div ref={container} style={{ height: HEIGHT }}>
         {width > 0 && (
           <svg
@@ -213,10 +215,9 @@ function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
             width={width}
             height={HEIGHT}
             className="block"
-            onPointerDown={point}
-            onPointerMove={point}
-            // A finger lifted leaves the bar: its details stay until another one is tapped.
-            onPointerLeave={(event) => event.pointerType === "mouse" && setPointed(null)}
+            onPointerDown={pointMonth}
+            onPointerMove={pointMonth}
+            onPointerLeave={leave}
           >
             {Array.from({ length: Math.round(high / step) + 1 }, (_, index) => index * step).map((value) => (
               <g key={value}>

@@ -2,10 +2,11 @@
 
 import { ArrowDownRightIcon, ArrowUpRightIcon, CalendarRangeIcon, FlameIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useRef } from "react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityFormat } from "@/hooks/use-activity-format";
+import { usePointed } from "@/hooks/use-pointed";
 import type { ActivityDay } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
@@ -143,7 +144,8 @@ function WeekChart({ current, previous, averages, today }: WeekChartProps) {
   const t = useTranslations("dashboard.week");
   const format = useFormatter();
   const activityFormat = useActivityFormat();
-  const [pointed, setPointed] = useState<number | null>(null);
+  const chart = useRef<HTMLDivElement>(null);
+  const { pointed, point, leave } = usePointed<number>(chart);
   const max = Math.max(...current.map((day) => day.distanceM), ...previous.map((day) => day.distanceM), ...averages, 1);
   const share = (meters: number) => (meters / max) * 100;
   const points = averages.map((meters, index): [number, number] => [index * 100 + 50, 100 - share(meters)]);
@@ -152,13 +154,14 @@ function WeekChart({ current, previous, averages, today }: WeekChartProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative" onPointerLeave={(event) => event.pointerType === "mouse" && setPointed(null)}>
+      <div ref={chart} className="relative" onPointerLeave={leave}>
         <ol className="grid h-32 grid-cols-7 gap-1 border-b border-dashed pt-5" aria-label={t("daysLabel")}>
           {current.map((day, index) => (
             <li
               key={day.date}
               aria-label={dayDetail(index)}
-              onPointerEnter={() => setPointed(index)}
+              onPointerEnter={(event) => point(event, index)}
+              onPointerDown={(event) => point(event, index)}
               className="relative flex items-end justify-center"
             >
               {previous[index].distanceM > 0 && (

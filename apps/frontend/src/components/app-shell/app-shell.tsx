@@ -3,14 +3,12 @@ import type { ReactNode } from "react";
 import { FollowsSummaryProvider } from "@/components/community/follows-summary-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
 import { AppHeader } from "./app-header";
 import { AppSidebar, type AppSidebarSlots } from "./app-sidebar";
-
-/** Cookie written by the shadcn sidebar to remember its collapsed state. */
-const SIDEBAR_STATE_COOKIE = "sidebar_state";
+import { PersistedSidebarProvider, SIDEBAR_STATE_COOKIE } from "./sidebar-state";
 
 /**
  * Authenticated layout: resolves the session, then renders the sidebar and
@@ -25,14 +23,14 @@ export async function AppShell({ children, ...slots }: AppSidebarSlots & { child
       <TrackSyncProvider userId={user.id}>
         <NotificationsProvider>
           <FollowsSummaryProvider>
-            <SidebarProvider defaultOpen={sidebarOpen}>
+            <PersistedSidebarProvider defaultOpen={sidebarOpen}>
               <AppSidebar user={user} {...slots} />
               {/* Never wider than the space beside the sidebar, whatever its content: no sideways scroll. */}
               <SidebarInset className="min-w-0">
                 <AppHeader />
                 {children}
               </SidebarInset>
-            </SidebarProvider>
+            </PersistedSidebarProvider>
           </FollowsSummaryProvider>
         </NotificationsProvider>
       </TrackSyncProvider>

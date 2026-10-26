@@ -3,7 +3,7 @@
 import { CalendarIcon, CircleAlertIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRef } from "react";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { HistoryMode, TileHistorySummary } from "@/lib/api/types";

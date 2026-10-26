@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCountryCodes } from "@/hooks/use-country-codes";
 import type { CountryCompletion } from "@/lib/api/types";
 import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";

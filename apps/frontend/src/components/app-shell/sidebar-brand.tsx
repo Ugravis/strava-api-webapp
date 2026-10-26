@@ -4,8 +4,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AppLogoMark, AppWordmark } from "@/components/brand/app-logo";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/tooltip";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 
 /**

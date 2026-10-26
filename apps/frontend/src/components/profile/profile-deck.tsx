@@ -3,7 +3,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useRef } from "react";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CARD_WIDTH } from "./profile-stage";
 

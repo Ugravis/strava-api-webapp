@@ -2,7 +2,7 @@
 
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { useThemeToggle } from "./use-theme-toggle";
 
 /** Icon button; icons are switched in CSS to avoid any hydration mismatch. */

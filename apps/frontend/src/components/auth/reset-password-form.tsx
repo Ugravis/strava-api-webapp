@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { FormError } from "@/components/forms/form-error";
 import { NewPasswordFields } from "@/components/forms/new-password-fields";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { routes } from "@/config/routes";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";

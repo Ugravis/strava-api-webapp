@@ -5,15 +5,15 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
  * CSRF defense in depth on top of `SameSite=Lax` cookies: state-changing
- * requests sent by a browser must originate from the frontend or the back office.
+ * requests sent by a browser must originate from the frontend.
  */
-export function originCheck(allowedOrigins: string[]): RequestHandler {
+export function originCheck(allowedOrigin: string): RequestHandler {
   return (request: Request, _response: Response, next: NextFunction): void => {
     const origin = request.get('origin');
     if (
       SAFE_METHODS.has(request.method) ||
       !origin ||
-      allowedOrigins.includes(origin)
+      origin === allowedOrigin
     ) {
       return next();
     }

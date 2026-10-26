@@ -14,11 +14,9 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 ```
 apps/backend/                NestJS API
 apps/frontend/               Next.js application
-apps/admin/                  Next.js back office, on its own subdomain
 packages/shared/             API contracts, constants and validation rules (compiled, ESM + CJS)
 packages/typescript-config/  Shared tsconfig presets (base, library, nestjs, nextjs)
 packages/eslint-config/      Shared ESLint flat configs (nestjs, nextjs)
-packages/ui/                 shadcn primitives and Tailwind theme shared by the Next.js apps
 docker/                      Dockerfiles
 ```
 
@@ -32,7 +30,6 @@ docker compose up --build
 ```
 
 - Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
-- Back office: http://localhost:3001 (only `/api/admin` is proxied)
 - API health check: http://localhost:4000/api/health
 - API endpoint listing: http://localhost:3000/api (method, path, access, rate limit, status; not served in production)
 - Adminer (database UI): http://localhost:8088 — system `PostgreSQL`, server `db`, credentials from `.env` (default `postgres` / `postgres`, database `strava_webapp`)
@@ -77,41 +74,6 @@ pnpm --filter @kilotrace/backend migration:revert
   With "Stay signed in", the cookie lasts 30 days and is extended while used; otherwise it ends
   with the browser and the session expires after 24 hours of inactivity.
   The browser only talks to the frontend origin, which proxies `/api` to the backend.
-
-## Back office
-
-The back-office API lives under `/api/admin`, in the same NestJS process but isolated from the
-application users (`apps/backend/src/admin`).
-
-- **App**: `apps/admin`, a separate Next.js app served on its own subdomain (`ADMIN_URL`). It only
-  proxies `/api/admin`, so its session cookie stays host-only; the public frontend answers 404
-  on `/api/admin`. Never indexed (`X-Robots-Tag`, `robots.txt`, metadata), stricter Content
-  Security Policy, no third-party origin. Its navigation only shows the sections of the role.
-- **UI**: shadcn primitives and the Tailwind theme live in `packages/ui`, moved there when an app
-  besides the frontend needs them; business components stay in their app.
-
-- **Accounts**: `admin_users`, separate from `users`; the email is the sign-in allowlist entry.
-  Roles are hierarchical, `super-admin` > `admin` > `support` (`AdminRole` in `@kilotrace/shared`).
-- **Access**: a global guard refuses by default. A route under `/api/admin` must come from an
-  `@AdminController()` and declare its lowest role with `@Roles()`; the account and its role are
-  read from the database on every request, so a role change or a disabled account applies at
-  once. Back-office sessions (`kilotrace_admin_session` cookie, `admin_sessions`) end after
-  30 minutes of inactivity and 8 hours at most. Admin routes have their own rate limit.
-- **Audit log**: every state-changing route must be `@Audited()` (the guard refuses it
-  otherwise); an interceptor records who, what, on what, why and the outcome in `audit_log`,
-  which a database trigger keeps append-only. Destructive actions set `requireReason` and need a
-  `reason` in the body.
-- **Sign-in**: Google only, through an OAuth client of its own (`ADMIN_GOOGLE_CLIENT_ID`,
-  `ADMIN_GOOGLE_CLIENT_SECRET`, redirect URI `${ADMIN_URL}/api/admin/auth/google/callback`),
-  never the public one. The verified Google email must match an enabled `admin_users` account;
-  each sign-in ends the previous sessions of the account, and every attempt, refused ones
-  included, is recorded in the audit log. The session cookie is host-only and ends with the
-  browser. Only these sign-in steps are `@AdminPublic()`, which the guard accepts on read-only
-  methods only.
-- **First super-admin**: set `ADMIN_BOOTSTRAP_EMAIL` to its Google email; the backend creates it
-  at startup, audited, only while `admin_users` is empty. Once any account exists the variable is
-  ignored, so disabling that account never brings it back; later roles are granted from the
-  back office.
 
 ## Strava
 
@@ -314,12 +276,11 @@ delete `apps/backend/src/dev`, `apps/frontend/src/components/dev` and their two 
 
 `docker-compose.prod.yml` runs the production images (`prod` targets of `docker/*.Dockerfile`,
 non-root, `NODE_ENV=production`). Nothing is public: the frontend listens on
-`127.0.0.1:${FRONTEND_PORT}` (3100 by default), the back office on `127.0.0.1:${ADMIN_PORT}`
-(3200), set `ADMIN_URL` to its public subdomain, and the database on `127.0.0.1:${DB_HOST_PORT}` (5432), for SSH
+`127.0.0.1:${FRONTEND_PORT}` (3100 by default) and the database on `127.0.0.1:${DB_HOST_PORT}` (5432), for SSH
 tunnels only. The web server of the host terminates HTTPS and proxies to the frontend, which
 forwards `/api` to the backend. On a server of its own, `--profile caddy` starts the bundled
 [Caddy](https://caddyserver.com) (`docker/Caddyfile`) on ports 80 and 443 instead, with
-automatic certificates and HSTS, serving the back office on `ADMIN_DOMAIN`. No Adminer, Mailpit or storage console.
+automatic certificates and HSTS. No Adminer, Mailpit or storage console.
 
 ```bash
 cp .env.production.example .env   # then fill in every value, chmod 600 .env
@@ -345,18 +306,18 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ## Scripts
 
-| Command                 | Description                                          |
-| ----------------------- | ---------------------------------------------------- |
-| `pnpm check`            | Run every CI check on all packages                   |
-| `pnpm dev`              | Start every app in development mode                  |
-| `pnpm lint`             | Lint all packages                                    |
-| `pnpm typecheck`        | Type-check all packages                              |
-| `pnpm test`             | Run unit tests                                       |
-| `pnpm test:e2e`         | Run e2e tests                                        |
-| `pnpm build`            | Build all packages                                   |
-| `pnpm countries:import` | Import the country boundaries from Overture Maps     |
-| `pnpm stations:import`  | Import the train stations and links from an OSM file |
-| `pnpm db:seed:bench`    | Create the `bench` account with a large tile history |
+| Command                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `pnpm check`            | Run every CI check on all packages                      |
+| `pnpm dev`              | Start every app in development mode                     |
+| `pnpm lint`             | Lint all packages                                       |
+| `pnpm typecheck`        | Type-check all packages                                 |
+| `pnpm test`             | Run unit tests                                          |
+| `pnpm test:e2e`         | Run e2e tests                                           |
+| `pnpm build`            | Build all packages                                      |
+| `pnpm countries:import` | Import the country boundaries from Overture Maps        |
+| `pnpm stations:import`  | Import the train stations and links from an OSM file    |
+| `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
 Tasks run through Turborepo (`turbo.json`), which caches their results in `.turbo`. Add
 `--filter=<package>` to run one package, e.g. `pnpm dev --filter=@kilotrace/frontend`. The CI runs

@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { errorCodeOf } from "@/lib/api/errors";
 import type { ProfileSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";

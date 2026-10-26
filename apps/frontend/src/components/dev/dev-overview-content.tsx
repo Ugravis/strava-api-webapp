@@ -2,10 +2,10 @@
 
 import { RefreshCwIcon } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/api/client";
 import { DevTable } from "./dev-table";
 

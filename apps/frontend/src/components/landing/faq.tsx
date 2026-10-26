@@ -1,7 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 
 export const FAQ_KEYS = ["what", "tiles", "square", "sources", "sports", "privacy", "mobile", "account"] as const;

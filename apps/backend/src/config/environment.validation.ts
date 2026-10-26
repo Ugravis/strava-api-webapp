@@ -1,5 +1,3 @@
-import { isEmail } from 'class-validator';
-
 const MIN_SECRET_LENGTH = 32;
 
 /** Values shipped in `.env.example` and `docker-compose.yml`, public by nature. */
@@ -36,11 +34,6 @@ export function validateEnvironment(
   const read = (name: string): string =>
     typeof env[name] === 'string' ? env[name] : '';
 
-  const bootstrapEmail = read('ADMIN_BOOTSTRAP_EMAIL').trim();
-  if (bootstrapEmail && !isEmail(bootstrapEmail)) {
-    errors.push('ADMIN_BOOTSTRAP_EMAIL must be an email address');
-  }
-
   const verifyToken = read('STRAVA_WEBHOOK_VERIFY_TOKEN');
   if (verifyToken && !URL_SAFE.test(verifyToken)) {
     errors.push(
@@ -65,10 +58,6 @@ export function validateEnvironment(
     }
     if (!read('FRONTEND_URL').startsWith('https://')) {
       errors.push('FRONTEND_URL must be an https:// URL');
-    }
-    const adminUrl = read('ADMIN_URL');
-    if (adminUrl && !adminUrl.startsWith('https://')) {
-      errors.push('ADMIN_URL must be an https:// URL');
     }
   }
 

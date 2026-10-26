@@ -4,7 +4,7 @@ import { ArrowUpDownIcon, CheckIcon, StarIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import type { DistanceBadge } from "@/lib/api/types";
 import { BadgeGrid } from "./badge-grid";
 import { SortableFavorites } from "./sortable-favorites";

@@ -3,7 +3,7 @@
 import { InfoIcon, RefreshCwIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import type { StravaConnectionStatus } from "@/lib/api/types";
 import { StravaIcon } from "./strava-icon";
 

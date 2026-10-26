@@ -21,7 +21,7 @@ function row(endpoint: ApiEndpoint): string {
   return `<tr>
       <td><span class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</span></td>
       <td><code>${escape(endpoint.path)}</code></td>
-      <td>${endpoint.access === 'session' ? 'session' : `<span class="${endpoint.access}">${endpoint.access}</span>`}</td>
+      <td>${endpoint.access === 'public' ? '<span class="public">public</span>' : 'session'}</td>
       <td>${endpoint.rateLimit ? escape(endpoint.rateLimit) : '<span class="muted">none</span>'}</td>
       <td>${endpoint.status}</td>
       <td class="muted"><code>${escape(endpoint.handler)}</code></td>
@@ -65,7 +65,6 @@ export function renderApiIndex(endpoints: ApiEndpoint[]): string {
   code { font: 13px ui-monospace, monospace; }
   .muted { color: var(--muted); }
   .public { color: #b45309; }
-  .admin { color: #7c3aed; }
   .method { display: inline-block; min-width: 56px; text-align: center; padding: 1px 6px; border-radius: 4px; font: 600 12px ui-monospace, monospace; color: #fff; }
   .get { background: #2563eb; } .post { background: #16a34a; } .put { background: #9333ea; }
   .patch { background: #0891b2; } .delete { background: #dc2626; }

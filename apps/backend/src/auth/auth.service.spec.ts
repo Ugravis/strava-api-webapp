@@ -13,7 +13,6 @@ import type { UserTokensService } from './tokens/user-tokens.service';
 
 const config: AuthConfig = {
   frontendUrl: 'http://localhost:3000',
-  adminUrl: null,
   cookieSecret: 'secret',
   encryptionSecret: 'encryption-secret',
   secureCookies: false,

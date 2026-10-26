@@ -3,8 +3,8 @@
 import { CircleAlertIcon, RefreshCwIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@kilotrace/ui/components/button";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StravaConnectCard } from "@/components/strava/strava-connect-card";
 import { StravaConnectionSummary } from "@/components/strava/strava-connection-summary";
 import { StravaSyncStatus } from "@/components/strava/strava-sync-status";

@@ -3,9 +3,9 @@
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@kilotrace/ui/components/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/card";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityFormat } from "@/hooks/use-activity-format";
 import { usePointed } from "@/hooks/use-pointed";
 import { useYearDays } from "@/hooks/use-year-days";

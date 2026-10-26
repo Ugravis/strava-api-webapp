@@ -3,7 +3,7 @@
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useThemeToggle } from "@/components/theme/use-theme-toggle";
-import { DropdownMenuItem } from "@kilotrace/ui/components/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 /** Light/dark switch in the account menu; labels and icons are swapped in CSS to stay hydration-safe. */
 export function ThemeMenuItem() {

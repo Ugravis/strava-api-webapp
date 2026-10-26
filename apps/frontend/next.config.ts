@@ -35,8 +35,6 @@ const nextConfig: NextConfig = {
   // Self-contained server for the production image (docker/frontend.Dockerfile).
   output: "standalone",
   poweredByHeader: false,
-  // Shared components are shipped as TypeScript sources.
-  transpilePackages: ["@kilotrace/ui"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

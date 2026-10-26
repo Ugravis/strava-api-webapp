@@ -3,7 +3,7 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { useId } from "react";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useActivityDetails } from "@/hooks/use-activity";
 import { isFootSport, useActivityFormat } from "@/hooks/use-activity-format";

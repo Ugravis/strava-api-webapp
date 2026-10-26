@@ -1,11 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true
-  },
+  "extends": "@kilotrace/typescript-config/library.json",
   "include": ["src"]
 }

@@ -12,10 +12,12 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 ## Structure
 
 ```
-apps/backend/     NestJS API
-apps/frontend/    Next.js application
-packages/shared/  Types shared between frontend and backend
-docker/           Dockerfiles
+apps/backend/                NestJS API
+apps/frontend/               Next.js application
+packages/shared/             Types shared between frontend and backend
+packages/typescript-config/  Shared tsconfig presets (base, library, nestjs, nextjs)
+packages/eslint-config/      Shared ESLint flat configs (nestjs, nextjs)
+docker/                      Dockerfiles
 ```
 
 ## Getting started

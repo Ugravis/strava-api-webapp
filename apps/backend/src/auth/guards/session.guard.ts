@@ -5,17 +5,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Response } from 'express';
-import { ADMIN_AREA_KEY } from '../../admin/decorators/admin-controller.decorator';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import type { AuthenticatedRequest } from '../auth-request';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { SessionCookie } from '../session-cookie';
 import { SessionsService } from '../sessions/sessions.service';
 
-/**
- * Global guard: every route requires a valid session unless marked `@Public()`.
- * Back-office routes have their own guard and sessions.
- */
+/** Global guard: every route requires a valid session unless marked `@Public()`. */
 @Injectable()
 export class SessionGuard implements CanActivate {
   constructor(
@@ -25,16 +21,11 @@ export class SessionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const targets = [context.getHandler(), context.getClass()];
-    const isPublic = this.reflector.getAllAndOverride<boolean>(
-      IS_PUBLIC_KEY,
-      targets,
-    );
-    const isAdminArea = this.reflector.getAllAndOverride<boolean>(
-      ADMIN_AREA_KEY,
-      targets,
-    );
-    if (isPublic || isAdminArea) {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
       return true;
     }
 

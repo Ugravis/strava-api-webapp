@@ -5,7 +5,6 @@ import {
   PATH_METADATA,
 } from '@nestjs/common/constants';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { ADMIN_AREA_KEY } from '../admin/decorators/admin-controller.decorator';
 import { IS_PUBLIC_KEY } from '../auth/decorators/public.decorator';
 import { DEFAULT_THROTTLE } from '../auth/throttle';
 import { API_PREFIX } from '../common/api-prefix';
@@ -13,7 +12,7 @@ import { API_PREFIX } from '../common/api-prefix';
 export interface ApiEndpoint {
   method: string;
   path: string;
-  access: 'public' | 'session' | 'admin';
+  access: 'public' | 'session';
   /** e.g. `10 / 60 s`, or null when the route is not throttled. */
   rateLimit: string | null;
   status: number;
@@ -87,7 +86,7 @@ export class ApiEndpointsService {
             endpoints.push({
               method,
               path: joinPath(API_PREFIX, controllerPath, path),
-              access: this.access(handler, metatype),
+              access: this.isPublic(handler, metatype) ? 'public' : 'session',
               rateLimit: this.rateLimit(handler, metatype),
               status: this.status(handler, method),
               handler: `${metatype.name}.${name}`,
@@ -101,18 +100,6 @@ export class ApiEndpointsService {
         a.path.localeCompare(b.path) ||
         METHOD_ORDER.indexOf(a.method) - METHOD_ORDER.indexOf(b.method),
     );
-  }
-
-  private access(handler: Handler, controller: Type): ApiEndpoint['access'] {
-    if (
-      this.reflector.getAllAndOverride<boolean>(ADMIN_AREA_KEY, [
-        handler,
-        controller,
-      ])
-    ) {
-      return 'admin';
-    }
-    return this.isPublic(handler, controller) ? 'public' : 'session';
   }
 
   private isPublic(handler: Handler, controller: Type): boolean {

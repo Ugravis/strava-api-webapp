@@ -75,27 +75,6 @@ pnpm --filter @kilotrace/backend migration:revert
   with the browser and the session expires after 24 hours of inactivity.
   The browser only talks to the frontend origin, which proxies `/api` to the backend.
 
-## Back office
-
-The back-office API lives under `/api/admin`, in the same NestJS process but isolated from the
-application users (`apps/backend/src/admin`). Its sign-in and its own app come later.
-
-- **Accounts**: `admin_users`, separate from `users`; the email is the sign-in allowlist entry.
-  Roles are hierarchical, `super-admin` > `admin` > `support` (`AdminRole` in `@kilotrace/shared`).
-- **Access**: a global guard refuses by default. A route under `/api/admin` must come from an
-  `@AdminController()` and declare its lowest role with `@Roles()`; the account and its role are
-  read from the database on every request, so a role change or a disabled account applies at
-  once. Back-office sessions (`kilotrace_admin_session` cookie, `admin_sessions`) end after
-  30 minutes of inactivity and 8 hours at most. Admin routes have their own rate limit.
-- **Audit log**: every state-changing route must be `@Audited()` (the guard refuses it
-  otherwise); an interceptor records who, what, on what, why and the outcome in `audit_log`,
-  which a database trigger keeps append-only. Destructive actions set `requireReason` and need a
-  `reason` in the body.
-- **First super-admin**: created from the command line, refused once an enabled super-admin
-  exists: `pnpm admin:create-super-admin <email>` in development,
-  `docker compose -f docker-compose.prod.yml exec backend node dist/admin/cli/create-super-admin.js <email>`
-  in production.
-
 ## Strava
 
 Activities are imported from Strava into the platform's own schema (`activities`, linked to
@@ -327,19 +306,18 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ## Scripts
 
-| Command                         | Description                                          |
-| ------------------------------- | ---------------------------------------------------- |
-| `pnpm check`                    | Run every CI check on all packages                   |
-| `pnpm dev`                      | Start every app in development mode                  |
-| `pnpm lint`                     | Lint all packages                                    |
-| `pnpm typecheck`                | Type-check all packages                              |
-| `pnpm test`                     | Run unit tests                                       |
-| `pnpm test:e2e`                 | Run e2e tests                                        |
-| `pnpm build`                    | Build all packages                                   |
-| `pnpm countries:import`         | Import the country boundaries from Overture Maps     |
-| `pnpm stations:import`          | Import the train stations and links from an OSM file |
-| `pnpm db:seed:bench`            | Create the `bench` account with a large tile history |
-| `pnpm admin:create-super-admin` | Create the first back-office super-admin             |
+| Command                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `pnpm check`            | Run every CI check on all packages                      |
+| `pnpm dev`              | Start every app in development mode                     |
+| `pnpm lint`             | Lint all packages                                       |
+| `pnpm typecheck`        | Type-check all packages                                 |
+| `pnpm test`             | Run unit tests                                          |
+| `pnpm test:e2e`         | Run e2e tests                                           |
+| `pnpm build`            | Build all packages                                      |
+| `pnpm countries:import` | Import the country boundaries from Overture Maps        |
+| `pnpm stations:import`  | Import the train stations and links from an OSM file    |
+| `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
 Tasks run through Turborepo (`turbo.json`), which caches their results in `.turbo`. Add
 `--filter=<package>` to run one package, e.g. `pnpm dev --filter=@kilotrace/frontend`. The CI runs

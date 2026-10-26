@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { useTrackSyncManager } from "@/components/tracks/track-sync-provider";
 import { useStravaConnection } from "@/hooks/use-strava-connection";
 import { errorCodeOf } from "@/lib/api/errors";

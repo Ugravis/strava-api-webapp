@@ -2,7 +2,7 @@
 
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { FollowDirection } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { FollowsDialog } from "./follows-dialog";

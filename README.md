@@ -14,11 +14,9 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 ```
 apps/backend/                NestJS API
 apps/frontend/               Next.js application
-apps/admin/                  Next.js back office, on its own subdomain
 packages/shared/             API contracts, constants and validation rules (compiled, ESM + CJS)
 packages/typescript-config/  Shared tsconfig presets (base, library, nestjs, nextjs)
 packages/eslint-config/      Shared ESLint flat configs (nestjs, nextjs)
-packages/ui/                 shadcn primitives and Tailwind theme shared by the Next.js apps
 docker/                      Dockerfiles
 ```
 
@@ -32,7 +30,6 @@ docker compose up --build
 ```
 
 - Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
-- Back office: http://localhost:3001 (only `/api/admin` is proxied)
 - API health check: http://localhost:4000/api/health
 - API endpoint listing: http://localhost:3000/api (method, path, access, rate limit, status; not served in production)
 - Adminer (database UI): http://localhost:8088 — system `PostgreSQL`, server `db`, credentials from `.env` (default `postgres` / `postgres`, database `strava_webapp`)
@@ -81,14 +78,7 @@ pnpm --filter @kilotrace/backend migration:revert
 ## Back office
 
 The back-office API lives under `/api/admin`, in the same NestJS process but isolated from the
-application users (`apps/backend/src/admin`). Its sign-in comes later.
-
-- **App**: `apps/admin`, a separate Next.js app served on its own subdomain (`ADMIN_URL`). It only
-  proxies `/api/admin`, so its session cookie stays host-only; the public frontend answers 404
-  on `/api/admin`. Never indexed (`X-Robots-Tag`, `robots.txt`, metadata), stricter Content
-  Security Policy, no third-party origin. Its navigation only shows the sections of the role.
-- **UI**: shadcn primitives and the Tailwind theme live in `packages/ui`, moved there when an app
-  besides the frontend needs them; business components stay in their app.
+application users (`apps/backend/src/admin`). Its sign-in and its own app come later.
 
 - **Accounts**: `admin_users`, separate from `users`; the email is the sign-in allowlist entry.
   Roles are hierarchical, `super-admin` > `admin` > `support` (`AdminRole` in `@kilotrace/shared`).
@@ -307,12 +297,11 @@ delete `apps/backend/src/dev`, `apps/frontend/src/components/dev` and their two 
 
 `docker-compose.prod.yml` runs the production images (`prod` targets of `docker/*.Dockerfile`,
 non-root, `NODE_ENV=production`). Nothing is public: the frontend listens on
-`127.0.0.1:${FRONTEND_PORT}` (3100 by default), the back office on `127.0.0.1:${ADMIN_PORT}`
-(3200), set `ADMIN_URL` to its public subdomain, and the database on `127.0.0.1:${DB_HOST_PORT}` (5432), for SSH
+`127.0.0.1:${FRONTEND_PORT}` (3100 by default) and the database on `127.0.0.1:${DB_HOST_PORT}` (5432), for SSH
 tunnels only. The web server of the host terminates HTTPS and proxies to the frontend, which
 forwards `/api` to the backend. On a server of its own, `--profile caddy` starts the bundled
 [Caddy](https://caddyserver.com) (`docker/Caddyfile`) on ports 80 and 443 instead, with
-automatic certificates and HSTS, serving the back office on `ADMIN_DOMAIN`. No Adminer, Mailpit or storage console.
+automatic certificates and HSTS. No Adminer, Mailpit or storage console.
 
 ```bash
 cp .env.production.example .env   # then fill in every value, chmod 600 .env

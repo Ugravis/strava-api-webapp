@@ -4,7 +4,7 @@ import { CheckIcon, LoaderIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { useWatch, type Control, type FieldValues, type Path, type UseFormSetError, type UseFormClearErrors } from "react-hook-form";
-import { Input } from "@kilotrace/ui/components/input";
+import { Input } from "@/components/ui/input";
 import { useUsernameAvailability } from "@/hooks/use-username-availability";
 import { FormField } from "./form-field";
 

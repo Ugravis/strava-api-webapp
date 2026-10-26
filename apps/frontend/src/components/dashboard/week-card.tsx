@@ -3,8 +3,8 @@
 import { ArrowDownRightIcon, ArrowUpRightIcon, CalendarRangeIcon, FlameIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { type ReactNode, useMemo, useRef } from "react";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@kilotrace/ui/components/card";
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityFormat } from "@/hooks/use-activity-format";
 import { usePointed } from "@/hooks/use-pointed";
 import type { ActivityDay } from "@/lib/api/types";

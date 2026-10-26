@@ -1,4 +1,4 @@
-import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function MapSkeleton() {
   return <Skeleton className="absolute inset-0 rounded-none" aria-busy />;

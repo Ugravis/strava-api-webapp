@@ -3,7 +3,7 @@
 import { RotateCcwIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { type PointerEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** The value of a counter from a date on, until the next point. */

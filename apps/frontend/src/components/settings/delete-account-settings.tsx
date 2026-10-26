@@ -17,9 +17,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@kilotrace/ui/components/input";
+import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { routes } from "@/config/routes";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";

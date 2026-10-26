@@ -6,7 +6,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@kilotrace/ui/components/card";
+} from "@/components/ui/card";
 
 interface AuthCardProps {
   title: ReactNode;

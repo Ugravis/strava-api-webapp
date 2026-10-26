@@ -11,18 +11,16 @@ import { StravaWebhookSubscriptionService } from './strava/webhooks/strava-webho
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get<AuthConfig>(authConfig.KEY);
-  const allowedOrigins = [config.frontendUrl, config.adminUrl]
-    .filter((url): url is string => Boolean(url))
-    .map((url) => new URL(url).origin);
+  const frontendOrigin = new URL(config.frontendUrl).origin;
 
   // The API is reached through the frontend proxy: trust it for the client IP.
   app.set('trust proxy', process.env.TRUST_PROXY ?? 'loopback, uniquelocal');
   app.disable('x-powered-by');
   app.setGlobalPrefix(API_PREFIX);
   app.use(cookieParser(config.cookieSecret));
-  app.use(originCheck(allowedOrigins));
+  app.use(originCheck(frontendOrigin));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.enableCors({ origin: allowedOrigins, credentials: true });
+  app.enableCors({ origin: frontendOrigin, credentials: true });
   app.enableShutdownHooks();
   await app.listen(process.env.PORT ?? 4000);
   // Strava validates the callback while subscribing: the server must listen first.

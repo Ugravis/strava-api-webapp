@@ -8,8 +8,8 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { FollowButton, type FollowState, followStateOf } from "@/components/community/follow-button";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { useNotifications } from "@/components/notifications/notifications-provider";
-import { Button } from "@kilotrace/ui/components/button";
-import { Card } from "@kilotrace/ui/components/card";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { PROFILE_PARAM, routes, userProfileHref } from "@/config/routes";
 import { usePublicProfile } from "@/hooks/use-public-profile";

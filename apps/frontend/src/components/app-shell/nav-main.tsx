@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@kilotrace/ui/components/sidebar";
+} from "@/components/ui/sidebar";
 import type { NavigationItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 

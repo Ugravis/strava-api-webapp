@@ -59,10 +59,6 @@ export function validateEnvironment(
     if (!read('FRONTEND_URL').startsWith('https://')) {
       errors.push('FRONTEND_URL must be an https:// URL');
     }
-    const adminUrl = read('ADMIN_URL');
-    if (adminUrl && !adminUrl.startsWith('https://')) {
-      errors.push('ADMIN_URL must be an https:// URL');
-    }
   }
 
   if (errors.length > 0) {

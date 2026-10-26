@@ -4,7 +4,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, type MouseEvent } from "react";
 import { toast } from "sonner";
-import { Button } from "@kilotrace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { errorCodeOf } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { profilesService } from "@/services/profiles.service";

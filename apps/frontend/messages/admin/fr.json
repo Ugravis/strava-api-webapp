@@ -3,8 +3,8 @@
     "title": "Administration"
   },
   "shell": {
-    "toAdmin": "Administration",
-    "toApp": "Retour au site"
+    "toAdmin": "Partie admin",
+    "toApp": "Site public"
   },
   "nav": {
     "overview": "Vue d'ensemble"

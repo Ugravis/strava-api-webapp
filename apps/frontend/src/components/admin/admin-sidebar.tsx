@@ -1,6 +1,6 @@
 import "server-only";
 import { type AdminRole, highestAdminRole } from "@kilotrace/shared/admin";
-import { ArrowLeftIcon, ShieldIcon } from "lucide-react";
+import { GlobeIcon, ShieldIcon } from "lucide-react";
 import { NavLinks } from "@/components/app-shell/nav-links";
 import { NavSwitchLink } from "@/components/app-shell/nav-switch-link";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
@@ -49,7 +49,7 @@ export function ToAppLink({ roles }: { roles: readonly AdminRole[] }) {
       href={DEFAULT_AUTHENTICATED_ROUTE}
       label={getAdminTranslations("shell")("toApp")}
       caption={role ? getAdminTranslations("roles")(role) : ""}
-      icon={<ArrowLeftIcon />}
+      icon={<GlobeIcon />}
     />
   );
 }

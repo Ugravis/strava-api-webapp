@@ -1,7 +1,6 @@
 "use client";
 
 import { BugIcon } from "lucide-react";
-import Link from "next/link";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DevOverviewContent } from "./dev-overview-content";
 
@@ -29,9 +28,6 @@ export function DevToolbar() {
           <SheetDescription>Base de données en lecture seule, visible en développement uniquement.</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-4 px-4 pb-4">
-          <Link href="/admin/railway" className="text-sm underline underline-offset-4">
-            Rapport du dernier import des gares
-          </Link>
           <DevOverviewContent />
         </div>
       </SheetContent>

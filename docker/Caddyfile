@@ -5,6 +5,8 @@
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		-Server
+		# Discloses the 404 of the back office to non-admins (apps/frontend/src/proxy.ts).
+		-X-Middleware-Rewrite
 	}
 	reverse_proxy frontend:3000
 }

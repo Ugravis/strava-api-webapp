@@ -1,3 +1,4 @@
+import type { AdminRole } from '@kilotrace/shared/admin';
 import {
   Column,
   CreateDateColumn,
@@ -74,6 +75,18 @@ export class User {
   /** A private profile shows its badges, statistics and follows to accepted followers only. */
   @Column({ name: 'profile_private', type: 'boolean', default: true })
   profilePrivate!: boolean;
+
+  /**
+   * Back-office roles, read from the database on every admin request. Never
+   * part of a response outside `/api/admin`.
+   */
+  @Column({
+    type: 'varchar',
+    length: 20,
+    array: true,
+    default: () => "'{}'",
+  })
+  roles!: AdminRole[];
 
   /** When the terms of use were accepted, kept as proof of consent. */
   @Column({ name: 'terms_accepted_at', type: 'timestamptz', nullable: true })

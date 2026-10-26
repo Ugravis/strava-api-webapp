@@ -1,15 +1,27 @@
-import { Skeleton } from "@/components/ui/skeleton";
+"use client";
 
-/** Static fallback shown while the session is resolved. */
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { useSavedSidebarOpen } from "./sidebar-state";
+
+/** Static fallback shown while the session is resolved, with the sidebar folded as it was left. */
 export function AppShellSkeleton() {
+  const open = useSavedSidebarOpen();
+  const item = open ? "w-full" : "w-8";
+
   return (
     <div className="flex min-h-svh w-full" aria-busy>
-      <div className="hidden w-64 shrink-0 flex-col gap-4 border-r bg-sidebar p-3 md:flex">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <div className="mt-auto flex flex-col gap-2">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-12 w-full" />
+      <div
+        className={cn(
+          "hidden shrink-0 flex-col gap-4 border-r bg-sidebar md:flex",
+          open ? "w-64 p-3" : "w-12 items-center px-2 py-3",
+        )}
+      >
+        <Skeleton className={cn("h-10", item)} />
+        <Skeleton className={cn("h-8", item)} />
+        <div className={cn("mt-auto flex flex-col gap-2", !open && "items-center")}>
+          <Skeleton className={cn("h-8", item)} />
+          <Skeleton className={cn(open ? "h-12" : "h-8", item)} />
         </div>
       </div>
       <div className="flex flex-1 flex-col">

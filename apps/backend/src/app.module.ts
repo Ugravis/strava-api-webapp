@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ActivitiesModule } from './activities/activities.module';
+import { AdminModule } from './admin/admin.module';
 import { ApiIndexModule } from './api-index/api-index.module';
 import { AuthModule } from './auth/auth.module';
 import { DEFAULT_THROTTLE } from './auth/throttle';
@@ -11,6 +12,7 @@ import { CountriesModule } from './countries/countries.module';
 import { DevModule } from './dev/dev.module';
 import { DistancesModule } from './distances/distances.module';
 import { FollowsModule } from './follows/follows.module';
+import adminConfig from './config/admin.config';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import { validateEnvironment } from './config/environment.validation';
@@ -39,6 +41,7 @@ import { UsersModule } from './users/users.module';
         storageConfig,
         stravaConfig,
         profilesConfig,
+        adminConfig,
       ],
     }),
     TypeOrmModule.forRootAsync({
@@ -57,6 +60,7 @@ import { UsersModule } from './users/users.module';
     StationsModule,
     FollowsModule,
     NotificationsModule,
+    AdminModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.
     DevModule.forEnvironment(),

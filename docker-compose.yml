@@ -58,6 +58,7 @@ services:
       DB_NAME: ${DB_NAME:-strava_webapp}
       PORT: 4000
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:3001}
       COOKIE_SECRET: ${COOKIE_SECRET:-development-cookie-secret}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
@@ -114,6 +115,20 @@ services:
       - ./apps/frontend/src:/app/apps/frontend/src
       - ./apps/frontend/public:/app/apps/frontend/public
       - ./apps/frontend/messages:/app/apps/frontend/messages
+
+  admin:
+    build:
+      context: .
+      dockerfile: docker/admin.Dockerfile
+      target: dev
+    environment:
+      API_INTERNAL_URL: http://backend:4000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/admin/src:/app/apps/admin/src
 
 volumes:
   db-data:

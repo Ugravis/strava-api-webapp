@@ -56,6 +56,7 @@ services:
       DB_NAME: ${DB_NAME:-strava_webapp}
       PORT: 4000
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
+      ADMIN_URL: ${ADMIN_URL:-}
       COOKIE_SECRET: ${COOKIE_SECRET:?COOKIE_SECRET is required}
       ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:?ENCRYPTION_SECRET is required}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -101,12 +102,27 @@ services:
       - backend
     logging: *logging
 
+  admin:
+    build:
+      context: .
+      dockerfile: docker/admin.Dockerfile
+      target: prod
+      args:
+        API_INTERNAL_URL: http://backend:4000
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:-3200}:3000"
+    depends_on:
+      - backend
+    logging: *logging
+
   caddy:
     image: caddy:2.10-alpine
     profiles: [caddy]
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:-}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:-}
     ports:
       - "80:80"
       - "443:443"
@@ -117,6 +133,7 @@ services:
       - caddy-config:/config
     depends_on:
       - frontend
+      - admin
     logging: *logging
 
 volumes:

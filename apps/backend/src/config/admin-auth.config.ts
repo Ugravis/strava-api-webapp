@@ -7,8 +7,6 @@ export interface AdminAuthConfig {
   /** Dedicated OAuth client: the public sign-in client never opens the back office. */
   google: GoogleConfig;
   secureCookies: boolean;
-  /** First super-admin, created at startup while there is no back-office account at all. */
-  bootstrapEmail: string | null;
 }
 
 export default registerAs('adminAuth', (): AdminAuthConfig => {
@@ -21,7 +19,5 @@ export default registerAs('adminAuth', (): AdminAuthConfig => {
       redirectUri: `${adminUrl}/api/admin/auth/google/callback`,
     },
     secureCookies: adminUrl.startsWith('https://'),
-    bootstrapEmail:
-      process.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase() || null,
   };
 });

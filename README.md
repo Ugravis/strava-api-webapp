@@ -108,10 +108,10 @@ application users (`apps/backend/src/admin`).
   included, is recorded in the audit log. The session cookie is host-only and ends with the
   browser. Only these sign-in steps are `@AdminPublic()`, which the guard accepts on read-only
   methods only.
-- **First super-admin**: set `ADMIN_BOOTSTRAP_EMAIL` to its Google email; the backend creates it
-  at startup, audited, only while `admin_users` is empty. Once any account exists the variable is
-  ignored, so disabling that account never brings it back; later roles are granted from the
-  back office.
+- **First super-admin**: created from the command line, refused once an enabled super-admin
+  exists: `pnpm admin:create-super-admin <email>` in development,
+  `docker compose -f docker-compose.prod.yml exec backend node dist/admin/cli/create-super-admin.js <email>`
+  in production.
 
 ## Strava
 
@@ -345,18 +345,19 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ## Scripts
 
-| Command                 | Description                                          |
-| ----------------------- | ---------------------------------------------------- |
-| `pnpm check`            | Run every CI check on all packages                   |
-| `pnpm dev`              | Start every app in development mode                  |
-| `pnpm lint`             | Lint all packages                                    |
-| `pnpm typecheck`        | Type-check all packages                              |
-| `pnpm test`             | Run unit tests                                       |
-| `pnpm test:e2e`         | Run e2e tests                                        |
-| `pnpm build`            | Build all packages                                   |
-| `pnpm countries:import` | Import the country boundaries from Overture Maps     |
-| `pnpm stations:import`  | Import the train stations and links from an OSM file |
-| `pnpm db:seed:bench`    | Create the `bench` account with a large tile history |
+| Command                         | Description                                          |
+| ------------------------------- | ---------------------------------------------------- |
+| `pnpm check`                    | Run every CI check on all packages                   |
+| `pnpm dev`                      | Start every app in development mode                  |
+| `pnpm lint`                     | Lint all packages                                    |
+| `pnpm typecheck`                | Type-check all packages                              |
+| `pnpm test`                     | Run unit tests                                       |
+| `pnpm test:e2e`                 | Run e2e tests                                        |
+| `pnpm build`                    | Build all packages                                   |
+| `pnpm countries:import`         | Import the country boundaries from Overture Maps     |
+| `pnpm stations:import`          | Import the train stations and links from an OSM file |
+| `pnpm db:seed:bench`            | Create the `bench` account with a large tile history |
+| `pnpm admin:create-super-admin` | Create the first back-office super-admin             |
 
 Tasks run through Turborepo (`turbo.json`), which caches their results in `.turbo`. Add
 `--filter=<package>` to run one package, e.g. `pnpm dev --filter=@kilotrace/frontend`. The CI runs

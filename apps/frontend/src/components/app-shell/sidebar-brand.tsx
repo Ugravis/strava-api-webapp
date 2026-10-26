@@ -6,14 +6,14 @@ import { useTranslations } from "next-intl";
 import { AppLogoMark, AppWordmark } from "@/components/brand/app-logo";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 
 /**
  * Logo and name of the app, with the button collapsing the sidebar beside
  * them. Once collapsed, the logo expands it again, the icon of the panel
- * shown on hover. On mobile, the sidebar is a drawer: no collapse.
+ * shown on hover. On mobile, the sidebar is a drawer: no collapse. The logo
+ * leads to `href`, the home of the current part of the site.
  */
-export function SidebarBrand() {
+export function SidebarBrand({ href }: { href: string }) {
   const t = useTranslations("nav");
   const { state, isMobile, toggleSidebar } = useSidebar();
 
@@ -38,7 +38,7 @@ export function SidebarBrand() {
     <SidebarMenuItem className="flex items-center gap-1">
       <SidebarMenuButton
         size="lg"
-        render={<Link href={DEFAULT_AUTHENTICATED_ROUTE} />}
+        render={<Link href={href} />}
         className="min-w-0 flex-1 hover:bg-transparent active:bg-transparent"
       >
         <AppLogoMark />

@@ -6,8 +6,9 @@ import { adminApi } from "./api";
 
 /** Back-office roles of the current user, empty for anyone else. Deduplicated within a request. */
 export const getAdminRoles = cache(async (): Promise<AdminRole[]> => {
-  const result = await adminApi<AdminMeResponse>("/me");
-  return result.ok ? result.data.roles : [];
+  // Also asked by the sidebar of every page: an unreachable backend must not break it.
+  const result = await adminApi<AdminMeResponse>("/me").catch(() => null);
+  return result?.ok ? result.data.roles : [];
 });
 
 /**

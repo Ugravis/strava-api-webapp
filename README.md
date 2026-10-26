@@ -94,7 +94,9 @@ session. Nothing of it is disclosed to anyone else:
 - **Pages**: server components, behind a role check in the proxy (`src/proxy.ts`), which serves
   non-admins the very page of an unknown route with a 404 status; Caddy removes the
   `X-Middleware-Rewrite` header that would tell it apart. Changes go through Server Actions and
-  `src/lib/admin` (server-only); the browser only gets generic components. Texts live in
+  `src/lib/admin` (server-only); the browser only gets generic components. The back office has
+  a sidebar of its own (`(admin)` route group); a link at the bottom of each sidebar, captioned
+  with the highest role, leads to the other part, rendered on the server for admins only. Texts live in
   `messages/admin/fr.json`, outside the messages sent to the browser. Never indexed, and left out
   of `robots.txt` and the sitemap.
 

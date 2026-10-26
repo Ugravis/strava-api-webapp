@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Placeholder for an admin page while it loads, below the section navigation. */
+/** Placeholder for an admin page while it loads, inside the shell. */
 export default function AdminPageLoading() {
   return (
     <div className="flex flex-col gap-6" aria-busy>

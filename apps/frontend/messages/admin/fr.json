@@ -1,7 +1,10 @@
 {
   "layout": {
-    "title": "Administration",
-    "navigation": "Navigation de l'administration"
+    "title": "Administration"
+  },
+  "shell": {
+    "toAdmin": "Administration",
+    "toApp": "Retour au site"
   },
   "nav": {
     "overview": "Vue d'ensemble"

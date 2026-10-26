@@ -4,15 +4,15 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY backend/package.json backend/
-COPY frontend/package.json frontend/
+COPY apps/backend/package.json apps/backend/
+COPY apps/frontend/package.json apps/frontend/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --filter frontend...
+RUN pnpm install --frozen-lockfile --filter @kilotrace/frontend...
 
 FROM deps AS dev
-COPY frontend frontend
+COPY apps/frontend apps/frontend
 COPY packages packages
-WORKDIR /app/frontend
+WORKDIR /app/apps/frontend
 EXPOSE 3000
 CMD ["pnpm", "dev"]
 
@@ -23,9 +23,9 @@ ARG NEXT_PUBLIC_SITE_URL
 ENV API_INTERNAL_URL=$API_INTERNAL_URL \
   NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
   NEXT_TELEMETRY_DISABLED=1
-COPY frontend frontend
+COPY apps/frontend apps/frontend
 COPY packages packages
-RUN pnpm --filter frontend build
+RUN pnpm --filter @kilotrace/frontend build
 
 FROM node:24-alpine AS prod
 ENV NODE_ENV=production \
@@ -33,9 +33,9 @@ ENV NODE_ENV=production \
   HOSTNAME=0.0.0.0 \
   PORT=3000
 WORKDIR /app
-COPY --from=build --chown=node:node /app/frontend/.next/standalone ./
-COPY --from=build --chown=node:node /app/frontend/.next/static frontend/.next/static
-COPY --from=build --chown=node:node /app/frontend/public frontend/public
+COPY --from=build --chown=node:node /app/apps/frontend/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/frontend/.next/static apps/frontend/.next/static
+COPY --from=build --chown=node:node /app/apps/frontend/public apps/frontend/public
 USER node
 EXPOSE 3000
-CMD ["node", "frontend/server.js"]
+CMD ["node", "apps/frontend/server.js"]

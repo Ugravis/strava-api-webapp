@@ -86,8 +86,8 @@ services:
       storage:
         condition: service_started
     volumes:
-      - ./backend/src:/app/backend/src
-      - ./backend/test:/app/backend/test
+      - ./apps/backend/src:/app/apps/backend/src
+      - ./apps/backend/test:/app/apps/backend/test
 
   # Optional public URL for Strava webhooks in development:
   # `docker compose --profile tunnel up`. Exposes the backend on a random
@@ -111,9 +111,9 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./frontend/src:/app/frontend/src
-      - ./frontend/public:/app/frontend/public
-      - ./frontend/messages:/app/frontend/messages
+      - ./apps/frontend/src:/app/apps/frontend/src
+      - ./apps/frontend/public:/app/apps/frontend/public
+      - ./apps/frontend/messages:/app/apps/frontend/messages
 
 volumes:
   db-data:

@@ -17,8 +17,7 @@ Closes #
 
 ## Plan de test
 
-- [ ] `composer run check-all` passe (backend)
-- [ ] `npm run check-all` passe (frontend)
+- [ ] `pnpm check-all` passe
 - [ ] Testé manuellement en local (`docker compose up -d`)
 
 ## Captures / démo (si pertinent)

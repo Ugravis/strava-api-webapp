@@ -12,8 +12,8 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 ## Structure
 
 ```
-backend/          NestJS API
-frontend/         Next.js application
+apps/backend/     NestJS API
+apps/frontend/    Next.js application
 packages/shared/  Types shared between frontend and backend
 docker/           Dockerfiles
 ```
@@ -50,9 +50,9 @@ object storage (uploaded avatars, map previews); it refuses to run when `NODE_EN
 To manage migrations manually:
 
 ```bash
-pnpm --filter backend migration:generate src/database/migrations/<Name>
-pnpm --filter backend migration:run
-pnpm --filter backend migration:revert
+pnpm --filter @kilotrace/backend migration:generate src/database/migrations/<Name>
+pnpm --filter @kilotrace/backend migration:run
+pnpm --filter @kilotrace/backend migration:revert
 ```
 
 ## Authentication
@@ -265,7 +265,7 @@ indicator) opens a temporary **Dev** panel: a read-only view of the database (we
 activities, sync jobs, connections, users) and of the Strava quotas, refreshed every 3 seconds
 while open, with the rows changed in the last minute highlighted. It is served by
 `GET /api/dev/overview`, which is never registered when `NODE_ENV=production`. To remove it:
-delete `backend/src/dev`, `frontend/src/components/dev` and their two references
+delete `apps/backend/src/dev`, `apps/frontend/src/components/dev` and their two references
 (`AppModule`, authenticated layout).
 
 ## Production
@@ -286,7 +286,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 - **Secrets**: the backend refuses to start in production when `COOKIE_SECRET`,
   `ENCRYPTION_SECRET` or `STRAVA_WEBHOOK_VERIFY_TOKEN` is missing, a development default or
   shorter than 32 characters, when a database or storage credential keeps its default, or when
-  `FRONTEND_URL` is not https (`backend/src/config/environment.validation.ts`).
+  `FRONTEND_URL` is not https (`apps/backend/src/config/environment.validation.ts`).
 - **Cookies** are `Secure` whenever `FRONTEND_URL` is https, and prefixed with `kilotrace_`:
   browsers share cookies between all the ports of a host, other apps included.
 - **Email sign-in**: sign-up, sign-in and password reset by email answer
@@ -295,7 +295,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 - **Strava webhook**: events are not signed, so the verify token is the last segment of the
   callback URL (`/api/strava/webhook/<token>`); any other URL answers 404.
 - **Headers**: Next.js sends the Content Security Policy, `X-Frame-Options: DENY`, `nosniff`,
-  `Referrer-Policy` and `Permissions-Policy` (`frontend/next.config.ts`).
+  `Referrer-Policy` and `Permissions-Policy` (`apps/frontend/next.config.ts`).
 - **Geography**: `country_parts` and the stations tables are not created by any user action:
   import them once (`pnpm countries:import`, `pnpm stations:import`) through an SSH tunnel to
   the database, or copy them from another database with `pg_dump --data-only -t <table>`.

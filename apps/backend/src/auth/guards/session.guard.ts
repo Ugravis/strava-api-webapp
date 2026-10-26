@@ -30,6 +30,10 @@ export class SessionGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    // Already validated by the back-office access middleware.
+    if (request.auth) {
+      return true;
+    }
     const token = this.sessionCookie.read(request);
     const validated = token ? await this.sessions.validate(token) : null;
     if (!validated) {

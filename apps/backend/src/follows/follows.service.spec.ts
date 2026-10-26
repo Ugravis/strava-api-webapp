@@ -27,6 +27,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     favoriteSports: [],
     profileColor: null,
     profilePrivate: true,
+    roles: [],
     termsAcceptedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -7,19 +7,19 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev:backend": "pnpm --filter @kilotrace/backend start:dev",
-    "dev:frontend": "pnpm --filter @kilotrace/frontend dev",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "check:backend": "pnpm --filter @kilotrace/backend check",
-    "check:frontend": "pnpm --filter @kilotrace/frontend check",
-    "check:shared": "pnpm --filter @kilotrace/shared check",
-    "check-all": "pnpm -r --workspace-concurrency=1 check",
+    "build": "turbo run build",
+    "check": "turbo run lint typecheck test test:e2e build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "typecheck": "turbo run typecheck",
     "db:reset": "pnpm --filter @kilotrace/backend db:reset",
     "db:seed:bench": "pnpm --filter @kilotrace/backend db:seed:bench",
     "countries:import": "pnpm --filter @kilotrace/backend countries:import",
     "stations:import": "pnpm --filter @kilotrace/backend stations:import"
+  },
+  "devDependencies": {
+    "turbo": "2.11.8"
   }
 }

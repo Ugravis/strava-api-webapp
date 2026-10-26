@@ -2,16 +2,18 @@ FROM node:24-alpine AS base
 RUN npm install -g pnpm@10.34.7
 WORKDIR /app
 
+# Keep in sync with the turbo version of the root package.json.
+FROM base AS prune
+RUN npm install -g turbo@2.11.8
+COPY . .
+RUN turbo prune @kilotrace/frontend --docker
+
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY apps/backend/package.json apps/backend/
-COPY apps/frontend/package.json apps/frontend/
-COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --filter @kilotrace/frontend...
+COPY --from=prune /app/out/json/ .
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS dev
-COPY apps/frontend apps/frontend
-COPY packages packages
+COPY --from=prune /app/out/full/ .
 WORKDIR /app/apps/frontend
 EXPOSE 3000
 CMD ["pnpm", "dev"]
@@ -23,9 +25,8 @@ ARG NEXT_PUBLIC_SITE_URL
 ENV API_INTERNAL_URL=$API_INTERNAL_URL \
   NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
   NEXT_TELEMETRY_DISABLED=1
-COPY apps/frontend apps/frontend
-COPY packages packages
-RUN pnpm --filter @kilotrace/frontend build
+COPY --from=prune /app/out/full/ .
+RUN pnpm turbo run build --filter=@kilotrace/frontend
 
 FROM node:24-alpine AS prod
 ENV NODE_ENV=production \

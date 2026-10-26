@@ -15,6 +15,7 @@ import {
   AdminAuthController,
 } from './auth/admin-auth.controller';
 import { AdminAuthService } from './auth/admin-auth.service';
+import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminGuard } from './guards/admin.guard';
 import { AdminSession } from './sessions/admin-session.entity';
 import { AdminSessionsService } from './sessions/admin-sessions.service';
@@ -30,6 +31,7 @@ import { AdminUser } from './users/admin-user.entity';
   providers: [
     AdminSessionsService,
     AdminAuthService,
+    AdminBootstrapService,
     AuditLogService,
     {
       provide: ADMIN_GOOGLE_OAUTH,

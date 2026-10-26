@@ -28,8 +28,7 @@
     "db:reset": "node --env-file-if-exists=../../.env -r ts-node/register src/database/reset.ts",
     "db:seed:bench": "node --env-file-if-exists=../../.env -r ts-node/register src/database/seed-bench.ts",
     "countries:import": "node --env-file-if-exists=../../.env -r ts-node/register src/countries/import/import-countries.ts",
-    "stations:import": "node --max-old-space-size=6144 --env-file-if-exists=../../.env -r ts-node/register/transpile-only src/stations/import/import-stations.ts",
-    "admin:create-super-admin": "node --env-file-if-exists=../../.env -r ts-node/register src/admin/cli/create-super-admin.ts"
+    "stations:import": "node --max-old-space-size=6144 --env-file-if-exists=../../.env -r ts-node/register/transpile-only src/stations/import/import-stations.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1151.0",

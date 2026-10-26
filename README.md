@@ -7,7 +7,7 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 - **Backend**: NestJS, TypeORM
 - **Database**: PostgreSQL with PostGIS
 - **Frontend**: Next.js, shadcn/ui
-- **Tooling**: pnpm workspaces, Docker
+- **Tooling**: pnpm workspaces, Turborepo, Docker
 
 ## Structure
 
@@ -38,8 +38,7 @@ Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be rea
 
 ```bash
 pnpm install
-pnpm dev:backend
-pnpm dev:frontend
+pnpm dev
 ```
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
@@ -304,19 +303,20 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 | Command                 | Description                                             |
 | ----------------------- | ------------------------------------------------------- |
-| `pnpm check-all`        | Run every CI check on all packages, sequentially        |
-| `pnpm check:backend`    | Backend: lint, type-check, unit tests, e2e tests, build |
-| `pnpm check:frontend`   | Frontend: lint, type-check, build                       |
-| `pnpm check:shared`     | Shared package: type-check                              |
+| `pnpm check`            | Run every CI check on all packages                      |
+| `pnpm dev`              | Start every app in development mode                     |
 | `pnpm lint`             | Lint all packages                                       |
 | `pnpm typecheck`        | Type-check all packages                                 |
 | `pnpm test`             | Run unit tests                                          |
+| `pnpm test:e2e`         | Run e2e tests                                           |
 | `pnpm build`            | Build all packages                                      |
 | `pnpm countries:import` | Import the country boundaries from Overture Maps        |
 | `pnpm stations:import`  | Import the train stations and links from an OSM file    |
 | `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
-The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.
+Tasks run through Turborepo (`turbo.json`), which caches their results in `.turbo`. Add
+`--filter=<package>` to run one package, e.g. `pnpm dev --filter=@kilotrace/frontend`. The CI runs
+`pnpm check` on the packages affected by the change, so `pnpm check` reproduces it locally.
 
 ## Workflow
 

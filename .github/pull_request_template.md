@@ -17,7 +17,7 @@ Closes #
 
 ## Plan de test
 
-- [ ] `pnpm check-all` passe
+- [ ] `pnpm check` passe
 - [ ] Testé manuellement en local (`docker compose up -d`)
 
 ## Captures / démo (si pertinent)

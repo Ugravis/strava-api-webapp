@@ -278,12 +278,16 @@ describe('Admin guards (e2e)', () => {
       return get('/api/user-area', 'super').expect(200);
     });
 
-    it('have a dedicated rate limit', async () => {
+    it('have a dedicated rate limit, per admin', async () => {
       store.add('token', [AdminRole.Support]);
       for (let i = 0; i < ADMIN_THROTTLE.limit; i += 1) {
         await get('/api/admin/probe/throttled', 'token').expect(200);
       }
       await get('/api/admin/probe/throttled', 'token').expect(429);
+
+      // Counted per admin, not per IP: they all call through the Next server.
+      store.add('other', [AdminRole.Support]);
+      await get('/api/admin/probe/throttled', 'other').expect(200);
     });
   });
 

@@ -18,6 +18,7 @@ import { usePathname } from "next/navigation";
 import { navItemsFor } from "@/config/navigation";
 import { ROLE_LABELS } from "@/config/roles";
 import { routes } from "@/config/routes";
+import { SignOutButton } from "./sign-out-button";
 
 /** Only the sections the role may open; the API refuses the others anyway. */
 export function AdminSidebar({ me }: { me: AdminMe }) {
@@ -56,6 +57,11 @@ export function AdminSidebar({ me }: { me: AdminMe }) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SignOutButton />
+          </SidebarMenuItem>
+        </SidebarMenu>
         <div className="grid min-w-0 px-2 py-1 text-sm leading-tight group-data-[collapsible=icon]:hidden">
           <span className="truncate font-medium">{me.email}</span>
           <span className="truncate text-xs text-muted-foreground">{ROLE_LABELS[me.role]}</span>

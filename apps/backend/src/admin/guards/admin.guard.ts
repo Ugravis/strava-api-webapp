@@ -12,6 +12,7 @@ import type { AdminRequest } from '../admin-request';
 import { readAdminSessionCookie } from '../admin-session-cookie';
 import { AUDITED_KEY } from '../audit/audited.decorator';
 import { ADMIN_AREA_KEY } from '../decorators/admin-controller.decorator';
+import { ADMIN_PUBLIC_KEY } from '../decorators/admin-public.decorator';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { AdminSessionsService } from '../sessions/admin-sessions.service';
 
@@ -23,7 +24,8 @@ const ADMIN_PATH = `/${API_PREFIX}/admin`;
  * `/api/admin` must come from an `@AdminController()`, the caller needs an
  * active back-office session whose account, read from the database on every
  * request, holds the `@Roles()` of the route, and a state-changing route must
- * be `@Audited()`. Other routes are left to the user session guard.
+ * be `@Audited()`. Only the read-only `@AdminPublic()` sign-in steps skip the
+ * session. Other routes are left to the user session guard.
  */
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -46,6 +48,14 @@ export class AdminGuard implements CanActivate {
         throw forbidden();
       }
       return true;
+    }
+
+    if (this.reflector.get<boolean>(ADMIN_PUBLIC_KEY, context.getHandler())) {
+      if (SAFE_METHODS.has(request.method)) {
+        return true;
+      }
+      this.logger.error(`${request.method} ${request.path} cannot be public`);
+      throw forbidden();
     }
 
     const token = readAdminSessionCookie(request);

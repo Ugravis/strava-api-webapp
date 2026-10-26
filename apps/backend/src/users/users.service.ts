@@ -1,3 +1,4 @@
+import { USERNAME_PATTERN } from '@kilotrace/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
@@ -8,7 +9,6 @@ import { randomProfileColor } from './profile-colors';
 import { User } from './user.entity';
 import {
   isReservedUsername,
-  USERNAME_PATTERN,
   usernameBaseFromEmail,
   withNumericSuffix,
 } from './username.util';

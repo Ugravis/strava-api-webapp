@@ -1,3 +1,8 @@
+import {
+  USERNAME_CHARACTERS_PATTERN,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from "@kilotrace/shared";
 import { z } from "zod";
 
 /**
@@ -6,9 +11,6 @@ import { z } from "zod";
  */
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
-export const USERNAME_MIN_LENGTH = 3;
-export const USERNAME_MAX_LENGTH = 20;
-export const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 
 export const emailSchema = z.string().trim().pipe(z.email({ error: "emailInvalid" }));
 
@@ -23,7 +25,7 @@ export const usernameSchema = z
   .toLowerCase()
   .min(USERNAME_MIN_LENGTH, "usernameLength")
   .max(USERNAME_MAX_LENGTH, "usernameLength")
-  .regex(USERNAME_PATTERN, "usernamePattern");
+  .regex(USERNAME_CHARACTERS_PATTERN, "usernamePattern");
 
 /** Optional: an empty value clears the display name, the username is then shown. */
 export const displayNameSchema = z.string().trim().max(50, "displayNameMax");

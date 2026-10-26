@@ -1,8 +1,5 @@
-import {
-  USERNAME_PATTERN,
-  usernameBaseFromEmail,
-  withNumericSuffix,
-} from './username.util';
+import { USERNAME_PATTERN } from '@kilotrace/shared';
+import { usernameBaseFromEmail, withNumericSuffix } from './username.util';
 
 describe('usernameBaseFromEmail', () => {
   it.each([

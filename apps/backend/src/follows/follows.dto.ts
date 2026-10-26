@@ -9,8 +9,8 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { USERNAME_PATTERN } from '@kilotrace/shared';
 import { NormalizeIdentifier, Trim } from '../common/transformers';
-import { USERNAME_PATTERN } from '../users/username.util';
 
 export class UsernameParamsDto {
   @NormalizeIdentifier()

@@ -14,7 +14,7 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 ```
 apps/backend/                NestJS API
 apps/frontend/               Next.js application
-packages/shared/             Types shared between frontend and backend
+packages/shared/             API contracts, constants and validation rules (compiled, ESM + CJS)
 packages/typescript-config/  Shared tsconfig presets (base, library, nestjs, nextjs)
 packages/eslint-config/      Shared ESLint flat configs (nestjs, nextjs)
 docker/                      Dockerfiles
@@ -42,6 +42,9 @@ Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be rea
 pnpm install
 pnpm dev
 ```
+
+`@kilotrace/shared` is a compiled package: `pnpm dev` builds it first and rebuilds it on change. The
+Docker dev images build it once, so after changing it, rebuild them (`docker compose up --build`).
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
 applies the pending migrations, empties the user data tables but keeps the datasets (countries,

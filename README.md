@@ -75,6 +75,29 @@ pnpm --filter @kilotrace/backend migration:revert
   with the browser and the session expires after 24 hours of inactivity.
   The browser only talks to the frontend origin, which proxies `/api` to the backend.
 
+## Back office
+
+Served by the site itself under `/admin` (frontend) and `/api/admin` (backend), with the normal
+session. Nothing of it is disclosed to anyone else:
+
+- **Roles**: `users.roles`, hierarchical (`support` < `admin` < `super-admin`, in
+  `@kilotrace/shared/admin`), read from the database on every request, so a withdrawn role
+  applies at once. `ADMIN_BOOTSTRAP_EMAIL` makes an existing account the first super-admin at
+  startup, while no user holds a role.
+- **API**: an access middleware answers the router's own 404 to anyone without a role, whether
+  the route exists or not. Routes are declared with `@AdminController()` and `@Roles()` (deny by
+  default), have their own rate limit (per admin), and must be `@Audited()` when they change
+  state; a destructive action requires a `reason`. The frontend proxy strips the cookies of
+  `/api/admin` requests from the browser: only the Next.js server calls it.
+- **Audit**: `admin_audit_log` is append-only (who, what, on what, why, outcome). A trigger
+  rejects deletions and any update other than the masking columns (`hidden_at`, `hidden_by`).
+- **Pages**: server components, behind a role check in the proxy (`src/proxy.ts`), which serves
+  non-admins the very page of an unknown route with a 404 status; Caddy removes the
+  `X-Middleware-Rewrite` header that would tell it apart. Changes go through Server Actions and
+  `src/lib/admin` (server-only); the browser only gets generic components. Texts live in
+  `messages/admin/fr.json`, outside the messages sent to the browser. Never indexed, and left out
+  of `robots.txt` and the sitemap.
+
 ## Strava
 
 Activities are imported from Strava into the platform's own schema (`activities`, linked to

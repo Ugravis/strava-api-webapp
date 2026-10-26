@@ -12,8 +12,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+} from "@kilotrace/ui/components/dropdown-menu";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/sidebar";
 import { routes } from "@/config/routes";
 import type { User } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";

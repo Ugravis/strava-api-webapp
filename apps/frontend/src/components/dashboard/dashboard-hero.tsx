@@ -3,8 +3,8 @@
 import { MapIcon, TrophyIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/button";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { routes } from "@/config/routes";

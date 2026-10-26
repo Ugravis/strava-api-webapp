@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { FollowsSummaryProvider } from "@/components/community/follows-summary-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@kilotrace/ui/components/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
 import { AppHeader } from "./app-header";

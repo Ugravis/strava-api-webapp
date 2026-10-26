@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { errorCodeOf } from "@/lib/api/errors";
 import { accountService } from "@/services/account.service";

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/card";
 import { cn } from "@/lib/utils";
 
 interface SettingsSectionProps {

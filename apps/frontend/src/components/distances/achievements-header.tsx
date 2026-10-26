@@ -3,7 +3,7 @@
 import { ChevronLeftIcon, ChevronRightIcon, DicesIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import type { BadgeMetric, DistanceBadge, DistanceFamily, DistancesOverview } from "@/lib/api/types";
 import { CHALLENGE_METRICS } from "@/lib/badge-amount";
 import { closestBadges, recentBadges } from "@/lib/badge-sort";

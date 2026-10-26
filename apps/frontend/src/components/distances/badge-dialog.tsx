@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { errorCodeOf } from "@/lib/api/errors";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import {
   Dialog,
   DialogClose,

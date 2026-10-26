@@ -1,0 +1,4 @@
+{
+  "extends": "@kilotrace/typescript-config/react-library.json",
+  "include": ["src"]
+}

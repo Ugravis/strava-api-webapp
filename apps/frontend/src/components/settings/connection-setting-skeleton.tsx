@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 
 export function ConnectionSettingSkeleton() {
   return (

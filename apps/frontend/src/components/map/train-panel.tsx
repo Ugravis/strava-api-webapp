@@ -4,7 +4,7 @@ import { ChevronDownIcon, CrosshairIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import { REAL_TRAIN_SPEED, useTrainSpeed } from "@/lib/trains/train-speed";
 import { cn } from "@/lib/utils";
 import { PanelFigure, PanelFigures, PanelSection } from "./panel-figure";

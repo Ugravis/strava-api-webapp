@@ -2,10 +2,10 @@
 
 import { CircleAlertIcon, ContrastIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/tooltip";
 import type { CountryLevelCompletion, CountrySector } from "@/lib/api/types";
 import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
 import { cn } from "@/lib/utils";

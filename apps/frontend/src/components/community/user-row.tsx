@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { userProfileHref } from "@/config/routes";

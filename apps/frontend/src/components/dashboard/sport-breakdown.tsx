@@ -2,8 +2,8 @@
 
 import { PieChartIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@kilotrace/ui/components/card";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { useActivityFormat } from "@/hooks/use-activity-format";
 import type { SportTotals } from "@/lib/api/types";
 import { SportIcon } from "./sport-icon";

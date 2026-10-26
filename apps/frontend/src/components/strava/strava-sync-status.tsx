@@ -3,8 +3,8 @@
 import { CircleAlertIcon, ClockIcon, RefreshCwIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@kilotrace/ui/components/button";
+import { Card, CardContent } from "@kilotrace/ui/components/card";
 import { Progress, ProgressLabel } from "@/components/ui/progress";
 import { isSyncActive, isTileWorkPending } from "@/hooks/use-strava-connection";
 import type { SyncJob, TileProgress } from "@/lib/api/types";

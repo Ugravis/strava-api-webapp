@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import { routes } from "@/config/routes";
 import { ACHIEVEMENT_TAB_HEADLINES, ACHIEVEMENT_TAB_METRICS, type AchievementTab } from "@/config/achievement-tabs";
 import { favoriteBadges, useDistances } from "@/hooks/use-distances";

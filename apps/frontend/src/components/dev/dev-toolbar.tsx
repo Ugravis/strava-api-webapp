@@ -2,7 +2,7 @@
 
 import { BugIcon } from "lucide-react";
 import Link from "next/link";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@kilotrace/ui/components/sheet";
 import { DevOverviewContent } from "./dev-overview-content";
 
 /**

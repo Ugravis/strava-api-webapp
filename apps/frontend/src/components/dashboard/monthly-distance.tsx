@@ -3,9 +3,9 @@
 import { BarChart3Icon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { type PointerEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/card";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { useMonthlyDistances } from "@/hooks/use-monthly-distances";
 import { usePointed } from "@/hooks/use-pointed";
 import type { MonthDistance, MonthlyFamily } from "@/lib/api/types";

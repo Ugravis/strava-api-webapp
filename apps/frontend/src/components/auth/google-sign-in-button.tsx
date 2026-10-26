@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import { GOOGLE_SIGN_IN_URL } from "@/services/auth.service";
 import { GoogleIcon } from "./google-icon";
 

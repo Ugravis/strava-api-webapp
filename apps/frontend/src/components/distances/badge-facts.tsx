@@ -1,7 +1,7 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { useAmount } from "./use-amount";
 import type { ReactNode } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import type { DistanceBadge, DistanceBadgeDetails } from "@/lib/api/types";
 
 interface BadgeFactsProps {

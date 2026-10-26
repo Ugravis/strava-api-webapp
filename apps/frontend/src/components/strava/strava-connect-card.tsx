@@ -1,6 +1,6 @@
 import { CheckIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@kilotrace/ui/components/card";
 import type { StravaConnectOrigin } from "@/services/strava.service";
 import { StravaConnectButton } from "./strava-connect-button";
 import { StravaIcon } from "./strava-icon";

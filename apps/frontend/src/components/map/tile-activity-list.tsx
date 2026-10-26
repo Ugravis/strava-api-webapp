@@ -2,8 +2,8 @@
 
 import { Loader2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/button";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { useTileActivities } from "@/hooks/use-tile-activities";
 import type { TileZoom } from "@/lib/tiles/tile-geometry";
 import { TileActivityItem } from "./tile-activity-item";

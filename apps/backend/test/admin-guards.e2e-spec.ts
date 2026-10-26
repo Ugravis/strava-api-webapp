@@ -1,4 +1,4 @@
-import { AdminRole } from '@kilotrace/shared';
+import { ADMIN_SESSION_COOKIE, AdminRole } from '@kilotrace/shared';
 import { Controller, Get, Param, Post } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -8,7 +8,6 @@ import type { Request } from 'express';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { AdminMeController } from '../src/admin/admin-me.controller';
-import { ADMIN_SESSION_COOKIE } from '../src/admin/admin-session-cookie';
 import type { AuditEntry } from '../src/admin/audit/audit-log.service';
 import { AuditLogService } from '../src/admin/audit/audit-log.service';
 import { AuditInterceptor } from '../src/admin/audit/audit.interceptor';

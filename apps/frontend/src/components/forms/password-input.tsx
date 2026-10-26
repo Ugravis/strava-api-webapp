@@ -3,8 +3,8 @@
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, type ComponentProps } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@kilotrace/ui/components/button";
+import { Input } from "@kilotrace/ui/components/input";
 
 export function PasswordInput(props: Omit<ComponentProps<typeof Input>, "type">) {
   const t = useTranslations("fields");

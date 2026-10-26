@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { FormError } from "@/components/forms/form-error";
 import { NewPasswordFields } from "@/components/forms/new-password-fields";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/button";
 import { FieldGroup } from "@/components/ui/field";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";

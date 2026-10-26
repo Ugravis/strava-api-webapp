@@ -4,8 +4,8 @@ import { CheckIcon, ChevronRightIcon, CircleDashedIcon, TrainFrontIcon } from "l
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/button";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { useStation } from "@/hooks/use-station";
 import type { StationDetails, StationNeighbor } from "@/lib/api/types";
 import { cn } from "@/lib/utils";

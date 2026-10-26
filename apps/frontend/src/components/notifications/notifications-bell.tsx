@@ -20,10 +20,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@kilotrace/ui/components/dropdown-menu";
+import { Button } from "@kilotrace/ui/components/button";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/sidebar";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { routes, userProfileHref } from "@/config/routes";
 import type { AppNotification, NotificationCategory } from "@/lib/api/types";

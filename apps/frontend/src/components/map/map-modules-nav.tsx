@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@kilotrace/ui/components/sidebar";
 import type { QuickAccessProps } from "@/config/navigation";
 import { routes } from "@/config/routes";
 import { searchOfModule } from "./map-address";

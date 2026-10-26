@@ -2,6 +2,8 @@ import { registerAs } from '@nestjs/config';
 
 export interface AuthConfig {
   frontendUrl: string;
+  /** Public URL of the back office, on its own subdomain; unset when it is not deployed. */
+  adminUrl: string | null;
   cookieSecret: string;
   /** Encrypts secrets stored in the database, such as third-party OAuth tokens. */
   encryptionSecret: string;
@@ -19,6 +21,7 @@ export default registerAs('auth', (): AuthConfig => {
   const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
   return {
     frontendUrl,
+    adminUrl: process.env.ADMIN_URL || null,
     cookieSecret: process.env.COOKIE_SECRET ?? 'development-cookie-secret',
     encryptionSecret:
       process.env.ENCRYPTION_SECRET ?? 'development-encryption-secret',

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 
 /** Static fallback shown while the session is resolved. */
 export function AppShellSkeleton() {

@@ -12,3 +12,15 @@
 www.{$DOMAIN} {
 	redir https://{$DOMAIN}{uri} permanent
 }
+
+# Back office on its own subdomain (`ADMIN_DOMAIN`): host-only cookies, never
+# indexed. The admin app only proxies /api/admin to the backend.
+{$ADMIN_DOMAIN:admin.localhost} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		-Server
+	}
+	reverse_proxy admin:3000
+}

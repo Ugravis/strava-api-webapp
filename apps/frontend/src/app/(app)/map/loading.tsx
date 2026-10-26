@@ -1,5 +1,5 @@
 import { MapSkeleton } from "@/components/map/map-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/skeleton";
 
 /** Placeholder for the map and its band while the page loads: the tools and modules, then the figures of the tiles. */
 export default function MapPageLoading() {

@@ -10,7 +10,7 @@ import {
   SidebarMenu,
   SidebarRail,
   SidebarSeparator,
-} from "@/components/ui/sidebar";
+} from "@kilotrace/ui/components/sidebar";
 import { mainNavigation } from "@/config/navigation";
 import type { User } from "@/lib/api/types";
 import { NavMain } from "./nav-main";

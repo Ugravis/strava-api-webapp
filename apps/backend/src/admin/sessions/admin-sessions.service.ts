@@ -85,10 +85,6 @@ export class AdminSessionsService {
     return { session, admin: session.adminUser };
   }
 
-  async revoke(token: string): Promise<void> {
-    await this.sessions.delete({ tokenHash: hashToken(token) });
-  }
-
   async revokeAllFor(adminUserId: string): Promise<void> {
     await this.sessions.delete({ adminUserId });
   }

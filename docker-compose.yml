@@ -62,8 +62,6 @@ services:
       COOKIE_SECRET: ${COOKIE_SECRET:-development-cookie-secret}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      ADMIN_GOOGLE_CLIENT_ID: ${ADMIN_GOOGLE_CLIENT_ID:-}
-      ADMIN_GOOGLE_CLIENT_SECRET: ${ADMIN_GOOGLE_CLIENT_SECRET:-}
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       MAIL_FROM: ${MAIL_FROM:-Kilotrace <no-reply@localhost>}

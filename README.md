@@ -81,7 +81,7 @@ pnpm --filter @kilotrace/backend migration:revert
 ## Back office
 
 The back-office API lives under `/api/admin`, in the same NestJS process but isolated from the
-application users (`apps/backend/src/admin`).
+application users (`apps/backend/src/admin`). Its sign-in comes later.
 
 - **App**: `apps/admin`, a separate Next.js app served on its own subdomain (`ADMIN_URL`). It only
   proxies `/api/admin`, so its session cookie stays host-only; the public frontend answers 404
@@ -101,13 +101,6 @@ application users (`apps/backend/src/admin`).
   otherwise); an interceptor records who, what, on what, why and the outcome in `audit_log`,
   which a database trigger keeps append-only. Destructive actions set `requireReason` and need a
   `reason` in the body.
-- **Sign-in**: Google only, through an OAuth client of its own (`ADMIN_GOOGLE_CLIENT_ID`,
-  `ADMIN_GOOGLE_CLIENT_SECRET`, redirect URI `${ADMIN_URL}/api/admin/auth/google/callback`),
-  never the public one. The verified Google email must match an enabled `admin_users` account;
-  each sign-in ends the previous sessions of the account, and every attempt, refused ones
-  included, is recorded in the audit log. The session cookie is host-only and ends with the
-  browser. Only these sign-in steps are `@AdminPublic()`, which the guard accepts on read-only
-  methods only.
 - **First super-admin**: created from the command line, refused once an enabled super-admin
   exists: `pnpm admin:create-super-admin <email>` in development,
   `docker compose -f docker-compose.prod.yml exec backend node dist/admin/cli/create-super-admin.js <email>`

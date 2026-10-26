@@ -1,6 +1,4 @@
-export const USERNAME_MIN_LENGTH = 3;
-export const USERNAME_MAX_LENGTH = 20;
-export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@kilotrace/shared';
 
 const RESERVED_USERNAMES = new Set([
   'admin',

@@ -1,11 +1,11 @@
 import { applyDecorators } from '@nestjs/common';
 import { Equals, IsOptional, IsString, Length, Matches } from 'class-validator';
-import { NormalizeIdentifier, TrimToNull } from '../../common/transformers';
 import {
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
   USERNAME_PATTERN,
-} from '../username.util';
+} from '@kilotrace/shared';
+import { NormalizeIdentifier, TrimToNull } from '../../common/transformers';
 import {
   DISPLAY_NAME_MAX_LENGTH,
   DISPLAY_NAME_MIN_LENGTH,

@@ -14,6 +14,8 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS dev
 COPY --from=prune /app/out/full/ .
+# The app watches its own sources; the workspace packages it imports are built once.
+RUN pnpm turbo run build --filter=@kilotrace/backend^...
 WORKDIR /app/apps/backend
 EXPOSE 4000
 CMD ["pnpm", "dev"]

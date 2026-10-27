@@ -13,13 +13,17 @@ import { User } from '../users/user.entity';
  * `follow`: the actor follows the user. `follow_request`: the actor asks to
  * follow the private profile of the user. `follow_accepted`: the actor
  * accepted the request of the user. `profile_like`: the actor liked the
- * profile of the user, who is never told by whom.
+ * profile of the user, who is never told by whom. `moderation`: the team
+ * reset free fields of the profile. `strava_unlinked`: the team unlinked the
+ * Strava account. The last two have no actor and carry the reason.
  */
 export const NOTIFICATION_TYPES = [
   'follow',
   'follow_request',
   'follow_accepted',
   'profile_like',
+  'moderation',
+  'strava_unlinked',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -37,6 +41,12 @@ export const NOTIFICATION_CATEGORY_TYPES: Record<
 };
 
 /** Kinds whose actor is kept for the bookkeeping but never disclosed. */
+/** What a notification from the team says beyond its kind. */
+export interface NotificationDetails {
+  reason?: string;
+  fields?: string[];
+}
+
 export const ANONYMOUS_NOTIFICATIONS: ReadonlySet<NotificationType> = new Set([
   'profile_like',
 ]);
@@ -55,8 +65,9 @@ export class Notification {
   @Column({ type: 'varchar', length: 32 })
   type!: NotificationType;
 
-  @Column({ name: 'actor_id', type: 'uuid' })
-  actorId!: string;
+  /** Null for a notification from the team. */
+  @Column({ name: 'actor_id', type: 'uuid', nullable: true })
+  actorId!: string | null;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
@@ -65,6 +76,9 @@ export class Notification {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'actor_id' })
   actor?: User;
+
+  @Column({ type: 'jsonb', nullable: true })
+  details!: NotificationDetails | null;
 
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
   readAt!: Date | null;

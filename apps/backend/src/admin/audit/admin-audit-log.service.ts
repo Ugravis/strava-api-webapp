@@ -80,8 +80,8 @@ export class AdminAuditLogService {
     const [rows, total] = await builder.getManyAndCount();
     const userIds = new Set(
       rows.flatMap((row) => [
-        row.actorId ?? [],
-        row.targetType === 'user' && row.targetId ? row.targetId : [],
+        ...(row.actorId ? [row.actorId] : []),
+        ...(row.targetType === 'user' && row.targetId ? [row.targetId] : []),
       ]),
     );
     const users = new Map(

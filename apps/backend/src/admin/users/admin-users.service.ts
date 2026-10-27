@@ -77,7 +77,7 @@ export class AdminUsersService {
     if (query.q) {
       const contains = `%${likeEscaped(query.q.toLowerCase())}%`;
       builder.andWhere(
-        `(user.username LIKE :contains OR lower(user.display_name) LIKE :contains OR lower(user.email) LIKE :contains OR user.id::text = :q)`,
+        `(user.username LIKE :contains OR lower(user.display_name) LIKE :contains OR lower(user.email) LIKE :contains OR CAST(user.id AS text) = :q)`,
         { contains, q: query.q },
       );
     }

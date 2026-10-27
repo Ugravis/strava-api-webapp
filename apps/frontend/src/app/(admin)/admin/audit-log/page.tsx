@@ -1,18 +1,23 @@
 import {
   AdminRole,
+  AUDIT_ORDERS,
   AUDIT_VISIBILITIES,
   type AdminPage,
   type AuditLogEntry,
   type AuditUser,
   hasAdminRole,
 } from "@kilotrace/shared/admin";
-import { EyeIcon, EyeOffIcon, XIcon } from "lucide-react";
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ActionForm } from "@/components/admin/action-form";
+import { DialogRow } from "@/components/admin/dialog-row";
+import { SortHeader } from "@/components/admin/list-navigation";
 import { PanelLink } from "@/components/admin/panel-link";
 import { Pagination } from "@/components/admin/pagination";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/user/user-avatar";
 import { requireAdminRole } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { formatDateTime } from "@/lib/admin/format";
@@ -27,8 +32,8 @@ const UUID = /^[0-9a-f-]{36}$/i;
 const PANEL_PREFIX = `${adminRoutes.users}/`;
 
 /**
- * A page of the logs, the latest first. Append-only: the super-admins may
- * only mask an entry from the other roles.
+ * A page of the logs. Append-only: the super-admins may only mask an entry
+ * from the other roles. A row opens the whole entry.
  */
 export default async function AdminAuditLogPage({ searchParams }: PageProps<"/admin/audit-log">) {
   const roles = await requireAdminRole(AdminRole.Admin);
@@ -39,12 +44,14 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
 
   const domain = oneOf(param(params, "action"), AUDIT_DOMAINS);
   const visibility = superAdmin ? oneOf(param(params, "visibility"), AUDIT_VISIBILITIES) : "all";
+  const order = oneOf(param(params, "order"), AUDIT_ORDERS);
   const target = param(params, "target");
   const actor = param(params, "actor");
   const current = {
     q: param(params, "q")?.trim().slice(0, 100) || undefined,
     action: domain === "all" ? undefined : domain,
     visibility: visibility === "all" ? undefined : visibility,
+    order: order === "desc" ? undefined : order,
     target: target && UUID.test(target) ? target : undefined,
     actor: actor && UUID.test(actor) ? actor : undefined,
   };
@@ -62,7 +69,7 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
     const user = list.items.flatMap((entry) => [entry.actor, entry.targetUser]).find((each) => each?.id === id);
     return user?.displayName ?? (user?.username ? `@${user.username}` : id.slice(0, 8));
   };
-  const cell = "px-3 py-2 align-top";
+  const cell = "px-3 py-2 whitespace-nowrap";
 
   return (
     <div className="flex flex-col gap-3">
@@ -83,11 +90,20 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
         // Every column stays, the table scrolling sideways on narrow screens.
         <div className="overflow-x-auto rounded-xl border">
           <table className="w-full min-w-[56rem] text-sm">
-            <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+            <thead className="bg-muted text-left text-xs text-muted-foreground">
               <tr>
-                <th className={`${cell} font-medium whitespace-nowrap`}>{t("columns.date")}</th>
-                <th className={`${cell} font-medium`}>{t("columns.actor")}</th>
-                <th className={`${cell} font-medium`}>{t("columns.target")}</th>
+                <th className={cell}>
+                  <SortHeader
+                    label={t("columns.date")}
+                    param="order"
+                    defaultValue="desc"
+                    asc="asc"
+                    desc="desc"
+                    first="desc"
+                    basePath={adminRoutes.auditLog}
+                  />
+                </th>
+                <th className={`${cell} font-medium`}>{t("columns.users")}</th>
                 <th className={`${cell} font-medium`}>{t("columns.action")}</th>
                 <th className={`${cell} font-medium`}>{t("columns.reason")}</th>
                 {superAdmin && <th className={`${cell} text-right font-medium`}>{t("columns.actions")}</th>}
@@ -97,20 +113,35 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
               {list.items.map((entry) => {
                 const hidden = Boolean(entry.hiddenAt);
                 return (
-                  <tr key={entry.id} className={cn("border-t", hidden && "bg-muted/40 text-muted-foreground")}>
-                    <td className={`${cell} whitespace-nowrap text-muted-foreground`}>
+                  <DialogRow
+                    key={entry.id}
+                    label={t("open", { date: formatDateTime(entry.createdAt) })}
+                    title={t("entry.title")}
+                    details={<EntryDetails entry={entry} />}
+                    className={cn("border-t transition-colors odd:bg-background even:bg-muted/50 hover:bg-muted", hidden && "text-muted-foreground")}
+                  >
+                    <td className={`${cell} text-muted-foreground`}>
                       <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>
                     </td>
-                    <td className={`${cell} whitespace-nowrap`}>
-                      <UserLink user={entry.actor} fallback={t("system")} deleted={t("deleted")} />
-                    </td>
-                    <td className={`${cell} whitespace-nowrap`}>
-                      <UserLink user={entry.targetUser} fallback="—" deleted={t("deleted")} />
+                    <td className={cell}>
+                      <span className="flex items-center gap-2">
+                        <UserLink user={entry.actor} fallback={t("system")} deleted={t("deleted")} />
+                        {entry.targetUser && (
+                          <>
+                            <ArrowRightIcon className="size-4 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden />
+                            <UserLink user={entry.targetUser} fallback="—" deleted={t("deleted")} />
+                          </>
+                        )}
+                      </span>
                     </td>
                     <td className={cell}>
-                      <ActionLabel entry={entry} />
+                      <span className="flex items-center gap-1.5">
+                        <ActionName entry={entry} />
+                        {!entry.succeeded && <Badge variant="destructive">{t("failed", { status: entry.status ?? "—" })}</Badge>}
+                        {hidden && <EyeOffIcon className="size-3.5 text-muted-foreground" aria-label={t("hidden")} />}
+                      </span>
                     </td>
-                    <td className={`${cell} max-w-80 whitespace-pre-line`}>{entry.reason ?? "—"}</td>
+                    <td className={`${cell} max-w-72 truncate`}>{entry.reason ?? "—"}</td>
                     {superAdmin && (
                       <td className={`${cell} text-right`}>
                         <ActionForm action={setEntryHidden.bind(null, entry.id, !hidden)}>
@@ -120,7 +151,7 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
                         </ActionForm>
                       </td>
                     )}
-                  </tr>
+                  </DialogRow>
                 );
               })}
             </tbody>
@@ -143,7 +174,64 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
   );
 }
 
-/** A user of an entry, opening their panel while the account exists. */
+/** Everything about an entry, in the dialog of its row. */
+function EntryDetails({ entry }: { entry: AuditLogEntry }) {
+  const t = getAdminTranslations("auditLog");
+  const details = detailsOf(entry);
+  const status = entry.status ?? "—";
+  return (
+    <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">
+      <Item label={t("entry.date")}>{formatDateTime(entry.createdAt)}</Item>
+      <Item label={t("entry.actor")}>
+        <UserLink user={entry.actor} fallback={t("system")} deleted={t("deleted")} />
+      </Item>
+      <Item label={t("entry.target")}>
+        {entry.targetUser ? (
+          <UserLink user={entry.targetUser} fallback="—" deleted={t("deleted")} />
+        ) : (
+          <span className="text-muted-foreground">{entry.targetId ? `${entry.targetType} ${entry.targetId}` : "—"}</span>
+        )}
+      </Item>
+      <Item label={t("entry.action")}>
+        <ActionName entry={entry} /> <code className="text-xs text-muted-foreground">{entry.action}</code>
+      </Item>
+      {details.length > 0 && (
+        <Item label={t("entry.details")}>
+          {details.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+        </Item>
+      )}
+      <Item label={t("entry.reason")}>
+        <span className="whitespace-pre-line">{entry.reason ?? "—"}</span>
+      </Item>
+      <Item label={t("entry.outcome")}>
+        {entry.succeeded ? t("entry.succeeded", { status }) : <span className="text-destructive">{t("entry.failed", { status })}</span>}
+      </Item>
+      {entry.hiddenAt !== undefined && (
+        <Item label={t("entry.visibility")}>
+          {entry.hiddenAt ? t("entry.hidden", { date: formatDateTime(entry.hiddenAt) }) : t("entry.visible")}
+        </Item>
+      )}
+      <Item label={t("entry.id")}>
+        <code className="text-xs break-all">{entry.id}</code>
+      </Item>
+    </dl>
+  );
+}
+
+function Item({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="min-w-0">{children}</dd>
+    </>
+  );
+}
+
+/** A user of an entry, with their picture, opening their panel while the account exists. */
 function UserLink({ user, fallback, deleted }: { user: AuditUser | null; fallback: string; deleted: string }) {
   if (!user) {
     return <span className="text-muted-foreground">{fallback}</span>;
@@ -155,38 +243,34 @@ function UserLink({ user, fallback, deleted }: { user: AuditUser | null; fallbac
     <PanelLink
       href={adminRoutes.user(user.id)}
       panelPrefix={PANEL_PREFIX}
-      className="font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+      className="inline-flex items-center gap-1.5 font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
     >
+      <UserAvatar user={{ ...user, username: user.username }} className="size-6" fallbackClassName="text-[10px]" />
       {user.displayName ?? `@${user.username}`}
     </PanelLink>
   );
 }
 
-/** The action in words, with its parameters and its failure if any. */
-function ActionLabel({ entry }: { entry: AuditLogEntry }) {
-  const t = getAdminTranslations("auditLog");
+function ActionName({ entry }: { entry: AuditLogEntry }) {
   const actions = getAdminTranslations("auditLog.actions");
+  const key = entry.action as Parameters<typeof actions>[0];
+  return <>{actions.has(key) ? actions(key) : entry.action}</>;
+}
+
+/** Parameters of the action recorded with it, in words. */
+function detailsOf(entry: AuditLogEntry): string[] {
+  const t = getAdminTranslations("auditLog.details");
   const fields = getAdminTranslations("user.moderatedFields");
   const kinds = getAdminTranslations("user.distinctions");
-  const key = entry.action as Parameters<typeof actions>[0];
   const { until, fields: reset, kind } = entry.details ?? {};
-  const details = [
-    typeof until === "string" && t("details.until", { date: formatDateTime(until) }),
+  return [
+    typeof until === "string" && t("until", { date: formatDateTime(until) }),
     Array.isArray(reset) &&
-      t("details.fields", {
+      t("fields", {
         fields: reset.map((field) => (fields.has(field as never) ? fields(field as never) : String(field))).join(", "),
       }),
-    typeof kind === "string" && t("details.kind", { kind: kinds.has(kind as never) ? kinds(kind as never) : kind }),
-  ].filter(Boolean);
-  return (
-    <span className="flex flex-col gap-0.5">
-      <span className="flex flex-wrap items-center gap-1.5">
-        {actions.has(key) ? actions(key) : entry.action}
-        {!entry.succeeded && <Badge variant="destructive">{t("failed", { status: entry.status ?? "—" })}</Badge>}
-      </span>
-      {details.length > 0 && <span className="text-xs text-muted-foreground">{details.join(" · ")}</span>}
-    </span>
-  );
+    typeof kind === "string" && t("kind", { kind: kinds.has(kind as never) ? kinds(kind as never) : kind }),
+  ].filter((line): line is string => Boolean(line));
 }
 
 function FilterBadge({ label, clear, href }: { label: string; clear: string; href: string }) {

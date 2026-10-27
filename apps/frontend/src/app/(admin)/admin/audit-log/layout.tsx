@@ -1,10 +1,12 @@
-import { AdminRole, AUDIT_VISIBILITIES, hasAdminRole } from "@kilotrace/shared/admin";
+import { AdminRole, type AdminPage, AUDIT_VISIBILITIES, type AuditLogEntry, hasAdminRole } from "@kilotrace/shared/admin";
 import { EyeIcon, EyeOffIcon, LayersIcon } from "lucide-react";
 import { Suspense } from "react";
+import { ListNavigationProvider, ListResults } from "@/components/admin/list-navigation";
 import { ListToolbar } from "@/components/admin/list-toolbar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireAdminRole } from "@/lib/admin/access";
+import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { AUDIT_DOMAINS } from "./domains";
@@ -13,14 +15,25 @@ const VISIBILITY_ICONS = { all: <LayersIcon />, visible: <EyeIcon />, hidden: <E
 
 /**
  * Header and filters of the logs, kept across the pages of results: only
- * the table changes, the previous one staying shown while the next loads.
+ * the table changes, a skeleton showing while the next one loads.
  */
 export default async function AdminAuditLogLayout({ children }: { children: React.ReactNode }) {
   const roles = await requireAdminRole(AdminRole.Admin);
   const t = getAdminTranslations("auditLog");
+  const skeleton = <TableSkeleton />;
   return (
-    <>
-      <PageHeader title={t("title")} description={t("description")} />
+    <ListNavigationProvider>
+      <PageHeader
+        title={t("title")}
+        description={
+          <>
+            {t("description")}{" "}
+            <Suspense fallback={null}>
+              <EntriesCount />
+            </Suspense>
+          </>
+        }
+      />
       <ListToolbar
         basePath={adminRoutes.auditLog}
         search={{ label: t("search") }}
@@ -50,7 +63,33 @@ export default async function AdminAuditLogLayout({ children }: { children: Reac
             : []
         }
       />
-      <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>{children}</Suspense>
-    </>
+      <Suspense fallback={skeleton}>
+        <ListResults skeletons={{ param: "", byValue: { "": skeleton } }}>{children}</ListResults>
+      </Suspense>
+    </ListNavigationProvider>
+  );
+}
+
+/** How many entries the role sees, whatever the filters. */
+async function EntriesCount() {
+  const result = await adminApi<AdminPage<AuditLogEntry>>("/audit-log");
+  if (!result.ok) return null;
+  return <span className="font-medium text-foreground">{getAdminTranslations("auditLog")("count", { count: result.data.total })}</span>;
+}
+
+function TableSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-xl border" aria-busy>
+      <Skeleton className="h-9 w-full rounded-none" />
+      {Array.from({ length: 12 }, (_, index) => (
+        <div key={index} className="flex items-center gap-3 border-t px-3 py-2.5 even:bg-muted/50">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="size-6 rounded-full" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="ml-auto h-4 w-40" />
+        </div>
+      ))}
+    </div>
   );
 }

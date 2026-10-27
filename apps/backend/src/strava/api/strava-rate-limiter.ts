@@ -18,6 +18,11 @@ export function nextQuarterHour(date: Date): Date {
   );
 }
 
+/** Start of the quarter of an hour holding a date. */
+export function quarterStart(date: Date): Date {
+  return new Date(nextQuarterHour(date).getTime() - QUARTER_HOUR_MS);
+}
+
 /** Strava resets the daily quota at midnight UTC. */
 export function nextUtcMidnight(date: Date): Date {
   return new Date(

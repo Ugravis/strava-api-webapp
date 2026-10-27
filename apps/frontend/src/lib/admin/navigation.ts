@@ -1,10 +1,11 @@
 import "server-only";
 import { AdminRole, hasAdminRole } from "@kilotrace/shared/admin";
-import { GaugeIcon, type LucideIcon } from "lucide-react";
+import { ChartColumnIcon, GaugeIcon, type LucideIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
   overview: "/admin",
+  statistics: "/admin/statistics",
 } as const;
 
 interface AdminNavItem {
@@ -19,6 +20,7 @@ interface AdminNavItem {
 
 const ADMIN_NAV: readonly AdminNavItem[] = [
   { key: "overview", href: adminRoutes.overview, icon: GaugeIcon, minimum: AdminRole.Support, exact: true },
+  { key: "statistics", href: adminRoutes.statistics, icon: ChartColumnIcon, minimum: AdminRole.Support },
 ];
 
 /** Entries of the back-office navigation the roles grant. */

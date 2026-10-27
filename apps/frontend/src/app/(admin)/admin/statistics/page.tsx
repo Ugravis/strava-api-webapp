@@ -13,7 +13,7 @@ import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { StravaUsageChart } from "@/components/admin/statistics/strava-usage-chart";
 import { TimeSeriesChart } from "@/components/admin/statistics/time-series-chart";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { requireAdminRole } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
@@ -74,7 +74,7 @@ export default async function AdminStatisticsPage() {
         })}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatTile
           icon={UserPlusIcon}
           label={t("tiles.users")}
@@ -131,10 +131,9 @@ export default async function AdminStatisticsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="order-1 lg:order-none lg:col-span-2">
           <CardHeader>
             <CardTitle>{t("signups.title")}</CardTitle>
-            <CardDescription>{t("signups.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <TimeSeriesChart
@@ -145,10 +144,9 @@ export default async function AdminStatisticsPage() {
             />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="order-3 lg:order-none">
           <CardHeader>
             <CardTitle>{t("follows.title")}</CardTitle>
-            <CardDescription>{t("follows.description")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 items-center">
             <DonutChart
@@ -163,10 +161,9 @@ export default async function AdminStatisticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="order-2 lg:order-none lg:col-span-2">
           <CardHeader>
             <CardTitle>{t("activities.title")}</CardTitle>
-            <CardDescription>{t("activities.description")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <ChartLegend label={t("activities.legend")} items={families} />
@@ -179,10 +176,9 @@ export default async function AdminStatisticsPage() {
             />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="order-4 lg:order-none">
           <CardHeader>
             <CardTitle>{t("notifications.title")}</CardTitle>
-            <CardDescription>{t("notifications.description")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 items-center">
             <DonutChart
@@ -201,7 +197,6 @@ export default async function AdminStatisticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t("stravaUsage.title")}</CardTitle>
-          <CardDescription>{t("stravaUsage.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <StravaUsageChart

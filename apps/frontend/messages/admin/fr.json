@@ -41,13 +41,11 @@
     },
     "signups": {
       "title": "Inscriptions",
-      "description": "Nouveaux comptes chaque jour.",
       "series": "Inscriptions",
       "chart": "Inscriptions par jour sur {days} jours"
     },
     "follows": {
       "title": "Abonnements",
-      "description": "Couples abonné / abonnement et demandes à des profils privés.",
       "accepted": "Abonnements",
       "pending": "Demandes en attente",
       "total": "relations",
@@ -56,7 +54,6 @@
     },
     "activities": {
       "title": "Activités synchronisées",
-      "description": "Activités importées chaque jour, par famille de sports. Un jour bien au-dessus des autres, comme un premier import, a sa barre coupée.",
       "total": "Total",
       "legend": "Familles de sports",
       "chart": "Activités synchronisées par jour et par famille de sports sur {days} jours",
@@ -70,7 +67,6 @@
     },
     "stravaUsage": {
       "title": "Usage de l'API Strava",
-      "description": "Quota de lecture consommé par toute l'application, sous sa limite en pointillés quand elle est proche.",
       "period": "Période",
       "days": "{days} jours",
       "quarters": "24 heures",
@@ -84,7 +80,6 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Toutes les notifications envoyées, lues ou non.",
       "unread": "Non lues",
       "read": "Lues",
       "total": "notifications",

@@ -23,7 +23,9 @@ interface DonutChartProps {
 
 const SIZE = 152;
 const THICKNESS = 18;
-const RADIUS = (SIZE - THICKNESS) / 2;
+/** Extra thickness of a pointed segment, kept within the ring's box. */
+const GROWTH = 4;
+const RADIUS = (SIZE - THICKNESS - GROWTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /** Surface left between two segments, along the ring. */
 const GAP = 3;
@@ -63,7 +65,7 @@ export function DonutChart({ segments, totalLabel, label, emptyLabel }: DonutCha
                 cy={SIZE / 2}
                 r={RADIUS}
                 fill="none"
-                strokeWidth={pointed === segment.id ? THICKNESS + 4 : THICKNESS}
+                strokeWidth={pointed === segment.id ? THICKNESS + GROWTH : THICKNESS}
                 strokeDasharray={`${length} ${CIRCUMFERENCE - length}`}
                 strokeDashoffset={-start}
                 className={cn(

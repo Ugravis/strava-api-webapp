@@ -42,7 +42,7 @@ export class AdminAuditLogService {
   ) {}
 
   /**
-   * A page of the entries, the latest first. Masked entries are left out
+   * A page of the entries by date, the latest first by default. Masked entries are left out
    * unless `withHidden`, granted to the super-admins.
    */
   async page(
@@ -51,8 +51,8 @@ export class AdminAuditLogService {
   ): Promise<AdminPage<AuditLogEntry>> {
     const builder = this.entries
       .createQueryBuilder('entry')
-      .orderBy('entry.created_at', 'DESC')
-      .addOrderBy('entry.id', 'DESC')
+      .orderBy('entry.created_at', query.order === 'asc' ? 'ASC' : 'DESC')
+      .addOrderBy('entry.id', query.order === 'asc' ? 'ASC' : 'DESC')
       .offset((query.page - 1) * ADMIN_PAGE_SIZE)
       .limit(ADMIN_PAGE_SIZE);
     if (query.action?.endsWith('.')) {

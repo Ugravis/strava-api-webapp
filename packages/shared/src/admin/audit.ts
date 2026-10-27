@@ -2,6 +2,10 @@
 export const ADMIN_REASON_MIN_LENGTH = 3;
 export const ADMIN_REASON_MAX_LENGTH = 500;
 
+/** Order of the entries by date; the first one is the default. */
+export const AUDIT_ORDERS = ["desc", "asc"] as const;
+export type AuditOrder = (typeof AUDIT_ORDERS)[number];
+
 export const AUDIT_OUTCOMES = ["all", "succeeded", "failed"] as const;
 export type AuditOutcome = (typeof AUDIT_OUTCOMES)[number];
 

@@ -1,5 +1,7 @@
 import {
+  AUDIT_ORDERS,
   AUDIT_OUTCOMES,
+  type AuditOrder,
   AUDIT_VISIBILITIES,
   type AuditOutcome,
   type AuditVisibility,
@@ -38,6 +40,11 @@ export class AuditLogQueryDto extends AdminPageQueryDto {
   @IsString()
   @Matches(/^[\w-]{1,100}$/)
   target?: string;
+
+  /** By date, the latest first by default. */
+  @IsOptional()
+  @IsIn(AUDIT_ORDERS)
+  order: AuditOrder = 'desc';
 
   @IsOptional()
   @IsIn(AUDIT_OUTCOMES)

@@ -14,7 +14,15 @@ export interface AdminPage<T> {
 export const ADMIN_USER_STATUSES = ["all", "active", "suspended", "staff"] as const;
 export type AdminUserStatus = (typeof ADMIN_USER_STATUSES)[number];
 
-export const ADMIN_USER_SORTS = ["recent", "oldest", "username", "last-seen"] as const;
+/** A column and a direction; the first one is the default. */
+export const ADMIN_USER_SORTS = [
+  "created-desc",
+  "created-asc",
+  "username-asc",
+  "username-desc",
+  "last-seen-desc",
+  "last-seen-asc",
+] as const;
 export type AdminUserSort = (typeof ADMIN_USER_SORTS)[number];
 
 /** Free fields of a profile a moderator can reset: never rewritten by hand. */

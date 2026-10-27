@@ -88,14 +88,15 @@ export class AdminUsersService {
     } else if (query.status === 'staff') {
       builder.andWhere('cardinality(user.roles) > 0');
     }
-    if (query.sort === 'oldest') {
-      builder.orderBy('user.created_at', 'ASC');
-    } else if (query.sort === 'username') {
-      builder.orderBy('user.username', 'ASC');
-    } else if (query.sort === 'last-seen') {
-      builder.orderBy(LAST_SEEN, 'DESC', 'NULLS LAST');
+    const descending = query.sort.endsWith('-desc');
+    const order = descending ? 'DESC' : 'ASC';
+    if (query.sort.startsWith('username')) {
+      builder.orderBy('user.username', order);
+    } else if (query.sort.startsWith('last-seen')) {
+      // Never seen last, whichever the direction.
+      builder.orderBy(LAST_SEEN, order, 'NULLS LAST');
     } else {
-      builder.orderBy('user.created_at', 'DESC');
+      builder.orderBy('user.created_at', order);
     }
     builder.addOrderBy('user.id');
 

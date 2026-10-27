@@ -36,7 +36,7 @@ export class AdminUsersQueryDto extends AdminPageQueryDto {
 
   @IsOptional()
   @IsIn(ADMIN_USER_SORTS)
-  sort: AdminUserSort = 'recent';
+  sort: AdminUserSort = 'created-desc';
 }
 
 /** The reason itself is checked by the audit interceptor. */

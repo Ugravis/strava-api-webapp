@@ -12,6 +12,13 @@ export interface AuditedOptions {
    * confirmation of the back office.
    */
   destructive?: boolean;
+  /**
+   * Route parameters, then body properties, copied into the entry, e.g. the
+   * fields of a moderation.
+   */
+  details?: readonly string[];
+  /** Recorded already masked, shown to the super-admins only. */
+  hidden?: boolean;
 }
 
 /**

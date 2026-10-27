@@ -87,6 +87,18 @@ class ProbeController {
     return id;
   }
 
+  @Post('things/:id/:kind/mask')
+  @Roles(AdminRole.SuperAdmin)
+  @Audited({
+    action: 'things.mask',
+    target: { type: 'thing', param: 'id' },
+    details: ['kind', 'fields', 'missing'],
+    hidden: true,
+  })
+  maskThing(@Param('id') id: string): string {
+    return id;
+  }
+
   @Post('failing')
   @Roles(AdminRole.Support)
   @Audited({ action: 'things.fail' })
@@ -386,9 +398,27 @@ describe('Admin guards (e2e)', () => {
           targetType: 'thing',
           targetId: '42',
           reason: 'Duplicate entry',
+          details: null,
           succeeded: true,
           status: 201,
+          hiddenBy: null,
         },
+      ]);
+    });
+
+    it('records the details named by the route, and masks the entry when asked', async () => {
+      const user = store.add('token', [AdminRole.SuperAdmin]);
+      await post('/api/admin/probe/things/42/badge/mask', 'token', {
+        fields: ['bio'],
+        kind: 'overridden',
+      }).expect(201);
+
+      expect(auditEntries).toEqual([
+        expect.objectContaining({
+          action: 'things.mask',
+          details: { kind: 'badge', fields: ['bio'] },
+          hiddenBy: user.id,
+        }),
       ]);
     });
 

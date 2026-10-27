@@ -55,12 +55,15 @@ export class AuditInterceptor implements NestInterceptor {
     const targetId = options.target
       ? request.params[options.target.param]
       : undefined;
+    const actorId = request.auth?.user.id ?? null;
     const entry: Omit<AuditEntry, 'succeeded' | 'status'> = {
-      actorId: request.auth?.user.id ?? null,
+      actorId,
       action: options.action,
       targetType: options.target?.type ?? null,
       targetId: typeof targetId === 'string' ? targetId : null,
       reason,
+      details: readDetails(options.details, request),
+      hiddenBy: options.hidden ? actorId : null,
     };
 
     return next.handle().pipe(
@@ -83,6 +86,23 @@ export class AuditInterceptor implements NestInterceptor {
       }),
     );
   }
+}
+
+function readDetails(
+  keys: readonly string[] | undefined,
+  request: AuthenticatedRequest,
+): Record<string, unknown> | null {
+  const body: unknown = request.body;
+  const source: Record<string, unknown> = {
+    ...(body && typeof body === 'object' ? body : {}),
+    ...request.params,
+  };
+  const details = Object.fromEntries(
+    (keys ?? [])
+      .filter((key) => source[key] !== undefined)
+      .map((key) => [key, source[key]]),
+  );
+  return Object.keys(details).length > 0 ? details : null;
 }
 
 function readReason(body: unknown): string | null {

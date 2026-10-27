@@ -24,12 +24,12 @@ export function SuspensionNotice() {
       <AlertTitle>{t("title")}</AlertTitle>
       {notice && (
         <AlertDescription>
-          <p>
+          <span className="block">
             {notice.until
               ? t("until", { date: format.dateTime(new Date(notice.until), { dateStyle: "long", timeStyle: "short" }) })
               : t("indefinite")}
-          </p>
-          {notice.reason && <p>{t("reason", { reason: notice.reason })}</p>}
+          </span>
+          {notice.reason && <span className="block">{t("reason", { reason: notice.reason })}</span>}
         </AlertDescription>
       )}
     </Alert>

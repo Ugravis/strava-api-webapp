@@ -1,8 +1,7 @@
 "use client";
 
 import { useFormatter } from "next-intl";
-import { type PointerEvent, useId, useLayoutEffect, useRef, useState } from "react";
-import { monotonePath } from "@/components/dashboard/chart-path";
+import { type PointerEvent, useLayoutEffect, useRef, useState } from "react";
 import { niceStep } from "@/components/dashboard/evolution-chart";
 import { usePointed } from "@/hooks/use-pointed";
 import { cn } from "@/lib/utils";
@@ -27,16 +26,19 @@ export interface ChartNote {
 }
 
 interface TimeSeriesChartProps {
-  /** A filled curve of a single series, or bars stacking every series. */
-  kind: "area" | "bars";
   points: ChartPoint[];
   series: ChartSeries[];
   unit: "day" | "quarter";
   label: string;
   /** Row of the tooltip summing the series, for stacked bars. */
   totalLabel?: string;
-  /** A ceiling drawn as a dashed step line, such as a quota. */
+  /**
+   * A ceiling drawn as a dashed step line, such as a quota; left out of the
+   * scale, then named above the chart, when far above the values.
+   */
   limit?: ChartNote;
+  /** Names the limit when it does not fit the scale. */
+  limitCaption?: string;
   notes?: ChartNote[];
   height?: number;
 }
@@ -44,6 +46,10 @@ interface TimeSeriesChartProps {
 const MARGIN = { top: 12, right: 8, bottom: 24, left: 36 };
 /** Room taken by a label of the time axis. */
 const TICK_WIDTH = 64;
+/** A total this many times the next highest gets its bar cut, not the scale. */
+const OUTLIER_RATIO = 3;
+/** A limit this many times the highest value is left out of the scale. */
+const LIMIT_RATIO = 2;
 
 const timeOf = (point: ChartPoint, unit: TimeSeriesChartProps["unit"]) =>
   new Date(unit === "day" ? `${point.start}T00:00:00Z` : point.start);
@@ -55,23 +61,22 @@ function barPath(x: number, y: number, width: number, height: number, radius: nu
 }
 
 /**
- * Values over time, a slot per day or quarter of an hour; pointed at, the
- * figures of a slot. Labels come from the server, as the admin messages.
+ * Bars stacking every series, a slot per day or quarter of an hour; pointed
+ * at, the figures of a slot. Labels come from the server, as the admin
+ * messages.
  */
 export function TimeSeriesChart({
-  kind,
   points,
   series,
   unit,
   label,
   totalLabel,
   limit,
+  limitCaption,
   notes = [],
   height = 220,
 }: TimeSeriesChartProps) {
   const format = useFormatter();
-  // Usable in `url(#…)`.
-  const gradientId = `gradient-${useId().replace(/[^\w-]/g, "")}`;
   const container = useRef<HTMLDivElement>(null);
   const chart = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -91,12 +96,17 @@ export function TimeSeriesChart({
   const plotHeight = height - MARGIN.top - MARGIN.bottom;
   const slot = plotWidth / Math.max(points.length, 1);
   const totals = points.map((entry) => series.reduce((sum, item) => sum + (entry.values[item.id] ?? 0), 0));
-  const highest = Math.max(...totals, ...(limit?.values ?? []).map((value) => value ?? 0), 1);
+  // A single huge day, such as the first import of a long history, would flatten all the others.
+  const [first = 0, second = 0] = [...totals].sort((a, b) => b - a);
+  const ceiling = second > 0 && first > second * OUTLIER_RATIO ? second : first;
+  const limitHighest = Math.max(0, ...(limit?.values ?? []).map((value) => value ?? 0));
+  const limitShown = limit !== undefined && limitHighest > 0 && limitHighest <= Math.max(ceiling, 1) * LIMIT_RATIO;
+  const highest = Math.max(ceiling, limitShown ? limitHighest : 0, 1);
   const step = niceStep(highest);
   const top = Math.ceil(highest / step) * step;
 
   const x = (index: number) => MARGIN.left + (index + 0.5) * slot;
-  const y = (value: number) => MARGIN.top + (1 - value / top) * plotHeight;
+  const y = (value: number) => MARGIN.top + (1 - Math.min(value, top) / top) * plotHeight;
   const count = (value: number) => format.number(value, { notation: value >= 10_000 ? "compact" : "standard" });
   const formatTime = (date: Date, long = false) =>
     unit === "day"
@@ -116,12 +126,7 @@ export function TimeSeriesChart({
     point(event, index >= 0 && index < points.length ? index : null);
   };
 
-  const area = series[0];
-  const curve =
-    kind === "area" && area
-      ? monotonePath(points.map((entry, index): [number, number] => [x(index), y(entry.values[area.id] ?? 0)]))
-      : "";
-  const limitPath = limit
+  const limitPath = limitShown
     ? points
         .map((_, index) => {
           const value = limit.values[index];
@@ -136,6 +141,9 @@ export function TimeSeriesChart({
 
   return (
     <div ref={chart} className="relative w-full select-none">
+      {limit && !limitShown && limitHighest > 0 && limitCaption && (
+        <p className="mb-2 text-xs text-muted-foreground">{limitCaption}</p>
+      )}
       <div ref={container} style={{ height }}>
         {width > 0 && (
           <svg
@@ -148,14 +156,6 @@ export function TimeSeriesChart({
             onPointerMove={pointSlot}
             onPointerLeave={leave}
           >
-            {area && (
-              <defs>
-                <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1" className={SERIES_COLORS[area.color].text}>
-                  <stop offset="0%" stopColor="currentColor" stopOpacity={0.28} />
-                  <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-            )}
             {Array.from({ length: Math.round(top / step) + 1 }, (_, index) => index * step).map((value) => (
               <g key={value}>
                 <line
@@ -198,75 +198,61 @@ export function TimeSeriesChart({
                 className="fill-foreground/5"
               />
             )}
-            {kind === "area" && area && points.length > 1 && (
-              <>
-                <path
-                  d={`${curve} L ${x(points.length - 1)} ${y(0)} L ${x(0)} ${y(0)} Z`}
-                  fill={`url(#${gradientId})`}
-                />
-                <path
-                  d={curve}
-                  fill="none"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  className={SERIES_COLORS[area.color].stroke}
-                />
-                {pointed !== null && (
-                  <>
-                    <line
-                      x1={x(pointed)}
-                      x2={x(pointed)}
-                      y1={MARGIN.top}
-                      y2={MARGIN.top + plotHeight}
-                      className="stroke-foreground/30"
-                    />
-                    <circle
-                      cx={x(pointed)}
-                      cy={y(points[pointed].values[area.id] ?? 0)}
-                      r={5}
-                      strokeWidth={2}
-                      className={cn(SERIES_COLORS[area.color].fill, "stroke-card")}
-                    />
-                  </>
-                )}
-              </>
-            )}
-            {kind === "bars" &&
-              points.map((entry, index) => {
-                const left = x(index) - barWidth / 2;
-                let base = 0;
-                const stacked = series
-                  .map((item) => ({ item, value: entry.values[item.id] ?? 0 }))
-                  .filter(({ value }) => value > 0);
-                return (
-                  <g key={entry.start} className={cn(pointed !== null && pointed !== index && "opacity-60")}>
-                    {stacked.map(({ item, value }, position) => {
-                      const bottom = y(base);
-                      base += value;
-                      // A gap of the surface between two segments.
-                      const gap = position > 0 ? Math.min(2, (bottom - y(base)) / 2) : 0;
-                      const segmentTop = y(base);
-                      const segmentHeight = Math.max(bottom - segmentTop - gap, 0.5);
-                      return position === stacked.length - 1 ? (
-                        <path
-                          key={item.id}
-                          d={barPath(left, segmentTop, barWidth, segmentHeight, 4)}
-                          className={SERIES_COLORS[item.color].fill}
-                        />
-                      ) : (
-                        <rect
-                          key={item.id}
-                          x={left}
-                          y={segmentTop}
-                          width={barWidth}
-                          height={segmentHeight}
-                          className={SERIES_COLORS[item.color].fill}
-                        />
-                      );
-                    })}
-                  </g>
-                );
-              })}
+            {points.map((entry, index) => {
+              const left = x(index) - barWidth / 2;
+              let base = 0;
+              // A cut bar keeps the shares of its series within the plot.
+              const scale = totals[index] > top ? top / totals[index] : 1;
+              const stacked = series
+                .map((item) => ({ item, value: (entry.values[item.id] ?? 0) * scale }))
+                .filter(({ value }) => value > 0);
+              return (
+                <g key={entry.start} className={cn(pointed !== null && pointed !== index && "opacity-60")}>
+                  {stacked.map(({ item, value }, position) => {
+                    const bottom = y(base);
+                    base += value;
+                    // A gap of the surface between two segments.
+                    const gap = position > 0 ? Math.min(2, (bottom - y(base)) / 2) : 0;
+                    const segmentTop = y(base);
+                    const segmentHeight = Math.max(bottom - segmentTop - gap, 0.5);
+                    return position === stacked.length - 1 ? (
+                      <path
+                        key={item.id}
+                        d={barPath(left, segmentTop, barWidth, segmentHeight, 4)}
+                        className={SERIES_COLORS[item.color].fill}
+                      />
+                    ) : (
+                      <rect
+                        key={item.id}
+                        x={left}
+                        y={segmentTop}
+                        width={barWidth}
+                        height={segmentHeight}
+                        className={SERIES_COLORS[item.color].fill}
+                      />
+                    );
+                  })}
+                  {totals[index] > top && (
+                    // Cut below its top, its total written above.
+                    <>
+                      <path
+                        d={`M ${left - 1} ${MARGIN.top + 14} L ${left + barWidth + 1} ${MARGIN.top + 9}`}
+                        strokeWidth={3}
+                        className="stroke-card"
+                      />
+                      <text
+                        x={x(index)}
+                        y={MARGIN.top - 4}
+                        textAnchor="middle"
+                        className="fill-foreground text-[10px] font-medium tabular-nums"
+                      >
+                        {count(totals[index])}
+                      </text>
+                    </>
+                  )}
+                </g>
+              );
+            })}
             {limitPath && (
               <path d={limitPath} fill="none" strokeWidth={1.5} strokeDasharray="4 3" className="stroke-foreground/70" />
             )}
@@ -287,7 +273,7 @@ export function TimeSeriesChart({
           {totalLabel && (
             <span className="flex items-center gap-1.5 text-muted-foreground">
               {totalLabel}
-              <span className="ml-auto pl-3 font-semibold text-foreground tabular-nums">{count(totals[pointed])}</span>
+              <span className="ml-auto pl-3 font-semibold text-foreground tabular-nums">{format.number(totals[pointed])}</span>
             </span>
           )}
           {series.map((item) => (
@@ -295,7 +281,7 @@ export function TimeSeriesChart({
               <span className={cn("size-2 rounded-xs", SERIES_COLORS[item.color].swatch)} />
               {item.label}
               <span className="ml-auto pl-3 font-medium text-foreground tabular-nums">
-                {pointedEntry.values[item.id] === null ? "–" : count(pointedEntry.values[item.id] ?? 0)}
+                {pointedEntry.values[item.id] === null ? "–" : format.number(pointedEntry.values[item.id] ?? 0)}
               </span>
             </span>
           ))}
@@ -303,7 +289,7 @@ export function TimeSeriesChart({
             <span key={note.label} className="flex items-center gap-1.5 text-muted-foreground">
               {note.label}
               <span className="ml-auto pl-3 tabular-nums">
-                {note.values[pointed] === null ? "–" : count(note.values[pointed] ?? 0)}
+                {note.values[pointed] === null ? "–" : format.number(note.values[pointed] ?? 0)}
               </span>
             </span>
           ))}

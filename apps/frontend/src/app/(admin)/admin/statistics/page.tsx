@@ -1,4 +1,9 @@
-import { ADMIN_STATISTICS_DAYS, AdminRole, type AdminStatisticsResponse } from "@kilotrace/shared/admin";
+import {
+  ADMIN_STATISTICS_DAYS,
+  AdminRole,
+  type AdminStatisticsResponse,
+  type AdminStravaUsagePoint,
+} from "@kilotrace/shared/admin";
 import { ActivityIcon, GaugeIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { getFormatter } from "next-intl/server";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
@@ -15,6 +20,10 @@ import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 
 const days = ADMIN_STATISTICS_DAYS;
+
+/** The read limit of the latest slot with a Strava call. */
+const latestLimit = (usage: AdminStravaUsagePoint[]) =>
+  usage.findLast((entry) => entry.readLimit !== null)?.readLimit ?? 0;
 
 /** Families in their fixed order, with the colors of the dashboard. */
 const FAMILY_COLORS = {
@@ -129,7 +138,6 @@ export default async function AdminStatisticsPage() {
           </CardHeader>
           <CardContent>
             <TimeSeriesChart
-              kind="area"
               unit="day"
               label={t("signups.chart", { days })}
               series={[{ id: "count", label: t("signups.series"), color: "blue" }]}
@@ -163,7 +171,6 @@ export default async function AdminStatisticsPage() {
           <CardContent className="flex flex-col gap-4">
             <ChartLegend label={t("activities.legend")} items={families} />
             <TimeSeriesChart
-              kind="bars"
               unit="day"
               label={t("activities.chart", { days })}
               totalLabel={t("activities.total")}
@@ -207,6 +214,14 @@ export default async function AdminStatisticsPage() {
               read: t("stravaUsage.read"),
               dailyLimit: t("stravaUsage.dailyLimit"),
               shortLimit: t("stravaUsage.shortLimit"),
+              dailyLimitCaption: t("stravaUsage.limitCaption", {
+                limit: t("stravaUsage.dailyLimit"),
+                value: format.number(latestLimit(stravaUsage.days)),
+              }),
+              shortLimitCaption: t("stravaUsage.limitCaption", {
+                limit: t("stravaUsage.shortLimit"),
+                value: format.number(latestLimit(stravaUsage.quarters)),
+              }),
               overall: t("stravaUsage.overall"),
               chart: t("stravaUsage.chart"),
               empty: t("stravaUsage.empty"),

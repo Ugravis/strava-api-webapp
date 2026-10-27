@@ -17,6 +17,9 @@ interface StravaUsageChartProps {
     read: string;
     dailyLimit: string;
     shortLimit: string;
+    /** The limits named when far above the usage. */
+    dailyLimitCaption: string;
+    shortLimitCaption: string;
     overall: string;
     chart: string;
     empty: string;
@@ -28,6 +31,8 @@ export function StravaUsageChart({ days, quarters, labels }: StravaUsageChartPro
   const [period, setPeriod] = useState<Period>("days");
   const usage = period === "days" ? days : quarters;
   const empty = usage.every((entry) => entry.read === null && entry.overall === null);
+  // The limit holds for the whole period, slots without any call included.
+  const knownLimit = usage.findLast((entry) => entry.readLimit !== null)?.readLimit ?? null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,7 +53,6 @@ export function StravaUsageChart({ days, quarters, labels }: StravaUsageChartPro
         </p>
       ) : (
         <TimeSeriesChart
-          kind="bars"
           unit={period === "days" ? "day" : "quarter"}
           label={labels.chart}
           series={[{ id: "read", label: labels.read, color: "blue" }]}
@@ -58,8 +62,9 @@ export function StravaUsageChart({ days, quarters, labels }: StravaUsageChartPro
           }))}
           limit={{
             label: period === "days" ? labels.dailyLimit : labels.shortLimit,
-            values: usage.map((entry) => entry.readLimit),
+            values: usage.map((entry) => entry.readLimit ?? knownLimit),
           }}
+          limitCaption={period === "days" ? labels.dailyLimitCaption : labels.shortLimitCaption}
           notes={[{ label: labels.overall, values: usage.map((entry) => entry.overall) }]}
         />
       )}

@@ -56,7 +56,7 @@
     },
     "activities": {
       "title": "Activités synchronisées",
-      "description": "Activités importées chaque jour, par famille de sports.",
+      "description": "Activités importées chaque jour, par famille de sports. Un jour bien au-dessus des autres, comme un premier import, a sa barre coupée.",
       "total": "Total",
       "legend": "Familles de sports",
       "chart": "Activités synchronisées par jour et par famille de sports sur {days} jours",
@@ -70,13 +70,14 @@
     },
     "stravaUsage": {
       "title": "Usage de l'API Strava",
-      "description": "Quota de lecture consommé par toute l'application, sous sa limite en pointillés.",
+      "description": "Quota de lecture consommé par toute l'application, sous sa limite en pointillés quand elle est proche.",
       "period": "Période",
       "days": "{days} jours",
       "quarters": "24 heures",
       "read": "Requêtes de lecture",
       "dailyLimit": "Limite quotidienne",
       "shortLimit": "Limite par 15 minutes",
+      "limitCaption": "{limit} : {value} requêtes, hors de l'échelle.",
       "overall": "Toutes requêtes",
       "chart": "Requêtes de lecture envoyées à Strava",
       "empty": "Aucun appel à Strava enregistré sur la période."

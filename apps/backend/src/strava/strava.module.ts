@@ -4,6 +4,8 @@ import { ActivitiesModule } from '../activities/activities.module';
 import { ConnectionsModule } from '../connections/connections.module';
 import { TilesModule } from '../tiles/tiles.module';
 import { StravaApiClient } from './api/strava-api.client';
+import { StravaApiUsage } from './api/strava-api-usage.entity';
+import { StravaApiUsageService } from './api/strava-api-usage.service';
 import { StravaRateLimiter } from './api/strava-rate-limiter';
 import { StravaConnectionController } from './strava-connection.controller';
 import { StravaConnectionService } from './strava-connection.service';
@@ -19,7 +21,7 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([StravaWebhookEvent]),
+    TypeOrmModule.forFeature([StravaApiUsage, StravaWebhookEvent]),
     ActivitiesModule,
     ConnectionsModule,
     TilesModule,
@@ -33,6 +35,7 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
     // One instance: the Strava quotas are shared by the whole application.
     { provide: StravaRateLimiter, useValue: new StravaRateLimiter() },
     StravaApiClient,
+    StravaApiUsageService,
     StravaConnectionService,
     StravaSyncService,
     StravaTilesService,

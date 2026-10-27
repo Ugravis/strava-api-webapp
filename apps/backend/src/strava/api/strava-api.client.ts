@@ -12,6 +12,7 @@ import type {
   StravaTokenResponse,
   StravaWebhookSubscription,
 } from './strava-api.types';
+import { StravaApiUsageService } from './strava-api-usage.service';
 import { StravaRateLimiter } from './strava-rate-limiter';
 
 const OAUTH_BASE_URL = 'https://www.strava.com/oauth';
@@ -33,6 +34,7 @@ export class StravaApiClient {
   constructor(
     @Inject(stravaConfig.KEY) private readonly config: StravaConfig,
     private readonly rateLimiter: StravaRateLimiter,
+    private readonly usage: StravaApiUsageService,
   ) {}
 
   get isEnabled(): boolean {
@@ -220,6 +222,7 @@ export class StravaApiClient {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     this.rateLimiter.record(response.headers);
+    void this.usage.record(this.rateLimiter.snapshot());
     if (response.status === 429) {
       throw new StravaRateLimitedError(this.rateLimiter.retryAfterRejection());
     }

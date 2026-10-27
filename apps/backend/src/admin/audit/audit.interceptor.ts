@@ -55,15 +55,13 @@ export class AuditInterceptor implements NestInterceptor {
     const targetId = options.target
       ? request.params[options.target.param]
       : undefined;
-    const actorId = request.auth?.user.id ?? null;
     const entry: Omit<AuditEntry, 'succeeded' | 'status'> = {
-      actorId,
+      actorId: request.auth?.user.id ?? null,
       action: options.action,
       targetType: options.target?.type ?? null,
       targetId: typeof targetId === 'string' ? targetId : null,
       reason,
       details: readDetails(options.details, request),
-      hiddenBy: options.hidden ? actorId : null,
     };
 
     return next.handle().pipe(

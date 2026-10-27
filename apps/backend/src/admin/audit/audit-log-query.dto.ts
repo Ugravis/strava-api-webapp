@@ -4,10 +4,25 @@ import {
   type AuditOutcome,
   type AuditVisibility,
 } from '@kilotrace/shared/admin';
-import { IsIn, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+} from 'class-validator';
+import { Trim } from '../../common/transformers';
 import { AdminPageQueryDto } from '../common/admin-page-query.dto';
 
 export class AuditLogQueryDto extends AdminPageQueryDto {
+  /** Part of the reason, of the action, or of the name of a user involved. */
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
+
   /** An action, or the start of one ending with a dot, e.g. `users.`. */
   @IsOptional()
   @IsString()

@@ -14,6 +14,13 @@ import { toAuditUser } from '../common/audit-user';
 import { AdminAuditLog } from './admin-audit-log.entity';
 import type { AuditLogQueryDto } from './audit-log-query.dto';
 
+const MATCHING_USERS =
+  'SELECT id FROM users WHERE username ILIKE :q OR display_name ILIKE :q';
+
+function likeEscaped(text: string): string {
+  return text.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
 export interface AuditEntry {
   actorId: string | null;
   action: string;
@@ -23,8 +30,6 @@ export interface AuditEntry {
   succeeded: boolean;
   status?: number | null;
   details?: Record<string, unknown> | null;
-  /** Records the entry masked by this super-admin. */
-  hiddenBy?: string | null;
 }
 
 @Injectable()
@@ -56,6 +61,13 @@ export class AdminAuditLogService {
       });
     } else if (query.action) {
       builder.andWhere('entry.action = :action', { action: query.action });
+    }
+    if (query.q) {
+      // The reason, the action, or the name of the author or of the target.
+      builder.andWhere(
+        `(entry.reason ILIKE :q OR entry.action ILIKE :q OR entry.actor_id IN (${MATCHING_USERS}) OR entry.target_id IN (SELECT CAST(id AS text) FROM (${MATCHING_USERS}) matching))`,
+        { q: `%${likeEscaped(query.q)}%` },
+      );
     }
     if (query.actor) {
       builder.andWhere('entry.actor_id = :actor', { actor: query.actor });
@@ -141,8 +153,6 @@ export class AdminAuditLogService {
       succeeded: entry.succeeded,
       status: entry.status ?? null,
       details: entry.details ?? null,
-      hiddenAt: entry.hiddenBy ? new Date() : null,
-      hiddenBy: entry.hiddenBy ?? null,
     } as QueryDeepPartialEntity<AdminAuditLog>;
     await (manager
       ? manager.insert(AdminAuditLog, values)

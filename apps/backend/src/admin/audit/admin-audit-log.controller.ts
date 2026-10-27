@@ -20,7 +20,7 @@ import { AdminController } from '../access/admin-controller.decorator';
 import { Roles } from '../access/roles.decorator';
 import { AdminAuditLogService } from './admin-audit-log.service';
 import { AuditLogQueryDto } from './audit-log-query.dto';
-import { Audited } from './audited.decorator';
+import { NotAudited } from './audited.decorator';
 
 @AdminController('audit-log')
 export class AdminAuditLogController {
@@ -38,14 +38,10 @@ export class AdminAuditLogController {
     );
   }
 
-  /** Masking is recorded too, in an entry masked at once. */
+  /** Masking leaves no entry: recorded, it would show what it hides. */
   @Put(':id/hidden')
   @Roles(AdminRole.SuperAdmin)
-  @Audited({
-    action: 'audit.hide',
-    target: { type: 'audit', param: 'id' },
-    hidden: true,
-  })
+  @NotAudited()
   @HttpCode(HttpStatus.NO_CONTENT)
   hide(
     @CurrentUser() user: User,
@@ -56,11 +52,7 @@ export class AdminAuditLogController {
 
   @Delete(':id/hidden')
   @Roles(AdminRole.SuperAdmin)
-  @Audited({
-    action: 'audit.show',
-    target: { type: 'audit', param: 'id' },
-    hidden: true,
-  })
+  @NotAudited()
   @HttpCode(HttpStatus.NO_CONTENT)
   show(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.audit.setHidden(id, null);

@@ -30,7 +30,7 @@ import {
   AdminAuditLogService,
 } from '../src/admin/audit/admin-audit-log.service';
 import { AuditInterceptor } from '../src/admin/audit/audit.interceptor';
-import { Audited } from '../src/admin/audit/audited.decorator';
+import { Audited, NotAudited } from '../src/admin/audit/audited.decorator';
 import { SessionGuard } from '../src/auth/guards/session.guard';
 import { SessionCookie } from '../src/auth/session-cookie';
 import { SessionsService } from '../src/auth/sessions/sessions.service';
@@ -93,9 +93,15 @@ class ProbeController {
     action: 'things.mask',
     target: { type: 'thing', param: 'id' },
     details: ['kind', 'fields', 'missing'],
-    hidden: true,
   })
   maskThing(@Param('id') id: string): string {
+    return id;
+  }
+
+  @Post('things/:id/peek')
+  @Roles(AdminRole.SuperAdmin)
+  @NotAudited()
+  peekThing(@Param('id') id: string): string {
     return id;
   }
 
@@ -401,13 +407,12 @@ describe('Admin guards (e2e)', () => {
           details: null,
           succeeded: true,
           status: 201,
-          hiddenBy: null,
         },
       ]);
     });
 
-    it('records the details named by the route, and masks the entry when asked', async () => {
-      const user = store.add('token', [AdminRole.SuperAdmin]);
+    it('records the details named by the route', async () => {
+      store.add('token', [AdminRole.SuperAdmin]);
       await post('/api/admin/probe/things/42/badge/mask', 'token', {
         fields: ['bio'],
         kind: 'overridden',
@@ -417,9 +422,14 @@ describe('Admin guards (e2e)', () => {
         expect.objectContaining({
           action: 'things.mask',
           details: { kind: 'badge', fields: ['bio'] },
-          hiddenBy: user.id,
         }),
       ]);
+    });
+
+    it('lets an explicitly unaudited route through without an entry', async () => {
+      store.add('token', [AdminRole.SuperAdmin]);
+      await post('/api/admin/probe/things/42/peek', 'token').expect(201);
+      expect(auditEntries).toEqual([]);
     });
 
     it('records a failed action, then returns its error', async () => {

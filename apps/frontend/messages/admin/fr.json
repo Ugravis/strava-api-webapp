@@ -8,6 +8,7 @@
   },
   "nav": {
     "overview": "Vue d'ensemble",
+    "statistics": "Statistiques",
     "users": "Utilisateurs",
     "auditLog": "Logs"
   },
@@ -333,6 +334,70 @@
       "hidden": "Masquée le {date}",
       "visible": "Visible de tous les rôles admin",
       "visibility": "Visibilité"
+    }
+  },
+  "statistics": {
+    "title": "Statistiques",
+    "description": "Chiffres de toute l'application, par jour UTC, sur les {days} derniers jours. Calculés à {time}.",
+    "error": "Les statistiques n'ont pas pu être chargées. Réessayez dans un instant.",
+    "tiles": {
+      "users": "Inscrits",
+      "usersDetail": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}} sur {days} jours",
+      "trend": "{trend} par rapport aux {days} jours précédents",
+      "activities": "Activités",
+      "activitiesDetail": "{count, plural, =0 {Aucune synchronisée} one {# synchronisée} other {# synchronisées}} sur {days} jours",
+      "follows": "Abonnements",
+      "followsDetail": "{count, plural, =0 {Aucune demande en attente} one {# demande en attente} other {# demandes en attente}}",
+      "quota": "Quota Strava du jour",
+      "quotaDetail": "{used} requêtes de lecture sur {limit}",
+      "quotaUnknown": "Aucun appel à Strava aujourd'hui"
+    },
+    "signups": {
+      "title": "Inscriptions",
+      "series": "Inscriptions",
+      "chart": "Inscriptions par jour sur {days} jours"
+    },
+    "follows": {
+      "title": "Abonnements",
+      "accepted": "Abonnements",
+      "pending": "Demandes en attente",
+      "total": "relations",
+      "chart": "Répartition des abonnements et des demandes en attente",
+      "empty": "Aucun abonnement pour l'instant."
+    },
+    "activities": {
+      "title": "Activités synchronisées",
+      "total": "Total",
+      "legend": "Familles de sports",
+      "chart": "Activités synchronisées par jour et par famille de sports sur {days} jours",
+      "families": {
+        "ride": "Vélo",
+        "run": "Course",
+        "hike": "Marche et rando",
+        "swim": "Natation",
+        "other": "Autres"
+      }
+    },
+    "stravaUsage": {
+      "title": "Usage de l'API Strava",
+      "period": "Période",
+      "days": "{days} jours",
+      "quarters": "24 heures",
+      "read": "Requêtes de lecture",
+      "dailyLimit": "Limite quotidienne",
+      "shortLimit": "Limite par 15 minutes",
+      "limitCaption": "{limit} : {value} requêtes, hors de l'échelle.",
+      "overall": "Toutes requêtes",
+      "chart": "Requêtes de lecture envoyées à Strava",
+      "empty": "Aucun appel à Strava enregistré sur la période."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "Non lues",
+      "read": "Lues",
+      "total": "notifications",
+      "chart": "Répartition des notifications lues et non lues",
+      "empty": "Aucune notification envoyée."
     }
   }
 }

@@ -25,6 +25,8 @@ import { AdminAuditLog } from './audit/admin-audit-log.entity';
 import { AdminAuditLogService } from './audit/admin-audit-log.service';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
+import { AdminStatisticsController } from './statistics/admin-statistics.controller';
+import { AdminStatisticsService } from './statistics/admin-statistics.service';
 import { AdminUsersController } from './users/admin-users.controller';
 import { AdminUsersService } from './users/admin-users.service';
 
@@ -57,6 +59,7 @@ export const ADMIN_ROUTES = [
   ],
   controllers: [
     AdminMeController,
+    AdminStatisticsController,
     AdminUsersController,
     AdminAuditLogController,
   ],
@@ -64,6 +67,7 @@ export const ADMIN_ROUTES = [
     AdminAuditLogService,
     AdminUsersService,
     AdminBootstrapService,
+    AdminStatisticsService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

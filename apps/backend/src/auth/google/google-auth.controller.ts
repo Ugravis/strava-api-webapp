@@ -20,6 +20,10 @@ import { Public } from '../decorators/public.decorator';
 import { CompleteGoogleSignupDto } from '../dto/complete-google-signup.dto';
 import { requestMetadata } from '../request-metadata';
 import { SessionCookie } from '../session-cookie';
+import {
+  AccountSuspendedException,
+  writeSuspensionNotice,
+} from '../account-suspension';
 import { SignedCookie } from '../signed-cookie';
 import { SensitiveThrottle } from '../throttle';
 import {
@@ -111,6 +115,10 @@ export class GoogleAuthController {
       this.sessionCookie.write(response, session);
       return this.redirectToFrontend(response, '/dashboard');
     } catch (error) {
+      if (error instanceof AccountSuspendedException) {
+        writeSuspensionNotice(response, error, this.config.secureCookies);
+        return this.redirectToFrontend(response, '/login?error=suspended');
+      }
       this.logger.warn(
         `Google sign-in failed: ${error instanceof Error ? error.message : String(error)}`,
       );

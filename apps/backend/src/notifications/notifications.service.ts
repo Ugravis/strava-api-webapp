@@ -10,14 +10,17 @@ import {
   NOTIFICATION_CATEGORY_TYPES,
   Notification,
   type NotificationCategory,
+  type NotificationDetails,
   type NotificationType,
 } from './notification.entity';
 
 export interface NotificationResponse {
   id: string;
   type: NotificationType;
-  /** Null for an anonymous kind, e.g. a like. */
+  /** Null for an anonymous kind, e.g. a like, and for the team. */
   actor: PublicUser | null;
+  /** Said by the team, e.g. the reason of a moderation. */
+  details: NotificationDetails | null;
   read: boolean;
   createdAt: string;
   /** Whether the actor follows the user, who neither follows them nor asked to: offers to follow back. */
@@ -46,15 +49,17 @@ export const NOTIFICATIONS_PAGE_SIZE = 20;
 
 function toNotificationResponse(
   notification: Notification,
-  actor: User,
+  actor: User | null,
   followBack = false,
 ): NotificationResponse {
   return {
     id: notification.id,
     type: notification.type,
-    actor: ANONYMOUS_NOTIFICATIONS.has(notification.type)
-      ? null
-      : toPublicUser(actor),
+    actor:
+      !actor || ANONYMOUS_NOTIFICATIONS.has(notification.type)
+        ? null
+        : toPublicUser(actor),
+    details: notification.details,
     read: notification.readAt !== null,
     createdAt: notification.createdAt.toISOString(),
     followBack: notification.type === 'follow' && followBack,
@@ -98,14 +103,14 @@ export class NotificationsService {
       userId,
       page
         .filter(({ type }) => type === 'follow')
-        .map(({ actorId }) => actorId),
+        .flatMap(({ actorId }) => actorId ?? []),
     );
     return {
       notifications: page.map((notification) =>
         toNotificationResponse(
           notification,
-          notification.actor!,
-          !followed.has(notification.actorId),
+          notification.actor ?? null,
+          !followed.has(notification.actorId ?? ''),
         ),
       ),
       hasMore: rows.length > NOTIFICATIONS_PAGE_SIZE,
@@ -161,6 +166,21 @@ export class NotificationsService {
         type === 'follow' &&
           (await this.followedAmong(userId, [actor.id])).size === 0,
       ),
+    } satisfies NotificationEvent);
+  }
+
+  /** Notifies a user of an action of the team, which stays anonymous. */
+  async notifyFromTeam(
+    userId: string,
+    type: Extract<NotificationType, 'moderation' | 'strava_unlinked'>,
+    details: NotificationDetails,
+  ): Promise<void> {
+    const notification = await this.notifications.save(
+      this.notifications.create({ userId, type, actorId: null, details }),
+    );
+    this.streams.send(userId, {
+      unreadCount: await this.unreadCount(userId),
+      notification: toNotificationResponse(notification, null),
     } satisfies NotificationEvent);
   }
 

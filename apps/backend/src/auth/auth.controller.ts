@@ -10,6 +10,12 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import {
+  AccountSuspendedException,
+  type SuspensionNotice,
+  suspensionCookie,
+  writeSuspensionNotice,
+} from './account-suspension';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import { toUserResponse, type UserResponse } from '../users/dto/user-response';
@@ -69,12 +75,30 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserResponse> {
     this.assertEmailSignIn();
-    const { user, session } = await this.auth.login(
-      dto,
-      requestMetadata(request),
-    );
-    this.sessionCookie.write(response, session);
-    return toUserResponse(user);
+    try {
+      const { user, session } = await this.auth.login(
+        dto,
+        requestMetadata(request),
+      );
+      this.sessionCookie.write(response, session);
+      return toUserResponse(user);
+    } catch (error) {
+      if (error instanceof AccountSuspendedException) {
+        writeSuspensionNotice(response, error, this.config.secureCookies);
+      }
+      throw error;
+    }
+  }
+
+  /** Why the latest sign-in was refused, while its short-lived cookie lasts. */
+  @Public()
+  @Get('suspension')
+  suspension(@Req() request: Request): SuspensionNotice {
+    const notice = suspensionCookie.read(request);
+    if (!notice) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No suspension notice');
+    }
+    return notice;
   }
 
   /** Public so that a stale cookie can always be cleared. */

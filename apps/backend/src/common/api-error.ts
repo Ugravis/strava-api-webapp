@@ -37,6 +37,8 @@ export enum ApiErrorCode {
   CannotLikeSelf = 'CANNOT_LIKE_SELF',
   AdminForbidden = 'ADMIN_FORBIDDEN',
   ReasonRequired = 'REASON_REQUIRED',
+  AccountSuspended = 'ACCOUNT_SUSPENDED',
+  InvalidSuspension = 'INVALID_SUSPENSION',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

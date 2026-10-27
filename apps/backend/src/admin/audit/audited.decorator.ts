@@ -12,6 +12,11 @@ export interface AuditedOptions {
    * confirmation of the back office.
    */
   destructive?: boolean;
+  /**
+   * Route parameters, then body properties, copied into the entry, e.g. the
+   * fields of a moderation.
+   */
+  details?: readonly string[];
 }
 
 /**
@@ -20,3 +25,13 @@ export interface AuditedOptions {
  */
 export const Audited = (options: AuditedOptions): MethodDecorator =>
   SetMetadata(AUDITED_KEY, options);
+
+export const NOT_AUDITED_KEY = 'adminNotAudited';
+
+/**
+ * Exempts a state-changing route from the audit log, which the roles guard
+ * otherwise requires. Reserved to the masking of the log itself, which
+ * would defeat its purpose if recorded.
+ */
+export const NotAudited = (): MethodDecorator =>
+  SetMetadata(NOT_AUDITED_KEY, true);

@@ -10,7 +10,7 @@ import {
   type DistinctionKind,
   UserDistinction,
 } from '../users/user-distinction.entity';
-import { User } from '../users/user.entity';
+import { isSuspended, User } from '../users/user.entity';
 import { Follow } from './follow.entity';
 import { ProfileLike } from './profile-like.entity';
 import {
@@ -112,6 +112,7 @@ export class FollowsService {
         'follow.followed_id = user.id AND follow.follower_id = :viewerId AND NOT follow.pending',
       )
       .where('user.id <> :viewerId', { viewerId: viewer.id })
+      .andWhere('(user.suspended_at IS NULL OR user.suspended_until <= now())')
       .andWhere(
         '(user.username LIKE :contains OR lower(user.display_name) LIKE :contains)',
         { contains: `%${likeEscaped(lowered)}%` },
@@ -249,7 +250,7 @@ export class FollowsService {
 
   /** Unfollows a user, or cancels a request to follow them. */
   async unfollow(viewer: User, username: string): Promise<void> {
-    const user = await this.findByUsername(username);
+    const user = await this.findByUsername(username, true);
     const follow = await this.removeFollow(viewer.id, user.id);
     await (follow.pending
       ? this.notifications.discard(user.id, 'follow_request', viewer.id)
@@ -280,7 +281,7 @@ export class FollowsService {
 
   /** Removes a follower of the viewer, or declines their request. */
   async removeFollower(viewer: User, username: string): Promise<void> {
-    const user = await this.findByUsername(username);
+    const user = await this.findByUsername(username, true);
     const follow = await this.removeFollow(user.id, viewer.id);
     await this.notifications.discard(
       viewer.id,
@@ -393,9 +394,16 @@ export class FollowsService {
     );
   }
 
-  private async findByUsername(username: string): Promise<User> {
+  /**
+   * A suspended user is hidden as an unknown one, except to undo a follow,
+   * which must stay possible.
+   */
+  private async findByUsername(
+    username: string,
+    includeSuspended = false,
+  ): Promise<User> {
     const user = await this.users.findOneBy({ username });
-    if (!user) {
+    if (!user || (!includeSuspended && isSuspended(user))) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'User not found');
     }
     return user;
@@ -422,6 +430,7 @@ export class FollowsService {
     viewer: User,
     users: User[],
   ): Promise<ProfileSummary[]> {
+    users = users.filter((user) => !isSuspended(user));
     if (users.length === 0) {
       return [];
     }

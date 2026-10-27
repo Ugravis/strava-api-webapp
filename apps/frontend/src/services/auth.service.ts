@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { PendingGoogleSignup, User, UsernameAvailability } from "@/lib/api/types";
+import type { PendingGoogleSignup, SuspensionNotice, User, UsernameAvailability } from "@/lib/api/types";
 
 export interface LoginInput {
   email: string;
@@ -29,6 +29,9 @@ export const authService = {
     apiRequest<User>("/auth/register", { method: "POST", body: { json: input } }),
 
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
+
+  /** Why the latest sign-in was refused to a suspended account, for a few minutes. */
+  getSuspension: () => apiRequest<SuspensionNotice>("/auth/suspension"),
 
   checkUsername: (username: string) =>
     apiRequest<UsernameAvailability>(

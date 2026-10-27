@@ -34,6 +34,10 @@ export class AdminAuditLog {
   @Column({ type: 'varchar', length: 500, nullable: true })
   reason!: string | null;
 
+  /** Parameters of the action, e.g. the fields reset. */
+  @Column({ type: 'jsonb', nullable: true })
+  details!: Record<string, unknown> | null;
+
   /** False when the action was attempted but failed. */
   @Column({ type: 'boolean' })
   succeeded!: boolean;

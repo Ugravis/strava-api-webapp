@@ -88,6 +88,23 @@ export class User {
   })
   roles!: AdminRole[];
 
+  /** Set by the back office: sign-in refused and profile hidden meanwhile. */
+  @Column({ name: 'suspended_at', type: 'timestamptz', nullable: true })
+  suspendedAt!: Date | null;
+
+  /** End of the suspension; null for an indefinite one. */
+  @Column({ name: 'suspended_until', type: 'timestamptz', nullable: true })
+  suspendedUntil!: Date | null;
+
+  /** Shown to the user when a sign-in is refused. */
+  @Column({
+    name: 'suspension_reason',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  suspensionReason!: string | null;
+
   /** When the terms of use were accepted, kept as proof of consent. */
   @Column({ name: 'terms_accepted_at', type: 'timestamptz', nullable: true })
   termsAcceptedAt!: Date | null;
@@ -97,4 +114,12 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+}
+
+/** Whether a suspension is in force, an expired one ending by itself. */
+export function isSuspended(user: User, now = new Date()): boolean {
+  return (
+    user.suspendedAt !== null &&
+    (user.suspendedUntil === null || user.suspendedUntil > now)
+  );
 }

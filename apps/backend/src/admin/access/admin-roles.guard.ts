@@ -12,7 +12,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { AuthenticatedRequest } from '../../auth/auth-request';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
-import { AUDITED_KEY } from '../audit/audited.decorator';
+import { AUDITED_KEY, NOT_AUDITED_KEY } from '../audit/audited.decorator';
 import { ADMIN_AREA_KEY } from './admin-controller.decorator';
 import { adminNotFound } from './admin-not-found';
 import { isAdminPath } from './admin-path';
@@ -24,7 +24,7 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
  * Global guard of the back office, denying by default: a route under
  * `/api/admin` must come from an `@AdminController()` and declare its
  * minimal role with `@Roles()`, and a state-changing route must be
- * `@Audited()`. Routes elsewhere are left to the session guard.
+ * `@Audited()`, or explicitly `@NotAudited()`. Routes elsewhere are left to the session guard.
  */
 @Injectable()
 export class AdminRolesGuard implements CanActivate {
@@ -64,10 +64,9 @@ export class AdminRolesGuard implements CanActivate {
       throw forbidden();
     }
 
-    const audited = this.reflector.get<unknown>(
-      AUDITED_KEY,
-      context.getHandler(),
-    );
+    const audited =
+      this.reflector.get<unknown>(AUDITED_KEY, context.getHandler()) ??
+      this.reflector.get<unknown>(NOT_AUDITED_KEY, context.getHandler());
     if (!SAFE_METHODS.has(request.method) && !audited) {
       this.logger.error(`${request.method} ${request.path} is not audited`);
       throw forbidden();

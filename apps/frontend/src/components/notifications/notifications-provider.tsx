@@ -15,6 +15,16 @@ import type {
 import { publicNameOf } from "@/lib/user";
 import { NOTIFICATIONS_STREAM_URL, notificationsService } from "@/services/notifications.service";
 
+/**
+ * Where a notification leads: the profile of its actor, the own one for an
+ * anonymous like, the settings for a notice of the team.
+ */
+export function notificationHref({ type, actor }: AppNotification): string {
+  if (type === "moderation") return routes.settingsProfile;
+  if (type === "strava_unlinked") return routes.settings;
+  return actor ? userProfileHref(actor.username) : routes.profiles;
+}
+
 /** Filters of the list, all loaded up front so that switching is instant. */
 export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = ["all", "likes", "follows"];
 
@@ -163,7 +173,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         toast(t(`toast.${added.type}`, { name: actor ? publicNameOf(actor) : "" }), {
           action: {
             label: t("view"),
-            onClick: () => router.push(actor ? userProfileHref(actor.username) : routes.profiles),
+            onClick: () => router.push(notificationHref(added)),
           },
         });
       } else if (event.read) {

@@ -30,7 +30,7 @@ import {
   AdminAuditLogService,
 } from '../src/admin/audit/admin-audit-log.service';
 import { AuditInterceptor } from '../src/admin/audit/audit.interceptor';
-import { Audited } from '../src/admin/audit/audited.decorator';
+import { Audited, NotAudited } from '../src/admin/audit/audited.decorator';
 import { SessionGuard } from '../src/auth/guards/session.guard';
 import { SessionCookie } from '../src/auth/session-cookie';
 import { SessionsService } from '../src/auth/sessions/sessions.service';
@@ -84,6 +84,24 @@ class ProbeController {
     destructive: true,
   })
   deleteThing(@Param('id') id: string): string {
+    return id;
+  }
+
+  @Post('things/:id/:kind/mask')
+  @Roles(AdminRole.SuperAdmin)
+  @Audited({
+    action: 'things.mask',
+    target: { type: 'thing', param: 'id' },
+    details: ['kind', 'fields', 'missing'],
+  })
+  maskThing(@Param('id') id: string): string {
+    return id;
+  }
+
+  @Post('things/:id/peek')
+  @Roles(AdminRole.SuperAdmin)
+  @NotAudited()
+  peekThing(@Param('id') id: string): string {
     return id;
   }
 
@@ -261,11 +279,11 @@ describe('Admin guards (e2e)', () => {
   });
 
   describe('admins', () => {
-    it('returns the roles of the caller', async () => {
-      store.add('token', [AdminRole.Support, AdminRole.Admin]);
+    it('returns the caller and their roles', async () => {
+      const user = store.add('token', [AdminRole.Support, AdminRole.Admin]);
       await get('/api/admin/me', 'token')
         .expect(200)
-        .expect({ roles: ['support', 'admin'] });
+        .expect({ id: user.id, roles: ['support', 'admin'] });
     });
 
     it('answers an unknown back-office route with a 404', () => {
@@ -386,10 +404,32 @@ describe('Admin guards (e2e)', () => {
           targetType: 'thing',
           targetId: '42',
           reason: 'Duplicate entry',
+          details: null,
           succeeded: true,
           status: 201,
         },
       ]);
+    });
+
+    it('records the details named by the route', async () => {
+      store.add('token', [AdminRole.SuperAdmin]);
+      await post('/api/admin/probe/things/42/badge/mask', 'token', {
+        fields: ['bio'],
+        kind: 'overridden',
+      }).expect(201);
+
+      expect(auditEntries).toEqual([
+        expect.objectContaining({
+          action: 'things.mask',
+          details: { kind: 'badge', fields: ['bio'] },
+        }),
+      ]);
+    });
+
+    it('lets an explicitly unaudited route through without an entry', async () => {
+      store.add('token', [AdminRole.SuperAdmin]);
+      await post('/api/admin/probe/things/42/peek', 'token').expect(201);
+      expect(auditEntries).toEqual([]);
     });
 
     it('records a failed action, then returns its error', async () => {

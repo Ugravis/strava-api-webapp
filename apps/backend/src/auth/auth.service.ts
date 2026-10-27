@@ -11,6 +11,7 @@ import type { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
+import { assertNotSuspended } from './account-suspension';
 import { PasswordHasher } from './password-hasher.service';
 import {
   type CreatedSession,
@@ -75,6 +76,7 @@ export class AuthService {
     if (!(await this.passwordHasher.verify(dto.password, user.passwordHash))) {
       throw this.invalidCredentials();
     }
+    assertNotSuspended(user);
     return {
       user,
       session: await this.sessions.create(
@@ -90,6 +92,7 @@ export class AuthService {
     user: User,
     metadata: SessionMetadata,
   ): Promise<AuthResult> {
+    assertNotSuspended(user);
     return {
       user,
       session: await this.sessions.create(user.id, metadata, true),
@@ -175,6 +178,14 @@ export class AuthService {
         'The confirmation does not match the username',
       );
     }
+    await this.purge(user);
+  }
+
+  /**
+   * Deletes an account and everything tied to it, the access granted at
+   * Strava included. Also run by the back office.
+   */
+  async purge(user: User): Promise<void> {
     await this.avatars.deleteQuietly(user.avatarKey);
     await this.mapPreview.deleteFor(user.id);
     // Revokes the access at Strava: the cascade below only removes local data.

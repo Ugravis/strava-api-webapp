@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { CheckboxField } from "@/components/forms/checkbox-field";
+import { SuspensionNotice } from "@/components/auth/suspension-notice";
 import { FormError } from "@/components/forms/form-error";
 import { FormField } from "@/components/forms/form-field";
 import { PasswordInput } from "@/components/forms/password-input";
@@ -36,6 +37,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const notice = useRedirectNotice();
+  const [suspended, setSuspended] = useState(searchParams.get("error") === "suspended");
   const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -49,14 +51,17 @@ export function LoginForm() {
       router.replace(safeRedirectPath(searchParams.get("next")));
       router.refresh();
     } catch (error) {
-      setErrorCode(errorCodeOf(error));
+      const code = errorCodeOf(error);
+      setSuspended(code === "ACCOUNT_SUSPENDED");
+      setErrorCode(code === "ACCOUNT_SUSPENDED" ? null : code);
     }
   }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {notice && !errorCode && (
+        {suspended && <SuspensionNotice />}
+        {notice && !errorCode && !suspended && (
           <Alert>
             <CircleAlertIcon />
             <AlertDescription>{notice}</AlertDescription>

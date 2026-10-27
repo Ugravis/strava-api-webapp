@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Not, Repository } from 'typeorm';
 import authConfig, { type AuthConfig } from '../../config/auth.config';
 import { generateToken, hashToken } from '../../common/crypto.util';
-import { User } from '../../users/user.entity';
+import { isSuspended, User } from '../../users/user.entity';
 import { Session } from './session.entity';
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -69,7 +69,8 @@ export class SessionsService {
     }
 
     const now = new Date();
-    if (session.expiresAt <= now) {
+    // A suspension ends the sessions it did not revoke, e.g. one opened meanwhile.
+    if (session.expiresAt <= now || isSuspended(session.user, now)) {
       await this.sessions.delete({ id: session.id });
       return null;
     }

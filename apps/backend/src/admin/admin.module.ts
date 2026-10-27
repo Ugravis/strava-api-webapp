@@ -6,16 +6,29 @@ import {
 } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Activity } from '../activities/activity.entity';
 import { AuthModule } from '../auth/auth.module';
+import { OAuthAccount } from '../auth/google/oauth-account.entity';
+import { Session } from '../auth/sessions/session.entity';
+import { ProviderConnection } from '../connections/provider-connection.entity';
+import { Follow } from '../follows/follow.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { StravaModule } from '../strava/strava.module';
+import { UserDistinction } from '../users/user-distinction.entity';
+import { User } from '../users/user.entity';
+import { UsersModule } from '../users/users.module';
 import { AdminAccessMiddleware } from './access/admin-access.middleware';
 import { AdminRolesGuard } from './access/admin-roles.guard';
 import { AdminMeController } from './admin-me.controller';
+import { AdminAuditLogController } from './audit/admin-audit-log.controller';
 import { AdminAuditLog } from './audit/admin-audit-log.entity';
 import { AdminAuditLogService } from './audit/admin-audit-log.service';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
+import { AdminUsersController } from './users/admin-users.controller';
+import { AdminUsersService } from './users/admin-users.service';
 
 /** Every path under `/api/admin`, whether a route exists or not. */
 export const ADMIN_ROUTES = [
@@ -28,10 +41,31 @@ export const ADMIN_ROUTES = [
  * frontend proxy blocks it from the browser).
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([AdminAuditLog]), AuthModule],
-  controllers: [AdminMeController, AdminStatisticsController],
+  imports: [
+    TypeOrmModule.forFeature([
+      AdminAuditLog,
+      User,
+      Session,
+      ProviderConnection,
+      Activity,
+      Follow,
+      UserDistinction,
+      OAuthAccount,
+    ]),
+    AuthModule,
+    UsersModule,
+    StravaModule,
+    NotificationsModule,
+  ],
+  controllers: [
+    AdminMeController,
+    AdminStatisticsController,
+    AdminUsersController,
+    AdminAuditLogController,
+  ],
   providers: [
     AdminAuditLogService,
+    AdminUsersService,
     AdminBootstrapService,
     AdminStatisticsService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },

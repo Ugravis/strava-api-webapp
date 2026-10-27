@@ -1,31 +1,34 @@
 import {
   AdminRole,
-  AUDIT_OUTCOMES,
   AUDIT_VISIBILITIES,
   type AdminPage,
   type AuditLogEntry,
+  type AuditUser,
   hasAdminRole,
 } from "@kilotrace/shared/admin";
-import { XIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, XIcon } from "lucide-react";
 import Link from "next/link";
-import { LinkPills } from "@/components/admin/link-pills";
+import { ActionForm } from "@/components/admin/action-form";
+import { PanelLink } from "@/components/admin/panel-link";
 import { Pagination } from "@/components/admin/pagination";
-import { PageHeader } from "@/components/layout/page-header";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { requireAdminRole } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
+import { formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { hrefWith, oneOf, pageOf, param } from "@/lib/admin/url";
-import { AuditEntryItem } from "./audit-entry";
+import { cn } from "@/lib/utils";
+import { setEntryHidden } from "./actions";
+import { AUDIT_DOMAINS } from "./domains";
 
-/** Domains of the actions, matched by the start of their name. */
-const DOMAINS = ["all", "users.", "roles.", "audit."] as const;
 const UUID = /^[0-9a-f-]{36}$/i;
+const PANEL_PREFIX = `${adminRoutes.users}/`;
 
 /**
- * The audit log, the latest first, filtered in the URL. Append-only: the
- * super-admins may only mask an entry from the other roles.
+ * A page of the logs, the latest first. Append-only: the super-admins may
+ * only mask an entry from the other roles.
  */
 export default async function AdminAuditLogPage({ searchParams }: PageProps<"/admin/audit-log">) {
   const roles = await requireAdminRole(AdminRole.Admin);
@@ -34,20 +37,18 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
   const common = getAdminTranslations("common");
   const params = await searchParams;
 
-  const domain = oneOf(param(params, "action"), DOMAINS);
-  const outcome = oneOf(param(params, "outcome"), AUDIT_OUTCOMES);
+  const domain = oneOf(param(params, "action"), AUDIT_DOMAINS);
   const visibility = superAdmin ? oneOf(param(params, "visibility"), AUDIT_VISIBILITIES) : "all";
   const target = param(params, "target");
   const actor = param(params, "actor");
-  const page = pageOf(param(params, "page"));
   const current = {
+    q: param(params, "q")?.trim().slice(0, 100) || undefined,
     action: domain === "all" ? undefined : domain,
-    outcome: outcome === "all" ? undefined : outcome,
     visibility: visibility === "all" ? undefined : visibility,
     target: target && UUID.test(target) ? target : undefined,
     actor: actor && UUID.test(actor) ? actor : undefined,
-    page: page > 1 ? String(page) : undefined,
   };
+  const page = pageOf(param(params, "page"));
   const href = (changes: Record<string, string | null>) => hrefWith(adminRoutes.auditLog, current, changes);
 
   const query = new URLSearchParams(
@@ -61,57 +62,70 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
     const user = list.items.flatMap((entry) => [entry.actor, entry.targetUser]).find((each) => each?.id === id);
     return user?.displayName ?? (user?.username ? `@${user.username}` : id.slice(0, 8));
   };
+  const cell = "px-3 py-2 align-top";
 
   return (
-    <>
-      <PageHeader title={t("title")} description={t("description")} />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <LinkPills
-          label={t("filters.action")}
-          items={DOMAINS.map((each) => ({
-            key: each,
-            label: t(`filters.domains.${each === "all" ? each : (each.slice(0, -1) as "users" | "roles" | "audit")}`),
-            href: href({ action: each === "all" ? null : each, page: null }),
-            active: each === domain,
-          }))}
-        />
-        <LinkPills
-          label={t("filters.outcome")}
-          items={AUDIT_OUTCOMES.map((each) => ({
-            key: each,
-            label: t(`filters.outcomes.${each}`),
-            href: href({ outcome: each === "all" ? null : each, page: null }),
-            active: each === outcome,
-          }))}
-        />
-        {superAdmin && (
-          <LinkPills
-            label={t("filters.visibility")}
-            items={AUDIT_VISIBILITIES.map((each) => ({
-              key: each,
-              label: t(`filters.visibilities.${each}`),
-              href: href({ visibility: each === "all" ? null : each, page: null }),
-              active: each === visibility,
-            }))}
-          />
-        )}
-        {current.target && (
-          <FilterBadge label={t("filters.target", { name: nameOf(current.target) })} clear={t("filters.clear")} href={href({ target: null, page: null })} />
-        )}
-        {current.actor && (
-          <FilterBadge label={t("filters.actor", { name: nameOf(current.actor) })} clear={t("filters.clear")} href={href({ actor: null, page: null })} />
-        )}
-      </div>
+    <div className="flex flex-col gap-3">
+      {(current.target || current.actor) && (
+        <div className="flex flex-wrap gap-2">
+          {current.target && (
+            <FilterBadge label={t("filters.target", { name: nameOf(current.target) })} clear={t("filters.clear")} href={href({ target: null })} />
+          )}
+          {current.actor && (
+            <FilterBadge label={t("filters.actor", { name: nameOf(current.actor) })} clear={t("filters.clear")} href={href({ actor: null })} />
+          )}
+        </div>
+      )}
 
       {list.items.length === 0 ? (
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("empty")}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {list.items.map((entry) => (
-            <AuditEntryItem key={entry.id} entry={entry} masking={superAdmin} />
-          ))}
-        </ul>
+        // Every column stays, the table scrolling sideways on narrow screens.
+        <div className="overflow-x-auto rounded-xl border">
+          <table className="w-full min-w-[56rem] text-sm">
+            <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+              <tr>
+                <th className={`${cell} font-medium whitespace-nowrap`}>{t("columns.date")}</th>
+                <th className={`${cell} font-medium`}>{t("columns.actor")}</th>
+                <th className={`${cell} font-medium`}>{t("columns.target")}</th>
+                <th className={`${cell} font-medium`}>{t("columns.action")}</th>
+                <th className={`${cell} font-medium`}>{t("columns.reason")}</th>
+                {superAdmin && <th className={`${cell} text-right font-medium`}>{t("columns.actions")}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {list.items.map((entry) => {
+                const hidden = Boolean(entry.hiddenAt);
+                return (
+                  <tr key={entry.id} className={cn("border-t", hidden && "bg-muted/40 text-muted-foreground")}>
+                    <td className={`${cell} whitespace-nowrap text-muted-foreground`}>
+                      <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>
+                    </td>
+                    <td className={`${cell} whitespace-nowrap`}>
+                      <UserLink user={entry.actor} fallback={t("system")} deleted={t("deleted")} />
+                    </td>
+                    <td className={`${cell} whitespace-nowrap`}>
+                      <UserLink user={entry.targetUser} fallback="—" deleted={t("deleted")} />
+                    </td>
+                    <td className={cell}>
+                      <ActionLabel entry={entry} />
+                    </td>
+                    <td className={`${cell} max-w-80 whitespace-pre-line`}>{entry.reason ?? "—"}</td>
+                    {superAdmin && (
+                      <td className={`${cell} text-right`}>
+                        <ActionForm action={setEntryHidden.bind(null, entry.id, !hidden)}>
+                          <SubmitButton size="icon-sm" variant="ghost" aria-label={t(hidden ? "show" : "hide")} title={t(hidden ? "show" : "hide")}>
+                            {hidden ? <EyeIcon /> : <EyeOffIcon />}
+                          </SubmitButton>
+                        </ActionForm>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <Pagination
@@ -125,7 +139,53 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
           status: common("page", { page, pages }),
         }}
       />
-    </>
+    </div>
+  );
+}
+
+/** A user of an entry, opening their panel while the account exists. */
+function UserLink({ user, fallback, deleted }: { user: AuditUser | null; fallback: string; deleted: string }) {
+  if (!user) {
+    return <span className="text-muted-foreground">{fallback}</span>;
+  }
+  if (!user.username) {
+    return <span className="text-muted-foreground italic">{deleted}</span>;
+  }
+  return (
+    <PanelLink
+      href={adminRoutes.user(user.id)}
+      panelPrefix={PANEL_PREFIX}
+      className="font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+    >
+      {user.displayName ?? `@${user.username}`}
+    </PanelLink>
+  );
+}
+
+/** The action in words, with its parameters and its failure if any. */
+function ActionLabel({ entry }: { entry: AuditLogEntry }) {
+  const t = getAdminTranslations("auditLog");
+  const actions = getAdminTranslations("auditLog.actions");
+  const fields = getAdminTranslations("user.moderatedFields");
+  const kinds = getAdminTranslations("user.distinctions");
+  const key = entry.action as Parameters<typeof actions>[0];
+  const { until, fields: reset, kind } = entry.details ?? {};
+  const details = [
+    typeof until === "string" && t("details.until", { date: formatDateTime(until) }),
+    Array.isArray(reset) &&
+      t("details.fields", {
+        fields: reset.map((field) => (fields.has(field as never) ? fields(field as never) : String(field))).join(", "),
+      }),
+    typeof kind === "string" && t("details.kind", { kind: kinds.has(kind as never) ? kinds(kind as never) : kind }),
+  ].filter(Boolean);
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span className="flex flex-wrap items-center gap-1.5">
+        {actions.has(key) ? actions(key) : entry.action}
+        {!entry.succeeded && <Badge variant="destructive">{t("failed", { status: entry.status ?? "—" })}</Badge>}
+      </span>
+      {details.length > 0 && <span className="text-xs text-muted-foreground">{details.join(" · ")}</span>}
+    </span>
   );
 }
 

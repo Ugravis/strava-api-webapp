@@ -7,7 +7,8 @@
     "toApp": "Site public"
   },
   "nav": {
-    "overview": "Vue d'ensemble"
+    "overview": "Vue d'ensemble",
+    "statistics": "Statistiques"
   },
   "roles": {
     "support": "Support",
@@ -21,5 +22,73 @@
     "rolesDescription": "Chaque rôle donne aussi les droits des rôles inférieurs : support, puis admin, puis super-admin.",
     "sections": "Outils",
     "sectionsEmpty": "Les outils d'administration apparaîtront ici, selon vos rôles."
+  },
+  "statistics": {
+    "title": "Statistiques",
+    "description": "Chiffres de toute l'application, par jour UTC, sur les {days} derniers jours. Calculés à {time}.",
+    "error": "Les statistiques n'ont pas pu être chargées. Réessayez dans un instant.",
+    "tiles": {
+      "users": "Inscrits",
+      "usersDetail": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}} sur {days} jours",
+      "trend": "{trend} par rapport aux {days} jours précédents",
+      "activities": "Activités",
+      "activitiesDetail": "{count, plural, =0 {Aucune synchronisée} one {# synchronisée} other {# synchronisées}} sur {days} jours",
+      "follows": "Abonnements",
+      "followsDetail": "{count, plural, =0 {Aucune demande en attente} one {# demande en attente} other {# demandes en attente}}",
+      "quota": "Quota Strava du jour",
+      "quotaDetail": "{used} requêtes de lecture sur {limit}",
+      "quotaUnknown": "Aucun appel à Strava aujourd'hui"
+    },
+    "signups": {
+      "title": "Inscriptions",
+      "description": "Nouveaux comptes chaque jour.",
+      "series": "Inscriptions",
+      "chart": "Inscriptions par jour sur {days} jours"
+    },
+    "follows": {
+      "title": "Abonnements",
+      "description": "Couples abonné / abonnement et demandes à des profils privés.",
+      "accepted": "Abonnements",
+      "pending": "Demandes en attente",
+      "total": "relations",
+      "chart": "Répartition des abonnements et des demandes en attente",
+      "empty": "Aucun abonnement pour l'instant."
+    },
+    "activities": {
+      "title": "Activités synchronisées",
+      "description": "Activités importées chaque jour, par famille de sports.",
+      "total": "Total",
+      "legend": "Familles de sports",
+      "chart": "Activités synchronisées par jour et par famille de sports sur {days} jours",
+      "families": {
+        "ride": "Vélo",
+        "run": "Course",
+        "hike": "Marche et rando",
+        "swim": "Natation",
+        "other": "Autres"
+      }
+    },
+    "stravaUsage": {
+      "title": "Usage de l'API Strava",
+      "description": "Quota de lecture consommé par toute l'application, sous sa limite en pointillés.",
+      "period": "Période",
+      "days": "{days} jours",
+      "quarters": "24 heures",
+      "read": "Requêtes de lecture",
+      "dailyLimit": "Limite quotidienne",
+      "shortLimit": "Limite par 15 minutes",
+      "overall": "Toutes requêtes",
+      "chart": "Requêtes de lecture envoyées à Strava",
+      "empty": "Aucun appel à Strava enregistré sur la période."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Toutes les notifications envoyées, lues ou non.",
+      "unread": "Non lues",
+      "read": "Lues",
+      "total": "notifications",
+      "chart": "Répartition des notifications lues et non lues",
+      "empty": "Aucune notification envoyée."
+    }
   }
 }

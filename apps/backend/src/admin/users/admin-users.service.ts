@@ -117,8 +117,6 @@ export class AdminUsersService {
       followersCount,
       followingCount,
       sessionsCount,
-      distinctions,
-      googleAccounts,
     ] = await Promise.all([
       this.summaries([user]),
       this.connections.findOneBy({ userId: id, provider: STRAVA }),
@@ -126,11 +124,6 @@ export class AdminUsersService {
       this.follows.countBy({ followedId: id, pending: false }),
       this.follows.countBy({ followerId: id, pending: false }),
       this.sessions.countBy({ userId: id }),
-      this.distinctions.find({
-        where: { userId: id },
-        order: { awardedAt: 'ASC' },
-      }),
-      this.oauthAccounts.countBy({ userId: id }),
     ]);
     return {
       ...summary,
@@ -138,10 +131,6 @@ export class AdminUsersService {
       city: user.city,
       countryCode: user.countryCode,
       profilePrivate: user.profilePrivate,
-      signInMethods: [
-        ...(user.passwordHash ? (['password'] as const) : []),
-        ...(googleAccounts > 0 ? (['google'] as const) : []),
-      ],
       strava: connection && {
         accountName: connection.accountName,
         connectedAt: connection.createdAt.toISOString(),
@@ -151,10 +140,6 @@ export class AdminUsersService {
       followersCount,
       followingCount,
       sessionsCount,
-      distinctions: distinctions.map(({ kind, awardedAt }) => ({
-        kind,
-        awardedAt: awardedAt.toISOString(),
-      })),
     };
   }
 
@@ -268,23 +253,33 @@ export class AdminUsersService {
       return [];
     }
     const ids = users.map(({ id }) => id);
-    const [lastSeen, connections] = await Promise.all([
-      this.sessions
-        .createQueryBuilder('session')
-        .select('session.user_id', 'userId')
-        .addSelect('MAX(session.last_seen_at)', 'lastSeenAt')
-        .where({ userId: In(ids) })
-        .groupBy('session.user_id')
-        .getRawMany<{ userId: string; lastSeenAt: Date }>(),
-      this.connections.find({
-        select: { userId: true },
-        where: { userId: In(ids), provider: STRAVA },
-      }),
-    ]);
+    const [lastSeen, connections, googleAccounts, distinctions] =
+      await Promise.all([
+        this.sessions
+          .createQueryBuilder('session')
+          .select('session.user_id', 'userId')
+          .addSelect('MAX(session.last_seen_at)', 'lastSeenAt')
+          .where({ userId: In(ids) })
+          .groupBy('session.user_id')
+          .getRawMany<{ userId: string; lastSeenAt: Date }>(),
+        this.connections.find({
+          select: { userId: true },
+          where: { userId: In(ids), provider: STRAVA },
+        }),
+        this.oauthAccounts.find({
+          select: { userId: true },
+          where: { userId: In(ids) },
+        }),
+        this.distinctions.find({
+          where: { userId: In(ids) },
+          order: { awardedAt: 'ASC' },
+        }),
+      ]);
     const lastSeenById = new Map(
       lastSeen.map(({ userId, lastSeenAt }) => [userId, lastSeenAt]),
     );
     const connected = new Set(connections.map(({ userId }) => userId));
+    const withGoogle = new Set(googleAccounts.map(({ userId }) => userId));
     return users.map((user) => ({
       id: user.id,
       username: user.username,
@@ -302,6 +297,16 @@ export class AdminUsersService {
           }
         : null,
       stravaConnected: connected.has(user.id),
+      signInMethods: [
+        ...(user.passwordHash ? (['password'] as const) : []),
+        ...(withGoogle.has(user.id) ? (['google'] as const) : []),
+      ],
+      distinctions: distinctions
+        .filter(({ userId }) => userId === user.id)
+        .map(({ kind, awardedAt }) => ({
+          kind,
+          awardedAt: awardedAt.toISOString(),
+        })),
     }));
   }
 

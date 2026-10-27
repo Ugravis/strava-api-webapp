@@ -45,6 +45,8 @@ export interface AdminUserSummary {
   lastSeenAt: string | null;
   suspension: AdminUserSuspension | null;
   stravaConnected: boolean;
+  signInMethods: ("password" | "google")[];
+  distinctions: { kind: AdminDistinctionKind; awardedAt: string }[];
 }
 
 /** `GET /api/admin/users/:id`: everything the back office shows of a user. */
@@ -53,13 +55,11 @@ export interface AdminUserDetail extends AdminUserSummary {
   city: string | null;
   countryCode: string | null;
   profilePrivate: boolean;
-  signInMethods: ("password" | "google")[];
   strava: { accountName: string | null; connectedAt: string; lastSyncedAt: string | null } | null;
   activitiesCount: number;
   followersCount: number;
   followingCount: number;
   sessionsCount: number;
-  distinctions: { kind: AdminDistinctionKind; awardedAt: string }[];
 }
 
 /** `PUT /api/admin/users/:id/suspension`. */

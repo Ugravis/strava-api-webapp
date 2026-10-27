@@ -90,18 +90,14 @@ export class AuthController {
     }
   }
 
-  /** Why the latest sign-in was refused, read once from its short-lived cookie. */
+  /** Why the latest sign-in was refused, while its short-lived cookie lasts. */
   @Public()
   @Get('suspension')
-  suspension(
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ): SuspensionNotice {
+  suspension(@Req() request: Request): SuspensionNotice {
     const notice = suspensionCookie.read(request);
     if (!notice) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No suspension notice');
     }
-    suspensionCookie.clear(response, this.config.secureCookies);
     return notice;
   }
 

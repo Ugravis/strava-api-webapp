@@ -11,10 +11,10 @@ import { Roles } from './access/roles.decorator';
 
 @AdminController('me')
 export class AdminMeController {
-  /** The back-office roles of the caller, to filter the navigation. */
+  /** The caller and their back-office roles, to filter the navigation and the actions. */
   @Get()
   @Roles(AdminRole.Support)
   me(@CurrentUser() user: User): AdminMeResponse {
-    return { roles: user.roles.filter(isAdminRole) };
+    return { id: user.id, roles: user.roles.filter(isAdminRole) };
   }
 }

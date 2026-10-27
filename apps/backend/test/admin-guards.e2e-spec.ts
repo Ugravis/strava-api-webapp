@@ -273,11 +273,11 @@ describe('Admin guards (e2e)', () => {
   });
 
   describe('admins', () => {
-    it('returns the roles of the caller', async () => {
-      store.add('token', [AdminRole.Support, AdminRole.Admin]);
+    it('returns the caller and their roles', async () => {
+      const user = store.add('token', [AdminRole.Support, AdminRole.Admin]);
       await get('/api/admin/me', 'token')
         .expect(200)
-        .expect({ roles: ['support', 'admin'] });
+        .expect({ id: user.id, roles: ['support', 'admin'] });
     });
 
     it('answers an unknown back-office route with a 404', () => {

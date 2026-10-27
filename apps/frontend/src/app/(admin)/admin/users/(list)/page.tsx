@@ -2,23 +2,21 @@ import {
   ADMIN_USER_SORTS,
   ADMIN_USER_STATUSES,
   AdminRole,
-  type AdminMeResponse,
   type AdminPage,
   type AdminUserSummary,
 } from "@kilotrace/shared/admin";
+import { SortHeader } from "@/components/admin/list-navigation";
 import { PanelLink } from "@/components/admin/panel-link";
 import { Pagination } from "@/components/admin/pagination";
 import { UserAvatar } from "@/components/user/user-avatar";
-import { getAdminMe, requireAdminRole } from "@/lib/admin/access";
+import { requireAdminRole } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { actRefusal } from "@/lib/admin/permissions";
 import { hrefWith, oneOf, pageOf, param } from "@/lib/admin/url";
 import { publicNameOf } from "@/lib/user";
-import { UserActions } from "../user-actions";
-import { ConnectionIcons, DistinctionIcons, RoleDot, SuspendedBadge } from "../user-bits";
+import { ConnectionIcons, DistinctionIcons, RoleBadge, SuspendedMark } from "../user-bits";
 
 const VIEWS = ["cards", "table"] as const;
 const PANEL_PREFIX = `${adminRoutes.users}/`;
@@ -38,12 +36,12 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
   const current = {
     q,
     status: status === "all" ? undefined : status,
-    sort: sort === "recent" ? undefined : sort,
+    sort: sort === ADMIN_USER_SORTS[0] ? undefined : sort,
     view: view === "cards" ? undefined : view,
   };
 
   const query = new URLSearchParams({ status, sort, page: String(page), ...(q && { q }) });
-  const [result, me] = await Promise.all([adminApi<AdminPage<AdminUserSummary>>(`/users?${query}`), getAdminMe()]);
+  const result = await adminApi<AdminPage<AdminUserSummary>>(`/users?${query}`);
   const list = result.ok ? result.data : { items: [], total: 0, page, pageSize: 1 };
   const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
 
@@ -55,7 +53,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
       ) : view === "cards" ? (
         <UserCards users={list.items} />
       ) : (
-        <UserTable users={list.items} me={me} />
+        <UserTable users={list.items} />
       )}
       <Pagination
         page={page}
@@ -86,15 +84,20 @@ function UserCards({ users }: { users: AdminUserSummary[] }) {
           >
             <UserAvatar user={user} className="size-9" />
             <span className="flex min-w-0 flex-1 flex-col">
+              {/* The small icons share the line of the name, which gives way to them. */}
               <span className="flex items-center gap-1.5">
                 <span className="truncate text-sm font-medium">{publicNameOf(user)}</span>
-                <RoleDot roles={user.roles} />
+                <RoleBadge roles={user.roles} />
+                {user.suspension && <SuspendedMark />}
+                <span className="ml-auto flex shrink-0 items-center gap-1 pl-1">
+                  <ConnectionIcons user={user} small />
+                  <DistinctionIcons user={user} small />
+                </span>
               </span>
               <span className="truncate text-xs text-muted-foreground">
                 @{user.username} • {formatDate(user.createdAt)}
               </span>
             </span>
-            {user.suspension && <SuspendedBadge />}
           </PanelLink>
         </li>
       ))}
@@ -102,28 +105,37 @@ function UserCards({ users }: { users: AdminUserSummary[] }) {
   );
 }
 
-function UserTable({ users, me }: { users: AdminUserSummary[]; me: AdminMeResponse | null }) {
+function UserTable({ users }: { users: AdminUserSummary[] }) {
   const t = getAdminTranslations("users");
   const never = getAdminTranslations("common")("never");
   const cell = "px-3 py-2 whitespace-nowrap";
+  const sort = (label: string, column: "username" | "created" | "last-seen", first: "asc" | "desc") => (
+    <SortHeader
+      label={label}
+      param="sort"
+      defaultValue={ADMIN_USER_SORTS[0]}
+      asc={`${column}-asc`}
+      desc={`${column}-desc`}
+      first={first}
+      basePath={adminRoutes.users}
+    />
+  );
   return (
     // Every column stays, the table scrolling sideways on narrow screens.
     <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-[56rem] text-sm">
-        <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+      <table className="w-full min-w-[48rem] text-sm">
+        <thead className="bg-muted text-left text-xs text-muted-foreground">
           <tr>
-            <th className={`${cell} font-medium`}>{t("columns.user")}</th>
-            <th className={`${cell} font-medium`}>{t("columns.createdAt")}</th>
-            <th className={`${cell} font-medium`}>{t("columns.lastSeenAt")}</th>
+            <th className={cell}>{sort(t("columns.user"), "username", "asc")}</th>
+            <th className={cell}>{sort(t("columns.createdAt"), "created", "desc")}</th>
+            <th className={cell}>{sort(t("columns.lastSeenAt"), "last-seen", "desc")}</th>
             <th className={`${cell} font-medium`}>{t("columns.connections")}</th>
             <th className={`${cell} font-medium`}>{t("columns.distinctions")}</th>
-            <th className={`${cell} font-medium`}>{t("columns.status")}</th>
-            <th className={`${cell} text-right font-medium`}>{t("columns.actions")}</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="relative border-t transition-colors hover:bg-muted/50">
+            <tr key={user.id} className="relative border-t transition-colors odd:bg-background even:bg-muted/50 hover:bg-muted">
               <td className={cell}>
                 {/* The whole row opens the panel, through this stretched link. */}
                 <PanelLink
@@ -136,7 +148,8 @@ function UserTable({ users, me }: { users: AdminUserSummary[]; me: AdminMeRespon
                   <span className="flex min-w-0 flex-col">
                     <span className="flex items-center gap-1.5 font-medium">
                       {publicNameOf(user)}
-                      <RoleDot roles={user.roles} />
+                      <RoleBadge roles={user.roles} />
+                      {user.suspension && <SuspendedMark />}
                     </span>
                     <span className="text-xs text-muted-foreground">@{user.username}</span>
                   </span>
@@ -158,11 +171,6 @@ function UserTable({ users, me }: { users: AdminUserSummary[]; me: AdminMeRespon
               </td>
               <td className={`${cell} relative z-10`}>
                 <DistinctionIcons user={user} />
-              </td>
-              <td className={cell}>{user.suspension && <SuspendedBadge />}</td>
-              {/* Above the stretched link. */}
-              <td className={`${cell} relative z-10`}>
-                {me && !actRefusal(me, user) && <UserActions user={user} quick />}
               </td>
             </tr>
           ))}

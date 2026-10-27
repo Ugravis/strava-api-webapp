@@ -23,7 +23,7 @@ import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
 import { setDistinction } from "./actions";
 import { UserActions } from "./user-actions";
-import { ConnectionIcons, RoleDot, SuspendedBadge } from "./user-bits";
+import { ConnectionIcons, DistinctionIcon, RoleBadge, SuspendedMark } from "./user-bits";
 
 const HISTORY_SIZE = 5;
 
@@ -46,12 +46,12 @@ export async function UserPanel({ id }: { id: string }) {
         <div className="flex min-w-0 flex-col gap-0.5">
           <h2 className="flex items-center gap-2 font-semibold">
             <span className="truncate">{publicNameOf(user)}</span>
-            <RoleDot roles={user.roles} />
+            <RoleBadge roles={user.roles} />
+            {user.suspension && <SuspendedMark />}
           </h2>
           <p className="truncate text-sm text-muted-foreground">
             @{user.username} • {formatDate(user.createdAt)}
           </p>
-          {user.suspension && <SuspendedBadge />}
         </div>
       </header>
 
@@ -130,8 +130,9 @@ export async function UserPanel({ id }: { id: string }) {
           {ADMIN_DISTINCTION_KINDS.map((kind) => {
             const distinction = user.distinctions.find((each) => each.kind === kind);
             return (
-              <li key={kind} className="flex items-center justify-between gap-3">
-                <span className="flex flex-col">
+              <li key={kind} className="flex items-center gap-3">
+                <DistinctionIcon kind={kind} />
+                <span className="flex flex-1 flex-col">
                   <span className="text-sm font-medium">{t(`distinctions.${kind}`)}</span>
                   {distinction && (
                     <span className="text-xs text-muted-foreground">

@@ -12,11 +12,8 @@ import { deleteUser, liftSuspension, moderateUser, revokeSessions, suspendUser, 
 
 type PresetKey = "moderate" | "suspend" | "revokeSessions" | "unlinkStrava" | "delete";
 
-/**
- * The actions on an account, each confirmed in a dialog. `quick` keeps the
- * frequent ones, as icons, for a row of the table.
- */
-export function UserActions({ user, quick }: { user: AdminUserSummary; quick?: boolean }) {
+/** The actions on an account, on a single row, each confirmed in a dialog. */
+export function UserActions({ user }: { user: AdminUserSummary }) {
   const t = getAdminTranslations("user.actions");
   const common = getAdminTranslations("common");
   const fields = getAdminTranslations("user.moderatedFields");
@@ -30,15 +27,11 @@ export function UserActions({ user, quick }: { user: AdminUserSummary; quick?: b
     min: ADMIN_REASON_MIN_LENGTH,
     max: ADMIN_REASON_MAX_LENGTH,
   });
-  const trigger = (key: PresetKey | "lift", icon: React.ReactNode) => ({
-    label: quick ? t(`${key}.trigger`) : t(`${key}.short`),
-    icon,
-    iconOnly: quick,
-  });
+  const trigger = (key: PresetKey | "lift", icon: React.ReactNode) => ({ label: t(`${key}.short`), icon });
   const shared = { cancelLabel: common("cancel") };
 
   return (
-    <div className={quick ? "flex items-center justify-end gap-0.5" : "flex flex-wrap gap-1.5"}>
+    <div className="flex flex-wrap gap-1.5">
       <ActionDialog
         {...shared}
         action={moderateUser.bind(null, user.id)}
@@ -92,7 +85,7 @@ export function UserActions({ user, quick }: { user: AdminUserSummary; quick?: b
         submitLabel={t("revokeSessions.submit")}
         reason={reason("revokeSessions", false)}
       />
-      {!quick && user.stravaConnected && (
+      {user.stravaConnected && (
         <ActionDialog
           {...shared}
           action={unlinkStrava.bind(null, user.id)}
@@ -104,8 +97,7 @@ export function UserActions({ user, quick }: { user: AdminUserSummary; quick?: b
           reason={reason("unlinkStrava")}
         />
       )}
-      {!quick && (
-        <ActionDialog
+      <ActionDialog
           {...shared}
           action={deleteUser.bind(null, user.id)}
           trigger={trigger("delete", <Trash2Icon />)}
@@ -114,9 +106,8 @@ export function UserActions({ user, quick }: { user: AdminUserSummary; quick?: b
           submitLabel={t("delete.submit")}
           destructive
           reason={reason("delete")}
-          confirmation={{ label: common("confirmation", { expected: user.username }), expected: user.username }}
-        />
-      )}
+        confirmation={{ label: common("confirmation", { expected: user.username }), expected: user.username }}
+      />
     </div>
   );
 }

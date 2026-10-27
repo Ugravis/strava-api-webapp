@@ -68,10 +68,12 @@
     },
     "sort": {
       "label": "Trier",
-      "recent": "Plus récents",
-      "oldest": "Plus anciens",
-      "username": "Pseudo",
-      "last-seen": "Dernière visite"
+      "created-desc": "Plus récents",
+      "created-asc": "Plus anciens",
+      "username-asc": "Pseudo (A → Z)",
+      "username-desc": "Pseudo (Z → A)",
+      "last-seen-desc": "Vus récemment",
+      "last-seen-asc": "Vus il y a longtemps"
     },
     "view": {
       "label": "Affichage",
@@ -314,11 +316,28 @@
     "search": "Rechercher une raison, une action ou un utilisateur",
     "columns": {
       "date": "Date",
-      "actor": "Auteur",
-      "target": "Cible",
+      "users": "Auteur → cible",
       "action": "Action",
       "reason": "Raison",
       "actions": "Actions"
+    },
+    "count": "{count, plural, =0 {Aucune entrée} one {# entrée} other {# entrées}}",
+    "open": "Ouvrir l'entrée du {date}",
+    "entry": {
+      "title": "Entrée du journal",
+      "date": "Date",
+      "actor": "Auteur",
+      "target": "Cible",
+      "action": "Action",
+      "details": "Détails",
+      "reason": "Raison",
+      "outcome": "Résultat",
+      "succeeded": "Réussie ({status})",
+      "failed": "Échouée ({status})",
+      "id": "Id",
+      "hidden": "Masquée le {date}",
+      "visible": "Visible de tous les rôles admin",
+      "visibility": "Visibilité"
     }
   }
 }

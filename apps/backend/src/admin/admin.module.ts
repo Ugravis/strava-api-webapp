@@ -14,6 +14,8 @@ import { AdminAuditLog } from './audit/admin-audit-log.entity';
 import { AdminAuditLogService } from './audit/admin-audit-log.service';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
+import { AdminStatisticsController } from './statistics/admin-statistics.controller';
+import { AdminStatisticsService } from './statistics/admin-statistics.service';
 
 /** Every path under `/api/admin`, whether a route exists or not. */
 export const ADMIN_ROUTES = [
@@ -27,10 +29,11 @@ export const ADMIN_ROUTES = [
  */
 @Module({
   imports: [TypeOrmModule.forFeature([AdminAuditLog]), AuthModule],
-  controllers: [AdminMeController],
+  controllers: [AdminMeController, AdminStatisticsController],
   providers: [
     AdminAuditLogService,
     AdminBootstrapService,
+    AdminStatisticsService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

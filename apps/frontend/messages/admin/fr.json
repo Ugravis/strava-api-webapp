@@ -9,7 +9,7 @@
   "nav": {
     "overview": "Vue d'ensemble",
     "users": "Utilisateurs",
-    "auditLog": "Journal d'audit"
+    "auditLog": "Logs"
   },
   "roles": {
     "support": "Support",
@@ -46,13 +46,18 @@
       "404": "Ce compte ou cet élément n'existe plus.",
       "429": "Trop d'actions d'affilée, réessayez dans une minute.",
       "other": "Une erreur est survenue, réessayez."
+    },
+    "panel": {
+      "label": "Panneau",
+      "fold": "Replier le panneau",
+      "unfold": "Déplier le panneau",
+      "close": "Fermer le panneau"
     }
   },
   "users": {
     "title": "Utilisateurs",
-    "description": "{count, plural, =0 {Aucun compte} one {# compte} other {# comptes}}",
+    "description": "Comptes du site : consultation, modération, suspension et suppression.",
     "search": "Rechercher par pseudo, nom, email ou id",
-    "searchSubmit": "Rechercher",
     "empty": "Aucun utilisateur ne correspond.",
     "status": {
       "label": "Statut",
@@ -75,10 +80,12 @@
     },
     "columns": {
       "user": "Utilisateur",
-      "email": "Email",
       "createdAt": "Inscription",
       "lastSeenAt": "Dernière visite",
-      "status": "Statut"
+      "connections": "Connexions",
+      "distinctions": "Badges",
+      "status": "Statut",
+      "actions": "Actions"
     },
     "badges": {
       "suspended": "Suspendu",
@@ -86,9 +93,15 @@
       "private": "Privé",
       "public": "Public"
     },
-    "joined": "Inscrit le {date}",
+    "joined": "{date}",
     "lastSeen": "Vu {date}",
-    "open": "Ouvrir la fiche de {name}"
+    "open": "Ouvrir la fiche de {name}",
+    "count": "{count, plural, =0 {Aucun compte} one {# compte} other {# comptes}}",
+    "connections": {
+      "strava": "Strava",
+      "google": "Google",
+      "password": "Email et mot de passe"
+    }
   },
   "user": {
     "title": "Fiche utilisateur",
@@ -104,7 +117,8 @@
       "suspension": "Suspension",
       "distinctions": "Badges non sportifs",
       "history": "Historique",
-      "actions": "Actions"
+      "actions": "Actions",
+      "connections": "Connexions"
     },
     "fields": {
       "id": "Id",
@@ -157,7 +171,8 @@
           "Usurpation d'identité",
           "Publicité ou spam",
           "Informations personnelles d'un tiers"
-        ]
+        ],
+        "short": "Modérer"
       },
       "suspend": {
         "trigger": "Suspendre",
@@ -178,19 +193,27 @@
           "Spam ou activité automatisée",
           "Usurpation d'identité",
           "Non-respect des conditions d'utilisation"
-        ]
+        ],
+        "short": "Suspendre"
       },
       "lift": {
         "trigger": "Lever la suspension",
         "title": "Lever la suspension",
         "description": "Le compte peut de nouveau se connecter et son profil redevient visible.",
-        "submit": "Lever"
+        "submit": "Lever",
+        "short": "Lever"
       },
       "revokeSessions": {
         "trigger": "Déconnecter partout",
         "title": "Fermer toutes les sessions",
         "description": "L'utilisateur est déconnecté de tous ses appareils et peut se reconnecter aussitôt.",
-        "submit": "Déconnecter"
+        "submit": "Déconnecter",
+        "short": "Déconnecter",
+        "presets": [
+          "Session compromise ou appareil perdu",
+          "Demande de l'utilisateur",
+          "Activité suspecte sur le compte"
+        ]
       },
       "unlinkStrava": {
         "trigger": "Délier Strava",
@@ -201,7 +224,8 @@
           "Compte Strava d'un tiers",
           "Données incohérentes à resynchroniser",
           "Demande de l'utilisateur"
-        ]
+        ],
+        "short": "Délier Strava"
       },
       "delete": {
         "trigger": "Supprimer le compte",
@@ -212,7 +236,8 @@
           "Demande d'effacement (RGPD)",
           "Compte frauduleux",
           "Compte en double"
-        ]
+        ],
+        "short": "Supprimer"
       }
     },
     "moderatedFields": {
@@ -221,11 +246,14 @@
       "bio": "Bio",
       "city": "Ville et pays",
       "avatar": "Photo"
-    }
+    },
+    "profileHint": "Saisi librement par l'utilisateur : à modérer si besoin.",
+    "backToList": "Retour aux utilisateurs",
+    "historyBy": "par {name}"
   },
   "auditLog": {
-    "title": "Journal d'audit",
-    "description": "Chaque action du back office, réussie ou non. Rien ne peut y être modifié ni supprimé.",
+    "title": "Logs",
+    "description": "Chaque action du back office. Rien ne peut y être modifié ni supprimé.",
     "empty": "Aucune entrée ne correspond.",
     "filters": {
       "action": "Domaine",
@@ -235,29 +263,22 @@
         "roles": "Rôles",
         "audit": "Journal"
       },
-      "outcome": "Résultat",
-      "outcomes": {
-        "all": "Tous",
-        "succeeded": "Réussies",
-        "failed": "Échouées"
-      },
       "visibility": "Visibilité",
       "visibilities": {
-        "all": "Toutes",
-        "visible": "Visibles",
-        "hidden": "Masquées"
+        "all": "Toutes les entrées",
+        "visible": "Entrées non masquées",
+        "hidden": "Entrées masquées"
       },
       "target": "Cible : {name}",
       "actor": "Auteur : {name}",
       "clear": "Retirer le filtre"
     },
     "system": "Système",
-    "deleted": "compte supprimé",
+    "deleted": "Compte supprimé",
     "failed": "Échec ({status})",
     "hidden": "Masquée",
-    "hide": "Masquer",
-    "show": "Afficher",
-    "hideHint": "Visible des seuls super-admins une fois masquée.",
+    "hide": "Masquer aux autres rôles",
+    "show": "Ne plus masquer",
     "details": {
       "until": "Jusqu'au {date}",
       "fields": "Champs : {fields}",
@@ -265,30 +286,39 @@
     },
     "actions": {
       "users": {
-        "suspend": "a suspendu",
-        "unsuspend": "a levé la suspension de",
-        "delete": "a supprimé le compte de",
-        "moderate": "a modéré le profil de",
+        "suspend": "Suspension",
+        "unsuspend": "Levée de suspension",
+        "delete": "Suppression du compte",
+        "moderate": "Modération du profil",
         "strava": {
-          "unlink": "a délié le compte Strava de"
+          "unlink": "Déliaison Strava"
         },
         "sessions": {
-          "revoke": "a fermé les sessions de"
+          "revoke": "Déconnexion partout"
         },
         "distinctions": {
-          "grant": "a attribué un badge à",
-          "revoke": "a retiré un badge à"
+          "grant": "Badge attribué",
+          "revoke": "Badge retiré"
         }
       },
       "roles": {
-        "grant": "a attribué un rôle à",
-        "revoke": "a retiré un rôle à",
-        "bootstrap": "a attribué le rôle de super-admin initial à"
+        "grant": "Rôle attribué",
+        "revoke": "Rôle retiré",
+        "bootstrap": "Super-admin initial"
       },
       "audit": {
-        "hide": "a masqué une entrée du journal",
-        "show": "a ré-affiché une entrée du journal"
+        "hide": "Entrée masquée",
+        "show": "Entrée ré-affichée"
       }
+    },
+    "search": "Rechercher une raison, une action ou un utilisateur",
+    "columns": {
+      "date": "Date",
+      "actor": "Auteur",
+      "target": "Cible",
+      "action": "Action",
+      "reason": "Raison",
+      "actions": "Actions"
     }
   }
 }

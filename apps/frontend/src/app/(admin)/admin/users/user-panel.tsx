@@ -174,8 +174,12 @@ async function UserHistory({ id }: { id: string }) {
             return (
               <li key={entry.id} className="flex flex-col text-sm">
                 <span>
-                  <span className="font-medium">{entry.actor?.displayName ?? entry.actor?.username ?? "—"}</span>{" "}
-                  {actions.has(key) ? actions(key) : entry.action}
+                  <span className="font-medium">{actions.has(key) ? actions(key) : entry.action}</span>{" "}
+                  {entry.actor && (
+                    <span className="text-muted-foreground">
+                      {t("historyBy", { name: entry.actor.displayName ?? entry.actor.username ?? "—" })}
+                    </span>
+                  )}
                 </span>
                 {entry.reason && <span className="text-xs text-muted-foreground">« {entry.reason} »</span>}
                 <span className="text-xs text-muted-foreground">{formatDateTime(entry.createdAt)}</span>

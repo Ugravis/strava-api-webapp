@@ -17,8 +17,8 @@ import { adminRoutes } from "@/lib/admin/navigation";
 import { actRefusal } from "@/lib/admin/permissions";
 import { hrefWith, oneOf, pageOf, param } from "@/lib/admin/url";
 import { publicNameOf } from "@/lib/user";
-import { UserActions } from "./user-actions";
-import { ConnectionIcons, DistinctionIcons, RoleDot, SuspendedBadge } from "./user-bits";
+import { UserActions } from "../user-actions";
+import { ConnectionIcons, DistinctionIcons, RoleDot, SuspendedBadge } from "../user-bits";
 
 const VIEWS = ["cards", "table"] as const;
 const PANEL_PREFIX = `${adminRoutes.users}/`;
@@ -152,10 +152,11 @@ function UserTable({ users, me }: { users: AdminUserSummary[]; me: AdminMeRespon
                   never
                 )}
               </td>
-              <td className={cell}>
+              {/* Above the stretched link, for the names of the icons on hover. */}
+              <td className={`${cell} relative z-10`}>
                 <ConnectionIcons user={user} />
               </td>
-              <td className={cell}>
+              <td className={`${cell} relative z-10`}>
                 <DistinctionIcons user={user} />
               </td>
               <td className={cell}>{user.suspension && <SuspendedBadge />}</td>

@@ -245,7 +245,7 @@ function UserLink({ user, fallback, deleted }: { user: AuditUser | null; fallbac
       panelPrefix={PANEL_PREFIX}
       className="inline-flex items-center gap-1.5 font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
     >
-      <UserAvatar user={{ ...user, username: user.username }} className="size-6" fallbackClassName="text-[10px]" />
+      <UserAvatar user={{ ...user, username: user.username }} className="size-5" fallbackClassName="text-[9px]" />
       {user.displayName ?? `@${user.username}`}
     </PanelLink>
   );

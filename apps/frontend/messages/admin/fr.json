@@ -262,8 +262,7 @@
       "domains": {
         "all": "Toutes",
         "users": "Utilisateurs",
-        "roles": "Rôles",
-        "audit": "Journal"
+        "roles": "Rôles"
       },
       "visibility": "Visibilité",
       "visibilities": {
@@ -307,10 +306,6 @@
         "grant": "Rôle attribué",
         "revoke": "Rôle retiré",
         "bootstrap": "Super-admin initial"
-      },
-      "audit": {
-        "hide": "Entrée masquée",
-        "show": "Entrée ré-affichée"
       }
     },
     "search": "Rechercher une raison, une action ou un utilisateur",

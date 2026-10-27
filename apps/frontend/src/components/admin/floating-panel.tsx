@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,11 @@ interface FloatingPanelProps {
  */
 export function FloatingPanel({ labels, title, children }: FloatingPanelProps) {
   const router = useRouter();
-  const [folded, setFolded] = useState(false);
+  const pathname = usePathname();
+  // Folded for the content it was folded on: opening another one unfolds it.
+  const [foldedOn, setFoldedOn] = useState<string | null>(null);
+  const folded = foldedOn === pathname;
+  const setFolded = (fold: boolean) => setFoldedOn(fold ? pathname : null);
 
   return (
     <aside

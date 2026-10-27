@@ -1,10 +1,11 @@
 "use client";
 
 import { ChevronDownIcon, Loader2Icon, SearchIcon } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useEffect, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { type ReactNode, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useListNavigation } from "./list-navigation";
 
 const SEARCH_DELAY_MS = 300;
 
@@ -32,14 +33,13 @@ interface ListToolbarProps {
 }
 
 /**
- * Search and filters of a back-office list, kept in the URL. The page
- * behind stays shown while the next one loads, a spinner telling it.
+ * Search and filters of a back-office list, kept in the URL, in a frame of
+ * their own. The results show a skeleton while the next ones load.
  * Generic: its texts come from the caller.
  */
 export function ListToolbar({ basePath, search, selects = [], toggles = [] }: ListToolbarProps) {
-  const router = useRouter();
   const params = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const { pending, navigate: go } = useListNavigation();
   const [text, setText] = useState(params.get("q") ?? "");
 
   function navigate(changes: Record<string, string | null>) {
@@ -50,7 +50,7 @@ export function ListToolbar({ basePath, search, selects = [], toggles = [] }: Li
     }
     next.delete("page");
     const query = next.toString();
-    startTransition(() => router.replace(query ? `${basePath}?${query}` : basePath, { scroll: false }));
+    go(query ? `${basePath}?${query}` : basePath);
   }
 
   // Typing restarts the delay; the search runs once the typing pauses.
@@ -67,7 +67,7 @@ export function ListToolbar({ basePath, search, selects = [], toggles = [] }: Li
     navigate({ [param]: value === options[0]?.value ? null : value });
 
   return (
-    <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card p-2 lg:flex-row lg:items-center">
       {search && (
         <div className="relative w-full lg:max-w-sm">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />

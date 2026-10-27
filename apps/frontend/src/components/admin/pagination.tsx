@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ListLink } from "./list-navigation";
 
 interface PaginationProps {
   page: number;
@@ -30,7 +30,7 @@ export function Pagination({ page, pages, hrefFor, labels }: PaginationProps) {
               size="icon-sm"
               variant={each === page ? "secondary" : "ghost"}
               nativeButton={false}
-              render={<Link href={hrefFor(each)} scroll={false} aria-current={each === page ? "page" : undefined} />}
+              render={<ListLink href={hrefFor(each)} aria-current={each === page ? "page" : undefined} />}
             >
               {each}
             </Button>
@@ -53,7 +53,7 @@ function PageLink({ href, label, children }: { href: string | null; label: strin
     );
   }
   return (
-    <Button size="icon-sm" variant="ghost" nativeButton={false} render={<Link href={href} scroll={false} aria-label={label} />}>
+    <Button size="icon-sm" variant="ghost" nativeButton={false} render={<ListLink href={href} aria-label={label} />}>
       {children}
     </Button>
   );

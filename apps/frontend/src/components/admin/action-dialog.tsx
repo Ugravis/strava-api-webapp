@@ -30,8 +30,7 @@ interface Option {
 
 export interface ActionDialogProps {
   action: Action;
-  /** As a labelled button, or as an icon with the label as its name, e.g. in a table row. */
-  trigger: { label: string; icon?: ReactNode; iconOnly?: boolean };
+  trigger: { label: string; icon?: ReactNode };
   title: string;
   description: string;
   submitLabel: string;
@@ -68,17 +67,10 @@ export function ActionDialog(props: ActionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        render={
-          <Button
-            variant={props.destructive ? "destructive" : props.trigger.iconOnly ? "ghost" : "outline"}
-            size={props.trigger.iconOnly ? "icon-sm" : "xs"}
-            aria-label={props.trigger.iconOnly ? props.trigger.label : undefined}
-            title={props.trigger.iconOnly ? props.trigger.label : undefined}
-          />
-        }
+        render={<Button variant={props.destructive ? "destructive" : "outline"} size="xs" />}
       >
         {props.trigger.icon}
-        {!props.trigger.iconOnly && props.trigger.label}
+        {props.trigger.label}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         {/* Remounted on every opening, so that the form starts empty. */}

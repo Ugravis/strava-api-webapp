@@ -249,6 +249,7 @@
   "errors": {
     "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
     "EMAIL_SIGN_IN_DISABLED": "La connexion par email n'est pas encore disponible : utilisez Google.",
+    "ACCOUNT_SUSPENDED": "Votre compte est suspendu.",
     "EMAIL_TAKEN": "Un compte existe déjà avec cette adresse email.",
     "USERNAME_TAKEN": "Ce pseudo est déjà pris.",
     "USERNAME_RESERVED": "Ce pseudo est réservé.",
@@ -281,6 +282,12 @@
       "registerLink": "Inscrivez-vous",
       "googleError": "La connexion avec Google a échoué. Réessayez.",
       "googleDisabled": "La connexion avec Google n'est pas disponible pour le moment."
+    },
+    "suspended": {
+      "title": "Votre compte est suspendu",
+      "until": "Jusqu'au {date}.",
+      "indefinite": "Pour une durée indéterminée.",
+      "reason": "Raison : {reason}"
     },
     "register": {
       "title": "Inscription",
@@ -1176,12 +1183,25 @@
       "follow": "{name} s'est abonné·e à vous.",
       "follow_request": "{name} demande à s'abonner à vous.",
       "follow_accepted": "{name} a accepté votre demande d'abonnement.",
-      "profile_like": "Quelqu'un a aimé votre profil."
+      "profile_like": "Quelqu'un a aimé votre profil.",
+      "moderation": "L'équipe a modéré votre profil.",
+      "strava_unlinked": "L'équipe a délié votre compte Strava."
     },
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
     "follow_accepted": "<b>{name}</b> a accepté votre demande d'abonnement.",
     "profile_like": "Quelqu'un a aimé votre profil.",
+    "moderation": "L'équipe a réinitialisé {fields} de votre profil.",
+    "strava_unlinked": "L'équipe a délié votre compte Strava.",
+    "reason": "Raison : {reason}",
+    "team": "Équipe",
+    "fields": {
+      "username": "le pseudo",
+      "displayName": "le nom affiché",
+      "bio": "la bio",
+      "city": "la ville",
+      "avatar": "la photo"
+    },
     "category": {
       "all": "Toutes",
       "likes": "Likes",

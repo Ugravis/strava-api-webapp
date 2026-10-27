@@ -595,13 +595,24 @@ export type FollowStatus = "following" | "requested";
 
 export type FollowDirection = "followers" | "following";
 
-export type NotificationType = "follow" | "follow_request" | "follow_accepted" | "profile_like";
+export type NotificationType =
+  | "follow"
+  | "follow_request"
+  | "follow_accepted"
+  | "profile_like"
+  | "moderation"
+  | "strava_unlinked";
+
+/** Free fields of a profile the team may reset. */
+export type ModeratedField = "username" | "displayName" | "bio" | "city" | "avatar";
 
 export interface AppNotification {
   id: string;
   type: NotificationType;
-  /** Null for an anonymous kind: who liked a profile is never told. */
+  /** Null for an anonymous kind (who liked a profile is never told) and for the team. */
   actor: PublicUser | null;
+  /** Said by the team: the reason, and the fields reset by a moderation. */
+  details: { reason?: string; fields?: ModeratedField[] } | null;
   read: boolean;
   createdAt: string;
   /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */
@@ -627,4 +638,11 @@ export interface NotificationEvent {
   notification?: AppNotification;
   /** Marked read; every notification when empty. */
   read?: string[];
+}
+
+/** Why a sign-in was refused to a suspended account. */
+export interface SuspensionNotice {
+  reason: string;
+  /** Null for an indefinite suspension. */
+  until: string | null;
 }

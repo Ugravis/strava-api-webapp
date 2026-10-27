@@ -1,6 +1,6 @@
 "use client";
 
-import { BellIcon, HeartIcon } from "lucide-react";
+import { BellIcon, HeartIcon, ShieldIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useNow, useTranslations } from "next-intl";
@@ -25,11 +25,10 @@ import { Button } from "@/components/ui/button";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user/user-avatar";
-import { routes, userProfileHref } from "@/config/routes";
 import type { AppNotification, NotificationCategory } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
-import { NOTIFICATION_CATEGORIES, useNotifications } from "./notifications-provider";
+import { NOTIFICATION_CATEGORIES, notificationHref, useNotifications } from "./notifications-provider";
 
 /** A wavy line, drawn with the background color of the element. */
 const WAVE_STYLE: CSSProperties = {
@@ -203,9 +202,9 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   const router = useRouter();
-  const { actor } = notification;
-  // An anonymous like is counted on the own profile.
-  const href = actor ? userProfileHref(actor.username) : routes.profiles;
+  const { actor, details } = notification;
+  const href = notificationHref(notification);
+  const fromTeam = notification.type === "moderation" || notification.type === "strava_unlinked";
   // A request is answered, or a follower followed back, from the notification itself.
   const request = actor && notification.type === "follow_request";
   const followBack = actor && notification.followBack;
@@ -223,6 +222,10 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
     >
       {actor ? (
         <UserAvatar user={actor} className="size-8" />
+      ) : fromTeam ? (
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
+          <ShieldIcon className="size-4" aria-label={t("team")} />
+        </span>
       ) : (
         <span className="grid size-8 shrink-0 place-items-center rounded-full" style={HEART_DISC_STYLE}>
           <HeartIcon className="size-4" style={HEART_STYLE} aria-hidden />
@@ -232,6 +235,7 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
         <span className="text-sm leading-snug whitespace-normal">
           {t.rich(notification.type, {
             name: actor ? publicNameOf(actor) : "",
+            fields: format.list((details?.fields ?? []).map((field) => t(`fields.${field}`))),
             b: (chunks) => (
               <span className="font-semibold underline-offset-2 hover:underline">
                 {chunks}
@@ -239,6 +243,9 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
             ),
           })}
         </span>
+        {details?.reason && (
+          <span className="text-xs whitespace-normal text-muted-foreground">{t("reason", { reason: details.reason })}</span>
+        )}
         <span className="text-xs text-muted-foreground">
           {format.relativeTime(new Date(notification.createdAt), now)}
         </span>

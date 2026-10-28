@@ -14,7 +14,11 @@ import {
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { Readable } from 'node:stream';
 import storageConfig, { type StorageConfig } from '../config/storage.config';
-import { StorageService, type StoredObject } from './storage.service';
+import {
+  type ObjectInfo,
+  StorageService,
+  type StoredObject,
+} from './storage.service';
 
 const BUCKET_CHECK_ATTEMPTS = 10;
 const BUCKET_CHECK_DELAY_MS = 1000;
@@ -134,6 +138,28 @@ export class S3StorageService extends StorageService implements OnModuleInit {
       continuationToken = page.NextContinuationToken;
     } while (continuationToken);
     return deleted;
+  }
+
+  async list(prefix: string): Promise<ObjectInfo[]> {
+    const objects: ObjectInfo[] = [];
+    let continuationToken: string | undefined;
+    do {
+      const page = await this.listPage(prefix, continuationToken);
+      if (!page) {
+        return objects;
+      }
+      for (const object of page.Contents ?? []) {
+        if (object.Key) {
+          objects.push({
+            key: object.Key,
+            size: object.Size ?? 0,
+            lastModified: object.LastModified ?? null,
+          });
+        }
+      }
+      continuationToken = page.NextContinuationToken;
+    } while (continuationToken);
+    return objects;
   }
 
   /** Returns null when the bucket does not exist yet: there is nothing to list. */

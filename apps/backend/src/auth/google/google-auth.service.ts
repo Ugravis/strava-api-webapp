@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { isUniqueViolation } from '../../common/database-errors';
+import { SystemSettingsService } from '../../system/system-settings.service';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../users/dto/validation.constants';
 import { normalizeEmail, UsersService } from '../../users/users.service';
 import { AuthService, type AuthResult } from '../auth.service';
@@ -19,7 +20,9 @@ export interface PendingGoogleSignup {
 
 export type GoogleSignInOutcome =
   | { kind: 'signed-in'; result: AuthResult }
-  | { kind: 'signup-required'; pending: PendingGoogleSignup };
+  | { kind: 'signup-required'; pending: PendingGoogleSignup }
+  /** A new identity while the sign-ups are closed. */
+  | { kind: 'signups-closed' };
 
 const PROVIDER = 'google';
 
@@ -29,6 +32,7 @@ export class GoogleAuthService {
     private readonly users: UsersService,
     private readonly oauthAccounts: OAuthAccountsService,
     private readonly auth: AuthService,
+    private readonly system: SystemSettingsService,
   ) {}
 
   async signIn(
@@ -70,6 +74,9 @@ export class GoogleAuthService {
       };
     }
 
+    if (!(await this.system.status()).signupsEnabled) {
+      return { kind: 'signups-closed' };
+    }
     return {
       kind: 'signup-required',
       pending: {
@@ -90,6 +97,7 @@ export class GoogleAuthService {
     dto: CompleteGoogleSignupDto,
     metadata: SessionMetadata,
   ): Promise<AuthResult> {
+    await this.system.assertSignupsEnabled();
     const user = await this.users.create({
       email: pending.email,
       username: dto.username,

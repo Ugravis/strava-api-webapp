@@ -1,3 +1,4 @@
+import type { SystemSettingsService } from '../../system/system-settings.service';
 import type { User } from '../../users/user.entity';
 import type { UsersService } from '../../users/users.service';
 import type { AuthService } from '../auth.service';
@@ -31,6 +32,9 @@ describe('GoogleAuthService', () => {
     Pick<OAuthAccountsService, 'findUserId' | 'link'>
   >;
   let auth: jest.Mocked<Pick<AuthService, 'startSession'>>;
+  let system: jest.Mocked<
+    Pick<SystemSettingsService, 'status' | 'assertSignupsEnabled'>
+  >;
   let service: GoogleAuthService;
 
   beforeEach(() => {
@@ -43,10 +47,17 @@ describe('GoogleAuthService', () => {
     };
     oauthAccounts = { findUserId: jest.fn(), link: jest.fn() };
     auth = { startSession: jest.fn().mockResolvedValue(authResult) };
+    system = {
+      status: jest
+        .fn()
+        .mockResolvedValue({ maintenance: null, signupsEnabled: true }),
+      assertSignupsEnabled: jest.fn(),
+    };
     service = new GoogleAuthService(
       users as unknown as UsersService,
       oauthAccounts as unknown as OAuthAccountsService,
       auth as unknown as AuthService,
+      system as unknown as SystemSettingsService,
     );
   });
 
@@ -87,6 +98,19 @@ describe('GoogleAuthService', () => {
         name: 'Jean Dupont',
         picture: profile.picture,
       },
+    });
+  });
+
+  it('turns a new Google identity away while the sign-ups are closed', async () => {
+    oauthAccounts.findUserId.mockResolvedValue(null);
+    users.findByEmail.mockResolvedValue(null);
+    system.status.mockResolvedValue({
+      maintenance: null,
+      signupsEnabled: false,
+    });
+
+    await expect(service.signIn(profile, metadata)).resolves.toEqual({
+      kind: 'signups-closed',
     });
   });
 

@@ -15,7 +15,9 @@ import { BadgeTheme } from '../distances/badge-theme.entity';
 import { ProviderConnection } from '../connections/provider-connection.entity';
 import { Follow } from '../follows/follow.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { StorageModule } from '../storage/storage.module';
 import { StravaModule } from '../strava/strava.module';
+import { SystemModule } from '../system/system.module';
 import { UserDistinction } from '../users/user-distinction.entity';
 import { User } from '../users/user.entity';
 import { UsersModule } from '../users/users.module';
@@ -34,6 +36,8 @@ import { AdminBadgesService } from './badges/admin-badges.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
+import { AdminSystemController } from './system/admin-system.controller';
+import { AdminUploadsService } from './system/admin-uploads.service';
 import { AdminUsersController } from './users/admin-users.controller';
 import { AdminUsersService } from './users/admin-users.service';
 
@@ -65,6 +69,8 @@ export const ADMIN_ROUTES = [
     UsersModule,
     StravaModule,
     NotificationsModule,
+    StorageModule,
+    SystemModule,
   ],
   controllers: [
     AdminMeController,
@@ -73,6 +79,7 @@ export const ADMIN_ROUTES = [
     AdminAuditLogController,
     AdminBadgesController,
     AdminBadgeThemesController,
+    AdminSystemController,
   ],
   providers: [
     AdminAuditLogService,
@@ -80,6 +87,7 @@ export const ADMIN_ROUTES = [
     AdminBootstrapService,
     AdminStatisticsService,
     AdminBadgesService,
+    AdminUploadsService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

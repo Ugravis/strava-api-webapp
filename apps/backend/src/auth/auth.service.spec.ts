@@ -1,7 +1,12 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { AuthConfig } from '../config/auth.config';
 import type { MailService } from '../mail/mail.service';
 import type { StravaConnectionService } from '../strava/strava-connection.service';
+import type { SystemSettingsService } from '../system/system-settings.service';
 import type { MapPreviewService } from '../tiles/map-preview.service';
 import type { AvatarsService } from '../users/avatars.service';
 import type { User } from '../users/user.entity';
@@ -68,6 +73,7 @@ describe('AuthService', () => {
   let avatars: jest.Mocked<Pick<AvatarsService, 'deleteQuietly'>>;
   let strava: jest.Mocked<Pick<StravaConnectionService, 'disconnect'>>;
   let mapPreview: jest.Mocked<Pick<MapPreviewService, 'deleteFor'>>;
+  let system: jest.Mocked<Pick<SystemSettingsService, 'assertSignupsEnabled'>>;
   let service: AuthService;
 
   beforeEach(() => {
@@ -90,6 +96,7 @@ describe('AuthService', () => {
     avatars = { deleteQuietly: jest.fn() };
     strava = { disconnect: jest.fn() };
     mapPreview = { deleteFor: jest.fn() };
+    system = { assertSignupsEnabled: jest.fn() };
     service = new AuthService(
       users as unknown as UsersService,
       sessions as unknown as SessionsService,
@@ -99,6 +106,7 @@ describe('AuthService', () => {
       avatars as unknown as AvatarsService,
       strava as unknown as StravaConnectionService,
       mapPreview as unknown as MapPreviewService,
+      system as unknown as SystemSettingsService,
       config,
     );
   });
@@ -129,6 +137,15 @@ describe('AuthService', () => {
       expect(result.session).toBe(createdSession);
       expect(sessions.create).toHaveBeenCalledWith('user-id', metadata, true);
       expect(tokens.issue).not.toHaveBeenCalled();
+    });
+
+    it('creates no account while the sign-ups are closed', async () => {
+      system.assertSignupsEnabled.mockRejectedValue(new ForbiddenException());
+
+      await expect(service.register(dto, metadata)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(users.create).not.toHaveBeenCalled();
     });
 
     it('records the acceptance of the terms and asks no display name', async () => {

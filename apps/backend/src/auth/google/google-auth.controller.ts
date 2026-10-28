@@ -103,6 +103,9 @@ export class GoogleAuthController {
         profile,
         requestMetadata(request),
       );
+      if (outcome.kind === 'signups-closed') {
+        return this.redirectToFrontend(response, '/register?closed');
+      }
       if (outcome.kind === 'signup-required') {
         pendingSignupCookie.write(
           response,

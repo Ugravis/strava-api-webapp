@@ -4,6 +4,7 @@
  */
 export * from "./audit";
 export * from "./badges";
+export * from "./dev";
 export * from "./me";
 export * from "./reserved-usernames";
 export * from "./roles";

@@ -1188,7 +1188,8 @@
       "follow_accepted": "{name} a accepté votre demande d'abonnement.",
       "profile_like": "Quelqu'un a aimé votre profil.",
       "moderation": "L'équipe a modéré votre profil.",
-      "strava_unlinked": "L'équipe a délié votre compte Strava."
+      "strava_unlinked": "L'équipe a délié votre compte Strava.",
+      "role_changed": "Votre rôle dans l'équipe a changé."
     },
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
@@ -1196,6 +1197,12 @@
     "profile_like": "Quelqu'un a aimé votre profil.",
     "moderation": "L'équipe a réinitialisé {fields} de votre profil.",
     "strava_unlinked": "L'équipe a délié votre compte Strava.",
+    "role_changed": "{role, select, none {Vous ne faites plus partie de l'équipe.} other {Vous avez désormais le rôle {roleName} dans l'équipe.}}",
+    "roles": {
+      "support": "Support",
+      "admin": "Admin",
+      "super-admin": "Super-admin"
+    },
     "reason": "Raison : {reason}",
     "team": "Équipe",
     "fields": {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useEffectEvent, useId, useState, type ReactNode } from "react";
+import { CheckIcon, Loader2Icon, SearchIcon } from "lucide-react";
+import { useActionState, useEffect, useEffectEvent, useId, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/user/user-avatar";
 import { cn } from "@/lib/utils";
 import type { Action } from "./action-state";
 import { SubmitButton } from "./submit-button";
@@ -49,7 +51,23 @@ export type FormField = BaseField &
     /** `#rrggbb`, or nothing at all when the default is kept. */
     | { kind: "color"; defaultValue: string | null; noneLabel: string }
     | { kind: "icons"; defaultValue: string; options: (Option & { icon: ReactNode })[] }
+    /** One user among the results of a search, posted by id. */
+    | {
+        kind: "user";
+        search: (query: string) => Promise<UserOption[]>;
+        placeholder: string;
+        emptyLabel: string;
+      }
   );
+
+export interface UserOption {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  /** Shown under the name, e.g. the email. */
+  hint?: string;
+}
 
 export interface FormDialogProps {
   action: Action;
@@ -233,6 +251,8 @@ function FieldInput({
       return <ColorInput id={id} field={field} />;
     case "icons":
       return <IconPicker field={field} />;
+    case "user":
+      return <UserPicker id={id} field={field} />;
   }
 }
 
@@ -290,5 +310,91 @@ function IconPicker({ field }: { field: Extract<FormField, { kind: "icons" }> })
         ))}
       </div>
     </fieldset>
+  );
+}
+
+const SEARCH_DELAY_MS = 250;
+
+/** Search of a user, the choice kept shown while searching again. */
+function UserPicker({ id, field }: { id: string; field: Extract<FormField, { kind: "user" }> }) {
+  const [query, setQuery] = useState("");
+  // Tied to their query, so that clearing the search clears them too.
+  const [found, setFound] = useState<{ query: string; options: UserOption[] } | null>(null);
+  const [chosen, setChosen] = useState<UserOption | null>(null);
+  const [pending, startSearch] = useTransition();
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    let stale = false;
+    const timer = setTimeout(() => {
+      startSearch(async () => {
+        const options = await field.search(trimmed);
+        if (!stale) setFound({ query: trimmed, options });
+      });
+    }, SEARCH_DELAY_MS);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [query, field]);
+
+  const trimmed = query.trim();
+  const results = trimmed && found?.query === trimmed ? found.options : null;
+  const options = chosen && !results?.some((option) => option.id === chosen.id) ? [chosen, ...(results ?? [])] : (results ?? []);
+
+  return (
+    <>
+      <Label htmlFor={id}>{field.label}</Label>
+      <div className="relative">
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input
+          id={id}
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={field.placeholder}
+          autoComplete="off"
+          className="pl-8"
+        />
+        {pending && (
+          <Loader2Icon className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden />
+        )}
+      </div>
+      {options.length > 0 ? (
+        <div role="radiogroup" aria-label={field.label} className="grid max-h-56 gap-0.5 overflow-y-auto rounded-lg border p-1">
+          {options.map((option) => (
+            <label
+              key={option.id}
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-muted has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
+                chosen?.id === option.id && "bg-muted",
+              )}
+            >
+              <input
+                type="radio"
+                name={field.name}
+                value={option.id}
+                checked={chosen?.id === option.id}
+                onChange={() => setChosen(option)}
+                required
+                className="sr-only"
+              />
+              <UserAvatar user={option} className="size-7" fallbackClassName="text-[10px]" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{option.displayName ?? `@${option.username}`}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  @{option.username}
+                  {option.hint && ` · ${option.hint}`}
+                </span>
+              </span>
+              {chosen?.id === option.id && <CheckIcon className="size-4 shrink-0 text-primary" aria-hidden />}
+            </label>
+          ))}
+        </div>
+      ) : (
+        results && !pending && <p className="text-sm text-muted-foreground">{field.emptyLabel}</p>
+      )}
+    </>
   );
 }

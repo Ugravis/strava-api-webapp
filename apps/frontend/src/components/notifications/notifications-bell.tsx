@@ -197,6 +197,9 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
   );
 }
 
+/** Kinds told by the team, shown with its shield. */
+const TEAM_NOTIFICATIONS: ReadonlySet<AppNotification["type"]> = new Set(["moderation", "strava_unlinked", "role_changed"]);
+
 function NotificationItem({ notification, unread }: { notification: AppNotification; unread: boolean }) {
   const t = useTranslations("notifications");
   const format = useFormatter();
@@ -204,7 +207,7 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
   const router = useRouter();
   const { actor, details } = notification;
   const href = notificationHref(notification);
-  const fromTeam = notification.type === "moderation" || notification.type === "strava_unlinked";
+  const fromTeam = TEAM_NOTIFICATIONS.has(notification.type);
   // A request is answered, or a follower followed back, from the notification itself.
   const request = actor && notification.type === "follow_request";
   const followBack = actor && notification.followBack;
@@ -236,6 +239,8 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
           {t.rich(notification.type, {
             name: actor ? publicNameOf(actor) : "",
             fields: format.list((details?.fields ?? []).map((field) => t(`fields.${field}`))),
+            role: details?.role ?? "none",
+            roleName: details?.role ? t(`roles.${details.role}`) : "",
             b: (chunks) => (
               <span className="font-semibold underline-offset-2 hover:underline">
                 {chunks}

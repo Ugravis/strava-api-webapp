@@ -1,6 +1,6 @@
 import "server-only";
 import {
-  ADMIN_DISTINCTION_KINDS,
+  type AdminDistinction,
   type AdminPage,
   type AdminPermission,
   type AdminUserDetail,
@@ -31,7 +31,11 @@ const HISTORY_SIZE = 5;
 /** Everything the back office shows of an account, and the actions the role grants on it. */
 export async function UserPanel({ id }: { id: string }) {
   const t = getAdminTranslations("user");
-  const [me, result] = await Promise.all([getAdminMe(), adminApi<AdminUserDetail>(`/users/${encodeURIComponent(id)}`)]);
+  const [me, result, catalog] = await Promise.all([
+    getAdminMe(),
+    adminApi<AdminUserDetail>(`/users/${encodeURIComponent(id)}`),
+    adminApi<AdminDistinction[]>("/distinctions"),
+  ]);
   if (!result.ok || !me) {
     return <p className="p-4 text-sm text-muted-foreground">{t("notFound")}</p>;
   }
@@ -128,23 +132,23 @@ export async function UserPanel({ id }: { id: string }) {
 
       <Section title={t("sections.distinctions")}>
         <ul className="flex flex-col gap-2">
-          {ADMIN_DISTINCTION_KINDS.map((kind) => {
-            const distinction = user.distinctions.find((each) => each.kind === kind);
+          {(catalog.ok ? catalog.data : user.distinctions).map((distinction) => {
+            const held = user.distinctions.find((each) => each.id === distinction.id);
             return (
-              <li key={kind} className="flex items-center gap-3">
-                <DistinctionIcon kind={kind} />
+              <li key={distinction.id} className="flex items-center gap-3">
+                <DistinctionIcon distinction={distinction} />
                 <span className="flex flex-1 flex-col">
-                  <span className="text-sm font-medium">{t(`distinctions.${kind}`)}</span>
-                  {distinction && (
+                  <span className="text-sm font-medium">{distinction.name}</span>
+                  {held && (
                     <span className="text-xs text-muted-foreground">
-                      {t("distinctions.granted", { date: formatDate(distinction.awardedAt) })}
+                      {t("distinctions.granted", { date: formatDate(held.awardedAt) })}
                     </span>
                   )}
                 </span>
                 {can("users.distinctions") && (
-                  <ActionForm action={setDistinction.bind(null, user.id, kind, !distinction)}>
-                    <SubmitButton size="xs" variant={distinction ? "outline" : "secondary"}>
-                      {t(distinction ? "distinctions.revoke" : "distinctions.grant")}
+                  <ActionForm action={setDistinction.bind(null, user.id, distinction.id, !held)}>
+                    <SubmitButton size="xs" variant={held ? "outline" : "secondary"}>
+                      {t(held ? "distinctions.revoke" : "distinctions.grant")}
                     </SubmitButton>
                   </ActionForm>
                 )}

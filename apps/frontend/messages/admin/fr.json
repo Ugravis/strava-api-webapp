@@ -11,6 +11,7 @@
     "statistics": "Statistiques",
     "users": "Utilisateurs",
     "badges": "Badges",
+    "distinctions": "Distinctions",
     "auditLog": "Logs",
     "system": "Maintenance",
     "team": "Permissions",
@@ -206,9 +207,6 @@
     },
     "stravaNone": "Aucun compte Strava lié.",
     "distinctions": {
-      "founder": "Fondateur",
-      "team": "Équipe",
-      "early_member": "100 premiers membres",
       "grant": "Attribuer",
       "revoke": "Retirer",
       "granted": "Attribué le {date}"
@@ -319,6 +317,7 @@
         "usernames": "Pseudos réservés",
         "roles": "Rôles",
         "badges": "Badges",
+        "distinctions": "Distinctions",
         "system": "Système"
       },
       "visibility": "Visibilité",
@@ -388,6 +387,12 @@
           "delete": "Collection supprimée",
           "reorder": "Collections réordonnées"
         }
+      },
+      "distinctions": {
+        "create": "Distinction créée",
+        "update": "Distinction modifiée",
+        "delete": "Distinction supprimée",
+        "reorder": "Distinctions réordonnées"
       },
       "system": {
         "maintenance": {
@@ -609,6 +614,54 @@
       "colorNone": "Fond par défaut"
     }
   },
+  "distinctions": {
+    "title": "Distinctions",
+    "description": "Badges non sportifs affichés sur les profils, même privés. Une modification s'applique aussitôt à tous les profils.",
+    "count": "{count, plural, =0 {Aucune distinction} one {# distinction} other {# distinctions}}",
+    "empty": "Aucune distinction.",
+    "dragHandle": "Déplacer",
+    "holders": "{count, plural, =0 {Aucun membre} one {# membre} other {# membres}}",
+    "system": "Automatique",
+    "systemHint": "Attribuée par l'application : modifiable, jamais supprimée.",
+    "noDescription": "Sans description",
+    "create": {
+      "short": "Nouvelle distinction",
+      "title": "Nouvelle distinction",
+      "description": "Ajoutée en fin de liste, attribuée ensuite depuis la fiche d'un utilisateur.",
+      "submit": "Créer"
+    },
+    "edit": {
+      "short": "Modifier",
+      "title": "Modifier la distinction",
+      "description": "Le changement s'applique à tous les profils qui l'affichent.",
+      "submit": "Enregistrer"
+    },
+    "delete": {
+      "short": "Supprimer",
+      "title": "Supprimer la distinction",
+      "description": "Définitif : la distinction disparaît de tous les profils qui l'affichent.",
+      "submit": "Supprimer",
+      "presets": [
+        "Distinction obsolète",
+        "Doublon",
+        "Créée par erreur"
+      ]
+    },
+    "errors": {
+      "system": "Cette distinction est attribuée par l'application et ne peut pas être supprimée.",
+      "idTaken": "Cet identifiant est déjà pris."
+    },
+    "fields": {
+      "id": "Identifiant",
+      "idHint": "Minuscules, chiffres et _ ; définitif.",
+      "name": "Nom",
+      "description": "Description",
+      "descriptionHint": "Facultative, affichée dans le détail de la distinction.",
+      "icon": "Icône",
+      "color": "Couleur de l'icône",
+      "colorNone": "Couleur par défaut"
+    }
+  },
   "system": {
     "title": "Maintenance",
     "description": "Bandeau d'information, inscriptions et fichiers stockés.",
@@ -746,6 +799,7 @@
         "users": "Utilisateurs",
         "usernames": "Pseudos réservés",
         "badges": "Badges",
+        "distinctions": "Distinctions",
         "audit": "Logs",
         "system": "Maintenance",
         "team": "Permissions"
@@ -795,6 +849,20 @@
           "delete": {
             "label": "Supprimer",
             "description": "Supprimer un badge ou une collection."
+          }
+        },
+        "distinctions": {
+          "create": {
+            "label": "Créer",
+            "description": "Ajouter une distinction."
+          },
+          "edit": {
+            "label": "Modifier",
+            "description": "Modifier et réordonner les distinctions."
+          },
+          "delete": {
+            "label": "Supprimer",
+            "description": "Supprimer une distinction attribuée à la main."
           }
         },
         "audit": {

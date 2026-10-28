@@ -11,7 +11,8 @@ interface ShowcaseDialogProps {
   title: string;
   /** Short line under the title: level, date… */
   subtitle?: ReactNode;
-  description: string;
+  /** Left out, the dialog has no description. */
+  description?: string;
   footer?: ReactNode;
 }
 
@@ -19,12 +20,12 @@ interface ShowcaseDialogProps {
 export function ShowcaseDialog({ open, onOpenChange, media, title, subtitle, description, footer }: ShowcaseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm" {...(!description && { "aria-describedby": undefined })}>
         <DialogHeader className="items-center gap-3 text-center sm:text-center">
           {media}
           <DialogTitle className="text-lg">{title}</DialogTitle>
           {subtitle && <p className="-mt-2 text-sm text-muted-foreground">{subtitle}</p>}
-          <DialogDescription>{description}</DialogDescription>
+          {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
         {footer}
       </DialogContent>

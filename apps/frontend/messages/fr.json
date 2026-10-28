@@ -383,19 +383,7 @@
     },
     "distinctions": {
       "label": "Distinctions",
-      "awarded": "Obtenue le {date}",
-      "founder": {
-        "name": "Fondateur",
-        "description": "A créé l'application et l'a ouverte à la communauté."
-      },
-      "team": {
-        "name": "Équipe",
-        "description": "Fait partie de l'équipe qui construit et fait vivre l'application."
-      },
-      "early_member": {
-        "name": "100 premiers membres",
-        "description": "Parmi les 100 premiers membres à avoir rejoint l'aventure."
-      }
+      "awarded": "Obtenue le {date}"
     },
     "share": {
       "open": "Partager le profil",

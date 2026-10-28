@@ -1,8 +1,7 @@
 "use server";
 
 import {
-  ADMIN_DISTINCTION_KINDS,
-  type AdminDistinctionKind,
+  ADMIN_BADGE_SLUG,
   MODERATABLE_FIELDS,
   type ModeratableField,
   type ModerateUserRequest,
@@ -58,10 +57,10 @@ export async function deleteUser(id: string, _: ActionResult | null, formData: F
 
 export async function setDistinction(
   id: string,
-  kind: AdminDistinctionKind,
+  kind: string,
   granted: boolean,
 ): Promise<ActionResult> {
-  if (!ADMIN_DISTINCTION_KINDS.includes(kind)) {
+  if (typeof kind !== "string" || !ADMIN_BADGE_SLUG.test(kind)) {
     throw new Error("Invalid distinction");
   }
   return runAdminAction(`/users/${checkedId(id)}/distinctions/${kind}`, granted ? "PUT" : "DELETE");

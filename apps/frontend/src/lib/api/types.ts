@@ -523,11 +523,15 @@ export interface ProfileSummary extends PublicUser {
   requested: boolean;
 }
 
-/** Badge owed to the membership, not to sport: `founder` and `team` by hand, `early_member` for the first 100 accounts. */
-export type DistinctionKind = "founder" | "team" | "early_member";
-
+/** Badge owed to the membership, not to sport, managed from the back office; in the order of the catalog. */
 export interface Distinction {
-  kind: DistinctionKind;
+  id: string;
+  name: string;
+  description: string | null;
+  /** Key of `BadgeIcon`. */
+  icon: string;
+  /** `#rrggbb` of the icon; null for the default one. */
+  color: string | null;
   awardedAt: string;
 }
 

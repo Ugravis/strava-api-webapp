@@ -1,5 +1,5 @@
 import "server-only";
-import { AwardIcon, ChartColumnIcon, CodeIcon, GaugeIcon, GitCommitHorizontalIcon, KeyRoundIcon, LogsIcon, type LucideIcon, UsersIcon, WrenchIcon } from "lucide-react";
+import { AwardIcon, ChartColumnIcon, CodeIcon, GaugeIcon, GitCommitHorizontalIcon, KeyRoundIcon, LogsIcon, type LucideIcon, MedalIcon, UsersIcon, WrenchIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -9,6 +9,7 @@ export const adminRoutes = {
   /** The panel of a user, opened above the current page. */
   user: (id: string) => `/admin/users/${id}`,
   badges: "/admin/badges",
+  distinctions: "/admin/distinctions",
   auditLog: "/admin/audit-log",
   system: "/admin/system",
   team: "/admin/team",
@@ -17,7 +18,7 @@ export const adminRoutes = {
 } as const;
 
 interface AdminNavItem {
-  key: "overview" | "statistics" | "users" | "badges" | "auditLog" | "system" | "team" | "dev" | "commits";
+  key: "overview" | "statistics" | "users" | "badges" | "distinctions" | "auditLog" | "system" | "team" | "dev" | "commits";
   href: string;
   icon: LucideIcon;
   /** Active on its own path only, not on the pages below it. */
@@ -30,6 +31,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   { key: "statistics", href: adminRoutes.statistics, icon: ChartColumnIcon },
   { key: "users", href: adminRoutes.users, icon: UsersIcon },
   { key: "badges", href: adminRoutes.badges, icon: AwardIcon },
+  { key: "distinctions", href: adminRoutes.distinctions, icon: MedalIcon },
   { key: "auditLog", href: adminRoutes.auditLog, icon: LogsIcon },
   { key: "system", href: adminRoutes.system, icon: WrenchIcon },
   { key: "team", href: adminRoutes.team, icon: KeyRoundIcon },

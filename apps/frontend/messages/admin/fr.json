@@ -14,7 +14,8 @@
     "auditLog": "Logs",
     "system": "Maintenance",
     "team": "Permissions",
-    "dev": "Technique"
+    "dev": "Technique",
+    "commits": "Commits"
   },
   "roles": {
     "support": "Support",
@@ -761,15 +762,22 @@
         "name": "Nom",
         "createdAt": "Créée"
       }
-    },
-    "commits": {
-      "title": "Commits sur main",
-      "description": "Les {count} derniers commits de la branche de production, merges en surbrillance.",
-      "deployed": "Déployé",
-      "upToDate": "Le commit déployé est le dernier de main.",
-      "undeployed": "{count, plural, one {# commit sur main pas encore déployé.} other {# commits sur main pas encore déployés.}}",
-      "unconfigured": "Dépôt GitHub non configuré (GITHUB_REPOSITORY).",
-      "unavailable": "Impossible de lire les commits de {repository} pour le moment. Un dépôt privé demande GITHUB_TOKEN."
     }
+  },
+  "commits": {
+    "title": "Commits",
+    "description": "Historique de la branche main sur GitHub, du plus récent au plus ancien.",
+    "legend": {
+      "mainMerge": "Merge sur main",
+      "merge": "Merge d'une branche",
+      "commit": "Commit"
+    },
+    "deployed": "Déployé",
+    "upToDate": "Le commit déployé est à jour avec main.",
+    "undeployed": "{count, plural, one {# commit sur main pas encore déployé.} other {# commits sur main pas encore déployés.}}",
+    "noDeployed": "Commit déployé non renseigné (GIT_COMMIT).",
+    "empty": "Aucun commit sur cette page.",
+    "unconfigured": "Dépôt GitHub non configuré (GITHUB_REPOSITORY).",
+    "unavailable": "Impossible de lire les commits de {repository} pour le moment. Un dépôt privé demande GITHUB_TOKEN."
   }
 }

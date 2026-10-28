@@ -1,6 +1,6 @@
 import "server-only";
 import { AdminRole, hasAdminRole } from "@kilotrace/shared/admin";
-import { AwardIcon, ChartColumnIcon, CodeIcon, GaugeIcon, KeyRoundIcon, LogsIcon, type LucideIcon, UsersIcon, WrenchIcon } from "lucide-react";
+import { AwardIcon, ChartColumnIcon, CodeIcon, GaugeIcon, GitCommitHorizontalIcon, KeyRoundIcon, LogsIcon, type LucideIcon, UsersIcon, WrenchIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -14,10 +14,11 @@ export const adminRoutes = {
   system: "/admin/system",
   team: "/admin/team",
   dev: "/admin/dev",
+  commits: "/admin/commits",
 } as const;
 
 interface AdminNavItem {
-  key: "overview" | "statistics" | "users" | "badges" | "auditLog" | "system" | "team" | "dev";
+  key: "overview" | "statistics" | "users" | "badges" | "auditLog" | "system" | "team" | "dev" | "commits";
   href: string;
   icon: LucideIcon;
   /** Lowest role that sees the entry, as on the backend route it calls. */
@@ -35,6 +36,7 @@ const ADMIN_NAV: readonly AdminNavItem[] = [
   { key: "system", href: adminRoutes.system, icon: WrenchIcon, minimum: AdminRole.Support },
   { key: "team", href: adminRoutes.team, icon: KeyRoundIcon, minimum: AdminRole.Support },
   { key: "dev", href: adminRoutes.dev, icon: CodeIcon, minimum: AdminRole.Support },
+  { key: "commits", href: adminRoutes.commits, icon: GitCommitHorizontalIcon, minimum: AdminRole.Support },
 ];
 
 /** Entries of the back-office navigation the roles grant. */

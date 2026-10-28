@@ -29,3 +29,39 @@ export interface AdminDevResponse {
   /** Migrations of the code missing from the database, the oldest first. */
   pending: AdminMigration[];
 }
+
+/** Number of commits of `main` listed by the dev page. */
+export const ADMIN_COMMITS_COUNT = 30;
+
+/** A commit of `main`, as GitHub reports it. */
+export interface AdminCommit {
+  sha: string;
+  /** First line of the message, the title of the pull request for a merge of one. */
+  title: string;
+  /** Number of the merged pull request. */
+  pullRequest: number | null;
+  /** Name of the git author, or their GitHub login. */
+  author: string;
+  date: string;
+  url: string;
+  /** Has several parents: a pull request or a branch merged into `main`. */
+  merge: boolean;
+}
+
+/** `GET /api/admin/dev/commits`: latest commits of `main`, the latest first. */
+export type AdminCommitsResponse =
+  | {
+      status: "ok";
+      repository: string;
+      commits: AdminCommit[];
+      /**
+       * Commits newer than the deployed one, null when the deployed commit is
+       * unknown or older than the listed ones.
+       */
+      undeployed: number | null;
+      deployed: string | null;
+    }
+  /** `GITHUB_REPOSITORY` is not set. */
+  | { status: "unconfigured" }
+  /** GitHub refused or did not answer (missing token on a private repository, rate limit). */
+  | { status: "unavailable"; repository: string };

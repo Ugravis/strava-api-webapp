@@ -26,7 +26,9 @@ RUN pnpm turbo run build --filter=@kilotrace/backend \
   && pnpm --filter @kilotrace/backend deploy --prod --legacy /out
 
 FROM node:24-alpine AS prod
-ENV NODE_ENV=production
+# Commit shown in the back office; `.git` stays out of the build context.
+ARG GIT_COMMIT=""
+ENV NODE_ENV=production GIT_COMMIT=${GIT_COMMIT}
 WORKDIR /app
 COPY --from=build --chown=node:node /out/package.json ./
 COPY --from=build --chown=node:node /out/node_modules node_modules

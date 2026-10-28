@@ -47,6 +47,8 @@ services:
       context: .
       dockerfile: docker/backend.Dockerfile
       target: prod
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-}
     restart: unless-stopped
     environment:
       DB_HOST: db

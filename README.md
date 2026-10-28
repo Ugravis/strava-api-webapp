@@ -309,8 +309,11 @@ automatic certificates and HSTS. No Adminer, Mailpit or storage console.
 
 ```bash
 cp .env.production.example .env   # then fill in every value, chmod 600 .env
-docker compose -f docker-compose.prod.yml up -d --build
+GIT_COMMIT=$(git rev-parse HEAD) docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+- **Commit**: `GIT_COMMIT` is baked into the backend image and shown in the back office
+  (`/admin/dev`), along with the versions and the applied migrations; left empty, the page says so.
 
 - **Secrets**: the backend refuses to start in production when `COOKIE_SECRET`,
   `ENCRYPTION_SECRET` or `STRAVA_WEBHOOK_VERIFY_TOKEN` is missing, a development default or

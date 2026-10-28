@@ -41,6 +41,7 @@ export enum ApiErrorCode {
   InvalidSuspension = 'INVALID_SUSPENSION',
   IdTaken = 'ID_TAKEN',
   SignupsDisabled = 'SIGNUPS_DISABLED',
+  InvalidPermissions = 'INVALID_PERMISSIONS',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

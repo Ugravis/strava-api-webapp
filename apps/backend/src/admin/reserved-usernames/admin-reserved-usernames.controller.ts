@@ -1,4 +1,4 @@
-import { AdminRole, type AdminReservedUsername } from '@kilotrace/shared/admin';
+import { type AdminReservedUsername } from '@kilotrace/shared/admin';
 import {
   Body,
   Delete,
@@ -11,7 +11,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Roles } from '../access/roles.decorator';
+import { Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import { ReserveUsernameDto } from './admin-reserved-usernames.dto';
 import { AdminReservedUsernamesService } from './admin-reserved-usernames.service';
@@ -22,13 +22,13 @@ export class AdminReservedUsernamesController {
   constructor(private readonly reserved: AdminReservedUsernamesService) {}
 
   @Get()
-  @Roles(AdminRole.Support)
+  @Permission('usernames.view')
   list(): Promise<AdminReservedUsername[]> {
     return this.reserved.list();
   }
 
   @Post()
-  @Roles(AdminRole.Admin)
+  @Permission('usernames.manage')
   @Audited({ action: 'usernames.reserve', details: ['username', 'category'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   reserve(
@@ -39,7 +39,7 @@ export class AdminReservedUsernamesController {
   }
 
   @Delete(':username')
-  @Roles(AdminRole.Admin)
+  @Permission('usernames.manage')
   @Audited({ action: 'usernames.release', details: ['username'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   release(@Param('username') username: string): Promise<void> {

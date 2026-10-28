@@ -21,6 +21,7 @@ const KEPT_TABLES = [
   'badge_themes',
   'badges',
   'reserved_usernames',
+  'admin_role_permissions',
   'migrations',
   'spatial_ref_sys',
 ];

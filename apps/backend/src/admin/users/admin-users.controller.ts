@@ -1,5 +1,4 @@
 import {
-  AdminRole,
   type AdminPage,
   type AdminUserDetail,
   type AdminUserSummary,
@@ -19,7 +18,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Roles } from '../access/roles.decorator';
+import { Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import {
   AdminUsersQueryDto,
@@ -41,7 +40,7 @@ export class AdminUsersController {
   constructor(private readonly users: AdminUsersService) {}
 
   @Get()
-  @Roles(AdminRole.Support)
+  @Permission('users.view')
   page(
     @Query() query: AdminUsersQueryDto,
   ): Promise<AdminPage<AdminUserSummary>> {
@@ -49,13 +48,13 @@ export class AdminUsersController {
   }
 
   @Get(':id')
-  @Roles(AdminRole.Support)
+  @Permission('users.view')
   detail(@Param('id', ParseUUIDPipe) id: string): Promise<AdminUserDetail> {
     return this.users.detail(id);
   }
 
   @Put(':id/suspension')
-  @Roles(AdminRole.Admin)
+  @Permission('users.suspend')
   @Audited({
     action: 'users.suspend',
     target: TARGET,
@@ -72,7 +71,7 @@ export class AdminUsersController {
   }
 
   @Delete(':id/suspension')
-  @Roles(AdminRole.Admin)
+  @Permission('users.suspend')
   @Audited({ action: 'users.unsuspend', target: TARGET })
   @HttpCode(HttpStatus.NO_CONTENT)
   lift(
@@ -83,7 +82,7 @@ export class AdminUsersController {
   }
 
   @Delete(':id')
-  @Roles(AdminRole.Admin)
+  @Permission('users.delete')
   @Audited({ action: 'users.delete', target: TARGET, destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(
@@ -94,7 +93,7 @@ export class AdminUsersController {
   }
 
   @Delete(':id/strava')
-  @Roles(AdminRole.Admin)
+  @Permission('users.strava')
   @Audited({ action: 'users.strava.unlink', target: TARGET, destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   unlinkStrava(
@@ -106,7 +105,7 @@ export class AdminUsersController {
   }
 
   @Delete(':id/sessions')
-  @Roles(AdminRole.Admin)
+  @Permission('users.sessions')
   @Audited({ action: 'users.sessions.revoke', target: TARGET })
   @HttpCode(HttpStatus.NO_CONTENT)
   revokeSessions(
@@ -117,7 +116,7 @@ export class AdminUsersController {
   }
 
   @Post(':id/moderation')
-  @Roles(AdminRole.Admin)
+  @Permission('users.moderate')
   @Audited({
     action: 'users.moderate',
     target: TARGET,
@@ -134,7 +133,7 @@ export class AdminUsersController {
   }
 
   @Put(':id/distinctions/:kind')
-  @Roles(AdminRole.Admin)
+  @Permission('users.distinctions')
   @Audited({
     action: 'users.distinctions.grant',
     target: TARGET,
@@ -149,7 +148,7 @@ export class AdminUsersController {
   }
 
   @Delete(':id/distinctions/:kind')
-  @Roles(AdminRole.Admin)
+  @Permission('users.distinctions')
   @Audited({
     action: 'users.distinctions.revoke',
     target: TARGET,

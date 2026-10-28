@@ -1,5 +1,4 @@
 import {
-  AdminRole,
   type AdminTeamCandidate,
   type AdminTeamMember,
 } from '@kilotrace/shared/admin';
@@ -17,7 +16,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Roles } from '../access/roles.decorator';
+import { Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import { SetTeamRoleDto, TeamCandidatesQueryDto } from './admin-team.dto';
 import { AdminTeamService } from './admin-team.service';
@@ -33,13 +32,13 @@ export class AdminTeamController {
   constructor(private readonly team: AdminTeamService) {}
 
   @Get()
-  @Roles(AdminRole.Support)
+  @Permission('team.view')
   members(): Promise<AdminTeamMember[]> {
     return this.team.members();
   }
 
   @Get('candidates')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('team.manage')
   candidates(
     @Query() query: TeamCandidatesQueryDto,
   ): Promise<AdminTeamCandidate[]> {
@@ -47,7 +46,7 @@ export class AdminTeamController {
   }
 
   @Put(':id')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('team.manage')
   @Audited({ action: 'roles.grant', target: TARGET, details: ['role'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   setRole(
@@ -59,7 +58,7 @@ export class AdminTeamController {
   }
 
   @Delete(':id')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('team.manage')
   @Audited({ action: 'roles.revoke', target: TARGET })
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(

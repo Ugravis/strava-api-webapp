@@ -1,4 +1,4 @@
-/** Back-office roles, each one granting everything the lower ones grant. */
+/** Back-office roles, from the lowest to the highest: their permissions are set from the Permissions page. */
 export const AdminRole = {
   Support: "support",
   Admin: "admin",

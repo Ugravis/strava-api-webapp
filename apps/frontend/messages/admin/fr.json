@@ -13,7 +13,8 @@
     "badges": "Badges",
     "auditLog": "Logs",
     "system": "Maintenance",
-    "team": "Permissions"
+    "team": "Permissions",
+    "dev": "Technique"
   },
   "roles": {
     "support": "Support",
@@ -728,6 +729,38 @@
       "title": "Retirer {name} de l'équipe ?",
       "description": "Le compte perd l'accès au back-office et la distinction Équipe. Il en est notifié.",
       "submit": "Retirer"
+    }
+  },
+  "dev": {
+    "title": "Technique",
+    "description": "Version déployée, dépendances et migrations de la base de données.",
+    "error": "Impossible de lire l'état technique pour le moment.",
+    "deployment": {
+      "title": "Déploiement",
+      "description": "Ce qui tourne sur le serveur.",
+      "version": "Version",
+      "commit": "Commit",
+      "noCommit": "Non renseigné",
+      "environment": "Environnement",
+      "startedAt": "Démarré"
+    },
+    "versions": {
+      "title": "Versions",
+      "description": "Environnements d'exécution, bibliothèques clés et serveurs.",
+      "backend": "Backend",
+      "frontend": "Frontend",
+      "unknown": "Inconnue"
+    },
+    "migrations": {
+      "title": "Migrations",
+      "description": "{count, plural, =0 {Aucune migration appliquée.} one {# migration appliquée, la plus récente en premier.} other {# migrations appliquées, les plus récentes en premier.}}",
+      "pending": "{count, plural, one {# migration en attente} other {# migrations en attente}}",
+      "empty": "Aucune migration appliquée.",
+      "columns": {
+        "id": "N°",
+        "name": "Nom",
+        "createdAt": "Créée"
+      }
     }
   }
 }

@@ -111,6 +111,9 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
   wind: WindIcon,
 };
 
+/** Keys of the icons a badge can take, in alphabetical order. */
+export const BADGE_ICON_KEYS = Object.keys(BADGE_ICONS);
+
 /** Icon of a badge; keys unknown to this version of the app get a generic one. */
 export function BadgeIcon({ icon, ...props }: LucideProps & { icon: string }) {
   return createElement(BADGE_ICONS[icon] ?? MilestoneIcon, props);

@@ -20,6 +20,7 @@ const KEPT_TABLES = [
   'railway_imports',
   'badge_themes',
   'badges',
+  'distinctions',
   'reserved_usernames',
   'admin_role_permissions',
   'migrations',

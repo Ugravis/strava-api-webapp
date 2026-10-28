@@ -1,7 +1,6 @@
 import {
   ADMIN_PAGE_SIZE,
   ADMIN_ROLES,
-  type AdminDistinctionKind,
   type AdminPage,
   type AdminUserDetail,
   type AdminUserSummary,
@@ -25,6 +24,7 @@ import { NotificationsService } from '../../notifications/notifications.service'
 import { StravaConnectionService } from '../../strava/strava-connection.service';
 import { AvatarsService } from '../../users/avatars.service';
 import { avatarUrlFor } from '../../users/dto/user-response';
+import { Distinction } from '../../users/distinction.entity';
 import { UserDistinction } from '../../users/user-distinction.entity';
 import { isSuspended, User } from '../../users/user.entity';
 import { likeEscaped } from '../common/like-escaped';
@@ -225,11 +225,13 @@ export class AdminUsersService {
     });
   }
 
-  async grantDistinction(
-    id: string,
-    kind: AdminDistinctionKind,
-  ): Promise<void> {
+  async grantDistinction(id: string, kind: string): Promise<void> {
     await this.find(id);
+    if (
+      !(await this.distinctions.manager.existsBy(Distinction, { id: kind }))
+    ) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such distinction');
+    }
     await this.distinctions
       .createQueryBuilder()
       .insert()
@@ -238,10 +240,7 @@ export class AdminUsersService {
       .execute();
   }
 
-  async revokeDistinction(
-    id: string,
-    kind: AdminDistinctionKind,
-  ): Promise<void> {
+  async revokeDistinction(id: string, kind: string): Promise<void> {
     await this.find(id);
     await this.distinctions.delete({ userId: id, kind });
   }
@@ -270,7 +269,8 @@ export class AdminUsersService {
         }),
         this.distinctions.find({
           where: { userId: In(ids) },
-          order: { awardedAt: 'ASC' },
+          relations: { distinction: true },
+          order: { distinction: { position: 'ASC' } },
         }),
       ]);
     const lastSeenById = new Map(
@@ -301,8 +301,11 @@ export class AdminUsersService {
       ],
       distinctions: distinctions
         .filter(({ userId }) => userId === user.id)
-        .map(({ kind, awardedAt }) => ({
-          kind,
+        .map(({ distinction, awardedAt }) => ({
+          id: distinction!.id,
+          name: distinction!.name,
+          icon: distinction!.icon,
+          color: distinction!.color,
           awardedAt: awardedAt.toISOString(),
         })),
     }));

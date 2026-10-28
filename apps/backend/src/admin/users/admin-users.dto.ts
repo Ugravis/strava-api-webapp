@@ -1,9 +1,9 @@
 import {
-  ADMIN_DISTINCTION_KINDS,
+  ADMIN_BADGE_SLUG,
+  ADMIN_DISTINCTION_ID_MAX_LENGTH,
   ADMIN_REASON_MAX_LENGTH,
   ADMIN_USER_SORTS,
   ADMIN_USER_STATUSES,
-  type AdminDistinctionKind,
   type AdminUserSort,
   type AdminUserStatus,
   MODERATABLE_FIELDS,
@@ -17,6 +17,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
 } from 'class-validator';
 import { Trim } from '../../common/transformers';
@@ -62,6 +63,8 @@ export class ModerateUserDto extends ReasonDto {
 }
 
 export class DistinctionParamsDto {
-  @IsIn(ADMIN_DISTINCTION_KINDS)
-  kind!: AdminDistinctionKind;
+  @IsString()
+  @Matches(ADMIN_BADGE_SLUG)
+  @MaxLength(ADMIN_DISTINCTION_ID_MAX_LENGTH)
+  kind!: string;
 }

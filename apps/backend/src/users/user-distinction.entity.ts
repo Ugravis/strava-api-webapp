@@ -5,18 +5,15 @@ import {
   ManyToOne,
   PrimaryColumn,
 } from 'typeorm';
+import { Distinction } from './distinction.entity';
 import { User } from './user.entity';
 
 /**
- * Badges owed to the membership, not to sport: never derived from Strava
- * data, so shown on every profile, private ones included.
- * `founder` and `team` are granted by hand; `early_member` to the first
- * `EARLY_MEMBERS` accounts.
+ * Distinctions held by the users: never derived from Strava data, so shown
+ * on every profile, private ones included. `team` follows the back-office
+ * roles, `early_member` goes to the first `EARLY_MEMBERS` accounts, the
+ * others are granted by hand.
  */
-export const DISTINCTION_KINDS = ['founder', 'team', 'early_member'] as const;
-
-export type DistinctionKind = (typeof DISTINCTION_KINDS)[number];
-
 export const EARLY_MEMBERS = 100;
 
 @Entity('user_distinctions')
@@ -25,11 +22,18 @@ export class UserDistinction {
   userId!: string;
 
   @PrimaryColumn({ type: 'varchar', length: 32 })
-  kind!: DistinctionKind;
+  kind!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user?: User;
+
+  @ManyToOne(() => Distinction, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'kind',
+    foreignKeyConstraintName: 'FK_user_distinctions_distinction',
+  })
+  distinction?: Distinction;
 
   @CreateDateColumn({ name: 'awarded_at', type: 'timestamptz' })
   awardedAt!: Date;

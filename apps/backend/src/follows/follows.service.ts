@@ -6,10 +6,7 @@ import { isUniqueViolation } from '../common/database-errors';
 import { NotificationsService } from '../notifications/notifications.service';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import type { FavoriteSport } from '../users/favorite-sports';
-import {
-  type DistinctionKind,
-  UserDistinction,
-} from '../users/user-distinction.entity';
+import { UserDistinction } from '../users/user-distinction.entity';
 import { isSuspended, User } from '../users/user.entity';
 import { Follow } from './follow.entity';
 import { ProfileLike } from './profile-like.entity';
@@ -26,6 +23,17 @@ export interface ProfileSummary extends PublicUser {
   requested: boolean;
 }
 
+/** A distinction as the profiles show it, in the order of the catalog. */
+export interface ProfileDistinction {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  /** `#rrggbb` of the icon; null for the default one. */
+  color: string | null;
+  awardedAt: string;
+}
+
 export interface PublicProfile extends ProfileSummary {
   createdAt: string;
   bio: string | null;
@@ -36,7 +44,7 @@ export interface PublicProfile extends ProfileSummary {
   color: string | null;
   private: boolean;
   /** Badges of the membership, shown even on a private profile. */
-  distinctions: { kind: DistinctionKind; awardedAt: string }[];
+  distinctions: ProfileDistinction[];
   /**
    * False for a private profile the viewer does not follow: its showcase and
    * its follows are hidden.
@@ -147,7 +155,8 @@ export class FollowsService {
       this.follows.findOneBy({ followerId: user.id, followedId: viewer.id }),
       this.distinctions.find({
         where: { userId: user.id },
-        order: { awardedAt: 'ASC' },
+        relations: { distinction: true },
+        order: { distinction: { position: 'ASC' } },
       }),
       this.likes.countBy({ profileId: user.id }),
       this.likes.existsBy({ userId: viewer.id, profileId: user.id }),
@@ -166,8 +175,12 @@ export class FollowsService {
       favoriteSports: user.favoriteSports,
       color: user.profileColor,
       private: user.profilePrivate,
-      distinctions: distinctions.map(({ kind, awardedAt }) => ({
-        kind,
+      distinctions: distinctions.map(({ distinction, awardedAt }) => ({
+        id: distinction!.id,
+        name: distinction!.name,
+        description: distinction!.description,
+        icon: distinction!.icon,
+        color: distinction!.color,
         awardedAt: awardedAt.toISOString(),
       })),
       visible,

@@ -18,6 +18,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
 import { StravaModule } from '../strava/strava.module';
 import { SystemModule } from '../system/system.module';
+import { Distinction } from '../users/distinction.entity';
 import { UserDistinction } from '../users/user-distinction.entity';
 import { ReservedUsername } from '../users/reserved-username.entity';
 import { User } from '../users/user.entity';
@@ -34,6 +35,8 @@ import {
   AdminBadgeThemesController,
 } from './badges/admin-badges.controller';
 import { AdminBadgesService } from './badges/admin-badges.service';
+import { AdminDistinctionsController } from './distinctions/admin-distinctions.controller';
+import { AdminDistinctionsService } from './distinctions/admin-distinctions.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminDevController } from './dev/admin-dev.controller';
 import { AdminDevService } from './dev/admin-dev.service';
@@ -72,6 +75,7 @@ export const ADMIN_ROUTES = [
       Activity,
       Follow,
       UserDistinction,
+      Distinction,
       OAuthAccount,
       Badge,
       BadgeTheme,
@@ -92,6 +96,7 @@ export const ADMIN_ROUTES = [
     AdminAuditLogController,
     AdminBadgesController,
     AdminBadgeThemesController,
+    AdminDistinctionsController,
     AdminSystemController,
     AdminTeamController,
     AdminPermissionsController,
@@ -104,6 +109,7 @@ export const ADMIN_ROUTES = [
     AdminBootstrapService,
     AdminStatisticsService,
     AdminBadgesService,
+    AdminDistinctionsService,
     AdminUploadsService,
     AdminTeamService,
     AdminReservedUsernamesService,

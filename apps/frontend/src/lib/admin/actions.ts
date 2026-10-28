@@ -11,12 +11,22 @@ type Method = Parameters<typeof adminApi>[1];
 
 /**
  * Runs a back-office call for a Server Action: the backend checks the role
- * and records the action. The page is refreshed on success.
+ * and records the action. The page is refreshed on success. `errors` tells
+ * the failures by API error code, before the generic message of the status.
  */
-export async function runAdminAction(path: string, method: Method, json?: unknown): Promise<ActionResult> {
+export async function runAdminAction(
+  path: string,
+  method: Method,
+  json?: unknown,
+  errors?: Partial<Record<string, string>>,
+): Promise<ActionResult> {
   const t = getAdminTranslations("common");
   const result: AdminApiResult<void> | null = await adminApi(path, method, json).catch(() => null);
   if (!result?.ok) {
+    const byCode = result?.code && errors?.[result.code];
+    if (byCode) {
+      return { ok: false, message: byCode };
+    }
     const status = result?.status;
     const known = status === 400 || status === 403 || status === 404 || status === 409 || status === 429;
     return { ok: false, message: t(known ? `errors.${status}` : "errors.other") };

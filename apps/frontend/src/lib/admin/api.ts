@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 const API_URL = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 
-export type AdminApiResult<T> = { ok: true; data: T } | { ok: false; status: number };
+export type AdminApiResult<T> = { ok: true; data: T } | { ok: false; status: number; code?: string };
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -24,7 +24,8 @@ export async function adminApi<T = void>(path: string, method: Method = "GET", j
     cache: "no-store",
   });
   if (!response.ok) {
-    return { ok: false, status: response.status };
+    const error = (await response.json().catch(() => null)) as { code?: unknown } | null;
+    return { ok: false, status: response.status, ...(typeof error?.code === "string" && { code: error.code }) };
   }
   if (response.status === 204) {
     return { ok: true, data: undefined as T };

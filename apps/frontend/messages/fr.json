@@ -240,7 +240,7 @@
     "usernameLength": "Le pseudo doit contenir entre 3 et 20 caractères.",
     "usernamePattern": "Utilisez uniquement des lettres minuscules, des chiffres et _.",
     "usernameTaken": "Ce pseudo est déjà pris.",
-    "usernameReserved": "Ce pseudo est réservé.",
+    "usernameReserved": "Ce pseudo est réservé, choisissez-en un autre.",
     "termsRequired": "Vous devez accepter les conditions d'utilisation pour continuer.",
     "bioMax": "La bio doit contenir au plus 160 caractères.",
     "cityMax": "La ville doit contenir au plus 60 caractères.",

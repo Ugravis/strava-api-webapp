@@ -11,7 +11,8 @@
     "statistics": "Statistiques",
     "users": "Utilisateurs",
     "badges": "Badges",
-    "auditLog": "Logs"
+    "auditLog": "Logs",
+    "system": "Maintenance"
   },
   "roles": {
     "support": "Support",
@@ -266,7 +267,8 @@
         "all": "Toutes",
         "users": "Utilisateurs",
         "roles": "Rôles",
-        "badges": "Badges"
+        "badges": "Badges",
+        "system": "Système"
       },
       "visibility": "Visibilité",
       "visibilities": {
@@ -289,7 +291,10 @@
       "fields": "Champs : {fields}",
       "kind": "Badge : {kind}",
       "name": "Nom : {name}",
-      "active": "{active, select, true {Activé} other {Désactivé}}"
+      "active": "{active, select, true {Activé} other {Désactivé}}",
+      "title": "Titre : {title}",
+      "description": "Description : {description}",
+      "signups": "{enabled, select, true {Inscriptions ouvertes} other {Inscriptions fermées}}"
     },
     "actions": {
       "users": {
@@ -324,6 +329,18 @@
           "update": "Collection renommée",
           "delete": "Collection supprimée",
           "reorder": "Collections réordonnées"
+        }
+      },
+      "system": {
+        "maintenance": {
+          "set": "Bandeau de maintenance affiché",
+          "clear": "Bandeau de maintenance retiré"
+        },
+        "signups": "Inscriptions ouvertes ou fermées",
+        "uploads": {
+          "orphans": {
+            "delete": "Fichiers orphelins supprimés"
+          }
         }
       }
     },
@@ -532,6 +549,86 @@
       "icon": "Icône",
       "color": "Couleur de fond",
       "colorNone": "Fond par défaut"
+    }
+  },
+  "system": {
+    "title": "Maintenance",
+    "description": "Bandeau d'information, inscriptions et fichiers stockés.",
+    "readOnly": "Seuls les super-admins peuvent modifier ces réglages.",
+    "statusError": "Impossible de lire l'état du site pour le moment.",
+    "maintenance": {
+      "title": "Bandeau de maintenance",
+      "description": "Affiché en haut des pages des utilisateurs connectés, qui peuvent le masquer jusqu'au prochain chargement.",
+      "titles": {
+        "scheduled": "Maintenance programmée",
+        "ongoing": "Maintenance en cours",
+        "degraded": "Service perturbé",
+        "strava": "Synchronisation Strava perturbée"
+      },
+      "off": "Aucun bandeau affiché.",
+      "on": "Affiché",
+      "since": "Depuis le {date}",
+      "noDescription": "Sans description.",
+      "turnOn": "Afficher un bandeau",
+      "edit": "Modifier",
+      "turnOff": "Retirer",
+      "form": {
+        "title": "Bandeau de maintenance",
+        "description": "Le titre est choisi parmi les messages prévus ; la description, facultative, s'ouvre avec « Voir plus ».",
+        "titleField": "Titre",
+        "descriptionField": "Description",
+        "descriptionHint": "Facultative, {max} caractères au plus.",
+        "submit": "Afficher"
+      }
+    },
+    "signups": {
+      "title": "Inscriptions",
+      "description": "Kill switch de la création de comptes, par email et par Google. Les comptes existants se connectent normalement.",
+      "open": "Ouvertes",
+      "closed": "Fermées",
+      "close": {
+        "trigger": "Fermer les inscriptions",
+        "title": "Fermer les inscriptions ?",
+        "description": "Plus aucun compte ne pourra être créé, par email ou par Google, jusqu'à la réouverture.",
+        "submit": "Fermer"
+      },
+      "reopen": {
+        "trigger": "Rouvrir les inscriptions",
+        "title": "Rouvrir les inscriptions ?",
+        "description": "La création de comptes redevient possible immédiatement.",
+        "submit": "Rouvrir"
+      }
+    },
+    "uploads": {
+      "title": "Audit des fichiers",
+      "description": "Poids des images importées par les utilisateurs dans le stockage.",
+      "error": "Le stockage est injoignable pour le moment.",
+      "avatars": "Avatars",
+      "orphans": "Orphelins",
+      "previews": "Aperçus de carte",
+      "files": "{count, plural, =0 {Aucun fichier} one {# fichier} other {# fichiers}}",
+      "previewsHint": "Cache, régénéré à la demande",
+      "heaviest": "Avatars les plus lourds",
+      "heaviestEmpty": "Aucun avatar importé.",
+      "orphansTitle": "Fichiers orphelins",
+      "orphansDescription": "Avatars qu'aucun compte n'utilise plus (remplacés ou comptes supprimés), importés il y a plus d'une heure.",
+      "orphansEmpty": "Aucun fichier orphelin.",
+      "orphansMore": "… et {count, plural, one {# autre} other {# autres}}",
+      "columns": {
+        "file": "Fichier",
+        "user": "Compte",
+        "size": "Poids",
+        "date": "Importé"
+      },
+      "delete": {
+        "trigger": "Supprimer les orphelins",
+        "title": "Supprimer les fichiers orphelins ?",
+        "description": "Les fichiers orphelins sont supprimés définitivement du stockage. Ceux importés il y a moins d'une heure sont gardés.",
+        "submit": "Supprimer",
+        "presets": [
+          "Nettoyage du stockage"
+        ]
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { AdminRole, hasAdminRole } from "@kilotrace/shared/admin";
-import { AwardIcon, ChartColumnIcon, GaugeIcon, LogsIcon, type LucideIcon, UsersIcon } from "lucide-react";
+import { AwardIcon, ChartColumnIcon, GaugeIcon, LogsIcon, type LucideIcon, UsersIcon, WrenchIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -11,10 +11,11 @@ export const adminRoutes = {
   user: (id: string) => `/admin/users/${id}`,
   badges: "/admin/badges",
   auditLog: "/admin/audit-log",
+  system: "/admin/system",
 } as const;
 
 interface AdminNavItem {
-  key: "overview" | "statistics" | "users" | "badges" | "auditLog";
+  key: "overview" | "statistics" | "users" | "badges" | "auditLog" | "system";
   href: string;
   icon: LucideIcon;
   /** Lowest role that sees the entry, as on the backend route it calls. */
@@ -29,6 +30,7 @@ const ADMIN_NAV: readonly AdminNavItem[] = [
   { key: "users", href: adminRoutes.users, icon: UsersIcon, minimum: AdminRole.Support },
   { key: "badges", href: adminRoutes.badges, icon: AwardIcon, minimum: AdminRole.Support },
   { key: "auditLog", href: adminRoutes.auditLog, icon: LogsIcon, minimum: AdminRole.Admin },
+  { key: "system", href: adminRoutes.system, icon: WrenchIcon, minimum: AdminRole.Support },
 ];
 
 /** Entries of the back-office navigation the roles grant. */

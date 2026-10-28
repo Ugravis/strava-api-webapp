@@ -25,6 +25,7 @@ import { HealthController } from './health/health.controller';
 import { NotificationsModule } from './notifications/notifications.module';
 import { StationsModule } from './stations/stations.module';
 import { StravaModule } from './strava/strava.module';
+import { SystemModule } from './system/system.module';
 import { TilesModule } from './tiles/tiles.module';
 import { UsersModule } from './users/users.module';
 
@@ -60,6 +61,7 @@ import { UsersModule } from './users/users.module';
     StationsModule,
     FollowsModule,
     NotificationsModule,
+    SystemModule,
     AdminModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.

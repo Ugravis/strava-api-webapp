@@ -269,7 +269,8 @@
     "PRIVATE_PROFILE": "Ce profil est privé.",
     "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
     "PROFILE_BADGES_FULL": "Vous avez déjà épinglé 5 badges.",
-    "CANNOT_LIKE_SELF": "Vous ne pouvez pas aimer votre propre profil."
+    "CANNOT_LIKE_SELF": "Vous ne pouvez pas aimer votre propre profil.",
+    "SIGNUPS_DISABLED": "Les inscriptions sont fermées pour le moment."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -294,7 +295,9 @@
       "description": "Créez votre compte en quelques secondes.",
       "submit": "Créer mon compte",
       "hasAccount": "Déjà un compte ?",
-      "loginLink": "Connectez-vous"
+      "loginLink": "Connectez-vous",
+      "closedTitle": "Inscriptions fermées",
+      "closed": "Les inscriptions sont fermées pour le moment. Revenez un peu plus tard !"
     },
     "googleSignup": {
       "title": "Finalisez votre inscription",
@@ -1231,5 +1234,16 @@
     "rights": "Tous droits réservés.",
     "compatible": "Compatible avec Strava",
     "stravaNotice": "Kilotrace n’est ni affilié ni approuvé par Strava. Strava est une marque de Strava, Inc."
+  },
+  "maintenance": {
+    "titles": {
+      "scheduled": "Maintenance programmée",
+      "ongoing": "Maintenance en cours",
+      "degraded": "Service perturbé",
+      "strava": "Synchronisation Strava perturbée"
+    },
+    "more": "Voir plus",
+    "less": "Voir moins",
+    "close": "Masquer le bandeau"
   }
 }

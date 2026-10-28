@@ -3,6 +3,7 @@ import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import { MailService } from '../mail/mail.service';
 import { StravaConnectionService } from '../strava/strava-connection.service';
+import { SystemSettingsService } from '../system/system-settings.service';
 import { MapPreviewService } from '../tiles/map-preview.service';
 import { AvatarsService } from '../users/avatars.service';
 import type { ChangePasswordDto } from '../users/dto/change-password.dto';
@@ -42,6 +43,7 @@ export class AuthService {
     private readonly avatars: AvatarsService,
     private readonly strava: StravaConnectionService,
     private readonly mapPreview: MapPreviewService,
+    private readonly system: SystemSettingsService,
     @Inject(authConfig.KEY) private readonly config: AuthConfig,
   ) {}
 
@@ -49,6 +51,7 @@ export class AuthService {
     dto: RegisterDto,
     metadata: SessionMetadata,
   ): Promise<AuthResult> {
+    await this.system.assertSignupsEnabled();
     if (await this.users.findByEmail(dto.email)) {
       throw ApiErrors.conflict(
         ApiErrorCode.EmailTaken,

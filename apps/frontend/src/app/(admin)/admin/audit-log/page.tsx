@@ -4,7 +4,6 @@ import {
   AUDIT_VISIBILITIES,
   type AdminPage,
   type AuditLogEntry,
-  type AuditUser,
   hasAdminRole,
 } from "@kilotrace/shared/admin";
 import { ArrowRightIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react";
@@ -13,11 +12,10 @@ import type { ReactNode } from "react";
 import { ActionForm } from "@/components/admin/action-form";
 import { DialogRow } from "@/components/admin/dialog-row";
 import { SortHeader } from "@/components/admin/list-navigation";
-import { PanelLink } from "@/components/admin/panel-link";
 import { Pagination } from "@/components/admin/pagination";
 import { SubmitButton } from "@/components/admin/submit-button";
+import { UserLink } from "@/components/admin/user-link";
 import { Badge } from "@/components/ui/badge";
-import { UserAvatar } from "@/components/user/user-avatar";
 import { requireAdminRole } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { formatDateTime } from "@/lib/admin/format";
@@ -29,7 +27,6 @@ import { setEntryHidden } from "./actions";
 import { AUDIT_DOMAINS } from "./domains";
 
 const UUID = /^[0-9a-f-]{36}$/i;
-const PANEL_PREFIX = `${adminRoutes.users}/`;
 
 /**
  * A page of the logs. Append-only: the super-admins may only mask an entry
@@ -231,26 +228,6 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** A user of an entry, with their picture, opening their panel while the account exists. */
-function UserLink({ user, fallback, deleted }: { user: AuditUser | null; fallback: string; deleted: string }) {
-  if (!user) {
-    return <span className="text-muted-foreground">{fallback}</span>;
-  }
-  if (!user.username) {
-    return <span className="text-muted-foreground italic">{deleted}</span>;
-  }
-  return (
-    <PanelLink
-      href={adminRoutes.user(user.id)}
-      panelPrefix={PANEL_PREFIX}
-      className="inline-flex items-center gap-1.5 font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
-    >
-      <UserAvatar user={{ ...user, username: user.username }} className="size-5" fallbackClassName="text-[9px]" />
-      {user.displayName ?? `@${user.username}`}
-    </PanelLink>
-  );
-}
-
 function ActionName({ entry }: { entry: AuditLogEntry }) {
   const actions = getAdminTranslations("auditLog.actions");
   const key = entry.action as Parameters<typeof actions>[0];
@@ -262,7 +239,8 @@ function detailsOf(entry: AuditLogEntry): string[] {
   const t = getAdminTranslations("auditLog.details");
   const fields = getAdminTranslations("user.moderatedFields");
   const kinds = getAdminTranslations("user.distinctions");
-  const { until, fields: reset, kind, name, active } = entry.details ?? {};
+  const titles = getAdminTranslations("system.maintenance.titles");
+  const { until, fields: reset, kind, name, active, title, description, enabled } = entry.details ?? {};
   return [
     typeof until === "string" && t("until", { date: formatDateTime(until) }),
     Array.isArray(reset) &&
@@ -272,6 +250,9 @@ function detailsOf(entry: AuditLogEntry): string[] {
     typeof kind === "string" && t("kind", { kind: kinds.has(kind as never) ? kinds(kind as never) : kind }),
     typeof name === "string" && t("name", { name }),
     typeof active === "boolean" && t("active", { active: String(active) }),
+    typeof title === "string" && t("title", { title: titles.has(title as never) ? titles(title as never) : title }),
+    typeof description === "string" && t("description", { description }),
+    typeof enabled === "boolean" && t("signups", { enabled: String(enabled) }),
   ].filter((line): line is string => Boolean(line));
 }
 

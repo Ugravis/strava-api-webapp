@@ -36,6 +36,7 @@ export type BadgeView = Omit<
   | 'target'
   | 'backgroundColor'
   | 'backgroundImage'
+  | 'active'
 > &
   BadgeProgress & {
     /** Background of the card; null for the default one. */
@@ -119,7 +120,10 @@ export class DistancesService {
   async overview(userId: string): Promise<DistancesOverview> {
     const [badges, themes, favorites, onProfile, timelines] = await Promise.all(
       [
-        this.badges.find({ order: { position: 'ASC', id: 'ASC' } }),
+        this.badges.find({
+          where: { active: true },
+          order: { position: 'ASC', id: 'ASC' },
+        }),
         this.themes.find({ order: { position: 'ASC', id: 'ASC' } }),
         this.favoritePositions(userId),
         this.profileBadgeIds(userId),
@@ -214,7 +218,7 @@ export class DistancesService {
   /** Badges the user shows on their profile, in the order they were added. */
   async shownOnProfile(userId: string): Promise<ProfileBadge[]> {
     const shown = await this.profileBadges.find({
-      where: { userId },
+      where: { userId, badge: { active: true } },
       relations: { badge: true },
       order: { addedAt: 'ASC' },
       take: PROFILE_BADGES_MAX,
@@ -295,7 +299,7 @@ export class DistancesService {
   }
 
   private async findBadge(id: string): Promise<Badge> {
-    const badge = await this.badges.findOneBy({ id });
+    const badge = await this.badges.findOneBy({ id, active: true });
     if (!badge) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such badge');
     }
@@ -306,7 +310,8 @@ export class DistancesService {
   /** Badges shown on the profile of the user. */
   private async profileBadgeIds(userId: string): Promise<Set<string>> {
     const badges = await this.profileBadges.find({
-      where: { userId },
+      where: { userId, badge: { active: true } },
+      relations: { badge: true },
       select: { badgeId: true },
     });
     return new Set(badges.map(({ badgeId }) => badgeId));
@@ -316,7 +321,8 @@ export class DistancesService {
     userId: string,
   ): Promise<Map<string, number>> {
     const favorites = await this.favorites.find({
-      where: { userId },
+      where: { userId, badge: { active: true } },
+      relations: { badge: true },
       order: { position: 'ASC', addedAt: 'ASC' },
     });
     return new Map(

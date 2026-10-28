@@ -30,8 +30,8 @@ export interface AdminDevResponse {
   pending: AdminMigration[];
 }
 
-/** Number of commits of `main` listed by the dev page. */
-export const ADMIN_COMMITS_COUNT = 30;
+/** Commits of `main` per page of the commits page. */
+export const ADMIN_COMMITS_PER_PAGE = 30;
 
 /** A commit of `main`, as GitHub reports it. */
 export interface AdminCommit {
@@ -44,22 +44,26 @@ export interface AdminCommit {
   author: string;
   date: string;
   url: string;
-  /** Has several parents: a pull request or a branch merged into `main`. */
+  /** Has several parents: a pull request or a branch merged. */
   merge: boolean;
+  /**
+   * A merge made on `main` itself (on its first-parent line), rather than
+   * one brought by a merged branch, e.g. a feature merged into `develop`.
+   */
+  mainMerge: boolean;
 }
 
-/** `GET /api/admin/dev/commits`: latest commits of `main`, the latest first. */
+/** `GET /api/admin/dev/commits?page=`: commits of `main`, the latest first. */
 export type AdminCommitsResponse =
   | {
       status: "ok";
       repository: string;
       commits: AdminCommit[];
-      /**
-       * Commits newer than the deployed one, null when the deployed commit is
-       * unknown or older than the listed ones.
-       */
-      undeployed: number | null;
+      page: number;
+      pages: number;
       deployed: string | null;
+      /** Commits of `main` the deployed one lacks, null when unknown. */
+      undeployed: number | null;
     }
   /** `GITHUB_REPOSITORY` is not set. */
   | { status: "unconfigured" }

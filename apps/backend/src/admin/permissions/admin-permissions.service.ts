@@ -45,7 +45,7 @@ export class AdminPermissionsService {
     return (await this.permissionsOf(roles)).includes(permission);
   }
 
-  /** Replaces the whole table, refused when a permission lacks what it requires. */
+  /** Replaces the whole table, refused with a permission kept for the super-admins. */
   async setGrants(grants: AdminRoleGrants): Promise<void> {
     for (const role of EDITABLE_ADMIN_ROLES) {
       const invalid = invalidGrant(grants[role]);

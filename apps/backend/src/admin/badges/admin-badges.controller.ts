@@ -11,7 +11,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Permission } from '../access/permission.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import {
   CreateBadgeDto,
@@ -32,7 +32,7 @@ export class AdminBadgesController {
   constructor(private readonly badges: AdminBadgesService) {}
 
   @Get()
-  @Permission('badges.view')
+  @AnyMember()
   catalog(): Promise<AdminBadgeCatalog> {
     return this.badges.catalog();
   }

@@ -11,8 +11,8 @@ describe('AdminPermissionsService', () => {
   beforeEach(() => {
     rows = {
       find: jest.fn().mockResolvedValue([
-        { role: 'support', permission: 'users.view' },
-        { role: 'admin', permission: 'users.view' },
+        { role: 'support', permission: 'users.sessions' },
+        { role: 'admin', permission: 'users.sessions' },
         { role: 'admin', permission: 'users.suspend' },
         { role: 'admin', permission: 'gone.from.catalog' },
       ]),
@@ -35,8 +35,8 @@ describe('AdminPermissionsService', () => {
 
   it('grants the stored permissions, ignoring those left out of the catalog', async () => {
     expect(await service.permissionsOf(['admin'])).toEqual([
-      'users.view',
       'users.suspend',
+      'users.sessions',
     ]);
     expect(await service.can(['support'], 'users.suspend')).toBe(false);
   });
@@ -56,23 +56,19 @@ describe('AdminPermissionsService', () => {
   });
 
   it('replaces the whole table', async () => {
-    await service.setGrants({ support: [], admin: ['users.view'] });
+    await service.setGrants({ support: [], admin: ['users.suspend'] });
     expect(manager.execute).toHaveBeenCalled();
     expect(manager.insert).toHaveBeenCalledWith(expect.anything(), [
-      { role: 'admin', permission: 'users.view' },
+      { role: 'admin', permission: 'users.suspend' },
     ]);
-  });
-
-  it('refuses an action without the permission it requires', async () => {
-    await expect(
-      service.setGrants({ support: ['users.suspend'], admin: [] }),
-    ).rejects.toMatchObject({ response: { code: 'INVALID_PERMISSIONS' } });
-    expect(manager.insert).not.toHaveBeenCalled();
   });
 
   it('refuses a permission kept for the super-admins', async () => {
     await expect(
-      service.setGrants({ support: [], admin: ['team.view', 'team.manage'] }),
+      service.setGrants({
+        support: [],
+        admin: ['users.suspend', 'team.manage'],
+      }),
     ).rejects.toMatchObject({ response: { code: 'INVALID_PERMISSIONS' } });
   });
 });

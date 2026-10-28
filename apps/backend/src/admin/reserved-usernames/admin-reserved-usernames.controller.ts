@@ -11,7 +11,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Permission } from '../access/permission.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import { ReserveUsernameDto } from './admin-reserved-usernames.dto';
 import { AdminReservedUsernamesService } from './admin-reserved-usernames.service';
@@ -22,7 +22,7 @@ export class AdminReservedUsernamesController {
   constructor(private readonly reserved: AdminReservedUsernamesService) {}
 
   @Get()
-  @Permission('usernames.view')
+  @AnyMember()
   list(): Promise<AdminReservedUsername[]> {
     return this.reserved.list();
   }

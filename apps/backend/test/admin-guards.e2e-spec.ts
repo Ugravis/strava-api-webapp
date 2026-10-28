@@ -26,7 +26,10 @@ import {
   AdminController,
 } from '../src/admin/access/admin-controller.decorator';
 import { AdminRolesGuard } from '../src/admin/access/admin-roles.guard';
-import { Permission } from '../src/admin/access/permission.decorator';
+import {
+  AnyMember,
+  Permission,
+} from '../src/admin/access/permission.decorator';
 import { AdminPermissionsService } from '../src/admin/permissions/admin-permissions.service';
 import { AdminMeController } from '../src/admin/admin-me.controller';
 import { ADMIN_ROUTES } from '../src/admin/admin.module';
@@ -47,7 +50,7 @@ import type { User } from '../src/users/user.entity';
 @AdminController('probe')
 class ProbeController {
   @Get('support')
-  @Permission('statistics.view')
+  @AnyMember()
   support(): string {
     return 'support';
   }
@@ -70,13 +73,13 @@ class ProbeController {
   }
 
   @Get('throttled')
-  @Permission('statistics.view')
+  @AnyMember()
   throttled(): string {
     return 'throttled';
   }
 
   @Post('unaudited')
-  @Permission('statistics.view')
+  @AnyMember()
   unaudited(): string {
     return 'unaudited';
   }
@@ -111,7 +114,7 @@ class ProbeController {
   }
 
   @Post('failing')
-  @Permission('statistics.view')
+  @AnyMember()
   @Audited({ action: 'things.fail' })
   failing(): never {
     throw ApiErrors.conflict(ApiErrorCode.NotFound, 'Failed on purpose');
@@ -122,7 +125,7 @@ class ProbeController {
 @Controller('admin/rogue')
 class RogueController {
   @Get()
-  @Permission('statistics.view')
+  @AnyMember()
   rogue(): string {
     return 'rogue';
   }

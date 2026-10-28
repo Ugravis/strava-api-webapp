@@ -16,7 +16,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Permission } from '../access/permission.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import { SetTeamRoleDto, TeamCandidatesQueryDto } from './admin-team.dto';
 import { AdminTeamService } from './admin-team.service';
@@ -32,7 +32,7 @@ export class AdminTeamController {
   constructor(private readonly team: AdminTeamService) {}
 
   @Get()
-  @Permission('team.view')
+  @AnyMember()
   members(): Promise<AdminTeamMember[]> {
     return this.team.members();
   }

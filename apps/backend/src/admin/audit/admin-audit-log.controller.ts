@@ -12,7 +12,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Permission } from '../access/permission.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { AdminPermissionsService } from '../permissions/admin-permissions.service';
 import { AdminAuditLogService } from './admin-audit-log.service';
 import { AuditLogQueryDto } from './audit-log-query.dto';
@@ -26,7 +26,7 @@ export class AdminAuditLogController {
   ) {}
 
   @Get()
-  @Permission('audit.view')
+  @AnyMember()
   async page(
     @CurrentUser() user: User,
     @Query() query: AuditLogQueryDto,

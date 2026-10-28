@@ -18,7 +18,7 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Permission } from '../access/permission.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import {
   AdminUsersQueryDto,
@@ -40,7 +40,7 @@ export class AdminUsersController {
   constructor(private readonly users: AdminUsersService) {}
 
   @Get()
-  @Permission('users.view')
+  @AnyMember()
   page(
     @Query() query: AdminUsersQueryDto,
   ): Promise<AdminPage<AdminUserSummary>> {
@@ -48,7 +48,7 @@ export class AdminUsersController {
   }
 
   @Get(':id')
-  @Permission('users.view')
+  @AnyMember()
   detail(@Param('id', ParseUUIDPipe) id: string): Promise<AdminUserDetail> {
     return this.users.detail(id);
   }

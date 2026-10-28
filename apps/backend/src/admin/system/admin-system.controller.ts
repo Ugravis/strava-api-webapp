@@ -3,7 +3,7 @@ import type { AdminUploadsAudit } from '@kilotrace/shared/admin';
 import { Body, Delete, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { SystemSettingsService } from '../../system/system-settings.service';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Permission } from '../access/permission.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import { SetMaintenanceDto, SetSignupsDto } from './admin-system.dto';
 import { AdminUploadsService } from './admin-uploads.service';
@@ -17,7 +17,7 @@ export class AdminSystemController {
   ) {}
 
   @Get()
-  @Permission('system.view')
+  @AnyMember()
   status(): Promise<SystemStatusResponse> {
     return this.settings.status();
   }
@@ -50,7 +50,7 @@ export class AdminSystemController {
   }
 
   @Get('uploads')
-  @Permission('system.view')
+  @AnyMember()
   uploadsAudit(): Promise<AdminUploadsAudit> {
     return this.uploads.audit();
   }

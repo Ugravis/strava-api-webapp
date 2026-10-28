@@ -2,34 +2,18 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /** The grants of the former minimal roles, now set from the back office. */
 const INITIAL_GRANTS = {
-  support: [
-    'statistics.view',
-    'users.view',
-    'usernames.view',
-    'badges.view',
-    'system.view',
-    'team.view',
-    'dev.view',
-  ],
+  support: [],
   admin: [
-    'statistics.view',
-    'users.view',
     'users.suspend',
     'users.moderate',
     'users.distinctions',
     'users.sessions',
     'users.strava',
     'users.delete',
-    'usernames.view',
     'usernames.manage',
-    'badges.view',
     'badges.create',
     'badges.edit',
     'badges.delete',
-    'audit.view',
-    'system.view',
-    'team.view',
-    'dev.view',
   ],
 };
 

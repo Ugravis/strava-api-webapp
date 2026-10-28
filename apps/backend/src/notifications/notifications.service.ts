@@ -172,7 +172,10 @@ export class NotificationsService {
   /** Notifies a user of an action of the team, which stays anonymous. */
   async notifyFromTeam(
     userId: string,
-    type: Extract<NotificationType, 'moderation' | 'strava_unlinked'>,
+    type: Extract<
+      NotificationType,
+      'moderation' | 'strava_unlinked' | 'role_changed'
+    >,
     details: NotificationDetails,
   ): Promise<void> {
     const notification = await this.notifications.save(

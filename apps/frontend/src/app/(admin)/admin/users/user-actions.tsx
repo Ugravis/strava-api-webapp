@@ -2,18 +2,21 @@ import "server-only";
 import {
   ADMIN_REASON_MAX_LENGTH,
   ADMIN_REASON_MIN_LENGTH,
+  type AdminPermission,
   type AdminUserSummary,
   MODERATABLE_FIELDS,
 } from "@kilotrace/shared/admin";
 import { BanIcon, EraserIcon, LogOutIcon, ShieldCheckIcon, Trash2Icon, UnlinkIcon } from "lucide-react";
 import { ActionDialog, type ActionDialogProps } from "@/components/admin/action-dialog";
 import { getAdminTranslations } from "@/lib/admin/messages";
+import type { UserActionPermission } from "@/lib/admin/permissions";
 import { deleteUser, liftSuspension, moderateUser, revokeSessions, suspendUser, unlinkStrava } from "./actions";
 
 type PresetKey = "moderate" | "suspend" | "revokeSessions" | "unlinkStrava" | "delete";
 
-/** The actions on an account, on a single row, each confirmed in a dialog. */
-export function UserActions({ user }: { user: AdminUserSummary }) {
+/** The actions on an account the permissions grant, on a single row, each confirmed in a dialog. */
+export function UserActions({ user, permissions }: { user: AdminUserSummary; permissions: readonly AdminPermission[] }) {
+  const can = (permission: UserActionPermission) => permissions.includes(permission);
   const t = getAdminTranslations("user.actions");
   const common = getAdminTranslations("common");
   const fields = getAdminTranslations("user.moderatedFields");
@@ -32,6 +35,7 @@ export function UserActions({ user }: { user: AdminUserSummary }) {
 
   return (
     <div className="flex flex-wrap gap-1.5">
+      {can("users.moderate") && (
       <ActionDialog
         {...shared}
         action={moderateUser.bind(null, user.id)}
@@ -46,7 +50,8 @@ export function UserActions({ user }: { user: AdminUserSummary }) {
         }}
         reason={reason("moderate")}
       />
-      {user.suspension ? (
+      )}
+      {can("users.suspend") && (user.suspension ? (
         <ActionDialog
           {...shared}
           action={liftSuspension.bind(null, user.id)}
@@ -75,7 +80,8 @@ export function UserActions({ user }: { user: AdminUserSummary }) {
           }}
           reason={reason("suspend")}
         />
-      )}
+      ))}
+      {can("users.sessions") && (
       <ActionDialog
         {...shared}
         action={revokeSessions.bind(null, user.id)}
@@ -85,7 +91,8 @@ export function UserActions({ user }: { user: AdminUserSummary }) {
         submitLabel={t("revokeSessions.submit")}
         reason={reason("revokeSessions", false)}
       />
-      {user.stravaConnected && (
+      )}
+      {can("users.strava") && user.stravaConnected && (
         <ActionDialog
           {...shared}
           action={unlinkStrava.bind(null, user.id)}
@@ -97,6 +104,7 @@ export function UserActions({ user }: { user: AdminUserSummary }) {
           reason={reason("unlinkStrava")}
         />
       )}
+      {can("users.delete") && (
       <ActionDialog
           {...shared}
           action={deleteUser.bind(null, user.id)}
@@ -108,6 +116,7 @@ export function UserActions({ user }: { user: AdminUserSummary }) {
           reason={reason("delete")}
         confirmation={{ label: common("confirmation", { expected: user.username }), expected: user.username }}
       />
+      )}
     </div>
   );
 }

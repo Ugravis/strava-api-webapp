@@ -1,5 +1,5 @@
 import "server-only";
-import { type AdminRole, highestAdminRole } from "@kilotrace/shared/admin";
+import { type AdminPermission, type AdminRole, highestAdminRole } from "@kilotrace/shared/admin";
 import { GlobeIcon, ShieldIcon } from "lucide-react";
 import { NavLinks } from "@/components/app-shell/nav-links";
 import { NavSwitchLink } from "@/components/app-shell/nav-switch-link";
@@ -13,10 +13,10 @@ import { adminNavFor, adminRoutes } from "@/lib/admin/navigation";
  * gets generic components, labelled here from the admin messages.
  */
 
-/** Entries of the back office the roles grant. */
-export function AdminNavigation({ roles }: { roles: readonly AdminRole[] }) {
+/** Entries of the back office the permissions grant. */
+export function AdminNavigation({ permissions }: { permissions: readonly AdminPermission[] }) {
   const t = getAdminTranslations("nav");
-  const items = adminNavFor(roles).map(({ key, href, icon: Icon, exact }) => ({
+  const items = adminNavFor(permissions).map(({ key, href, icon: Icon, exact }) => ({
     href,
     label: t(key),
     icon: <Icon />,

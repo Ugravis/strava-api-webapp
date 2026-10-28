@@ -5,7 +5,7 @@ import { AdminNavigation, ToAppLink } from "@/components/admin/admin-sidebar";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { AppShellSkeleton } from "@/components/app-shell/app-shell-skeleton";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { requireAdminRole } from "@/lib/admin/access";
+import { getAdminPermissions, requireAdminRole } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 
@@ -31,10 +31,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
 async function AdminShell({ children }: { children: React.ReactNode }) {
   const roles = await requireAdminRole(AdminRole.Support);
+  const permissions = await getAdminPermissions();
 
   return (
     <AppShell
-      navigation={<AdminNavigation roles={roles} />}
+      navigation={<AdminNavigation permissions={permissions} />}
       switchLink={<ToAppLink roles={roles} />}
       homeHref={adminRoutes.overview}
     >

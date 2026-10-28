@@ -173,17 +173,25 @@ export function ThemeFormDialog({ theme }: { theme?: AdminBadgeTheme }) {
   );
 }
 
-/** A collection: its name, its badges, and its actions for the admins. */
-export function ThemeRow({ theme, count, canEdit }: { theme: AdminBadgeTheme; count: number; canEdit: boolean }) {
+/** What the permissions of the current member allow on the catalog. */
+export interface BadgeRights {
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+}
+
+/** A collection: its name, its badges, and the actions the permissions grant. */
+export function ThemeRow({ theme, count, rights }: { theme: AdminBadgeTheme; count: number; rights: BadgeRights }) {
   const t = getAdminTranslations("badges.themes");
   return (
     <div className="flex min-h-9 items-center gap-2 py-0.5">
       <span className="truncate text-sm font-medium">{theme.name}</span>
       <code className="truncate text-xs text-muted-foreground">{theme.id}</code>
       <span className="ml-auto shrink-0 text-xs text-muted-foreground">{t("badges", { count })}</span>
-      {canEdit && (
+      {(rights.edit || rights.delete) && (
         <span className="flex shrink-0 items-center gap-1">
-          <ThemeFormDialog theme={theme} />
+          {rights.edit && <ThemeFormDialog theme={theme} />}
+          {rights.delete && (
           <ActionDialog
             action={deleteTheme.bind(null, theme.id)}
             trigger={{ label: t("delete.short"), icon: <Trash2Icon />, iconOnly: true }}
@@ -194,14 +202,15 @@ export function ThemeRow({ theme, count, canEdit }: { theme: AdminBadgeTheme; co
             destructive
             reason={reasonFor(t.raw("delete.presets") as string[])}
           />
+          )}
         </span>
       )}
     </div>
   );
 }
 
-/** A badge: its look, what it counts, how many users picked it, and its actions for the admins. */
-export function BadgeRow({ badge, themes, canEdit }: { badge: AdminBadge; themes: AdminBadgeTheme[]; canEdit: boolean }) {
+/** A badge: its look, what it counts, how many users picked it, and the actions the permissions grant. */
+export function BadgeRow({ badge, themes, rights }: { badge: AdminBadge; themes: AdminBadgeTheme[]; rights: BadgeRights }) {
   const t = getAdminTranslations("badges");
   const common = getAdminTranslations("common");
   const unit = t(`units.${badge.metric}`);
@@ -237,8 +246,10 @@ export function BadgeRow({ badge, themes, canEdit }: { badge: AdminBadge; themes
           {t("profiles", { count: badge.profilesCount })} <UserRoundIcon className="size-3" aria-hidden />
         </span>
       </span>
-      {canEdit && (
+      {(rights.edit || rights.delete) && (
         <span className="flex shrink-0 items-center gap-1">
+          {rights.edit && (
+          <>
           <ActionForm action={setBadgeActive.bind(null, badge.id, !badge.active)}>
             <SubmitButton
               size="icon-sm"
@@ -250,6 +261,9 @@ export function BadgeRow({ badge, themes, canEdit }: { badge: AdminBadge; themes
             </SubmitButton>
           </ActionForm>
           <BadgeFormDialog badge={badge} themes={themes} />
+          </>
+          )}
+          {rights.delete && (
           <ActionDialog
             action={deleteBadge.bind(null, badge.id)}
             trigger={{ label: t("delete.short"), icon: <Trash2Icon />, iconOnly: true }}
@@ -261,6 +275,7 @@ export function BadgeRow({ badge, themes, canEdit }: { badge: AdminBadge; themes
             reason={reasonFor(t.raw("delete.presets") as string[])}
             confirmation={{ label: common("confirmation", { expected: badge.id }), expected: badge.id }}
           />
+          )}
         </span>
       )}
     </div>

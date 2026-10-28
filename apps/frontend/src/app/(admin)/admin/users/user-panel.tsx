@@ -2,6 +2,7 @@ import "server-only";
 import {
   ADMIN_DISTINCTION_KINDS,
   type AdminPage,
+  type AdminPermission,
   type AdminUserDetail,
   type AuditLogEntry,
 } from "@kilotrace/shared/admin";
@@ -36,7 +37,7 @@ export async function UserPanel({ id }: { id: string }) {
   }
   const user = result.data;
   const refusal = actRefusal(me, user);
-  const isAdmin = refusal !== "readOnly";
+  const can = (permission: AdminPermission) => me.permissions.includes(permission);
   const never = getAdminTranslations("common")("never");
 
   return (
@@ -56,7 +57,7 @@ export async function UserPanel({ id }: { id: string }) {
       </header>
 
       <Section title={t("sections.actions")}>
-        {refusal ? <p className="text-sm text-muted-foreground">{t(refusal)}</p> : <UserActions user={user} />}
+        {refusal ? <p className="text-sm text-muted-foreground">{t(refusal)}</p> : <UserActions user={user} permissions={me.permissions} />}
       </Section>
 
       {user.suspension && (
@@ -140,7 +141,7 @@ export async function UserPanel({ id }: { id: string }) {
                     </span>
                   )}
                 </span>
-                {isAdmin && (
+                {can("users.distinctions") && (
                   <ActionForm action={setDistinction.bind(null, user.id, kind, !distinction)}>
                     <SubmitButton size="xs" variant={distinction ? "outline" : "secondary"}>
                       {t(distinction ? "distinctions.revoke" : "distinctions.grant")}
@@ -153,7 +154,7 @@ export async function UserPanel({ id }: { id: string }) {
         </ul>
       </Section>
 
-      {isAdmin && <UserHistory id={user.id} />}
+      {can("audit.view") && <UserHistory id={user.id} />}
     </div>
   );
 }

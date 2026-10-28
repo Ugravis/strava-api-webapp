@@ -1,20 +1,24 @@
-import { type AdminBadge, type AdminBadgeCatalog, AdminRole, hasAdminRole } from "@kilotrace/shared/admin";
+import type { AdminBadge, AdminBadgeCatalog } from "@kilotrace/shared/admin";
 import { SortableList } from "@/components/admin/sortable-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdminRole } from "@/lib/admin/access";
+import { requireAdminPermission } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { reorderBadges, reorderThemes } from "./actions";
-import { BadgeFormDialog, BadgeRow, ThemeFormDialog, ThemeRow } from "./badge-bits";
+import { BadgeFormDialog, type BadgeRights, BadgeRow, ThemeFormDialog, ThemeRow } from "./badge-bits";
 
 /**
- * The catalog of badges, by collection: support reads, admins edit, toggle
- * and reorder by drag and drop.
+ * The catalog of badges, by collection: creating, editing (toggling and
+ * reordering by drag and drop included) and deleting each need their permission.
  */
 export default async function AdminBadgesPage() {
-  const roles = await requireAdminRole(AdminRole.Support);
-  const canEdit = hasAdminRole(roles, AdminRole.Admin);
+  const permissions = await requireAdminPermission("badges.view");
+  const rights: BadgeRights = {
+    create: permissions.includes("badges.create"),
+    edit: permissions.includes("badges.edit"),
+    delete: permissions.includes("badges.delete"),
+  };
   const t = getAdminTranslations("badges");
   const result = await adminApi<AdminBadgeCatalog>("/badges");
   const { themes, badges } = result.ok ? result.data : { themes: [], badges: [] };
@@ -31,7 +35,7 @@ export default async function AdminBadgesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageHeader title={t("title")} description={t("description")} />
-        {canEdit && <BadgeFormDialog themes={themes} />}
+        {rights.create && <BadgeFormDialog themes={themes} />}
       </div>
 
       <Card size="sm">
@@ -42,26 +46,26 @@ export default async function AdminBadgesPage() {
         <CardContent className="flex flex-col gap-2">
           {themes.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("themes.empty")}</p>
-          ) : canEdit ? (
+          ) : rights.edit ? (
             <SortableList
               action={reorderThemes}
               handleLabel={handleLabel}
               className="divide-y"
               items={themes.map((theme) => ({
                 id: theme.id,
-                content: <ThemeRow theme={theme} count={inTheme(theme.id).length} canEdit />,
+                content: <ThemeRow theme={theme} count={inTheme(theme.id).length} rights={rights} />,
               }))}
             />
           ) : (
             <ul className="divide-y">
               {themes.map((theme) => (
                 <li key={theme.id}>
-                  <ThemeRow theme={theme} count={inTheme(theme.id).length} canEdit={false} />
+                  <ThemeRow theme={theme} count={inTheme(theme.id).length} rights={rights} />
                 </li>
               ))}
             </ul>
           )}
-          {canEdit && (
+          {rights.create && (
             <div>
               <ThemeFormDialog />
             </div>
@@ -84,7 +88,7 @@ export default async function AdminBadgesPage() {
             {group.badges.length === 0 ? (
               <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">{t("emptyTheme")}</p>
             ) : (
-              <BadgeList badges={group.badges} canEdit={canEdit} themes={themes} handleLabel={handleLabel} />
+              <BadgeList badges={group.badges} rights={rights} themes={themes} handleLabel={handleLabel} />
             )}
           </section>
         ))}
@@ -94,21 +98,21 @@ export default async function AdminBadgesPage() {
 
 function BadgeList({
   badges,
-  canEdit,
+  rights,
   themes,
   handleLabel,
 }: {
   badges: AdminBadge[];
-  canEdit: boolean;
+  rights: BadgeRights;
   themes: AdminBadgeCatalog["themes"];
   handleLabel: string;
 }) {
-  if (!canEdit) {
+  if (!rights.edit) {
     return (
       <ul className="flex flex-col gap-1.5">
         {badges.map((badge) => (
           <li key={badge.id}>
-            <BadgeRow badge={badge} themes={themes} canEdit={false} />
+            <BadgeRow badge={badge} themes={themes} rights={rights} />
           </li>
         ))}
       </ul>
@@ -119,7 +123,7 @@ function BadgeList({
       action={reorderBadges}
       handleLabel={handleLabel}
       className="flex flex-col gap-1.5"
-      items={badges.map((badge) => ({ id: badge.id, content: <BadgeRow badge={badge} themes={themes} canEdit /> }))}
+      items={badges.map((badge) => ({ id: badge.id, content: <BadgeRow badge={badge} themes={themes} rights={rights} /> }))}
     />
   );
 }

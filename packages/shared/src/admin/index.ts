@@ -5,6 +5,7 @@
 export * from "./audit";
 export * from "./badges";
 export * from "./me";
+export * from "./reserved-usernames";
 export * from "./roles";
 export * from "./statistics";
 export * from "./system";

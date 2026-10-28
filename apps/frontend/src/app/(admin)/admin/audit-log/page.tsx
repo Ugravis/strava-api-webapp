@@ -240,7 +240,8 @@ function detailsOf(entry: AuditLogEntry): string[] {
   const fields = getAdminTranslations("user.moderatedFields");
   const kinds = getAdminTranslations("user.distinctions");
   const titles = getAdminTranslations("system.maintenance.titles");
-  const { until, fields: reset, kind, name, active, title, description, enabled } = entry.details ?? {};
+  const categories = getAdminTranslations("users.reserved.categories");
+  const { until, fields: reset, kind, name, active, title, description, enabled, username, category } = entry.details ?? {};
   return [
     typeof until === "string" && t("until", { date: formatDateTime(until) }),
     Array.isArray(reset) &&
@@ -253,6 +254,9 @@ function detailsOf(entry: AuditLogEntry): string[] {
     typeof title === "string" && t("title", { title: titles.has(title as never) ? titles(title as never) : title }),
     typeof description === "string" && t("description", { description }),
     typeof enabled === "boolean" && t("signups", { enabled: String(enabled) }),
+    typeof username === "string" && t("username", { username }),
+    typeof category === "string" &&
+      t("category", { category: categories.has(category as never) ? categories(category as never) : category }),
   ].filter((line): line is string => Boolean(line));
 }
 

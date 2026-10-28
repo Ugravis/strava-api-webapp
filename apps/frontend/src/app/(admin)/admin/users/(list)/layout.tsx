@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
+import { ReservedUsernames, ReservedUsernamesSkeleton } from "../reserved-usernames";
 
 /**
  * Header and filters of the users, kept across the pages of results: only
@@ -18,6 +19,9 @@ export default function AdminUsersLayout({ children }: { children: React.ReactNo
   return (
     <ListNavigationProvider>
       <PageHeader title={t("title")} description={t("description")} />
+      <Suspense fallback={<ReservedUsernamesSkeleton />}>
+        <ReservedUsernames />
+      </Suspense>
       <ListToolbar
         basePath={adminRoutes.users}
         search={{ label: t("search") }}

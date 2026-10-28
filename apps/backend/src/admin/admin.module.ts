@@ -19,6 +19,7 @@ import { StorageModule } from '../storage/storage.module';
 import { StravaModule } from '../strava/strava.module';
 import { SystemModule } from '../system/system.module';
 import { UserDistinction } from '../users/user-distinction.entity';
+import { ReservedUsername } from '../users/reserved-username.entity';
 import { User } from '../users/user.entity';
 import { UsersModule } from '../users/users.module';
 import { AdminAccessMiddleware } from './access/admin-access.middleware';
@@ -34,6 +35,8 @@ import {
 } from './badges/admin-badges.controller';
 import { AdminBadgesService } from './badges/admin-badges.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
+import { AdminReservedUsernamesController } from './reserved-usernames/admin-reserved-usernames.controller';
+import { AdminReservedUsernamesService } from './reserved-usernames/admin-reserved-usernames.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
 import { AdminSystemController } from './system/admin-system.controller';
@@ -66,6 +69,7 @@ export const ADMIN_ROUTES = [
       OAuthAccount,
       Badge,
       BadgeTheme,
+      ReservedUsername,
     ]),
     AuthModule,
     UsersModule,
@@ -83,6 +87,7 @@ export const ADMIN_ROUTES = [
     AdminBadgeThemesController,
     AdminSystemController,
     AdminTeamController,
+    AdminReservedUsernamesController,
   ],
   providers: [
     AdminAuditLogService,
@@ -92,6 +97,7 @@ export const ADMIN_ROUTES = [
     AdminBadgesService,
     AdminUploadsService,
     AdminTeamService,
+    AdminReservedUsernamesService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

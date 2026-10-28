@@ -2,7 +2,7 @@ import type { AdminBadge, AdminBadgeCatalog } from "@kilotrace/shared/admin";
 import { SortableList } from "@/components/admin/sortable-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdminPermission } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { reorderBadges, reorderThemes } from "./actions";
@@ -13,7 +13,7 @@ import { BadgeFormDialog, type BadgeRights, BadgeRow, ThemeFormDialog, ThemeRow 
  * reordering by drag and drop included) and deleting each need their permission.
  */
 export default async function AdminBadgesPage() {
-  const permissions = await requireAdminPermission("badges.view");
+  const { permissions } = await requireAdminMember();
   const rights: BadgeRights = {
     create: permissions.includes("badges.create"),
     edit: permissions.includes("badges.edit"),

@@ -2,12 +2,14 @@ import {
   ADMIN_PERMISSION_CATEGORIES,
   ADMIN_PERMISSION_KEYS,
   ADMIN_ROLES,
+  type AdminPermissionCategory,
   type AdminPermissionsResponse,
   type AdminTeamMember,
   permissionDefinition,
 } from "@kilotrace/shared/admin";
+import { AtSignIcon, AwardIcon, KeyRoundIcon, LogsIcon, type LucideIcon, UsersIcon, WrenchIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { getAdminMe, requireAdminPermission } from "@/lib/admin/access";
+import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { savePermissions } from "./actions";
@@ -16,7 +18,7 @@ import { AddMemberDialog, RoleSummary, TeamTable } from "./team-bits";
 
 /** Members of the team, their roles, and what each role grants. */
 export default async function AdminTeamPage() {
-  const permissions = await requireAdminPermission("team.view");
+  const { permissions } = await requireAdminMember();
   const canEdit = permissions.includes("team.manage");
   const t = getAdminTranslations("team");
   const [me, result, grants] = await Promise.all([
@@ -78,22 +80,32 @@ export default async function AdminTeamPage() {
   );
 }
 
-/** The catalog, labelled here: the client component gets its texts only. */
+/** As in the navigation; the reserved usernames as on their section. */
+const CATEGORY_ICONS: Record<AdminPermissionCategory, LucideIcon> = {
+  users: UsersIcon,
+  usernames: AtSignIcon,
+  badges: AwardIcon,
+  audit: LogsIcon,
+  system: WrenchIcon,
+  team: KeyRoundIcon,
+};
+
+/** The catalog, labelled here: the client component gets its texts and icons only. */
 function matrixCategories(): MatrixCategory[] {
   const categories = getAdminTranslations("team.permissions.categories");
   const labels = getAdminTranslations("team.permissions.list");
-  return ADMIN_PERMISSION_CATEGORIES.map((category) => ({
-    key: category,
-    label: categories(category),
-    permissions: ADMIN_PERMISSION_KEYS.filter((key) => permissionDefinition(key).category === category).map((key) => {
-      const definition = permissionDefinition(key);
-      return {
+  return ADMIN_PERMISSION_CATEGORIES.map((category) => {
+    const Icon = CATEGORY_ICONS[category];
+    return {
+      key: category,
+      label: categories(category),
+      icon: <Icon aria-hidden />,
+      permissions: ADMIN_PERMISSION_KEYS.filter((key) => permissionDefinition(key).category === category).map((key) => ({
         key,
         label: labels(`${key}.label`),
         description: labels(`${key}.description`),
-        requires: definition.requires ?? null,
-        locked: definition.locked ?? false,
-      };
-    }),
-  }));
+        locked: permissionDefinition(key).locked ?? false,
+      })),
+    };
+  });
 }

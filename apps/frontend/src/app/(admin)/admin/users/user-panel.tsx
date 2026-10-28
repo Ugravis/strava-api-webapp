@@ -154,7 +154,7 @@ export async function UserPanel({ id }: { id: string }) {
         </ul>
       </Section>
 
-      {can("audit.view") && <UserHistory id={user.id} />}
+      <UserHistory id={user.id} />
     </div>
   );
 }

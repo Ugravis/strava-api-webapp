@@ -30,15 +30,11 @@ const CATEGORY_COLORS: Record<ReservedUsernameCategory, string> = {
 
 /**
  * Usernames nobody can take, above the users: folded by default so that the
- * list stays in view. Hidden without the permission to read it.
+ * list stays in view. Every member reads, the permission adds and releases.
  */
 export async function ReservedUsernames() {
   const t = getAdminTranslations("users.reserved");
-  const permissions = await getAdminPermissions();
-  if (!permissions.includes("usernames.view")) {
-    return null;
-  }
-  const result = await adminApi<AdminReservedUsername[]>("/reserved-usernames");
+  const [permissions, result] = await Promise.all([getAdminPermissions(), adminApi<AdminReservedUsername[]>("/reserved-usernames")]);
   const canEdit = permissions.includes("usernames.manage");
 
   return (

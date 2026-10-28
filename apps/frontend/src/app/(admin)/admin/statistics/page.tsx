@@ -14,7 +14,7 @@ import { TimeSeriesChart } from "@/components/admin/statistics/time-series-chart
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { requireAdminPermission } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 
@@ -34,7 +34,7 @@ const FAMILY_COLORS = {
 } as const satisfies Record<keyof AdminStatisticsResponse["activities"]["synced"][number]["families"], SeriesColorName>;
 
 export default async function AdminStatisticsPage() {
-  await requireAdminPermission("statistics.view");
+  await requireAdminMember();
   const t = getAdminTranslations("statistics");
   const format = await getFormatter();
   const result = await adminApi<AdminStatisticsResponse>("/statistics");

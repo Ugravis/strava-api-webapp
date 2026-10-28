@@ -1,13 +1,13 @@
 import type { AdminDevResponse } from "@kilotrace/shared/admin";
 import { PageHeader } from "@/components/layout/page-header";
-import { requireAdminPermission } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { DeploymentCard, MigrationsSection, VersionsCard } from "./dev-bits";
 
 /** Technical overview of the running app: versions, commit and migrations. */
 export default async function AdminDevPage() {
-  await requireAdminPermission("dev.view");
+  await requireAdminMember();
   const t = getAdminTranslations("dev");
   const result = await adminApi<AdminDevResponse>("/dev");
 

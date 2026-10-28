@@ -34,13 +34,13 @@ export async function getAdminPermissions(): Promise<AdminPermission[]> {
 }
 
 /**
- * Permissions of the current user when they hold `required`; otherwise the
- * 404 of an unknown page, as for a missing role.
+ * The current member of the team, who sees every page of the back office;
+ * otherwise the 404 of an unknown page, as for a missing role.
  */
-export async function requireAdminPermission(required: AdminPermission): Promise<AdminPermission[]> {
-  const permissions = await getAdminPermissions();
-  if (!permissions.includes(required)) {
+export async function requireAdminMember(): Promise<AdminMeResponse> {
+  const me = await getAdminMe();
+  if (!me || me.roles.length === 0) {
     notFound();
   }
-  return permissions;
+  return me;
 }

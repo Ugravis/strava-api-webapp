@@ -1,7 +1,7 @@
 import type { SystemStatusResponse } from "@kilotrace/shared";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
-import { requireAdminPermission } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { MaintenanceCard, SignupsCard, UploadsAudit, UploadsSkeleton } from "./system-bits";
@@ -11,7 +11,7 @@ import { MaintenanceCard, SignupsCard, UploadsAudit, UploadsSkeleton } from "./s
  * behind its own permission.
  */
 export default async function AdminSystemPage() {
-  const permissions = await requireAdminPermission("system.view");
+  const { permissions } = await requireAdminMember();
   const can = (permission: "system.maintenance" | "system.signups" | "system.uploads") => permissions.includes(permission);
   const t = getAdminTranslations("system");
   const result = await adminApi<SystemStatusResponse>("/system");

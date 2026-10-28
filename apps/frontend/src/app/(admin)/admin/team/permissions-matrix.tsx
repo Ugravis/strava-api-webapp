@@ -1,7 +1,7 @@
 "use client";
 
 import { LockIcon } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,14 @@ export interface MatrixPermission {
   key: string;
   label: string;
   description: string;
-  requires: string | null;
   locked: boolean;
 }
 
 export interface MatrixCategory {
   key: string;
   label: string;
+  /** Icon of the section, as in the navigation. */
+  icon: ReactNode;
   permissions: MatrixPermission[];
 }
 
@@ -39,9 +40,8 @@ const cell = "px-3 py-2";
 const ROLES: readonly EditableRole[] = ["support", "admin"];
 
 /**
- * Permissions of each role, one row per action grouped by category. Granting
- * an action grants what it requires, withdrawing a permission withdraws what
- * requires it. Super-admins hold everything; the changes wait for Save.
+ * Permissions of each role, one row per action grouped by category.
+ * Super-admins hold everything; the changes wait for Save.
  */
 export function PermissionsMatrix({
   categories,
@@ -58,36 +58,13 @@ export function PermissionsMatrix({
 }) {
   const [grants, setGrants] = useState(initial);
   const [saving, startSaving] = useTransition();
-  const byKey = useMemo(
-    () => new Map(categories.flatMap((category) => category.permissions).map((permission) => [permission.key, permission])),
-    [categories],
-  );
   const dirty = ROLES.some((role) => !sameSet(grants[role], initial[role]));
 
   function toggle(role: EditableRole, key: string, checked: boolean) {
-    setGrants((previous) => {
-      const next = new Set(previous[role]);
-      if (checked) {
-        for (let current = byKey.get(key); current; current = current.requires ? byKey.get(current.requires) : undefined) {
-          next.add(current.key);
-        }
-      } else {
-        next.delete(key);
-        // Withdraws what required it, until nothing more depends on a missing permission.
-        let changed = true;
-        while (changed) {
-          changed = false;
-          for (const granted of next) {
-            const requires = byKey.get(granted)?.requires;
-            if (requires && !next.has(requires)) {
-              next.delete(granted);
-              changed = true;
-            }
-          }
-        }
-      }
-      return { ...previous, [role]: [...byKey.keys()].filter((permission) => next.has(permission)) };
-    });
+    setGrants((previous) => ({
+      ...previous,
+      [role]: checked ? [...previous[role], key] : previous[role].filter((permission) => permission !== key),
+    }));
   }
 
   function submit() {
@@ -117,7 +94,10 @@ export function PermissionsMatrix({
             <tbody key={category.key}>
               <tr className="border-t bg-muted/50">
                 <th colSpan={4} scope="colgroup" className={`${cell} text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground`}>
-                  {category.label}
+                  <span className="flex items-center gap-2 [&_svg]:size-3.5">
+                    {category.icon}
+                    {category.label}
+                  </span>
                 </th>
               </tr>
               {category.permissions.map((permission) => (

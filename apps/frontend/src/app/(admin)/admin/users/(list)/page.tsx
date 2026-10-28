@@ -8,7 +8,7 @@ import { SortHeader } from "@/components/admin/list-navigation";
 import { PanelLink } from "@/components/admin/panel-link";
 import { Pagination } from "@/components/admin/pagination";
 import { UserAvatar } from "@/components/user/user-avatar";
-import { requireAdminPermission } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -22,7 +22,7 @@ const PANEL_PREFIX = `${adminRoutes.users}/`;
 
 /** A page of the accounts, as cards or as a table; one opens in the panel above. */
 export default async function AdminUsersPage({ searchParams }: PageProps<"/admin/users">) {
-  await requireAdminPermission("users.view");
+  await requireAdminMember();
   const t = getAdminTranslations("users");
   const common = getAdminTranslations("common");
   const params = await searchParams;

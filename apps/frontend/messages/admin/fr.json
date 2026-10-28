@@ -705,8 +705,8 @@
       "actions": "Actions"
     },
     "roleHints": {
-      "support": "Les permissions cochées pour le support.",
-      "admin": "Les permissions cochées pour les admins.",
+      "support": "Voit tout le back-office, avec les actions cochées pour le support.",
+      "admin": "Voit tout le back-office, avec les actions cochées pour les admins.",
       "super-admin": "Toutes les permissions, y compris l'équipe."
     },
     "roleField": "Rôle",
@@ -734,36 +734,24 @@
     },
     "permissions": {
       "title": "Permissions des rôles",
-      "description": "Ce que chaque rôle peut voir et faire. Cocher une action coche aussi la lecture qu'elle demande ; décocher une lecture retire les actions qui en dépendent. Personne n'agit sur un compte de rang égal ou supérieur au sien.",
+      "description": "Ce que chaque rôle peut faire. Tous les membres de l'équipe voient toutes les pages ; seules les actions demandent une permission. Personne n'agit sur un compte de rang égal ou supérieur au sien.",
       "column": "Permission",
       "locked": "Réservé aux super-admins",
       "unsaved": "Modifications non enregistrées.",
       "save": "Enregistrer",
       "reset": "Annuler",
       "error": "Les permissions n'ont pas pu être chargées.",
-      "invalid": "Une permission demande une lecture non cochée ou est réservée aux super-admins.",
+      "invalid": "Une permission est réservée aux super-admins.",
       "categories": {
-        "statistics": "Statistiques",
         "users": "Utilisateurs",
         "usernames": "Pseudos réservés",
         "badges": "Badges",
         "audit": "Logs",
-        "system": "Système",
-        "team": "Équipe",
-        "dev": "Technique"
+        "system": "Maintenance",
+        "team": "Permissions"
       },
       "list": {
-        "statistics": {
-          "view": {
-            "label": "Voir les statistiques",
-            "description": "Les chiffres de l'application."
-          }
-        },
         "users": {
-          "view": {
-            "label": "Voir les utilisateurs",
-            "description": "La liste des comptes et leur fiche."
-          },
           "suspend": {
             "label": "Suspendre",
             "description": "Suspendre un compte ou lever sa suspension."
@@ -790,20 +778,12 @@
           }
         },
         "usernames": {
-          "view": {
-            "label": "Voir les pseudos réservés",
-            "description": "La liste des pseudos que personne ne peut prendre."
-          },
           "manage": {
             "label": "Gérer les pseudos réservés",
             "description": "Réserver ou libérer un pseudo."
           }
         },
         "badges": {
-          "view": {
-            "label": "Voir les badges",
-            "description": "Le catalogue des badges et des collections."
-          },
           "create": {
             "label": "Créer",
             "description": "Ajouter un badge ou une collection."
@@ -818,20 +798,12 @@
           }
         },
         "audit": {
-          "view": {
-            "label": "Voir les logs",
-            "description": "Le journal des actions de l'équipe, et l'historique d'un compte."
-          },
           "hide": {
             "label": "Masquer des entrées",
             "description": "Masquer ou réafficher une entrée, et voir les entrées masquées."
           }
         },
         "system": {
-          "view": {
-            "label": "Voir le système",
-            "description": "Les réglages du site et l'audit des fichiers."
-          },
           "maintenance": {
             "label": "Bannière de maintenance",
             "description": "Publier ou retirer la bannière."
@@ -846,10 +818,6 @@
           }
         },
         "team": {
-          "view": {
-            "label": "Voir l'équipe",
-            "description": "Les membres, leur rôle et ce tableau."
-          },
           "manage": {
             "label": "Gérer l'équipe",
             "description": "Ajouter, changer le rôle ou retirer un membre."
@@ -859,12 +827,6 @@
           "manage": {
             "label": "Gérer les permissions",
             "description": "Modifier ce tableau."
-          }
-        },
-        "dev": {
-          "view": {
-            "label": "Voir la technique",
-            "description": "La version déployée et les commits."
           }
         }
       }

@@ -5,7 +5,7 @@ import { ListNavigationProvider, ListResults } from "@/components/admin/list-nav
 import { ListToolbar } from "@/components/admin/list-toolbar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireAdminPermission } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
@@ -18,7 +18,7 @@ const VISIBILITY_ICONS = { all: <LayersIcon />, visible: <EyeIcon />, hidden: <E
  * the table changes, a skeleton showing while the next one loads.
  */
 export default async function AdminAuditLogLayout({ children }: { children: React.ReactNode }) {
-  const permissions = await requireAdminPermission("audit.view");
+  const { permissions } = await requireAdminMember();
   const t = getAdminTranslations("auditLog");
   const skeleton = <TableSkeleton />;
   return (

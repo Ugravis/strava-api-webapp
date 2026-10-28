@@ -22,6 +22,7 @@ import { NOTIFICATIONS_STREAM_URL, notificationsService } from "@/services/notif
 export function notificationHref({ type, actor }: AppNotification): string {
   if (type === "moderation") return routes.settingsProfile;
   if (type === "strava_unlinked") return routes.settings;
+  if (type === "role_changed") return routes.dashboard;
   return actor ? userProfileHref(actor.username) : routes.profiles;
 }
 

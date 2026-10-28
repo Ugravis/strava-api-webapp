@@ -12,7 +12,8 @@
     "users": "Utilisateurs",
     "badges": "Badges",
     "auditLog": "Logs",
-    "system": "Maintenance"
+    "system": "Maintenance",
+    "team": "Permissions"
   },
   "roles": {
     "support": "Support",
@@ -629,6 +630,50 @@
           "Nettoyage du stockage"
         ]
       }
+    }
+  },
+  "team": {
+    "title": "Permissions",
+    "description": "Les membres de l'équipe et leur rôle. Chaque rôle inclut les droits des rôles inférieurs.",
+    "readOnly": "Lecture seule : seuls les super-admins gèrent l'équipe.",
+    "error": "L'équipe n'a pas pu être chargée.",
+    "empty": "Personne dans l'équipe pour l'instant.",
+    "you": "Vous",
+    "count": "{count, plural, one {# membre} other {# membres}}",
+    "columns": {
+      "member": "Membre",
+      "role": "Rôle",
+      "email": "Email",
+      "lastSeenAt": "Dernière visite",
+      "actions": "Actions"
+    },
+    "roleHints": {
+      "support": "Consulte le back-office, sans aucune action.",
+      "admin": "Agit sur les comptes, les badges et les logs.",
+      "super-admin": "Tout, y compris la maintenance et l'équipe."
+    },
+    "roleField": "Rôle",
+    "roleHint": "Support : lecture seule. Admin : actions sur les comptes et les badges. Super-admin : tout, y compris l'équipe.",
+    "add": {
+      "trigger": "Ajouter un membre",
+      "title": "Ajouter un membre",
+      "description": "Le compte reçoit le rôle choisi et la distinction Équipe sur son profil, et en est notifié.",
+      "user": "Compte",
+      "placeholder": "Pseudo, nom ou email",
+      "empty": "Aucun compte hors de l'équipe ne correspond.",
+      "submit": "Ajouter"
+    },
+    "change": {
+      "trigger": "Changer le rôle",
+      "title": "Changer le rôle de {name}",
+      "description": "Le membre est notifié de son nouveau rôle.",
+      "submit": "Enregistrer"
+    },
+    "remove": {
+      "trigger": "Retirer de l'équipe",
+      "title": "Retirer {name} de l'équipe ?",
+      "description": "Le compte perd l'accès au back-office et la distinction Équipe. Il en est notifié.",
+      "submit": "Retirer"
     }
   }
 }

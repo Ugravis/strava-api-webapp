@@ -8,6 +8,7 @@ import {
 import { DataSource } from 'typeorm';
 import adminConfig, { type AdminConfig } from '../../config/admin.config';
 import { normalizeEmail } from '../../users/users.service';
+import { UserDistinction } from '../../users/user-distinction.entity';
 import { User } from '../../users/user.entity';
 import { AdminAuditLogService } from '../audit/admin-audit-log.service';
 
@@ -48,6 +49,13 @@ export class AdminBootstrapService implements OnApplicationBootstrap {
         return 'missing';
       }
       await users.update(user.id, { roles: [AdminRole.SuperAdmin] });
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(UserDistinction)
+        .values({ userId: user.id, kind: 'team' })
+        .orIgnore()
+        .execute();
       await this.audit.record(
         {
           actorId: null,

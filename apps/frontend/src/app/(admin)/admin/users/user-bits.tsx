@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * Small marks of an account, shared by the list and the panel.
  */
 
-const ROLE_COLORS: Record<AdminRole, string> = {
+export const ROLE_COLORS: Record<AdminRole, string> = {
   support: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
   admin: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
   "super-admin": "bg-violet-500/15 text-violet-700 dark:text-violet-300",

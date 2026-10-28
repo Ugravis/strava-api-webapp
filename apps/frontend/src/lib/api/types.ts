@@ -601,7 +601,11 @@ export type NotificationType =
   | "follow_accepted"
   | "profile_like"
   | "moderation"
-  | "strava_unlinked";
+  | "strava_unlinked"
+  | "role_changed";
+
+/** Back-office role told by a `role_changed` notification. */
+export type TeamRole = "support" | "admin" | "super-admin";
 
 /** Free fields of a profile the team may reset. */
 export type ModeratedField = "username" | "displayName" | "bio" | "city" | "avatar";
@@ -612,7 +616,7 @@ export interface AppNotification {
   /** Null for an anonymous kind (who liked a profile is never told) and for the team. */
   actor: PublicUser | null;
   /** Said by the team: the reason, and the fields reset by a moderation. */
-  details: { reason?: string; fields?: ModeratedField[] } | null;
+  details: { reason?: string; fields?: ModeratedField[]; role?: TeamRole | null } | null;
   read: boolean;
   createdAt: string;
   /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */

@@ -37,6 +37,8 @@ import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
 import { AdminSystemController } from './system/admin-system.controller';
+import { AdminTeamController } from './team/admin-team.controller';
+import { AdminTeamService } from './team/admin-team.service';
 import { AdminUploadsService } from './system/admin-uploads.service';
 import { AdminUsersController } from './users/admin-users.controller';
 import { AdminUsersService } from './users/admin-users.service';
@@ -80,6 +82,7 @@ export const ADMIN_ROUTES = [
     AdminBadgesController,
     AdminBadgeThemesController,
     AdminSystemController,
+    AdminTeamController,
   ],
   providers: [
     AdminAuditLogService,
@@ -88,6 +91,7 @@ export const ADMIN_ROUTES = [
     AdminStatisticsService,
     AdminBadgesService,
     AdminUploadsService,
+    AdminTeamService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

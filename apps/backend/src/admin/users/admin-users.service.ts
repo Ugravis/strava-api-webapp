@@ -27,6 +27,7 @@ import { AvatarsService } from '../../users/avatars.service';
 import { avatarUrlFor } from '../../users/dto/user-response';
 import { UserDistinction } from '../../users/user-distinction.entity';
 import { isSuspended, User } from '../../users/user.entity';
+import { likeEscaped } from '../common/like-escaped';
 import type {
   AdminUsersQueryDto,
   ModerateUserDto,
@@ -42,10 +43,6 @@ const LAST_SEEN =
 function rankOf(user: User): number {
   const role = highestAdminRole(user.roles);
   return role ? ADMIN_ROLES.indexOf(role) : -1;
-}
-
-function likeEscaped(text: string): string {
-  return text.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
 @Injectable()

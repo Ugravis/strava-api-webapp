@@ -8,4 +8,5 @@ export * from "./me";
 export * from "./roles";
 export * from "./statistics";
 export * from "./system";
+export * from "./team";
 export * from "./users";

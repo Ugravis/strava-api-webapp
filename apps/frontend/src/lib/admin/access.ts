@@ -1,5 +1,5 @@
 import "server-only";
-import { type AdminMeResponse, type AdminRole, hasAdminRole } from "@kilotrace/shared/admin";
+import { type AdminMeResponse, type AdminPermission, type AdminRole, hasAdminRole } from "@kilotrace/shared/admin";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { adminApi } from "./api";
@@ -26,4 +26,21 @@ export async function requireAdminRole(minimum: AdminRole): Promise<AdminRole[]>
     notFound();
   }
   return roles;
+}
+
+/** Permissions of the current user, empty for anyone else. */
+export async function getAdminPermissions(): Promise<AdminPermission[]> {
+  return (await getAdminMe())?.permissions ?? [];
+}
+
+/**
+ * The current member of the team, who sees every page of the back office;
+ * otherwise the 404 of an unknown page, as for a missing role.
+ */
+export async function requireAdminMember(): Promise<AdminMeResponse> {
+  const me = await getAdminMe();
+  if (!me || me.roles.length === 0) {
+    notFound();
+  }
+  return me;
 }

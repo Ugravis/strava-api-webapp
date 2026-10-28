@@ -34,7 +34,7 @@ async function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AppShell
-      navigation={<AdminNavigation roles={roles} />}
+      navigation={<AdminNavigation />}
       switchLink={<ToAppLink roles={roles} />}
       homeHref={adminRoutes.overview}
     >

@@ -1,4 +1,8 @@
-import { AdminRole } from '@kilotrace/shared/admin';
+import {
+  AdminRole,
+  DEFAULT_ADMIN_GRANTS,
+  permissionsOf,
+} from '@kilotrace/shared/admin';
 import {
   Controller,
   Get,
@@ -22,7 +26,11 @@ import {
   AdminController,
 } from '../src/admin/access/admin-controller.decorator';
 import { AdminRolesGuard } from '../src/admin/access/admin-roles.guard';
-import { Roles } from '../src/admin/access/roles.decorator';
+import {
+  AnyMember,
+  Permission,
+} from '../src/admin/access/permission.decorator';
+import { AdminPermissionsService } from '../src/admin/permissions/admin-permissions.service';
 import { AdminMeController } from '../src/admin/admin-me.controller';
 import { ADMIN_ROUTES } from '../src/admin/admin.module';
 import {
@@ -42,19 +50,19 @@ import type { User } from '../src/users/user.entity';
 @AdminController('probe')
 class ProbeController {
   @Get('support')
-  @Roles(AdminRole.Support)
+  @AnyMember()
   support(): string {
     return 'support';
   }
 
   @Get('admin')
-  @Roles(AdminRole.Admin)
+  @Permission('users.delete')
   admin(): string {
     return 'admin';
   }
 
   @Get('super-admin')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('audit.hide')
   superAdmin(): string {
     return 'super-admin';
   }
@@ -65,19 +73,19 @@ class ProbeController {
   }
 
   @Get('throttled')
-  @Roles(AdminRole.Support)
+  @AnyMember()
   throttled(): string {
     return 'throttled';
   }
 
   @Post('unaudited')
-  @Roles(AdminRole.Support)
+  @AnyMember()
   unaudited(): string {
     return 'unaudited';
   }
 
   @Post('things/:id/delete')
-  @Roles(AdminRole.Admin)
+  @Permission('users.delete')
   @Audited({
     action: 'things.delete',
     target: { type: 'thing', param: 'id' },
@@ -88,7 +96,7 @@ class ProbeController {
   }
 
   @Post('things/:id/:kind/mask')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('audit.hide')
   @Audited({
     action: 'things.mask',
     target: { type: 'thing', param: 'id' },
@@ -99,14 +107,14 @@ class ProbeController {
   }
 
   @Post('things/:id/peek')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('audit.hide')
   @NotAudited()
   peekThing(@Param('id') id: string): string {
     return id;
   }
 
   @Post('failing')
-  @Roles(AdminRole.Support)
+  @AnyMember()
   @Audited({ action: 'things.fail' })
   failing(): never {
     throw ApiErrors.conflict(ApiErrorCode.NotFound, 'Failed on purpose');
@@ -117,7 +125,7 @@ class ProbeController {
 @Controller('admin/rogue')
 class RogueController {
   @Get()
-  @Roles(AdminRole.Support)
+  @AnyMember()
   rogue(): string {
     return 'rogue';
   }
@@ -177,6 +185,19 @@ const auditEntries: AuditEntry[] = [];
       useValue: {
         read: (req: Request) =>
           (req.cookies as Record<string, string>).kilotrace_session ?? null,
+      },
+    },
+    {
+      provide: AdminPermissionsService,
+      useValue: {
+        can: (roles: string[], permission: string) =>
+          Promise.resolve(
+            permissionsOf(roles, DEFAULT_ADMIN_GRANTS).some(
+              (granted) => granted === permission,
+            ),
+          ),
+        permissionsOf: (roles: string[]) =>
+          Promise.resolve(permissionsOf(roles, DEFAULT_ADMIN_GRANTS)),
       },
     },
     {
@@ -283,7 +304,11 @@ describe('Admin guards (e2e)', () => {
       const user = store.add('token', [AdminRole.Support, AdminRole.Admin]);
       await get('/api/admin/me', 'token')
         .expect(200)
-        .expect({ id: user.id, roles: ['support', 'admin'] });
+        .expect({
+          id: user.id,
+          roles: ['support', 'admin'],
+          permissions: permissionsOf(['admin'], DEFAULT_ADMIN_GRANTS),
+        });
     });
 
     it('answers an unknown back-office route with a 404', () => {

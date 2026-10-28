@@ -1,8 +1,6 @@
 import "server-only";
 import {
-  AdminRole,
   type AdminReservedUsername,
-  hasAdminRole,
   RESERVED_USERNAME_CATEGORIES,
   RESERVED_USERNAME_NOTE_MAX_LENGTH,
   type ReservedUsernameCategory,
@@ -13,7 +11,7 @@ import { ActionDialog } from "@/components/admin/action-dialog";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { UserLink } from "@/components/admin/user-link";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAdminRoles } from "@/lib/admin/access";
+import { getAdminPermissions } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { formatDate, formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -32,12 +30,12 @@ const CATEGORY_COLORS: Record<ReservedUsernameCategory, string> = {
 
 /**
  * Usernames nobody can take, above the users: folded by default so that the
- * list stays in view. Support reads, admins add and release.
+ * list stays in view. Every member reads, the permission adds and releases.
  */
 export async function ReservedUsernames() {
   const t = getAdminTranslations("users.reserved");
-  const [roles, result] = await Promise.all([getAdminRoles(), adminApi<AdminReservedUsername[]>("/reserved-usernames")]);
-  const canEdit = hasAdminRole(roles, AdminRole.Admin);
+  const [permissions, result] = await Promise.all([getAdminPermissions(), adminApi<AdminReservedUsername[]>("/reserved-usernames")]);
+  const canEdit = permissions.includes("usernames.manage");
 
   return (
     <details className="group rounded-xl border">

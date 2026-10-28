@@ -1,4 +1,4 @@
-import { AdminRole, type AdminBadgeCatalog } from '@kilotrace/shared/admin';
+import { type AdminBadgeCatalog } from '@kilotrace/shared/admin';
 import {
   Body,
   Delete,
@@ -11,7 +11,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Roles } from '../access/roles.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import {
   CreateBadgeDto,
@@ -32,13 +32,13 @@ export class AdminBadgesController {
   constructor(private readonly badges: AdminBadgesService) {}
 
   @Get()
-  @Roles(AdminRole.Support)
+  @AnyMember()
   catalog(): Promise<AdminBadgeCatalog> {
     return this.badges.catalog();
   }
 
   @Post()
-  @Roles(AdminRole.Admin)
+  @Permission('badges.create')
   @Audited({ action: 'badges.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateBadgeDto): Promise<void> {
@@ -47,7 +47,7 @@ export class AdminBadgesController {
 
   /** Declared before `:id`, which would take `order` for an id. */
   @Put('order')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.edit')
   @Audited({ action: 'badges.reorder' })
   @HttpCode(HttpStatus.NO_CONTENT)
   reorder(@Body() dto: ReorderDto): Promise<void> {
@@ -55,7 +55,7 @@ export class AdminBadgesController {
   }
 
   @Patch(':id')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.edit')
   @Audited({ action: 'badges.update', target: BADGE, details: ['name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   update(@Param('id') id: string, @Body() dto: UpdateBadgeDto): Promise<void> {
@@ -63,7 +63,7 @@ export class AdminBadgesController {
   }
 
   @Put(':id/active')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.edit')
   @Audited({ action: 'badges.active', target: BADGE, details: ['active'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   setActive(
@@ -74,7 +74,7 @@ export class AdminBadgesController {
   }
 
   @Delete(':id')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.delete')
   @Audited({ action: 'badges.delete', target: BADGE, destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: string): Promise<void> {
@@ -88,7 +88,7 @@ export class AdminBadgeThemesController {
   constructor(private readonly badges: AdminBadgesService) {}
 
   @Post()
-  @Roles(AdminRole.Admin)
+  @Permission('badges.create')
   @Audited({ action: 'badges.themes.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateBadgeThemeDto): Promise<void> {
@@ -96,7 +96,7 @@ export class AdminBadgeThemesController {
   }
 
   @Put('order')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.edit')
   @Audited({ action: 'badges.themes.reorder' })
   @HttpCode(HttpStatus.NO_CONTENT)
   reorder(@Body() dto: ReorderDto): Promise<void> {
@@ -104,7 +104,7 @@ export class AdminBadgeThemesController {
   }
 
   @Patch(':id')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.edit')
   @Audited({ action: 'badges.themes.update', target: THEME, details: ['name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   update(
@@ -115,7 +115,7 @@ export class AdminBadgeThemesController {
   }
 
   @Delete(':id')
-  @Roles(AdminRole.Admin)
+  @Permission('badges.delete')
   @Audited({ action: 'badges.themes.delete', target: THEME, destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: string): Promise<void> {

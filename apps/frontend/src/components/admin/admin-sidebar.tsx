@@ -6,17 +6,17 @@ import { NavSwitchLink } from "@/components/app-shell/nav-switch-link";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 import { getAdminRoles } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { adminNavFor, adminRoutes } from "@/lib/admin/navigation";
+import { ADMIN_NAV, adminRoutes } from "@/lib/admin/navigation";
 
 /*
  * Sidebar slots of the back office, rendered on the server: the browser only
  * gets generic components, labelled here from the admin messages.
  */
 
-/** Entries of the back office the roles grant. */
-export function AdminNavigation({ roles }: { roles: readonly AdminRole[] }) {
+/** Entries of the back office. */
+export function AdminNavigation() {
   const t = getAdminTranslations("nav");
-  const items = adminNavFor(roles).map(({ key, href, icon: Icon, exact }) => ({
+  const items = ADMIN_NAV.map(({ key, href, icon: Icon, exact }) => ({
     href,
     label: t(key),
     icon: <Icon />,

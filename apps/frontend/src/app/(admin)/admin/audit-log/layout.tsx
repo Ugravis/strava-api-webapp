@@ -1,11 +1,11 @@
-import { AdminRole, type AdminPage, AUDIT_VISIBILITIES, type AuditLogEntry, hasAdminRole } from "@kilotrace/shared/admin";
+import { type AdminPage, AUDIT_VISIBILITIES, type AuditLogEntry } from "@kilotrace/shared/admin";
 import { EyeIcon, EyeOffIcon, LayersIcon } from "lucide-react";
 import { Suspense } from "react";
 import { ListNavigationProvider, ListResults } from "@/components/admin/list-navigation";
 import { ListToolbar } from "@/components/admin/list-toolbar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireAdminRole } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
@@ -18,7 +18,7 @@ const VISIBILITY_ICONS = { all: <LayersIcon />, visible: <EyeIcon />, hidden: <E
  * the table changes, a skeleton showing while the next one loads.
  */
 export default async function AdminAuditLogLayout({ children }: { children: React.ReactNode }) {
-  const roles = await requireAdminRole(AdminRole.Admin);
+  const { permissions } = await requireAdminMember();
   const t = getAdminTranslations("auditLog");
   const skeleton = <TableSkeleton />;
   return (
@@ -48,7 +48,7 @@ export default async function AdminAuditLogLayout({ children }: { children: Reac
           },
         ]}
         toggles={
-          hasAdminRole(roles, AdminRole.SuperAdmin)
+          permissions.includes("audit.hide")
             ? [
                 {
                   param: "visibility",

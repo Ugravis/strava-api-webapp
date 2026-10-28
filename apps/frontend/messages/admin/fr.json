@@ -116,7 +116,7 @@
       "description": "Pseudos que personne ne peut prendre à l'inscription ni en modifiant son profil.",
       "count": "{count, plural, =0 {aucun} one {# pseudo} other {# pseudos}}",
       "hint": "Un pseudo déjà porté par un compte ne peut pas être réservé : modérez d'abord le profil.",
-      "readOnly": "Lecture seule : seuls les admins ajoutent ou libèrent un pseudo.",
+      "readOnly": "Lecture seule : votre rôle n'a pas la permission de réserver ou libérer un pseudo.",
       "error": "Impossible de charger les pseudos réservés.",
       "empty": "Aucun pseudo réservé.",
       "initialList": "Liste initiale",
@@ -164,7 +164,7 @@
     "notFound": "Ce compte n'existe plus.",
     "self": "C'est votre compte : les actions sont désactivées.",
     "protected": "Membre de l'équipe de rang égal ou supérieur : les actions sont désactivées.",
-    "readOnly": "Le rôle support consulte seulement : les actions demandent le rôle admin.",
+    "readOnly": "Lecture seule : votre rôle n'a la permission d'aucune action sur les comptes.",
     "sections": {
       "account": "Compte",
       "profile": "Profil",
@@ -373,7 +373,8 @@
       "roles": {
         "grant": "Rôle attribué",
         "revoke": "Rôle retiré",
-        "bootstrap": "Super-admin initial"
+        "bootstrap": "Super-admin initial",
+        "permissions": "Permissions modifiées"
       },
       "badges": {
         "create": "Badge créé",
@@ -611,7 +612,7 @@
   "system": {
     "title": "Maintenance",
     "description": "Bandeau d'information, inscriptions et fichiers stockés.",
-    "readOnly": "Seuls les super-admins peuvent modifier ces réglages.",
+    "readOnly": "Lecture seule : votre rôle n'a la permission de modifier aucun de ces réglages.",
     "statusError": "Impossible de lire l'état du site pour le moment.",
     "maintenance": {
       "title": "Bandeau de maintenance",
@@ -690,7 +691,7 @@
   },
   "team": {
     "title": "Permissions",
-    "description": "Les membres de l'équipe et leur rôle. Chaque rôle inclut les droits des rôles inférieurs.",
+    "description": "Les membres de l'équipe, leur rôle et les permissions de chaque rôle.",
     "readOnly": "Lecture seule : seuls les super-admins gèrent l'équipe.",
     "error": "L'équipe n'a pas pu être chargée.",
     "empty": "Personne dans l'équipe pour l'instant.",
@@ -704,12 +705,12 @@
       "actions": "Actions"
     },
     "roleHints": {
-      "support": "Consulte le back-office, sans aucune action.",
-      "admin": "Agit sur les comptes, les badges et les logs.",
-      "super-admin": "Tout, y compris la maintenance et l'équipe."
+      "support": "Voit tout le back-office, avec les actions cochées pour le support.",
+      "admin": "Voit tout le back-office, avec les actions cochées pour les admins.",
+      "super-admin": "Toutes les permissions, y compris l'équipe."
     },
     "roleField": "Rôle",
-    "roleHint": "Support : lecture seule. Admin : actions sur les comptes et les badges. Super-admin : tout, y compris l'équipe.",
+    "roleHint": "Les permissions de chaque rôle se règlent dans le tableau sous l'équipe. Super-admin : tout, y compris l'équipe.",
     "add": {
       "trigger": "Ajouter un membre",
       "title": "Ajouter un membre",
@@ -730,6 +731,105 @@
       "title": "Retirer {name} de l'équipe ?",
       "description": "Le compte perd l'accès au back-office et la distinction Équipe. Il en est notifié.",
       "submit": "Retirer"
+    },
+    "permissions": {
+      "title": "Permissions des rôles",
+      "description": "Ce que chaque rôle peut faire. Tous les membres de l'équipe voient toutes les pages ; seules les actions demandent une permission. Personne n'agit sur un compte de rang égal ou supérieur au sien.",
+      "column": "Permission",
+      "locked": "Réservé aux super-admins",
+      "unsaved": "Modifications non enregistrées.",
+      "save": "Enregistrer",
+      "reset": "Annuler",
+      "error": "Les permissions n'ont pas pu être chargées.",
+      "invalid": "Une permission est réservée aux super-admins.",
+      "categories": {
+        "users": "Utilisateurs",
+        "usernames": "Pseudos réservés",
+        "badges": "Badges",
+        "audit": "Logs",
+        "system": "Maintenance",
+        "team": "Permissions"
+      },
+      "list": {
+        "users": {
+          "suspend": {
+            "label": "Suspendre",
+            "description": "Suspendre un compte ou lever sa suspension."
+          },
+          "moderate": {
+            "label": "Modérer le profil",
+            "description": "Réinitialiser le pseudo, le nom, la bio ou l'avatar."
+          },
+          "distinctions": {
+            "label": "Gérer les distinctions",
+            "description": "Attribuer ou retirer une distinction de profil."
+          },
+          "sessions": {
+            "label": "Déconnecter partout",
+            "description": "Fermer toutes les sessions d'un compte."
+          },
+          "strava": {
+            "label": "Délier Strava",
+            "description": "Révoquer la connexion Strava d'un compte."
+          },
+          "delete": {
+            "label": "Supprimer un compte",
+            "description": "Supprimer définitivement un compte et ses données."
+          }
+        },
+        "usernames": {
+          "manage": {
+            "label": "Gérer les pseudos réservés",
+            "description": "Réserver ou libérer un pseudo."
+          }
+        },
+        "badges": {
+          "create": {
+            "label": "Créer",
+            "description": "Ajouter un badge ou une collection."
+          },
+          "edit": {
+            "label": "Modifier",
+            "description": "Modifier, activer, désactiver et réordonner."
+          },
+          "delete": {
+            "label": "Supprimer",
+            "description": "Supprimer un badge ou une collection."
+          }
+        },
+        "audit": {
+          "hide": {
+            "label": "Masquer des entrées",
+            "description": "Masquer ou réafficher une entrée, et voir les entrées masquées."
+          }
+        },
+        "system": {
+          "maintenance": {
+            "label": "Bannière de maintenance",
+            "description": "Publier ou retirer la bannière."
+          },
+          "signups": {
+            "label": "Inscriptions",
+            "description": "Ouvrir ou fermer les inscriptions."
+          },
+          "uploads": {
+            "label": "Fichiers orphelins",
+            "description": "Supprimer les fichiers stockés sans compte."
+          }
+        },
+        "team": {
+          "manage": {
+            "label": "Gérer l'équipe",
+            "description": "Ajouter, changer le rôle ou retirer un membre."
+          }
+        },
+        "permissions": {
+          "manage": {
+            "label": "Gérer les permissions",
+            "description": "Modifier ce tableau."
+          }
+        }
+      }
     }
   },
   "dev": {

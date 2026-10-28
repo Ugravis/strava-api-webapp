@@ -1,9 +1,4 @@
-import {
-  AdminRole,
-  type AdminPage,
-  type AuditLogEntry,
-  hasAdminRole,
-} from '@kilotrace/shared/admin';
+import { type AdminPage, type AuditLogEntry } from '@kilotrace/shared/admin';
 import {
   Delete,
   Get,
@@ -17,30 +12,34 @@ import {
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
-import { Roles } from '../access/roles.decorator';
+import { AnyMember, Permission } from '../access/permission.decorator';
+import { AdminPermissionsService } from '../permissions/admin-permissions.service';
 import { AdminAuditLogService } from './admin-audit-log.service';
 import { AuditLogQueryDto } from './audit-log-query.dto';
 import { NotAudited } from './audited.decorator';
 
 @AdminController('audit-log')
 export class AdminAuditLogController {
-  constructor(private readonly audit: AdminAuditLogService) {}
+  constructor(
+    private readonly audit: AdminAuditLogService,
+    private readonly permissions: AdminPermissionsService,
+  ) {}
 
   @Get()
-  @Roles(AdminRole.Admin)
-  page(
+  @AnyMember()
+  async page(
     @CurrentUser() user: User,
     @Query() query: AuditLogQueryDto,
   ): Promise<AdminPage<AuditLogEntry>> {
     return this.audit.page(
       query,
-      hasAdminRole(user.roles, AdminRole.SuperAdmin),
+      await this.permissions.can(user.roles, 'audit.hide'),
     );
   }
 
   /** Masking leaves no entry: recorded, it would show what it hides. */
   @Put(':id/hidden')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('audit.hide')
   @NotAudited()
   @HttpCode(HttpStatus.NO_CONTENT)
   hide(
@@ -51,7 +50,7 @@ export class AdminAuditLogController {
   }
 
   @Delete(':id/hidden')
-  @Roles(AdminRole.SuperAdmin)
+  @Permission('audit.hide')
   @NotAudited()
   @HttpCode(HttpStatus.NO_CONTENT)
   show(@Param('id', ParseUUIDPipe) id: string): Promise<void> {

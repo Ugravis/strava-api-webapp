@@ -1,10 +1,8 @@
 import {
-  AdminRole,
   AUDIT_ORDERS,
   AUDIT_VISIBILITIES,
   type AdminPage,
   type AuditLogEntry,
-  hasAdminRole,
 } from "@kilotrace/shared/admin";
 import { ArrowRightIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react";
 import Link from "next/link";
@@ -16,7 +14,7 @@ import { Pagination } from "@/components/admin/pagination";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { UserLink } from "@/components/admin/user-link";
 import { Badge } from "@/components/ui/badge";
-import { requireAdminRole } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -33,8 +31,8 @@ const UUID = /^[0-9a-f-]{36}$/i;
  * from the other roles. A row opens the whole entry.
  */
 export default async function AdminAuditLogPage({ searchParams }: PageProps<"/admin/audit-log">) {
-  const roles = await requireAdminRole(AdminRole.Admin);
-  const superAdmin = hasAdminRole(roles, AdminRole.SuperAdmin);
+  const { permissions } = await requireAdminMember();
+  const superAdmin = permissions.includes("audit.hide");
   const t = getAdminTranslations("auditLog");
   const common = getAdminTranslations("common");
   const params = await searchParams;

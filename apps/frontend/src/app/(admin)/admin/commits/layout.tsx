@@ -1,14 +1,13 @@
-import { AdminRole } from "@kilotrace/shared/admin";
 import { Suspense } from "react";
 import { ListNavigationProvider, ListResults } from "@/components/admin/list-navigation";
 import { PageHeader } from "@/components/layout/page-header";
-import { requireAdminRole } from "@/lib/admin/access";
+import { requireAdminMember } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { CommitsSkeleton } from "./commits-bits";
 
 /** Header of the commits, kept across the pages: a skeleton shows while GitHub answers. */
 export default async function AdminCommitsLayout({ children }: { children: React.ReactNode }) {
-  await requireAdminRole(AdminRole.Support);
+  await requireAdminMember();
   const t = getAdminTranslations("commits");
   const skeleton = <CommitsSkeleton />;
   return (

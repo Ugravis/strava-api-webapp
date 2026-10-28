@@ -37,6 +37,7 @@ import { AdminBadgesService } from './badges/admin-badges.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminDevController } from './dev/admin-dev.controller';
 import { AdminDevService } from './dev/admin-dev.service';
+import { AdminGithubService } from './dev/admin-github.service';
 import { AdminReservedUsernamesController } from './reserved-usernames/admin-reserved-usernames.controller';
 import { AdminReservedUsernamesService } from './reserved-usernames/admin-reserved-usernames.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
@@ -102,6 +103,7 @@ export const ADMIN_ROUTES = [
     AdminTeamService,
     AdminReservedUsernamesService,
     AdminDevService,
+    AdminGithubService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

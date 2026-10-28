@@ -30,7 +30,8 @@ interface Option {
 
 export interface ActionDialogProps {
   action: Action;
-  trigger: { label: string; icon?: ReactNode };
+  /** The label is only told by a tooltip and to screen readers when `iconOnly`. */
+  trigger: { label: string; icon?: ReactNode; iconOnly?: boolean };
   title: string;
   description: string;
   submitLabel: string;
@@ -67,10 +68,17 @@ export function ActionDialog(props: ActionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        render={<Button variant={props.destructive ? "destructive" : "outline"} size="xs" />}
+        render={
+          <Button
+            variant={props.destructive ? "destructive" : "outline"}
+            size={props.trigger.iconOnly ? "icon-sm" : "xs"}
+            aria-label={props.trigger.iconOnly ? props.trigger.label : undefined}
+            title={props.trigger.iconOnly ? props.trigger.label : undefined}
+          />
+        }
       >
         {props.trigger.icon}
-        {props.trigger.label}
+        {!props.trigger.iconOnly && props.trigger.label}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         {/* Remounted on every opening, so that the form starts empty. */}

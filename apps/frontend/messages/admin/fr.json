@@ -10,6 +10,7 @@
     "overview": "Vue d'ensemble",
     "statistics": "Statistiques",
     "users": "Utilisateurs",
+    "badges": "Badges",
     "auditLog": "Logs"
   },
   "roles": {
@@ -46,7 +47,8 @@
       "403": "Action refusée : vous ne pouvez pas agir sur ce compte.",
       "404": "Ce compte ou cet élément n'existe plus.",
       "429": "Trop d'actions d'affilée, réessayez dans une minute.",
-      "other": "Une erreur est survenue, réessayez."
+      "other": "Une erreur est survenue, réessayez.",
+      "409": "Cet identifiant est déjà utilisé."
     },
     "panel": {
       "label": "Panneau",
@@ -263,7 +265,8 @@
       "domains": {
         "all": "Toutes",
         "users": "Utilisateurs",
-        "roles": "Rôles"
+        "roles": "Rôles",
+        "badges": "Badges"
       },
       "visibility": "Visibilité",
       "visibilities": {
@@ -284,7 +287,9 @@
     "details": {
       "until": "Jusqu'au {date}",
       "fields": "Champs : {fields}",
-      "kind": "Badge : {kind}"
+      "kind": "Badge : {kind}",
+      "name": "Nom : {name}",
+      "active": "{active, select, true {Activé} other {Désactivé}}"
     },
     "actions": {
       "users": {
@@ -307,6 +312,19 @@
         "grant": "Rôle attribué",
         "revoke": "Rôle retiré",
         "bootstrap": "Super-admin initial"
+      },
+      "badges": {
+        "create": "Badge créé",
+        "update": "Badge modifié",
+        "active": "Badge activé ou désactivé",
+        "delete": "Badge supprimé",
+        "reorder": "Badges réordonnés",
+        "themes": {
+          "create": "Collection créée",
+          "update": "Collection renommée",
+          "delete": "Collection supprimée",
+          "reorder": "Collections réordonnées"
+        }
       }
     },
     "search": "Rechercher une raison, une action ou un utilisateur",
@@ -398,6 +416,122 @@
       "total": "notifications",
       "chart": "Répartition des notifications lues et non lues",
       "empty": "Aucune notification envoyée."
+    }
+  },
+  "badges": {
+    "title": "Badges",
+    "description": "Catalogue des badges et de leurs collections. Une modification s'applique aussitôt à tous les utilisateurs.",
+    "count": "{count, plural, =0 {Aucun badge} one {# badge} other {# badges}}",
+    "inactiveCount": "{count, plural, =0 {} one {dont # désactivé} other {dont # désactivés}}",
+    "noTheme": "Sans collection",
+    "emptyTheme": "Aucun badge dans cette collection.",
+    "dragHandle": "Déplacer",
+    "inactive": "Désactivé",
+    "favorites": "{count, plural, one {# favori} other {# favoris}}",
+    "profiles": "{count, plural, one {# profil} other {# profils}}",
+    "tiers": "Paliers : {tiers}",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "metrics": {
+      "distance": "Distance",
+      "time": "Durée",
+      "elevation": "Dénivelé",
+      "activities": "Activités",
+      "active_days": "Jours actifs",
+      "tiles": "Tuiles",
+      "subtiles": "Petites tuiles",
+      "stations": "Gares"
+    },
+    "families": {
+      "all": "Tous sports",
+      "run": "Course à pied",
+      "hike": "Marche",
+      "ride": "Vélo",
+      "swim": "Natation"
+    },
+    "units": {
+      "distance": "km",
+      "time": "h",
+      "elevation": "m",
+      "activities": "activités",
+      "active_days": "jours",
+      "tiles": "tuiles",
+      "subtiles": "petites tuiles",
+      "stations": "gares"
+    },
+    "themes": {
+      "title": "Collections",
+      "description": "Regroupent des badges de tous les sports, en onglets sur la page Succès. Glissez pour réordonner.",
+      "empty": "Aucune collection.",
+      "badges": "{count, plural, =0 {aucun badge} one {# badge} other {# badges}}",
+      "create": {
+        "short": "Nouvelle collection",
+        "title": "Nouvelle collection",
+        "description": "Elle apparaît sur la page Succès dès qu'un badge actif en fait partie.",
+        "submit": "Créer"
+      },
+      "edit": {
+        "short": "Renommer",
+        "title": "Renommer la collection",
+        "description": "L'identifiant ne change pas.",
+        "submit": "Enregistrer"
+      },
+      "delete": {
+        "short": "Supprimer",
+        "title": "Supprimer la collection",
+        "description": "Ses badges restent, sans collection.",
+        "submit": "Supprimer",
+        "presets": [
+          "Collection abandonnée",
+          "Fusionnée avec une autre",
+          "Créée par erreur"
+        ]
+      },
+      "fields": {
+        "id": "Identifiant",
+        "idHint": "Minuscules, chiffres et _ ; définitif.",
+        "name": "Nom"
+      }
+    },
+    "create": {
+      "short": "Nouveau badge",
+      "title": "Nouveau badge",
+      "description": "Actif dès sa création, ajouté en fin de catalogue.",
+      "submit": "Créer"
+    },
+    "edit": {
+      "short": "Modifier",
+      "title": "Modifier le badge",
+      "description": "Progression et obtentions sont recalculées pour tous les utilisateurs.",
+      "submit": "Enregistrer"
+    },
+    "delete": {
+      "short": "Supprimer",
+      "title": "Supprimer le badge",
+      "description": "Définitif : le badge disparaît, ainsi que des favoris et des profils. Pour le masquer sans le perdre, désactivez-le.",
+      "submit": "Supprimer",
+      "presets": [
+        "Badge obsolète",
+        "Doublon",
+        "Créé par erreur"
+      ]
+    },
+    "fields": {
+      "id": "Identifiant",
+      "idHint": "Minuscules, chiffres et _ ; définitif.",
+      "name": "Nom",
+      "description": "Description",
+      "metric": "Mesure",
+      "family": "Sports",
+      "theme": "Collection",
+      "noTheme": "Aucune",
+      "target": "Objectif",
+      "targetHint": "Montant d'une itération : le badge est obtenu à chaque multiple.",
+      "tiers": "Paliers",
+      "tiersHint": "Facultatif, séparés par des espaces : le badge devient un défi obtenu une seule fois, son objectif est le dernier palier.",
+      "icon": "Icône",
+      "color": "Couleur de fond",
+      "colorNone": "Fond par défaut"
     }
   }
 }

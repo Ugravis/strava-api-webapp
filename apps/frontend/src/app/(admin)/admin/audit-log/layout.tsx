@@ -43,7 +43,7 @@ export default async function AdminAuditLogLayout({ children }: { children: Reac
             label: t("filters.action"),
             options: AUDIT_DOMAINS.map((value) => ({
               value,
-              label: t(`filters.domains.${value === "all" ? value : (value.slice(0, -1) as "users" | "roles")}`),
+              label: t(`filters.domains.${value === "all" ? value : (value.slice(0, -1) as "users" | "roles" | "badges")}`),
             })),
           },
         ]}

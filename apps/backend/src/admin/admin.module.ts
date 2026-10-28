@@ -10,6 +10,8 @@ import { Activity } from '../activities/activity.entity';
 import { AuthModule } from '../auth/auth.module';
 import { OAuthAccount } from '../auth/google/oauth-account.entity';
 import { Session } from '../auth/sessions/session.entity';
+import { Badge } from '../distances/badge.entity';
+import { BadgeTheme } from '../distances/badge-theme.entity';
 import { ProviderConnection } from '../connections/provider-connection.entity';
 import { Follow } from '../follows/follow.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -24,6 +26,11 @@ import { AdminAuditLogController } from './audit/admin-audit-log.controller';
 import { AdminAuditLog } from './audit/admin-audit-log.entity';
 import { AdminAuditLogService } from './audit/admin-audit-log.service';
 import { AuditInterceptor } from './audit/audit.interceptor';
+import {
+  AdminBadgesController,
+  AdminBadgeThemesController,
+} from './badges/admin-badges.controller';
+import { AdminBadgesService } from './badges/admin-badges.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
@@ -51,6 +58,8 @@ export const ADMIN_ROUTES = [
       Follow,
       UserDistinction,
       OAuthAccount,
+      Badge,
+      BadgeTheme,
     ]),
     AuthModule,
     UsersModule,
@@ -62,12 +71,15 @@ export const ADMIN_ROUTES = [
     AdminStatisticsController,
     AdminUsersController,
     AdminAuditLogController,
+    AdminBadgesController,
+    AdminBadgeThemesController,
   ],
   providers: [
     AdminAuditLogService,
     AdminUsersService,
     AdminBootstrapService,
     AdminStatisticsService,
+    AdminBadgesService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

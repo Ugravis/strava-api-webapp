@@ -13,7 +13,7 @@ import type { DistanceFamily } from './distance-families';
 /**
  * A known amount (a distance, a duration, a count…) the cumulated amount of a
  * metric is compared to. The catalog is shared by every user and maintained
- * through migrations.
+ * from the back office.
  */
 @Entity('badges')
 export class Badge {
@@ -83,6 +83,13 @@ export class Badge {
   /** Display order, ascending. */
   @Column({ type: 'integer' })
   position!: number;
+
+  /**
+   * An inactive badge is hidden from every user; their favorites and profile
+   * picks are kept for when it comes back.
+   */
+  @Column({ type: 'boolean', default: true })
+  active!: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

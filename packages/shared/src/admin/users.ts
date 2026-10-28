@@ -1,3 +1,4 @@
+import type { AdminDistinctionLook } from "./distinctions";
 import type { AdminRole } from "./roles";
 
 /** Rows of a page of the back-office lists, cards or table alike. */
@@ -29,10 +30,6 @@ export type AdminUserSort = (typeof ADMIN_USER_SORTS)[number];
 export const MODERATABLE_FIELDS = ["username", "displayName", "bio", "city", "avatar"] as const;
 export type ModeratableField = (typeof MODERATABLE_FIELDS)[number];
 
-/** Badges owed to the membership, not to sport, as stored by the backend. */
-export const ADMIN_DISTINCTION_KINDS = ["founder", "team", "early_member"] as const;
-export type AdminDistinctionKind = (typeof ADMIN_DISTINCTION_KINDS)[number];
-
 export interface AdminUserSuspension {
   reason: string;
   since: string;
@@ -54,7 +51,8 @@ export interface AdminUserSummary {
   suspension: AdminUserSuspension | null;
   stravaConnected: boolean;
   signInMethods: ("password" | "google")[];
-  distinctions: { kind: AdminDistinctionKind; awardedAt: string }[];
+  /** In the order of the catalog. */
+  distinctions: (AdminDistinctionLook & { awardedAt: string })[];
 }
 
 /** `GET /api/admin/users/:id`: everything the back office shows of a user. */

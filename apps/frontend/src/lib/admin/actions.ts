@@ -18,7 +18,7 @@ export async function runAdminAction(path: string, method: Method, json?: unknow
   const result: AdminApiResult<void> | null = await adminApi(path, method, json).catch(() => null);
   if (!result?.ok) {
     const status = result?.status;
-    const known = status === 400 || status === 403 || status === 404 || status === 429;
+    const known = status === 400 || status === 403 || status === 404 || status === 409 || status === 429;
     return { ok: false, message: t(known ? `errors.${status}` : "errors.other") };
   }
   refresh();

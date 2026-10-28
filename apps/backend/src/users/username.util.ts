@@ -1,25 +1,5 @@
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@kilotrace/shared';
 
-const RESERVED_USERNAMES = new Set([
-  'admin',
-  'administrator',
-  'api',
-  'help',
-  'login',
-  'logout',
-  'me',
-  'profile',
-  'register',
-  'root',
-  'settings',
-  'support',
-  'system',
-]);
-
-export function isReservedUsername(username: string): boolean {
-  return RESERVED_USERNAMES.has(username);
-}
-
 /**
  * Derives a valid username candidate from the local part of an email address,
  * e.g. `Jean.Dupont+strava@gmail.com` becomes `jean_dupont`.

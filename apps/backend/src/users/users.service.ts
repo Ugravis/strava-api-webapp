@@ -7,11 +7,8 @@ import { isUniqueViolation } from '../common/database-errors';
 import { EARLY_MEMBERS, UserDistinction } from './user-distinction.entity';
 import { randomProfileColor } from './profile-colors';
 import { User } from './user.entity';
-import {
-  isReservedUsername,
-  usernameBaseFromEmail,
-  withNumericSuffix,
-} from './username.util';
+import { ReservedUsername } from './reserved-username.entity';
+import { usernameBaseFromEmail, withNumericSuffix } from './username.util';
 
 export interface CreateUserInput {
   email: string;
@@ -39,6 +36,8 @@ export class UsersService {
     private readonly users: Repository<User>,
     @InjectRepository(UserDistinction)
     private readonly distinctions: Repository<UserDistinction>,
+    @InjectRepository(ReservedUsername)
+    private readonly reserved: Repository<ReservedUsername>,
   ) {}
 
   findById(id: string): Promise<User | null> {
@@ -56,7 +55,8 @@ export class UsersService {
     if (!USERNAME_PATTERN.test(username)) {
       return { available: false, reason: 'invalid' };
     }
-    if (isReservedUsername(username)) {
+    // Checked first: a reserved username reads as such, even when held.
+    if (await this.reserved.existsBy({ username })) {
       return { available: false, reason: 'reserved' };
     }
     const taken = await this.users.existsBy(

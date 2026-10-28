@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { FollowsSummaryProvider } from "@/components/community/follows-summary-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
+import { MaintenanceNotice } from "@/components/system/maintenance-notice";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
@@ -27,6 +28,10 @@ export async function AppShell({ children, ...slots }: AppSidebarSlots & { child
               <AppSidebar user={user} {...slots} />
               {/* Never wider than the space beside the sidebar, whatever its content: no sideways scroll. */}
               <SidebarInset className="min-w-0">
+                {/* Streamed apart, so that the status never delays the page. */}
+                <Suspense fallback={null}>
+                  <MaintenanceNotice />
+                </Suspense>
                 <AppHeader />
                 {children}
               </SidebarInset>

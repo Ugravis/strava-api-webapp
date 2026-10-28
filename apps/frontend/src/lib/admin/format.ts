@@ -32,3 +32,17 @@ export function formatRelative(iso: string, now = Date.now()): string {
   }
   return relative.format(0, "minute");
 }
+
+const BYTE_UNITS = ["o", "Ko", "Mo", "Go", "To"];
+const size = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+
+/** A weight of files, e.g. « 1,4 Mo ». */
+export function formatBytes(bytes: number): string {
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${size.format(value)} ${BYTE_UNITS[unit]}`;
+}

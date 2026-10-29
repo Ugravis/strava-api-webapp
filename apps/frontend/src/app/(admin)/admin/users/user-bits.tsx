@@ -1,8 +1,9 @@
 import "server-only";
-import { type AdminDistinctionKind, type AdminRole, type AdminUserSummary, highestAdminRole } from "@kilotrace/shared/admin";
-import { BanIcon, CrownIcon, KeyRoundIcon, type LucideIcon, RocketIcon, ShieldCheckIcon, ShieldIcon } from "lucide-react";
+import { type AdminDistinctionLook, type AdminRole, type AdminUserSummary, highestAdminRole } from "@kilotrace/shared/admin";
+import { BanIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { GoogleIcon } from "@/components/auth/google-icon";
+import { BadgeIcon } from "@/components/distances/badge-icon";
 import { StravaIcon } from "@/components/strava/strava-icon";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { cn } from "@/lib/utils";
@@ -75,18 +76,16 @@ export function ConnectionIcons({ user, small }: { user: AdminUserSummary; small
   );
 }
 
-export const DISTINCTION_ICONS: Record<AdminDistinctionKind, { icon: LucideIcon; color: string }> = {
-  founder: { icon: CrownIcon, color: "text-amber-500" },
-  team: { icon: ShieldCheckIcon, color: "text-blue-500" },
-  early_member: { icon: RocketIcon, color: "text-muted-foreground" },
-};
-
 /** An icon of a non-sport badge, as on the profiles of the site. */
-export function DistinctionIcon({ kind, small }: { kind: AdminDistinctionKind; small?: boolean }) {
-  const { icon: Icon, color } = DISTINCTION_ICONS[kind];
+export function DistinctionIcon({ distinction, small }: { distinction: AdminDistinctionLook; small?: boolean }) {
   return (
-    <IconBox label={getAdminTranslations("user.distinctions")(kind)} small={small}>
-      <Icon className={color} aria-hidden />
+    <IconBox label={distinction.name} small={small}>
+      <BadgeIcon
+        icon={distinction.icon}
+        className={cn(!distinction.color && "text-muted-foreground")}
+        style={distinction.color ? { color: distinction.color } : undefined}
+        aria-hidden
+      />
     </IconBox>
   );
 }
@@ -95,8 +94,8 @@ export function DistinctionIcon({ kind, small }: { kind: AdminDistinctionKind; s
 export function DistinctionIcons({ user, small }: { user: AdminUserSummary; small?: boolean }) {
   return (
     <IconRow small={small}>
-      {user.distinctions.map(({ kind }) => (
-        <DistinctionIcon key={kind} kind={kind} small={small} />
+      {user.distinctions.map((distinction) => (
+        <DistinctionIcon key={distinction.id} distinction={distinction} small={small} />
       ))}
     </IconRow>
   );

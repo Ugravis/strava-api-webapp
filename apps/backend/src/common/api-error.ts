@@ -42,6 +42,7 @@ export enum ApiErrorCode {
   IdTaken = 'ID_TAKEN',
   SignupsDisabled = 'SIGNUPS_DISABLED',
   InvalidPermissions = 'INVALID_PERMISSIONS',
+  SystemDistinction = 'SYSTEM_DISTINCTION',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

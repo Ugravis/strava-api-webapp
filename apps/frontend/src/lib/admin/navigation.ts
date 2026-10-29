@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { AwardIcon, ChartColumnIcon, CodeIcon, GaugeIcon, GitCommitHorizontalIcon, KeyRoundIcon, LogsIcon, type LucideIcon, TagIcon, UsersIcon, WrenchIcon } from "lucide-react";
+import { BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -46,23 +46,23 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     key: "community",
     items: [
       { key: "users", href: adminRoutes.users, icon: UsersIcon, count: "users" },
-      { key: "badges", href: adminRoutes.badges, icon: AwardIcon, count: "badges" },
+      { key: "badges", href: adminRoutes.badges, icon: TrophyIcon, count: "badges" },
       { key: "userTags", href: adminRoutes.userTags, icon: TagIcon, count: "userTags" },
     ],
   },
   {
     key: "infrastructure",
     items: [
-      { key: "system", href: adminRoutes.system, icon: WrenchIcon },
-      { key: "dev", href: adminRoutes.dev, icon: CodeIcon },
+      { key: "system", href: adminRoutes.system, icon: BoltIcon },
+      { key: "dev", href: adminRoutes.dev, icon: PackageIcon },
       { key: "commits", href: adminRoutes.commits, icon: GitCommitHorizontalIcon },
     ],
   },
   {
     key: "security",
     items: [
-      { key: "auditLog", href: adminRoutes.auditLog, icon: LogsIcon },
-      { key: "team", href: adminRoutes.team, icon: KeyRoundIcon },
+      { key: "auditLog", href: adminRoutes.auditLog, icon: ListClockIcon },
+      { key: "team", href: adminRoutes.team, icon: ShieldCogCornerIcon },
     ],
   },
 ];

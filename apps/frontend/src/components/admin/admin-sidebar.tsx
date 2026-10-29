@@ -18,9 +18,10 @@ import { ADMIN_NAV, adminRoutes } from "@/lib/admin/navigation";
 export async function AdminNavigation() {
   const t = getAdminTranslations("nav");
   const counts = await adminApi<AdminNavigationCounts>("/navigation/counts");
-  return ADMIN_NAV.map((group) => (
+  return ADMIN_NAV.map((group, index) => (
     <NavLinks
       key={group.key}
+      separated={index > 0}
       title={t(`groups.${group.key}`)}
       items={group.items.map(({ key, href, icon: Icon, count }) => ({
         href,

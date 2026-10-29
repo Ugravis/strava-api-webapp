@@ -44,7 +44,7 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
     <SidebarMenu
       className={cn(
         "gap-1",
-        title && "ml-3.5 w-auto border-l border-sidebar-border pl-2 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:border-none group-data-[collapsible=icon]:pl-0",
+        title && "ml-2 w-auto border-l border-sidebar-border pl-2 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:border-none group-data-[collapsible=icon]:pl-0",
       )}
     >
       {items.map((item) => {
@@ -85,7 +85,7 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
           className="group/label h-7 cursor-pointer text-[0.65rem] tracking-wider text-sidebar-foreground/50 uppercase hover:text-sidebar-foreground/80 group-data-[collapsible=icon]:pointer-events-none"
         >
           {title}
-          <ChevronDownIcon className="ml-auto size-3.5 -rotate-90 transition-transform group-data-panel-open/label:rotate-0" aria-hidden />
+          <ChevronDownIcon className="ml-auto size-3 -rotate-90 transition-transform group-data-panel-open/label:rotate-0" aria-hidden />
         </SidebarGroupLabel>
         <Collapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
           <SidebarGroupContent>{menu}</SidebarGroupContent>

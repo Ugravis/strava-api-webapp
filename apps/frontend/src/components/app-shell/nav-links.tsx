@@ -82,10 +82,10 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
       <Collapsible.Root open={open || iconOnly} onOpenChange={setOpen} render={<SidebarGroup />}>
         <SidebarGroupLabel
           render={<Collapsible.Trigger />}
-          className="group/label h-7 cursor-pointer text-[0.65rem] tracking-wider text-sidebar-foreground/50 uppercase hover:text-sidebar-foreground/80 group-data-[collapsible=icon]:pointer-events-none"
+          className="group/label h-7 cursor-pointer text-[0.65rem] tracking-wider text-sidebar-foreground/50 uppercase hover:text-sidebar-foreground/80 group-data-[collapsible=icon]:pointer-events-none [&>svg]:size-3"
         >
           {title}
-          <ChevronDownIcon className="ml-auto size-3 -rotate-90 transition-transform group-data-panel-open/label:rotate-0" aria-hidden />
+          <ChevronDownIcon className="ml-auto -rotate-90 transition-transform group-data-panel-open/label:rotate-0" aria-hidden />
         </SidebarGroupLabel>
         <Collapsible.Panel className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
           <SidebarGroupContent>{menu}</SidebarGroupContent>

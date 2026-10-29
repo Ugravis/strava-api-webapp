@@ -217,7 +217,7 @@ function FilesTable({ files, withUser }: { files: AdminUploadFile[]; withUser?: 
   return (
     // Every column stays, the table scrolling sideways on narrow screens.
     <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-[36rem] text-sm">
+      <table className="w-full min-w-xl text-sm">
         <thead className="bg-muted text-left text-xs text-muted-foreground">
           <tr>
             <th className={`${cell} font-medium`}>{t("file")}</th>

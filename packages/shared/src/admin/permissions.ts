@@ -1,7 +1,7 @@
 import { AdminRole } from "./roles";
 
 /** Sections of the back office with actions, in the order of the permissions table. */
-export const ADMIN_PERMISSION_CATEGORIES = ["users", "usernames", "badges", "distinctions", "audit", "system", "team"] as const;
+export const ADMIN_PERMISSION_CATEGORIES = ["users", "usernames", "badges", "userTags", "audit", "system", "team"] as const;
 
 export type AdminPermissionCategory = (typeof ADMIN_PERMISSION_CATEGORIES)[number];
 
@@ -20,7 +20,7 @@ interface AdminPermissionDefinition {
 export const ADMIN_PERMISSIONS = {
   "users.suspend": { category: "users", defaults: ["admin"] },
   "users.moderate": { category: "users", defaults: ["admin"] },
-  "users.distinctions": { category: "users", defaults: ["admin"] },
+  "users.userTags": { category: "users", defaults: ["admin"] },
   "users.sessions": { category: "users", defaults: ["admin"] },
   "users.strava": { category: "users", defaults: ["admin"] },
   "users.delete": { category: "users", defaults: ["admin"] },
@@ -28,9 +28,9 @@ export const ADMIN_PERMISSIONS = {
   "badges.create": { category: "badges", defaults: ["admin"] },
   "badges.edit": { category: "badges", defaults: ["admin"] },
   "badges.delete": { category: "badges", defaults: ["admin"] },
-  "distinctions.create": { category: "distinctions", defaults: ["admin"] },
-  "distinctions.edit": { category: "distinctions", defaults: ["admin"] },
-  "distinctions.delete": { category: "distinctions", defaults: ["admin"] },
+  "userTags.create": { category: "userTags", defaults: ["admin"] },
+  "userTags.edit": { category: "userTags", defaults: ["admin"] },
+  "userTags.delete": { category: "userTags", defaults: ["admin"] },
   "audit.hide": { category: "audit", defaults: [] },
   "system.maintenance": { category: "system", defaults: [] },
   "system.signups": { category: "system", defaults: [] },

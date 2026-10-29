@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { isUniqueViolation } from '../common/database-errors';
-import { EARLY_MEMBERS, UserDistinction } from './user-distinction.entity';
+import { EARLY_MEMBERS, UserTagAssignment } from './user-tag-assignment.entity';
 import { randomProfileColor } from './profile-colors';
 import { User } from './user.entity';
 import { ReservedUsername } from './reserved-username.entity';
@@ -34,8 +34,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly users: Repository<User>,
-    @InjectRepository(UserDistinction)
-    private readonly distinctions: Repository<UserDistinction>,
+    @InjectRepository(UserTagAssignment)
+    private readonly userTags: Repository<UserTagAssignment>,
     @InjectRepository(ReservedUsername)
     private readonly reserved: Repository<ReservedUsername>,
   ) {}
@@ -91,7 +91,7 @@ export class UsersService {
     });
     const saved = await this.save(user);
     if ((await this.users.count()) <= EARLY_MEMBERS) {
-      await this.distinctions.insert({
+      await this.userTags.insert({
         userId: saved.id,
         kind: 'early_member',
       });

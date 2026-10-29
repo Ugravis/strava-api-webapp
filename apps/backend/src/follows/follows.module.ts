@@ -4,7 +4,7 @@ import { DistancesModule } from '../distances/distances.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StationsModule } from '../stations/stations.module';
 import { TilesModule } from '../tiles/tiles.module';
-import { UserDistinction } from '../users/user-distinction.entity';
+import { UserTagAssignment } from '../users/user-tag-assignment.entity';
 import { User } from '../users/user.entity';
 import { Follow } from './follow.entity';
 import { ProfileLike } from './profile-like.entity';
@@ -14,7 +14,7 @@ import { ProfilesController } from './profiles.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Follow, User, UserDistinction, ProfileLike]),
+    TypeOrmModule.forFeature([Follow, User, UserTagAssignment, ProfileLike]),
     NotificationsModule,
     DistancesModule,
     StationsModule,

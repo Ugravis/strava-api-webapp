@@ -4,8 +4,8 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
  * A badge owed to the membership, not to sport, managed from the back
  * office. `system` ones are awarded by the code and cannot be deleted.
  */
-@Entity('distinctions')
-export class Distinction {
+@Entity('user_tags')
+export class UserTag {
   /** Stable slug, e.g. `founder`. */
   @PrimaryColumn({ type: 'varchar', length: 32 })
   id!: string;

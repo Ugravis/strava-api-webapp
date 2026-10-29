@@ -16,7 +16,7 @@ interface ShowcaseDialogProps {
   footer?: ReactNode;
 }
 
-/** Details of a badge or a distinction shown on a profile. */
+/** Details of a badge or a user tag shown on a profile. */
 export function ShowcaseDialog({ open, onOpenChange, media, title, subtitle, description, footer }: ShowcaseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

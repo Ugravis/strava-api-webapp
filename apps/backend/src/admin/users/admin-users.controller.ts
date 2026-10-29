@@ -22,7 +22,7 @@ import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import {
   AdminUsersQueryDto,
-  DistinctionParamsDto,
+  UserTagParamsDto,
   ModerateUserDto,
   ReasonDto,
   SuspendUserDto,
@@ -132,33 +132,33 @@ export class AdminUsersController {
     return this.users.moderate(actor, id, dto);
   }
 
-  @Put(':id/distinctions/:kind')
-  @Permission('users.distinctions')
+  @Put(':id/user-tags/:kind')
+  @Permission('users.userTags')
   @Audited({
-    action: 'users.distinctions.grant',
+    action: 'users.userTags.grant',
     target: TARGET,
     details: ['kind'],
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  grantDistinction(
+  grantUserTag(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param() { kind }: DistinctionParamsDto,
+    @Param() { kind }: UserTagParamsDto,
   ): Promise<void> {
-    return this.users.grantDistinction(id, kind);
+    return this.users.grantUserTag(id, kind);
   }
 
-  @Delete(':id/distinctions/:kind')
-  @Permission('users.distinctions')
+  @Delete(':id/user-tags/:kind')
+  @Permission('users.userTags')
   @Audited({
-    action: 'users.distinctions.revoke',
+    action: 'users.userTags.revoke',
     target: TARGET,
     details: ['kind'],
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  revokeDistinction(
+  revokeUserTag(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param() { kind }: DistinctionParamsDto,
+    @Param() { kind }: UserTagParamsDto,
   ): Promise<void> {
-    return this.users.revokeDistinction(id, kind);
+    return this.users.revokeUserTag(id, kind);
   }
 }

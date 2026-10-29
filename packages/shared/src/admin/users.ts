@@ -1,4 +1,4 @@
-import type { AdminDistinctionLook } from "./distinctions";
+import type { AdminUserTagLook } from "./user-tags";
 import type { AdminRole } from "./roles";
 
 /** Rows of a page of the back-office lists, cards or table alike. */
@@ -52,7 +52,7 @@ export interface AdminUserSummary {
   stravaConnected: boolean;
   signInMethods: ("password" | "google")[];
   /** In the order of the catalog. */
-  distinctions: (AdminDistinctionLook & { awardedAt: string })[];
+  userTags: (AdminUserTagLook & { awardedAt: string })[];
 }
 
 /** `GET /api/admin/users/:id`: everything the back office shows of a user. */

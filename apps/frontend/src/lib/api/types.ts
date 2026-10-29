@@ -524,7 +524,7 @@ export interface ProfileSummary extends PublicUser {
 }
 
 /** Badge owed to the membership, not to sport, managed from the back office; in the order of the catalog. */
-export interface Distinction {
+export interface UserTag {
   id: string;
   name: string;
   description: string | null;
@@ -565,7 +565,7 @@ export interface PublicProfile extends ProfileSummary {
   color: string | null;
   private: boolean;
   /** Badges of the membership, shown even on a private profile. */
-  distinctions: Distinction[];
+  userTags: UserTag[];
   /** False for a private profile the current user does not follow: its showcase and follows are hidden. */
   visible: boolean;
   followersCount: number;

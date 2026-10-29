@@ -15,7 +15,7 @@ import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { hrefWith, oneOf, pageOf, param } from "@/lib/admin/url";
 import { publicNameOf } from "@/lib/user";
-import { ConnectionIcons, DistinctionIcons, RoleBadge, SuspendedMark } from "../user-bits";
+import { ConnectionIcons, UserTagIcons, RoleBadge, SuspendedMark } from "../user-bits";
 
 const VIEWS = ["cards", "table"] as const;
 const PANEL_PREFIX = `${adminRoutes.users}/`;
@@ -90,7 +90,7 @@ function UserCards({ users }: { users: AdminUserSummary[] }) {
                 {user.suspension && <SuspendedMark />}
                 <span className="ml-auto flex shrink-0 items-center gap-1 pl-1">
                   <ConnectionIcons user={user} small />
-                  <DistinctionIcons user={user} small />
+                  <UserTagIcons user={user} small />
                 </span>
               </span>
               <span className="truncate text-xs text-muted-foreground">
@@ -129,7 +129,7 @@ function UserTable({ users }: { users: AdminUserSummary[] }) {
             <th className={cell}>{sort(t("columns.createdAt"), "created", "desc")}</th>
             <th className={cell}>{sort(t("columns.lastSeenAt"), "last-seen", "desc")}</th>
             <th className={`${cell} font-medium`}>{t("columns.connections")}</th>
-            <th className={`${cell} font-medium`}>{t("columns.distinctions")}</th>
+            <th className={`${cell} font-medium`}>{t("columns.userTags")}</th>
           </tr>
         </thead>
         <tbody>
@@ -169,7 +169,7 @@ function UserTable({ users }: { users: AdminUserSummary[] }) {
                 <ConnectionIcons user={user} />
               </td>
               <td className={`${cell} relative z-10`}>
-                <DistinctionIcons user={user} />
+                <UserTagIcons user={user} />
               </td>
             </tr>
           ))}

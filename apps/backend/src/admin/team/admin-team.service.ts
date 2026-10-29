@@ -13,17 +13,17 @@ import { Session } from '../../auth/sessions/session.entity';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { avatarUrlFor } from '../../users/dto/user-response';
-import { UserDistinction } from '../../users/user-distinction.entity';
+import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { User } from '../../users/user.entity';
 import { likeEscaped } from '../common/like-escaped';
 
-/** Distinction shown on the profiles of the team, kept in step with the roles. */
-const TEAM_DISTINCTION = 'team';
+/** User tag shown on the profiles of the team, kept in step with the roles. */
+const TEAM_USER_TAG = 'team';
 
 /**
  * Back-office roles of the accounts. One role per member, each granting
  * everything the lower ones grant; joining the team awards the `team`
- * distinction, leaving it withdraws it.
+ * user tag, leaving it withdraws it.
  */
 @Injectable()
 export class AdminTeamService {
@@ -111,8 +111,8 @@ export class AdminTeamService {
       await manager
         .createQueryBuilder()
         .insert()
-        .into(UserDistinction)
-        .values({ userId: user.id, kind: TEAM_DISTINCTION })
+        .into(UserTagAssignment)
+        .values({ userId: user.id, kind: TEAM_USER_TAG })
         .orIgnore()
         .execute();
     });
@@ -127,9 +127,9 @@ export class AdminTeamService {
     }
     await this.users.manager.transaction(async (manager) => {
       await manager.update(User, user.id, { roles: [] });
-      await manager.delete(UserDistinction, {
+      await manager.delete(UserTagAssignment, {
         userId: user.id,
-        kind: TEAM_DISTINCTION,
+        kind: TEAM_USER_TAG,
       });
     });
     await this.notifications.notifyFromTeam(user.id, 'role_changed', {

@@ -7,7 +7,7 @@ import {
   type AdminTeamMember,
   permissionDefinition,
 } from "@kilotrace/shared/admin";
-import { AtSignIcon, AwardIcon, KeyRoundIcon, LogsIcon, type LucideIcon, MedalIcon, UsersIcon, WrenchIcon } from "lucide-react";
+import { AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
@@ -84,11 +84,11 @@ export default async function AdminTeamPage() {
 const CATEGORY_ICONS: Record<AdminPermissionCategory, LucideIcon> = {
   users: UsersIcon,
   usernames: AtSignIcon,
-  badges: AwardIcon,
-  distinctions: MedalIcon,
-  audit: LogsIcon,
-  system: WrenchIcon,
-  team: KeyRoundIcon,
+  badges: TrophyIcon,
+  userTags: TagIcon,
+  audit: ListClockIcon,
+  system: BoltIcon,
+  team: ShieldCogCornerIcon,
 };
 
 /** The catalog, labelled here: the client component gets its texts and icons only. */

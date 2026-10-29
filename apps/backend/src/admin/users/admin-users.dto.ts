@@ -1,6 +1,6 @@
 import {
   ADMIN_BADGE_SLUG,
-  ADMIN_DISTINCTION_ID_MAX_LENGTH,
+  ADMIN_USER_TAG_ID_MAX_LENGTH,
   ADMIN_REASON_MAX_LENGTH,
   ADMIN_USER_SORTS,
   ADMIN_USER_STATUSES,
@@ -62,9 +62,9 @@ export class ModerateUserDto extends ReasonDto {
   fields!: ModeratableField[];
 }
 
-export class DistinctionParamsDto {
+export class UserTagParamsDto {
   @IsString()
   @Matches(ADMIN_BADGE_SLUG)
-  @MaxLength(ADMIN_DISTINCTION_ID_MAX_LENGTH)
+  @MaxLength(ADMIN_USER_TAG_ID_MAX_LENGTH)
   kind!: string;
 }

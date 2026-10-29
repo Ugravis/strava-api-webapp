@@ -8,7 +8,7 @@ import {
 import { DataSource } from 'typeorm';
 import adminConfig, { type AdminConfig } from '../../config/admin.config';
 import { normalizeEmail } from '../../users/users.service';
-import { UserDistinction } from '../../users/user-distinction.entity';
+import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { User } from '../../users/user.entity';
 import { AdminAuditLogService } from '../audit/admin-audit-log.service';
 
@@ -52,7 +52,7 @@ export class AdminBootstrapService implements OnApplicationBootstrap {
       await manager
         .createQueryBuilder()
         .insert()
-        .into(UserDistinction)
+        .into(UserTagAssignment)
         .values({ userId: user.id, kind: 'team' })
         .orIgnore()
         .execute();

@@ -2,7 +2,7 @@ import { AdminRole } from '@kilotrace/shared/admin';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { EntityManager, Repository } from 'typeorm';
 import type { NotificationsService } from '../../notifications/notifications.service';
-import { UserDistinction } from '../../users/user-distinction.entity';
+import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { User } from '../../users/user.entity';
 import { AdminTeamService } from './admin-team.service';
 
@@ -63,7 +63,7 @@ describe('AdminTeamService', () => {
     );
   });
 
-  it('adds an account with the team distinction and tells it', async () => {
+  it('adds an account with the team userTag and tells it', async () => {
     await service.setRole(superAdmin, target.id, AdminRole.Support);
 
     expect(manager.update).toHaveBeenCalledWith(User, target.id, {
@@ -96,13 +96,13 @@ describe('AdminTeamService', () => {
     expect(notifications.notifyFromTeam).not.toHaveBeenCalled();
   });
 
-  it('removes a member and the team distinction', async () => {
+  it('removes a member and the team userTag', async () => {
     target.roles = [AdminRole.Admin];
 
     await service.remove(superAdmin, target.id);
 
     expect(manager.update).toHaveBeenCalledWith(User, target.id, { roles: [] });
-    expect(manager.delete).toHaveBeenCalledWith(UserDistinction, {
+    expect(manager.delete).toHaveBeenCalledWith(UserTagAssignment, {
       userId: target.id,
       kind: 'team',
     });

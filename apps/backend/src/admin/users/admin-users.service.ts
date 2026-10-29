@@ -24,8 +24,8 @@ import { NotificationsService } from '../../notifications/notifications.service'
 import { StravaConnectionService } from '../../strava/strava-connection.service';
 import { AvatarsService } from '../../users/avatars.service';
 import { avatarUrlFor } from '../../users/dto/user-response';
-import { Distinction } from '../../users/distinction.entity';
-import { UserDistinction } from '../../users/user-distinction.entity';
+import { UserTag } from '../../users/user-tag.entity';
+import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { isSuspended, User } from '../../users/user.entity';
 import { likeEscaped } from '../common/like-escaped';
 import type {
@@ -55,8 +55,8 @@ export class AdminUsersService {
     @InjectRepository(Activity)
     private readonly activities: Repository<Activity>,
     @InjectRepository(Follow) private readonly follows: Repository<Follow>,
-    @InjectRepository(UserDistinction)
-    private readonly distinctions: Repository<UserDistinction>,
+    @InjectRepository(UserTagAssignment)
+    private readonly userTags: Repository<UserTagAssignment>,
     @InjectRepository(OAuthAccount)
     private readonly oauthAccounts: Repository<OAuthAccount>,
     private readonly sessionsService: SessionsService,
@@ -225,14 +225,12 @@ export class AdminUsersService {
     });
   }
 
-  async grantDistinction(id: string, kind: string): Promise<void> {
+  async grantUserTag(id: string, kind: string): Promise<void> {
     await this.find(id);
-    if (
-      !(await this.distinctions.manager.existsBy(Distinction, { id: kind }))
-    ) {
-      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such distinction');
+    if (!(await this.userTags.manager.existsBy(UserTag, { id: kind }))) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such userTag');
     }
-    await this.distinctions
+    await this.userTags
       .createQueryBuilder()
       .insert()
       .values({ userId: id, kind })
@@ -240,9 +238,9 @@ export class AdminUsersService {
       .execute();
   }
 
-  async revokeDistinction(id: string, kind: string): Promise<void> {
+  async revokeUserTag(id: string, kind: string): Promise<void> {
     await this.find(id);
-    await this.distinctions.delete({ userId: id, kind });
+    await this.userTags.delete({ userId: id, kind });
   }
 
   private async summaries(users: User[]): Promise<AdminUserSummary[]> {
@@ -250,8 +248,8 @@ export class AdminUsersService {
       return [];
     }
     const ids = users.map(({ id }) => id);
-    const [lastSeen, connections, googleAccounts, distinctions] =
-      await Promise.all([
+    const [lastSeen, connections, googleAccounts, userTags] = await Promise.all(
+      [
         this.sessions
           .createQueryBuilder('session')
           .select('session.user_id', 'userId')
@@ -267,12 +265,13 @@ export class AdminUsersService {
           select: { userId: true },
           where: { userId: In(ids) },
         }),
-        this.distinctions.find({
+        this.userTags.find({
           where: { userId: In(ids) },
-          relations: { distinction: true },
-          order: { distinction: { position: 'ASC' } },
+          relations: { userTag: true },
+          order: { userTag: { position: 'ASC' } },
         }),
-      ]);
+      ],
+    );
     const lastSeenById = new Map(
       lastSeen.map(({ userId, lastSeenAt }) => [userId, lastSeenAt]),
     );
@@ -299,13 +298,13 @@ export class AdminUsersService {
         ...(user.passwordHash ? (['password'] as const) : []),
         ...(withGoogle.has(user.id) ? (['google'] as const) : []),
       ],
-      distinctions: distinctions
+      userTags: userTags
         .filter(({ userId }) => userId === user.id)
-        .map(({ distinction, awardedAt }) => ({
-          id: distinction!.id,
-          name: distinction!.name,
-          icon: distinction!.icon,
-          color: distinction!.color,
+        .map(({ userTag, awardedAt }) => ({
+          id: userTag!.id,
+          name: userTag!.name,
+          icon: userTag!.icon,
+          color: userTag!.color,
           awardedAt: awardedAt.toISOString(),
         })),
     }));

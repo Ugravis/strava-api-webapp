@@ -6,7 +6,7 @@ import {
 import { QueryFailedError, type Repository } from 'typeorm';
 import type { NotificationsService } from '../notifications/notifications.service';
 import type { ProfileShowcaseService } from './profile-showcase.service';
-import type { UserDistinction } from '../users/user-distinction.entity';
+import type { UserTagAssignment } from '../users/user-tag-assignment.entity';
 import type { User } from '../users/user.entity';
 import type { Follow } from './follow.entity';
 import type { ProfileLike } from './profile-like.entity';
@@ -86,7 +86,7 @@ describe('FollowsService', () => {
     service = new FollowsService(
       follows as unknown as Repository<Follow>,
       users as unknown as Repository<User>,
-      {} as Repository<UserDistinction>,
+      {} as Repository<UserTagAssignment>,
       {} as Repository<ProfileLike>,
       notifications as unknown as NotificationsService,
       {} as ProfileShowcaseService,

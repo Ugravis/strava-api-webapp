@@ -6,7 +6,7 @@ import { isUniqueViolation } from '../common/database-errors';
 import { NotificationsService } from '../notifications/notifications.service';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import type { FavoriteSport } from '../users/favorite-sports';
-import { UserDistinction } from '../users/user-distinction.entity';
+import { UserTagAssignment } from '../users/user-tag-assignment.entity';
 import { isSuspended, User } from '../users/user.entity';
 import { Follow } from './follow.entity';
 import { ProfileLike } from './profile-like.entity';
@@ -23,8 +23,8 @@ export interface ProfileSummary extends PublicUser {
   requested: boolean;
 }
 
-/** A distinction as the profiles show it, in the order of the catalog. */
-export interface ProfileDistinction {
+/** A user tag as the profiles show it, in the order of the catalog. */
+export interface ProfileUserTag {
   id: string;
   name: string;
   description: string | null;
@@ -44,7 +44,7 @@ export interface PublicProfile extends ProfileSummary {
   color: string | null;
   private: boolean;
   /** Badges of the membership, shown even on a private profile. */
-  distinctions: ProfileDistinction[];
+  userTags: ProfileUserTag[];
   /**
    * False for a private profile the viewer does not follow: its showcase and
    * its follows are hidden.
@@ -94,8 +94,8 @@ export class FollowsService {
     private readonly follows: Repository<Follow>,
     @InjectRepository(User)
     private readonly users: Repository<User>,
-    @InjectRepository(UserDistinction)
-    private readonly distinctions: Repository<UserDistinction>,
+    @InjectRepository(UserTagAssignment)
+    private readonly userTags: Repository<UserTagAssignment>,
     @InjectRepository(ProfileLike)
     private readonly likes: Repository<ProfileLike>,
     private readonly notifications: NotificationsService,
@@ -145,7 +145,7 @@ export class FollowsService {
       followingCount,
       viewerFollow,
       followOfViewer,
-      distinctions,
+      userTags,
       likesCount,
       liked,
     ] = await Promise.all([
@@ -153,10 +153,10 @@ export class FollowsService {
       this.follows.countBy({ followerId: user.id, pending: false }),
       this.follows.findOneBy({ followerId: viewer.id, followedId: user.id }),
       this.follows.findOneBy({ followerId: user.id, followedId: viewer.id }),
-      this.distinctions.find({
+      this.userTags.find({
         where: { userId: user.id },
-        relations: { distinction: true },
-        order: { distinction: { position: 'ASC' } },
+        relations: { userTag: true },
+        order: { userTag: { position: 'ASC' } },
       }),
       this.likes.countBy({ profileId: user.id }),
       this.likes.existsBy({ userId: viewer.id, profileId: user.id }),
@@ -175,12 +175,12 @@ export class FollowsService {
       favoriteSports: user.favoriteSports,
       color: user.profileColor,
       private: user.profilePrivate,
-      distinctions: distinctions.map(({ distinction, awardedAt }) => ({
-        id: distinction!.id,
-        name: distinction!.name,
-        description: distinction!.description,
-        icon: distinction!.icon,
-        color: distinction!.color,
+      userTags: userTags.map(({ userTag, awardedAt }) => ({
+        id: userTag!.id,
+        name: userTag!.name,
+        description: userTag!.description,
+        icon: userTag!.icon,
+        color: userTag!.color,
         awardedAt: awardedAt.toISOString(),
       })),
       visible,

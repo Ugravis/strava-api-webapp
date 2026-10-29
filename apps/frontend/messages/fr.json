@@ -351,7 +351,7 @@
       "confirm": {
         "private": {
           "title": "Passer votre profil en privé ?",
-          "description": "Seuls vos abonnés verront vos badges épinglés, vos statistiques et vos abonnements. Les nouveaux abonnés devront être acceptés. Votre nom, votre bio et vos distinctions restent visibles.",
+          "description": "Seuls vos abonnés verront vos badges épinglés, vos statistiques et vos abonnements. Les nouveaux abonnés devront être acceptés. Votre nom, votre bio et vos tags restent visibles.",
           "action": "Passer en privé"
         },
         "public": {
@@ -381,8 +381,8 @@
       "unfold": "Déplier",
       "later": "Plus tard : retourner à la pile de cartes"
     },
-    "distinctions": {
-      "label": "Distinctions",
+    "userTags": {
+      "label": "Tags",
       "awarded": "Obtenue le {date}"
     },
     "share": {

@@ -1,39 +1,7 @@
-import { AdminRole } from "@kilotrace/shared/admin";
-import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdminRole } from "@/lib/admin/access";
-import { getAdminTranslations } from "@/lib/admin/messages";
+import { redirect } from "next/navigation";
+import { adminRoutes } from "@/lib/admin/navigation";
 
-export default async function AdminOverviewPage() {
-  const roles = await requireAdminRole(AdminRole.Support);
-  const t = getAdminTranslations("overview");
-  const roleLabel = getAdminTranslations("roles");
-
-  return (
-    <>
-      <PageHeader title={t("title")} description={t("description")} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("roles")}</CardTitle>
-            <CardDescription>{t("rolesDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {roles.map((role) => (
-              <Badge key={role} variant="secondary">
-                {roleLabel(role)}
-              </Badge>
-            ))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("sections")}</CardTitle>
-            <CardDescription>{t("sectionsEmpty")}</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    </>
-  );
+/** The entry of the back office opens on its dashboard. */
+export default function AdminIndexPage() {
+  redirect(adminRoutes.dashboard);
 }

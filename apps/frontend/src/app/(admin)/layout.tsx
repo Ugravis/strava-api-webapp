@@ -36,7 +36,7 @@ async function AdminShell({ children }: { children: React.ReactNode }) {
     <AppShell
       navigation={<AdminNavigation />}
       switchLink={<ToAppLink roles={roles} />}
-      homeHref={adminRoutes.overview}
+      homeHref={adminRoutes.dashboard}
     >
       {/* As the padded pages of the site. */}
       <div className="flex min-h-[calc(100svh-3.5rem)] flex-1 flex-col p-4 md:min-h-svh md:p-6">

@@ -1,10 +1,11 @@
 import "server-only";
-import { type AdminRole, highestAdminRole } from "@kilotrace/shared/admin";
+import { type AdminNavigationCounts, type AdminRole, highestAdminRole } from "@kilotrace/shared/admin";
 import { GlobeIcon, ShieldIcon } from "lucide-react";
 import { NavLinks } from "@/components/app-shell/nav-links";
 import { NavSwitchLink } from "@/components/app-shell/nav-switch-link";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 import { getAdminRoles } from "@/lib/admin/access";
+import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { ADMIN_NAV, adminRoutes } from "@/lib/admin/navigation";
 
@@ -13,16 +14,22 @@ import { ADMIN_NAV, adminRoutes } from "@/lib/admin/navigation";
  * gets generic components, labelled here from the admin messages.
  */
 
-/** Entries of the back office. */
-export function AdminNavigation() {
+/** Entries of the back office by group, with the size of the catalogs when the API answers. */
+export async function AdminNavigation() {
   const t = getAdminTranslations("nav");
-  const items = ADMIN_NAV.map(({ key, href, icon: Icon, exact }) => ({
-    href,
-    label: t(key),
-    icon: <Icon />,
-    exact,
-  }));
-  return <NavLinks items={items} />;
+  const counts = await adminApi<AdminNavigationCounts>("/navigation/counts");
+  return ADMIN_NAV.map((group) => (
+    <NavLinks
+      key={group.key}
+      title={t(`groups.${group.key}`)}
+      items={group.items.map(({ key, href, icon: Icon, count }) => ({
+        href,
+        label: t(key),
+        icon: <Icon />,
+        badge: count && counts.ok ? counts.data[count] : undefined,
+      }))}
+    />
+  ));
 }
 
 /** In the sidebar of the site, the way to the back office: nothing at all for anyone without a role. */
@@ -33,7 +40,7 @@ export async function ToAdminLink() {
   }
   return (
     <NavSwitchLink
-      href={adminRoutes.overview}
+      href={adminRoutes.dashboard}
       label={getAdminTranslations("shell")("toAdmin")}
       caption={getAdminTranslations("roles")(role)}
       icon={<ShieldIcon />}

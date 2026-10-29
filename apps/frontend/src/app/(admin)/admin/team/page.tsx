@@ -7,7 +7,7 @@ import {
   type AdminTeamMember,
   permissionDefinition,
 } from "@kilotrace/shared/admin";
-import { AtSignIcon, AwardIcon, KeyRoundIcon, LogsIcon, type LucideIcon, MedalIcon, UsersIcon, WrenchIcon } from "lucide-react";
+import { AtSignIcon, AwardIcon, KeyRoundIcon, LogsIcon, type LucideIcon, TagIcon, UsersIcon, WrenchIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
@@ -85,7 +85,7 @@ const CATEGORY_ICONS: Record<AdminPermissionCategory, LucideIcon> = {
   users: UsersIcon,
   usernames: AtSignIcon,
   badges: AwardIcon,
-  distinctions: MedalIcon,
+  userTags: TagIcon,
   audit: LogsIcon,
   system: WrenchIcon,
   team: KeyRoundIcon,

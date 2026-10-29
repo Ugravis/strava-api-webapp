@@ -27,7 +27,7 @@ import type { ProfileBadge, ProfileShowcase, PublicProfile, TileFigures } from "
 import { countryName } from "@/lib/countries/country-format";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
-import { Distinctions } from "./distinctions";
+import { UserTags } from "./user-tags";
 import { EXPORT_IGNORE } from "./card-image";
 import { LikeButton } from "./like-button";
 import { CardImageDialog } from "./card-image-dialog";
@@ -180,7 +180,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false,
           </p>
         </div>
         {/* Sections keep their height, a missing one is said so: every card of the deck has the same layout. */}
-        <Distinctions distinctions={profile.distinctions} className="h-6" />
+        <UserTags userTags={profile.userTags} className="h-6" />
         <p
           className={cn(
             "line-clamp-2 min-h-[2lh] text-sm wrap-break-word whitespace-pre-line",

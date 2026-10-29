@@ -236,7 +236,7 @@ function ActionName({ entry }: { entry: AuditLogEntry }) {
 function detailsOf(entry: AuditLogEntry): string[] {
   const t = getAdminTranslations("auditLog.details");
   const fields = getAdminTranslations("user.moderatedFields");
-  const kinds = getAdminTranslations("user.distinctions");
+  const kinds = getAdminTranslations("user.userTags");
   const titles = getAdminTranslations("system.maintenance.titles");
   const categories = getAdminTranslations("users.reserved.categories");
   const { until, fields: reset, kind, name, active, title, description, enabled, username, category } = entry.details ?? {};

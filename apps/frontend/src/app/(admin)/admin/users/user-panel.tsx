@@ -1,6 +1,6 @@
 import "server-only";
 import {
-  type AdminDistinction,
+  type AdminUserTag,
   type AdminPage,
   type AdminPermission,
   type AdminUserDetail,
@@ -22,9 +22,9 @@ import { actRefusal } from "@/lib/admin/permissions";
 import { countryName } from "@/lib/countries/country-format";
 import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
-import { setDistinction } from "./actions";
+import { setUserTag } from "./actions";
 import { UserActions } from "./user-actions";
-import { ConnectionIcons, DistinctionIcon, RoleBadge, SuspendedMark } from "./user-bits";
+import { ConnectionIcons, UserTagIcon, RoleBadge, SuspendedMark } from "./user-bits";
 
 const HISTORY_SIZE = 5;
 
@@ -34,7 +34,7 @@ export async function UserPanel({ id }: { id: string }) {
   const [me, result, catalog] = await Promise.all([
     getAdminMe(),
     adminApi<AdminUserDetail>(`/users/${encodeURIComponent(id)}`),
-    adminApi<AdminDistinction[]>("/distinctions"),
+    adminApi<AdminUserTag[]>("/user-tags"),
   ]);
   if (!result.ok || !me) {
     return <p className="p-4 text-sm text-muted-foreground">{t("notFound")}</p>;
@@ -130,25 +130,25 @@ export async function UserPanel({ id }: { id: string }) {
         <Field label={t("fields.following")}>{user.followingCount}</Field>
       </Section>
 
-      <Section title={t("sections.distinctions")}>
+      <Section title={t("sections.userTags")}>
         <ul className="flex flex-col gap-2">
-          {(catalog.ok ? catalog.data : user.distinctions).map((distinction) => {
-            const held = user.distinctions.find((each) => each.id === distinction.id);
+          {(catalog.ok ? catalog.data : user.userTags).map((userTag) => {
+            const held = user.userTags.find((each) => each.id === userTag.id);
             return (
-              <li key={distinction.id} className="flex items-center gap-3">
-                <DistinctionIcon distinction={distinction} />
+              <li key={userTag.id} className="flex items-center gap-3">
+                <UserTagIcon userTag={userTag} />
                 <span className="flex flex-1 flex-col">
-                  <span className="text-sm font-medium">{distinction.name}</span>
+                  <span className="text-sm font-medium">{userTag.name}</span>
                   {held && (
                     <span className="text-xs text-muted-foreground">
-                      {t("distinctions.granted", { date: formatDate(held.awardedAt) })}
+                      {t("userTags.granted", { date: formatDate(held.awardedAt) })}
                     </span>
                   )}
                 </span>
-                {can("users.distinctions") && (
-                  <ActionForm action={setDistinction.bind(null, user.id, distinction.id, !held)}>
+                {can("users.userTags") && (
+                  <ActionForm action={setUserTag.bind(null, user.id, userTag.id, !held)}>
                     <SubmitButton size="xs" variant={held ? "outline" : "secondary"}>
-                      {t(held ? "distinctions.revoke" : "distinctions.grant")}
+                      {t(held ? "userTags.revoke" : "userTags.grant")}
                     </SubmitButton>
                   </ActionForm>
                 )}

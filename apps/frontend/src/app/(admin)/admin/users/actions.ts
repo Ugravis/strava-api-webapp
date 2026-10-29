@@ -55,13 +55,13 @@ export async function deleteUser(id: string, _: ActionResult | null, formData: F
   return result;
 }
 
-export async function setDistinction(
+export async function setUserTag(
   id: string,
   kind: string,
   granted: boolean,
 ): Promise<ActionResult> {
   if (typeof kind !== "string" || !ADMIN_BADGE_SLUG.test(kind)) {
-    throw new Error("Invalid distinction");
+    throw new Error("Invalid userTag");
   }
-  return runAdminAction(`/users/${checkedId(id)}/distinctions/${kind}`, granted ? "PUT" : "DELETE");
+  return runAdminAction(`/users/${checkedId(id)}/user-tags/${kind}`, granted ? "PUT" : "DELETE");
 }

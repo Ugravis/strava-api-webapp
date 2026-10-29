@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Placeholder of the distinctions, in the layout of the page. */
-export default function AdminDistinctionsLoading() {
+/** Placeholder of the user tags, in the layout of the page. */
+export default function AdminUserTagsLoading() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
       <div className="flex flex-col gap-2">

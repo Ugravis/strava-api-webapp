@@ -7,15 +7,21 @@
     "toApp": "Site public"
   },
   "nav": {
-    "overview": "Vue d'ensemble",
+    "groups": {
+      "general": "Général",
+      "community": "Communauté",
+      "infrastructure": "Infrastructure",
+      "security": "Sécurité"
+    },
+    "dashboard": "Dashboard",
     "statistics": "Statistiques",
     "users": "Utilisateurs",
     "badges": "Badges",
-    "distinctions": "Distinctions",
+    "userTags": "Tags",
     "auditLog": "Logs",
     "system": "Maintenance",
     "team": "Permissions",
-    "dev": "Technique",
+    "dev": "Stack",
     "commits": "Commits"
   },
   "roles": {
@@ -23,8 +29,8 @@
     "admin": "Admin",
     "super-admin": "Super-admin"
   },
-  "overview": {
-    "title": "Administration",
+  "dashboard": {
+    "title": "Dashboard",
     "description": "Outils réservés à l'équipe, chaque action est consignée dans le journal d'audit.",
     "roles": "Vos rôles",
     "rolesDescription": "Chaque rôle donne aussi les droits des rôles inférieurs : support, puis admin, puis super-admin.",
@@ -93,7 +99,7 @@
       "createdAt": "Inscription",
       "lastSeenAt": "Dernière visite",
       "connections": "Connexions",
-      "distinctions": "Badges",
+      "userTags": "Tags",
       "status": "Statut",
       "actions": "Actions"
     },
@@ -172,7 +178,7 @@
       "strava": "Strava",
       "community": "Communauté",
       "suspension": "Suspension",
-      "distinctions": "Badges non sportifs",
+      "userTags": "Tags",
       "history": "Historique",
       "actions": "Actions",
       "connections": "Connexions"
@@ -206,7 +212,7 @@
       "google": "Google"
     },
     "stravaNone": "Aucun compte Strava lié.",
-    "distinctions": {
+    "userTags": {
       "grant": "Attribuer",
       "revoke": "Retirer",
       "granted": "Attribué le {date}"
@@ -317,7 +323,7 @@
         "usernames": "Pseudos réservés",
         "roles": "Rôles",
         "badges": "Badges",
-        "distinctions": "Distinctions",
+        "userTags": "Tags",
         "system": "Système"
       },
       "visibility": "Visibilité",
@@ -360,9 +366,9 @@
         "sessions": {
           "revoke": "Déconnexion partout"
         },
-        "distinctions": {
-          "grant": "Badge attribué",
-          "revoke": "Badge retiré"
+        "userTags": {
+          "grant": "Tag attribué",
+          "revoke": "Tag retiré"
         }
       },
       "usernames": {
@@ -388,11 +394,11 @@
           "reorder": "Collections réordonnées"
         }
       },
-      "distinctions": {
-        "create": "Distinction créée",
-        "update": "Distinction modifiée",
-        "delete": "Distinction supprimée",
-        "reorder": "Distinctions réordonnées"
+      "userTags": {
+        "create": "Tag créé",
+        "update": "Tag modifié",
+        "delete": "Tag supprimé",
+        "reorder": "Tags réordonnés"
       },
       "system": {
         "maintenance": {
@@ -614,41 +620,41 @@
       "colorNone": "Fond par défaut"
     }
   },
-  "distinctions": {
-    "title": "Distinctions",
+  "userTags": {
+    "title": "Tags",
     "description": "Badges non sportifs affichés sur les profils, même privés. Une modification s'applique aussitôt à tous les profils.",
-    "count": "{count, plural, =0 {Aucune distinction} one {# distinction} other {# distinctions}}",
-    "empty": "Aucune distinction.",
+    "count": "{count, plural, =0 {Aucun tag} one {# tag} other {# tags}}",
+    "empty": "Aucun tag.",
     "dragHandle": "Déplacer",
     "holders": "{count, plural, =0 {Aucun membre} one {# membre} other {# membres}}",
     "system": "Automatique",
-    "systemHint": "Attribuée par l'application : modifiable, jamais supprimée.",
+    "systemHint": "Attribué par l'application : modifiable, jamais supprimé.",
     "noDescription": "Sans description",
     "create": {
-      "short": "Nouvelle distinction",
-      "title": "Nouvelle distinction",
-      "description": "Ajoutée en fin de liste, attribuée ensuite depuis la fiche d'un utilisateur.",
+      "short": "Nouveau tag",
+      "title": "Nouveau tag",
+      "description": "Ajouté en fin de liste, attribué ensuite depuis la fiche d'un utilisateur.",
       "submit": "Créer"
     },
     "edit": {
       "short": "Modifier",
-      "title": "Modifier la distinction",
+      "title": "Modifier le tag",
       "description": "Le changement s'applique à tous les profils qui l'affichent.",
       "submit": "Enregistrer"
     },
     "delete": {
       "short": "Supprimer",
-      "title": "Supprimer la distinction",
-      "description": "Définitif : la distinction disparaît de tous les profils qui l'affichent.",
+      "title": "Supprimer le tag",
+      "description": "Définitif : le tag disparaît de tous les profils qui l'affichent.",
       "submit": "Supprimer",
       "presets": [
-        "Distinction obsolète",
+        "Tag obsolète",
         "Doublon",
-        "Créée par erreur"
+        "Créé par erreur"
       ]
     },
     "errors": {
-      "system": "Cette distinction est attribuée par l'application et ne peut pas être supprimée.",
+      "system": "Ce tag est attribué par l'application et ne peut pas être supprimé.",
       "idTaken": "Cet identifiant est déjà pris."
     },
     "fields": {
@@ -656,7 +662,7 @@
       "idHint": "Minuscules, chiffres et _ ; définitif.",
       "name": "Nom",
       "description": "Description",
-      "descriptionHint": "Facultative, affichée dans le détail de la distinction.",
+      "descriptionHint": "Facultative, affichée dans le détail du tag.",
       "icon": "Icône",
       "color": "Couleur de l'icône",
       "colorNone": "Couleur par défaut"
@@ -767,7 +773,7 @@
     "add": {
       "trigger": "Ajouter un membre",
       "title": "Ajouter un membre",
-      "description": "Le compte reçoit le rôle choisi et la distinction Équipe sur son profil, et en est notifié.",
+      "description": "Le compte reçoit le rôle choisi et le tag Équipe sur son profil, et en est notifié.",
       "user": "Compte",
       "placeholder": "Pseudo, nom ou email",
       "empty": "Aucun compte hors de l'équipe ne correspond.",
@@ -782,7 +788,7 @@
     "remove": {
       "trigger": "Retirer de l'équipe",
       "title": "Retirer {name} de l'équipe ?",
-      "description": "Le compte perd l'accès au back-office et la distinction Équipe. Il en est notifié.",
+      "description": "Le compte perd l'accès au back-office et le tag Équipe. Il en est notifié.",
       "submit": "Retirer"
     },
     "permissions": {
@@ -799,7 +805,7 @@
         "users": "Utilisateurs",
         "usernames": "Pseudos réservés",
         "badges": "Badges",
-        "distinctions": "Distinctions",
+        "userTags": "Tags",
         "audit": "Logs",
         "system": "Maintenance",
         "team": "Permissions"
@@ -814,9 +820,9 @@
             "label": "Modérer le profil",
             "description": "Réinitialiser le pseudo, le nom, la bio ou l'avatar."
           },
-          "distinctions": {
-            "label": "Gérer les distinctions",
-            "description": "Attribuer ou retirer une distinction de profil."
+          "userTags": {
+            "label": "Gérer les tags",
+            "description": "Attribuer ou retirer un tag de profil."
           },
           "sessions": {
             "label": "Déconnecter partout",
@@ -851,18 +857,18 @@
             "description": "Supprimer un badge ou une collection."
           }
         },
-        "distinctions": {
+        "userTags": {
           "create": {
             "label": "Créer",
-            "description": "Ajouter une distinction."
+            "description": "Ajouter un tag."
           },
           "edit": {
             "label": "Modifier",
-            "description": "Modifier et réordonner les distinctions."
+            "description": "Modifier et réordonner les tags."
           },
           "delete": {
             "label": "Supprimer",
-            "description": "Supprimer une distinction attribuée à la main."
+            "description": "Supprimer un tag attribué à la main."
           }
         },
         "audit": {
@@ -901,7 +907,7 @@
     }
   },
   "dev": {
-    "title": "Technique",
+    "title": "Stack",
     "description": "Version déployée, dépendances et migrations de la base de données.",
     "error": "Impossible de lire l'état technique pour le moment.",
     "deployment": {

@@ -1,5 +1,5 @@
 import "server-only";
-import { type AdminDistinctionLook, type AdminRole, type AdminUserSummary, highestAdminRole } from "@kilotrace/shared/admin";
+import { type AdminUserTagLook, type AdminRole, type AdminUserSummary, highestAdminRole } from "@kilotrace/shared/admin";
 import { BanIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { GoogleIcon } from "@/components/auth/google-icon";
@@ -77,13 +77,13 @@ export function ConnectionIcons({ user, small }: { user: AdminUserSummary; small
 }
 
 /** An icon of a non-sport badge, as on the profiles of the site. */
-export function DistinctionIcon({ distinction, small }: { distinction: AdminDistinctionLook; small?: boolean }) {
+export function UserTagIcon({ userTag, small }: { userTag: AdminUserTagLook; small?: boolean }) {
   return (
-    <IconBox label={distinction.name} small={small}>
+    <IconBox label={userTag.name} small={small}>
       <BadgeIcon
-        icon={distinction.icon}
-        className={cn(!distinction.color && "text-muted-foreground")}
-        style={distinction.color ? { color: distinction.color } : undefined}
+        icon={userTag.icon}
+        className={cn(!userTag.color && "text-muted-foreground")}
+        style={userTag.color ? { color: userTag.color } : undefined}
         aria-hidden
       />
     </IconBox>
@@ -91,11 +91,11 @@ export function DistinctionIcon({ distinction, small }: { distinction: AdminDist
 }
 
 /** The non-sport badges of the account; a dash without any. */
-export function DistinctionIcons({ user, small }: { user: AdminUserSummary; small?: boolean }) {
+export function UserTagIcons({ user, small }: { user: AdminUserSummary; small?: boolean }) {
   return (
     <IconRow small={small}>
-      {user.distinctions.map((distinction) => (
-        <DistinctionIcon key={distinction.id} distinction={distinction} small={small} />
+      {user.userTags.map((userTag) => (
+        <UserTagIcon key={userTag.id} userTag={userTag} small={small} />
       ))}
     </IconRow>
   );

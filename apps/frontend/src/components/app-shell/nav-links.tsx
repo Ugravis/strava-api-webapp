@@ -6,7 +6,9 @@ import type { ReactNode } from "react";
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -18,15 +20,18 @@ export interface NavLink {
   icon: ReactNode;
   /** Active on its own path only, not on the pages below it. */
   exact?: boolean;
+  /** Figure shown in a pill at the end of the entry. */
+  badge?: number;
 }
 
 /** Plain sidebar entries, labelled by the caller (a server component, for sections kept off the client messages). */
-export function NavLinks({ items }: { items: readonly NavLink[] }) {
+export function NavLinks({ title, items }: { title?: string; items: readonly NavLink[] }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
   return (
     <SidebarGroup>
+      {title ? <SidebarGroupLabel className="tracking-wider uppercase">{title}</SidebarGroupLabel> : null}
       <SidebarGroupContent>
         <SidebarMenu className="gap-1">
           {items.map((item) => {
@@ -49,6 +54,9 @@ export function NavLinks({ items }: { items: readonly NavLink[] }) {
                   {item.icon}
                   <span>{item.label}</span>
                 </SidebarMenuButton>
+                {item.badge === undefined ? null : (
+                  <SidebarMenuBadge className="rounded-full bg-sidebar-accent px-1.5">{item.badge.toLocaleString("fr-FR")}</SidebarMenuBadge>
+                )}
               </SidebarMenuItem>
             );
           })}

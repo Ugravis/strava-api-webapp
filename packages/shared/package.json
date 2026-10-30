@@ -29,6 +29,16 @@
         "types": "./dist/admin/index.d.cts",
         "default": "./dist/admin/index.cjs"
       }
+    },
+    "./table": {
+      "import": {
+        "types": "./dist/table/index.d.ts",
+        "default": "./dist/table/index.js"
+      },
+      "require": {
+        "types": "./dist/table/index.d.cts",
+        "default": "./dist/table/index.cjs"
+      }
     }
   },
   "scripts": {

@@ -5,15 +5,14 @@ import {
   ActivityIcon,
   AtSignIcon,
   BanIcon,
-  CircleCheckIcon,
-  EyeIcon,
-  ZapIcon,
-  EraserIcon,
-  ShapesIcon,
   CalendarPlusIcon,
+  CircleCheckIcon,
   CircleDotIcon,
   ClockIcon,
   CopyIcon,
+  DownloadIcon,
+  EraserIcon,
+  EyeIcon,
   FileImageIcon,
   HardDriveIcon,
   HashIcon,
@@ -21,65 +20,79 @@ import {
   LayoutGridIcon,
   LinkIcon,
   MailIcon,
-  MoreHorizontalIcon,
   PanelRightOpenIcon,
+  ShapesIcon,
   StickyNoteIcon,
   TableIcon,
   TableOfContentsIcon,
   TagIcon,
   TypeIcon,
+  ZapIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  buttonsColumn,
+  bytesColumn,
+  CellButton,
+  CellButtons,
+  codeColumn,
+  customColumn,
+  type DataTableConfig,
+  dateColumn,
+  EmptyValue,
+  formatDate,
+  IconsCell,
+  iconsColumn,
+  localTableSource,
+  numberColumn,
+  pillsColumn,
+  RowActions,
+  statusColumn,
+  textColumn,
+  Truncate,
+  userColumn,
+} from "@/components/admin/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { publicNameOf } from "@/lib/user";
-import {
-  CategoryPills,
-  CONNECTIONS,
-  ConnectionIcons,
-  connectionsOf,
-  Empty,
-  formatBytes,
-  formatDate,
-  formatNumber,
-  ROLE_LABELS,
-  RoleBadge,
-  STATUS_LABELS,
-  StatusDot,
-  SuspendedMark,
-  Truncate,
-  UserCell,
-  UserTagIcons,
-  When,
-} from "./poc-bits";
-import { type PocActionKind, POC_USERS, type PocUser } from "./poc-data";
-import { serve } from "./poc-server";
-import type { PocTableConfig } from "./poc-table";
-import { Tip } from "./poc-toolbar";
-
-/** Shown only on hover where a pointer hovers, always on touch screens. */
-const ON_HOVER = "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100";
+import { type PocActionKind, POC_NOW, POC_USERS, type PocUser } from "./poc-data";
+import { CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";
 
 const open = (user: PocUser) => toast(`Ouvrirait le panneau de @${user.username}`);
 
+/** The demo rows, served like the API would, after a network-like pause. */
+export const fetchPocUsers = localTableSource(POC_USERS, {
+  search: (user) => `${user.displayName ?? ""} ${user.username} ${user.email}`,
+  sorts: {
+    user: (user) => user.username,
+    displayName: (user) => user.displayName,
+    status: (user) => user.status,
+    createdAt: (user) => user.createdAt,
+    lastSeenAt: (user) => user.lastSeenAt,
+    activities: (user) => user.activitiesCount,
+    storage: (user) => user.storageBytes,
+    userTags: (user) => user.userTags.length,
+  },
+  facets: {
+    status: { options: Object.keys(STATUSES), values: (user) => [user.status] },
+    connections: { options: Object.keys(CONNECTIONS), values: connectionsOf },
+  },
+  groupings: {
+    status: (user) => user.status,
+    role: (user) => highestAdminRole(user.roles) ?? "~",
+  },
+  delay: () => 300 + Math.random() * 400,
+});
+
 /** Every kind of field of the back office, on fake accounts. */
-export const USERS: PocTableConfig<PocUser> = {
+export const USERS: DataTableConfig<PocUser> = {
   id: "users",
-  fetch: (request) => serve(POC_USERS, USERS, request),
+  fetch: fetchPocUsers,
   rowId: (user) => user.id,
-  selectable: true,
   onOpen: open,
-  search: { label: "Nom, @username ou e-mail", text: (user) => `${user.displayName ?? ""} ${user.username} ${user.email}` },
+  search: "Nom, @username ou e-mail",
   noun: (count) => (count > 1 ? "comptes" : "compte"),
   empty: { title: "Aucun compte", description: "Les comptes apparaîtront ici dès la première inscription." },
   create: { label: "Nouveau", onClick: () => toast("Ouvrirait la création d'un compte") },
@@ -89,31 +102,17 @@ export const USERS: PocTableConfig<PocUser> = {
     { id: "cards", label: "Cartes", icon: <LayoutGridIcon />, cards: true },
   ],
   columns: [
-    {
-      id: "user",
-      header: "Utilisateur",
-      icon: <AtSignIcon />,
-      locked: true,
-      sortValue: (user) => user.username,
-      copy: (user) => user.username,
-      cell: (user) => <UserCell user={user} />,
-      skeleton: (
-        <span className="flex items-center gap-2">
-          <Skeleton className="size-5 rounded-full" />
-          <Skeleton className="h-4 w-28" />
-        </span>
-      ),
-    },
-    { id: "displayName", header: "Nom affiché", icon: <TypeIcon />, copy: (user) => user.displayName, sortValue: (user) => user.displayName ?? "", cell: (user) => (user.displayName ? <Truncate className="max-w-44">{user.displayName}</Truncate> : <Empty />) },
-    { id: "status", header: "Statut", icon: <CircleDotIcon />, sortValue: (user) => user.status, cell: (user) => <StatusDot status={user.status} /> },
-    { id: "email", header: "E-mail", icon: <MailIcon />, copy: (user) => user.email, cell: (user) => <Truncate className="max-w-52 text-muted-foreground">{user.email}</Truncate> },
-    { id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortValue: (user) => user.createdAt, cell: (user) => <span className="text-muted-foreground">{formatDate(user.createdAt)}</span> },
-    { id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortValue: (user) => user.lastSeenAt ?? "", cell: (user) => <When iso={user.lastSeenAt} /> },
-    { id: "activities", header: "Activités", icon: <ActivityIcon />, copy: (user) => (user.activitiesCount ? String(user.activitiesCount) : null), sortValue: (user) => user.activitiesCount, cell: (user) => (user.activitiesCount ? <span className="tabular-nums">{formatNumber(user.activitiesCount)}</span> : <Empty />) },
-    { id: "storage", header: "Stockage", icon: <HardDriveIcon />, copy: (user) => (user.storageBytes ? formatBytes(user.storageBytes) : null), sortValue: (user) => user.storageBytes, cell: (user) => (user.storageBytes ? <span className="tabular-nums">{formatBytes(user.storageBytes)}</span> : <Empty />) },
-    { id: "connections", header: "Connexions", icon: <LinkIcon />, cell: (user) => <ConnectionIcons user={user} /> },
-    { id: "userTags", header: "Tags", icon: <TagIcon />, sortValue: (user) => user.userTags.length, cell: (user) => <UserTagIcons tags={user.userTags} /> },
-    {
+    userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user, marks: (user) => <UserMarks user={user} /> }),
+    textColumn({ id: "displayName", header: "Nom affiché", icon: <TypeIcon />, sortable: true, value: (user) => user.displayName, width: "max-w-44" }),
+    statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, sortable: true, value: (user) => user.status, statuses: STATUSES }),
+    textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, value: (user) => user.email, muted: true, width: "max-w-52" }),
+    dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
+    dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true, now: POC_NOW }),
+    numberColumn({ id: "activities", header: "Activités", icon: <ActivityIcon />, sortable: true, value: (user) => user.activitiesCount }),
+    bytesColumn({ id: "storage", header: "Stockage", icon: <HardDriveIcon />, sortable: true, value: (user) => user.storageBytes }),
+    iconsColumn({ id: "connections", header: "Connexions", icon: <LinkIcon />, value: connectionItems }),
+    iconsColumn({ id: "userTags", header: "Tags", icon: <TagIcon />, sortable: true, value: tagItems }),
+    customColumn({
       id: "lastAction",
       header: "Dernière action",
       icon: <HistoryIcon />,
@@ -125,74 +124,38 @@ export const USERS: PocTableConfig<PocUser> = {
             {lastAction.failedStatus && <Badge variant="destructive">Échec {lastAction.failedStatus}</Badge>}
           </span>
         ) : (
-          <Empty />
+          <EmptyValue />
         ),
-    },
-    {
+    }),
+    buttonsColumn({
       id: "quick",
       header: "Actions",
       icon: <ZapIcon />,
-      cell: (user) => (
-        <span className="flex items-center gap-1">
-          <Button size="xs" variant="outline" onClick={() => open(user)}>
-            <EyeIcon data-icon="inline-start" />
-            Voir
-          </Button>
-          <Tip label="Envoyer un e-mail">
-            <Button size="icon-xs" variant="outline" aria-label="Envoyer un e-mail" onClick={() => toast(`Écrirait à ${user.email}`)}>
-              <MailIcon />
-            </Button>
-          </Tip>
+      count: 3,
+      buttons: (user) => (
+        <CellButtons>
+          <CellButton text label="Voir" icon={<EyeIcon />} onClick={() => open(user)} />
+          <CellButton label="Envoyer un e-mail" icon={<MailIcon />} onClick={() => toast(`Écrirait à ${user.email}`)} />
           {user.status === "suspended" ? (
-            <Tip label="Réactiver">
-              <Button size="icon-xs" variant="outline" aria-label="Réactiver" onClick={() => toast(`Réactiverait @${user.username}`)}>
-                <CircleCheckIcon />
-              </Button>
-            </Tip>
+            <CellButton label="Réactiver" icon={<CircleCheckIcon />} onClick={() => toast(`Réactiverait @${user.username}`)} />
           ) : (
-            <Tip label="Suspendre">
-              <Button size="icon-xs" variant="outline" aria-label="Suspendre" className="text-destructive hover:text-destructive" onClick={() => toast(`Ouvrirait la suspension de @${user.username}`)}>
-                <BanIcon />
-              </Button>
-            </Tip>
+            <CellButton destructive label="Suspendre" icon={<BanIcon />} onClick={() => toast(`Ouvrirait la suspension de @${user.username}`)} />
           )}
-        </span>
+        </CellButtons>
       ),
-      skeleton: (
-        <span className="flex items-center gap-1">
-          <Skeleton className="h-6 w-14 rounded-md" />
-          <Skeleton className="size-6 rounded-md" />
-          <Skeleton className="size-6 rounded-md" />
-        </span>
-      ),
-    },
-    { id: "categories", header: "Catégorie", icon: <ShapesIcon />, cell: (user) => <CategoryPills categories={user.categories} /> },
-    { id: "note", header: "Note", icon: <StickyNoteIcon />, copy: (user) => user.note, cell: (user) => (user.note ? <Truncate className="max-w-56">{user.note}</Truncate> : <Empty />) },
-    { id: "avatarKey", header: "Fichier avatar", icon: <FileImageIcon />, copy: (user) => user.avatarKey, cell: (user) => (user.avatarKey ? <Truncate className="max-w-44 font-mono text-xs">{user.avatarKey}</Truncate> : <Empty />) },
-    { id: "id", header: "ID", icon: <HashIcon />, copy: (user) => user.id, cell: (user) => <Truncate className="max-w-20 font-mono text-xs text-muted-foreground">{user.id}</Truncate> },
+    }),
+    pillsColumn({ id: "categories", header: "Catégorie", icon: <ShapesIcon />, value: categoryPills }),
+    textColumn({ id: "note", header: "Note", icon: <StickyNoteIcon />, value: (user) => user.note }),
+    codeColumn({ id: "avatarKey", header: "Fichier avatar", icon: <FileImageIcon />, value: (user) => user.avatarKey }),
+    codeColumn({ id: "id", header: "ID", icon: <HashIcon />, value: (user) => user.id, width: "max-w-20" }),
   ],
   facets: [
-    {
-      id: "status",
-      label: "Statut",
-      options: Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-      values: (user) => [user.status],
-    },
-    {
-      id: "connections",
-      label: "Connexion",
-      options: Object.entries(CONNECTIONS).map(([value, { label, icon }]) => ({ value, label, icon })),
-      values: connectionsOf,
-    },
+    { id: "status", label: "Statut", options: Object.entries(STATUSES).map(([value, { label }]) => ({ value, label })) },
+    { id: "connections", label: "Connexion", options: Object.entries(CONNECTIONS).map(([value, { label, icon }]) => ({ value, label, icon })) },
   ],
   groupings: [
-    { id: "status", label: "Statut", key: (user) => user.status, title: (key) => STATUS_LABELS[key as PocUser["status"]] },
-    {
-      id: "role",
-      label: "Rôle",
-      key: (user) => highestAdminRole(user.roles) ?? "~",
-      title: (key) => (key === "~" ? "Sans rôle" : ROLE_LABELS[key as keyof typeof ROLE_LABELS]),
-    },
+    { id: "status", label: "Statut", title: (key) => STATUSES[key as PocUser["status"]].label },
+    { id: "role", label: "Rôle", title: (key) => (key === "~" ? "Sans rôle" : ROLES[key]!.label) },
   ],
   card: (user) => (
     <button
@@ -204,10 +167,9 @@ export const USERS: PocTableConfig<PocUser> = {
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex items-center gap-1.5">
           <Truncate className="text-sm font-medium">{publicNameOf(user)}</Truncate>
-          <RoleBadge roles={user.roles} />
-          {user.status === "suspended" && <SuspendedMark />}
+          <UserMarks user={user} />
           <span className="ml-auto shrink-0 pl-1">
-            <ConnectionIcons user={user} />
+            <IconsCell items={connectionItems(user)} />
           </span>
         </span>
         <span className="truncate text-xs text-muted-foreground">
@@ -216,29 +178,36 @@ export const USERS: PocTableConfig<PocUser> = {
       </span>
     </button>
   ),
+  bulkActions: () => (
+    <>
+      <Button size="sm" variant="ghost" onClick={() => toast("Exporterait la sélection")}>
+        <DownloadIcon data-icon="inline-start" />
+        Exporter
+      </Button>
+      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => toast("Suspendrait la sélection")}>
+        <BanIcon data-icon="inline-start" />
+        Suspendre
+      </Button>
+    </>
+  ),
   actions: (user) => (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className={ON_HOVER} aria-label={`Actions de @${user.username}`} />}>
-        <MoreHorizontalIcon />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="w-48">
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => open(user)}>
-            <PanelRightOpenIcon />
-            Ouvrir
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => toast("ID copié")}>
-            <CopyIcon />
-            Copier l&apos;ID
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => toast("Ouvrirait la suspension")}>
-          <BanIcon />
-          Suspendre
+    <RowActions label={`Actions de @${user.username}`}>
+      <DropdownMenuGroup>
+        <DropdownMenuItem onClick={() => open(user)}>
+          <PanelRightOpenIcon />
+          Ouvrir
         </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <DropdownMenuItem onClick={() => toast("ID copié")}>
+          <CopyIcon />
+          Copier l&apos;ID
+        </DropdownMenuItem>
+      </DropdownMenuGroup>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem variant="destructive" onClick={() => toast("Ouvrirait la suspension")}>
+        <BanIcon />
+        Suspendre
+      </DropdownMenuItem>
+    </RowActions>
   ),
 };
 

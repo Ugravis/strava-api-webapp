@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DataTable, type TablePage } from "@/components/admin/data-table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { USERS } from "./poc-columns";
-import { serve } from "./poc-server";
-import { PocTable } from "./poc-table";
+import { fetchPocUsers, USERS } from "./poc-columns";
+import type { PocUser } from "./poc-data";
 
 type PocState = "data" | "loading" | "empty" | "error";
 const STATES: Record<PocState, string> = { data: "Données", loading: "Chargement", empty: "Vide", error: "Erreur" };
+
+const EMPTY: TablePage<PocUser> = { entries: [], total: 0, visible: 0, page: 1, pages: 1, before: 0, counts: {} };
 
 /** The table, and above it how the fake server answers. */
 export function PocView() {
@@ -16,9 +18,9 @@ export function PocView() {
     () => ({
       ...USERS,
       fetch: {
-        data: USERS.fetch,
+        data: fetchPocUsers,
         loading: () => new Promise<never>(() => {}),
-        empty: (request: Parameters<typeof USERS.fetch>[0]) => serve([], USERS, request),
+        empty: () => new Promise<TablePage<PocUser>>((resolve) => setTimeout(() => resolve(EMPTY), 400)),
         error: () => new Promise<never>((_, reject) => setTimeout(() => reject(new Error("503")), 400)),
       }[state],
     }),
@@ -36,7 +38,7 @@ export function PocView() {
           ))}
         </ToggleGroup>
       </div>
-      <PocTable config={config} />
+      <DataTable config={config} />
     </>
   );
 }

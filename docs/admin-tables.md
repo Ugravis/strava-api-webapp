@@ -1,0 +1,181 @@
+# Admin data tables
+
+Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on the POC page `/admin/table-poc` (#133), which stays as the live showcase of the kit on fake rows.
+
+## Where things are
+
+| Layer | Path | Role |
+| --- | --- | --- |
+| Contract | `packages/shared/src/table/index.ts` (`@kilotrace/shared/table`) | `TableQuery`, `TablePage`, wire format, page layout. Browser-safe. |
+| Backend engine | `apps/backend/src/admin/common/table-query.ts` | `runTableQuery`, `TableSpec`, `@TableQueryParam()`. |
+| Server Action helper | `apps/frontend/src/lib/admin/table.ts` | `fetchAdminTable(path, query)`. |
+| Frontend kit | `apps/frontend/src/components/admin/data-table/` (import from `@/components/admin/data-table`) | `DataTable`, column builders, cells, `localTableSource`. |
+| Showcase | `apps/frontend/src/app/(admin)/admin/table-poc/` | Every feature on fake accounts: copy it. |
+
+## Recipe: a new table
+
+Example: the accounts, rows of type `AdminUserSummary`.
+
+### 1. Backend: an endpoint serving pages
+
+In the existing admin controller of the domain (its guards and permissions then apply):
+
+```ts
+@Get('table')
+table(@TableQueryParam() query: TableQuery): Promise<TablePage<AdminUserSummary>> {
+  return this.service.table(query);
+}
+```
+
+In the service, a `TableSpec` of SQL expressions on the aliases of the query builder, and the base query of every row the caller may see, without order:
+
+```ts
+const ACTIVE = '(user.suspended_at IS NULL OR user.suspended_until <= now())';
+
+const USERS_TABLE: TableSpec = {
+  search: ['user.username', 'user.display_name', 'user.email'],
+  sorts: {
+    createdAt: 'user.created_at',
+    user: 'user.username',
+    lastSeenAt: '(SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id = "user"."id")',
+  },
+  tiebreak: 'user.id',
+  facets: {
+    country: { column: 'user.country_code' },
+    status: { options: { active: ACTIVE, suspended: `NOT ${ACTIVE}` } },
+  },
+  groupings: { status: `CASE WHEN ${ACTIVE} THEN 'active' ELSE 'suspended' END` },
+};
+
+async table(query: TableQuery): Promise<TablePage<AdminUserSummary>> {
+  const page = await runTableQuery(this.users.createQueryBuilder('user'), query, USERS_TABLE);
+  return mapTablePage(page, (users) => this.summaries(users));
+}
+```
+
+- The ids of `sorts`, `facets` and `groupings` are those of the columns, facets and groupings of the frontend config. Anything else the client asks for is ignored.
+- Sorting puts empty values last, whichever the direction. `tiebreak` must be unique.
+- A facet is either a `column` of single values, counted per value, or one SQL condition per option. Use options for a value spread over rows, e.g. `EXISTS (SELECT 1 FROM provider_connections c WHERE c.user_id = "user"."id")`.
+- Facet counts are taken over the whole base query, before search and filters.
+- The joins of the base query must be to-one. A to-many join would repeat rows: filter on those through `EXISTS` instead.
+- The key of a group is the text of its expression; `NULL` becomes `''`.
+- `mapTablePage` maps the entities to the shape of the API, all rows of the page at once.
+- Test the spec on the dev database. The pure parts are covered by `table-query.spec.ts`.
+
+### 2. Frontend: the Server Action
+
+The browser never calls `/api/admin` itself (the proxy blocks it), so `fetch` is a Server Action, next to the page in `actions.ts`:
+
+```ts
+"use server";
+
+export async function fetchUsersTable(query: TableQuery): Promise<TablePage<AdminUserSummary>> {
+  return fetchAdminTable<AdminUserSummary>("/users/table", query);
+}
+```
+
+A failed call throws, and the table shows its error state with a retry button.
+
+### 3. Frontend: the config and the table
+
+Put them in a `"use client"` module, e.g. `users-table.tsx`:
+
+```tsx
+const USERS: DataTableConfig<AdminUserSummary> = {
+  id: "users",
+  fetch: fetchUsersTable,
+  rowId: (user) => user.id,
+  search: "Nom, @username ou e-mail",
+  noun: (count) => (count > 1 ? "comptes" : "compte"),
+  empty: { title: "Aucun compte", description: "Les comptes apparaîtront ici dès la première inscription." },
+  columns: [
+    userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user }),
+    statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, value: (user) => user.status, statuses: STATUSES }),
+    textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, value: (user) => user.email, muted: true }),
+    dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
+    dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true }),
+  ],
+  facets: [{ id: "status", label: "Statut", options: [{ value: "active", label: "Actif" }, { value: "suspended", label: "Suspendu" }] }],
+  groupings: [{ id: "status", label: "Statut", title: (key) => STATUSES[key].label }],
+};
+
+export function UsersTable() {
+  return <DataTable config={USERS} />;
+}
+```
+
+The page, a server component, checks access and renders `<UsersTable />`.
+
+- `config` must be stable: a module constant, or a `useMemo`. A new `fetch` on each render would fetch on each render.
+- When the config needs hooks, e.g. `useRouter` for `onOpen`, build it inside the component with `useMemo`.
+
+### Without a server: `localTableSource`
+
+For a short list already loaded in full, or a demo, `fetch: localTableSource(rows, spec)` serves the same pages in the browser. `spec` mirrors the `TableSpec`, with functions instead of SQL (see `poc-columns.tsx`).
+
+## Config reference (`DataTableConfig<T>`)
+
+| Key | Use |
+| --- | --- |
+| `id` | Prefix of the URL keys. Unique on the page. |
+| `fetch`, `rowId`, `columns`, `empty`, `noun` | Required. |
+| `search` | Placeholder of the search field. No field without it. |
+| `facets` | Filter buttons of the header. |
+| `groupings` | The « Grouper » menu. Its titles fold their group. |
+| `views` | Table, a subset of columns (`columns`), or cards (`cards` + `card`). The first one is the default. |
+| `create` | The blue « Nouveau » button. |
+| `defaultSort` | `createdAt` descending unless said otherwise. |
+| `defaultFilters` | Applied by the system, shown active only once the user picks. |
+| `pageSize` | 30 by default, at most 100. |
+| `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons. |
+| `actions` | The `RowActions` menu at the end of the row. |
+| `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. |
+| `muted` | Greyed rows. |
+
+## Columns: one builder per kind of field
+
+Each builder applies the rules of the kit: the cell of its kind, a copy button on texts and numbers, a skeleton of its shape, and `EmptyValue` (—) for a missing value. Every builder takes `id`, `header`, `icon`, and optionally `sortable`, `locked` and `className`.
+
+| Builder | Field | Cell |
+| --- | --- | --- |
+| `userColumn({ value, marks? })` | An account: avatar, @username, `Mark`s. Locked, copies the username. | `UserCell` |
+| `textColumn({ value, muted?, width? })` | Free text, e-mail (`muted`). Truncated with the whole text in a bubble. Copied. | `TextCell` |
+| `codeColumn({ value, width? })` | Id, key, hash, in monospace. Copied. | `CodeCell` |
+| `numberColumn({ value, zero?, unit? })` | A count. `0` shows as empty unless `zero`. Copied. | `NumberCell` |
+| `bytesColumn({ value })` | A weight of files, e.g. « 1,4 Mo ». Copied. | `BytesCell` |
+| `dateColumn({ value, time?, relative?, now? })` | A date, a date and time, or how long ago (`relative`, exact date on hover). | `DateCell`, `RelativeDateCell` |
+| `booleanColumn({ value })` | Yes as a check, no as empty. | `BooleanCell` |
+| `statusColumn({ value, statuses })` | A state among a few: a dot of colour and a label. | `StatusCell` |
+| `pillsColumn({ value, max? })` | Labels among many: coloured pills, the rest counted. | `PillsCell` |
+| `iconsColumn({ value, max? })` | Things told by an icon: connections, tags. | `IconsCell` |
+| `buttonsColumn({ buttons, count? })` | Quick actions: `CellButtons` of `CellButton`s. | — |
+| `customColumn(column)` | Anything else: its own `cell`, plus `copy` / `skeleton` if relevant. | — |
+
+Other bits:
+
+- `Truncate`: always give it a `max-w-*`.
+- `Mark`: a small icon pill beside a name, e.g. a role or a suspension.
+- `LinkCell`.
+- `Tip`: the bubble of every icon-only button.
+- `formatDate`, `formatDateTime`, `formatRelative`, `formatNumber`, `formatBytes`: French, Paris time.
+- Colours go through `Tone`: `gray`, `green`, `red`, `amber`, `blue`, `violet`, `sky`, `cyan`, `fuchsia`. No raw colour classes in configs.
+
+## Rules
+
+- **Icons.** Every column has a lucide icon before its name. Every icon-only button has a `Tip`.
+- **Copy.** Texts and numbers get a copy button on hover (the builders do it). Dates, statuses and marks don't.
+- **Server-driven.** Search (debounced 250 ms), filters, sort, groups, folds and pages all go through `fetch`. Skeleton rows show while it runs; the last page keeps the counts and the pagination.
+- **Defaults vs picks.** A header button turns blue only when the user picked it, even when the pick equals the default. Resetting hands control back to the system. « Grouper » has no « Aucun »: its reset item does that.
+- **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group`, `<id>.fold`, `<id>.hide`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
+- **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
+- **Layout.**
+  - The table box has a fixed height (`70vh`) whatever the number of rows. The header is sticky.
+  - The first column is pinned (toggle in the header); never on a phone.
+  - Under 640 px, the header folds onto two lines.
+  - On a narrow desktop, the details of the tools hide when they would wrap the header.
+- **Text.** French, written into the kit.
+- **Actions.** The row menu uses `RowActions` (shown on hover). Its column header is an icon.
+
+## Not in the kit
+
+Lists reordered by drag and drop (badges, tags) keep `components/admin/sortable-list.tsx`.

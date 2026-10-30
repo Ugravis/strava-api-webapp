@@ -1,8 +1,8 @@
 "use client";
 
 import { type AdminUserTagLook, highestAdminRole } from "@kilotrace/shared/admin";
-import { BanIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { BanIcon, CopyCheckIcon, CopyIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { BadgeIcon } from "@/components/distances/badge-icon";
 import { StravaIcon } from "@/components/strava/strava-icon";
@@ -66,6 +66,35 @@ export function Truncate({ children, className }: { children: ReactNode; classNa
         {children}
       </TooltipTrigger>
       <TooltipContent className="max-w-sm break-all">{children}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Floats at the right of its cell on hover, copies its text. */
+export function CopyButton({ value }: { value: string | null }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  if (!value) return null;
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        delay={400}
+        closeOnClick={false}
+        render={<button type="button" />}
+        aria-label={copied ? "Copié" : "Copier"}
+        onClick={(event) => {
+          event.stopPropagation();
+          void navigator.clipboard.writeText(value).then(() => setCopied(true));
+        }}
+        className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity outline-none group-hover/cell:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3.5"
+      >
+        {copied ? <CopyCheckIcon className="text-foreground" /> : <CopyIcon />}
+      </TooltipTrigger>
+      <TooltipContent>{copied ? "Copié" : "Copier"}</TooltipContent>
     </Tooltip>
   );
 }

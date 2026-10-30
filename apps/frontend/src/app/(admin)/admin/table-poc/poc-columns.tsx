@@ -74,7 +74,6 @@ export const USERS: PocTableConfig<PocUser> = {
   rowId: (user) => user.id,
   selectable: true,
   onOpen: open,
-  defaultSort: { id: "createdAt", desc: true },
   search: { label: "Nom, @username ou e-mail", text: (user) => `${user.displayName ?? ""} ${user.username} ${user.email}` },
   noun: (count) => (count > 1 ? "comptes" : "compte"),
   empty: { title: "Aucun compte", description: "Les comptes apparaîtront ici dès la première inscription." },
@@ -91,6 +90,7 @@ export const USERS: PocTableConfig<PocUser> = {
       icon: <AtSignIcon />,
       locked: true,
       sortValue: (user) => user.username,
+      copy: (user) => user.username,
       cell: (user) => <UserCell user={user} />,
       skeleton: (
         <span className="flex items-center gap-2">
@@ -99,13 +99,13 @@ export const USERS: PocTableConfig<PocUser> = {
         </span>
       ),
     },
-    { id: "displayName", header: "Nom affiché", icon: <TypeIcon />, sortValue: (user) => user.displayName ?? "", cell: (user) => (user.displayName ? <Truncate className="max-w-44">{user.displayName}</Truncate> : <Empty />) },
+    { id: "displayName", header: "Nom affiché", icon: <TypeIcon />, copy: (user) => user.displayName, sortValue: (user) => user.displayName ?? "", cell: (user) => (user.displayName ? <Truncate className="max-w-44">{user.displayName}</Truncate> : <Empty />) },
     { id: "status", header: "Statut", icon: <CircleDotIcon />, sortValue: (user) => user.status, cell: (user) => <StatusDot status={user.status} /> },
-    { id: "email", header: "E-mail", icon: <MailIcon />, cell: (user) => <Truncate className="max-w-52 text-muted-foreground">{user.email}</Truncate> },
+    { id: "email", header: "E-mail", icon: <MailIcon />, copy: (user) => user.email, cell: (user) => <Truncate className="max-w-52 text-muted-foreground">{user.email}</Truncate> },
     { id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortValue: (user) => user.createdAt, cell: (user) => <span className="text-muted-foreground">{formatDate(user.createdAt)}</span> },
     { id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortValue: (user) => user.lastSeenAt ?? "", cell: (user) => <When iso={user.lastSeenAt} /> },
-    { id: "activities", header: "Activités", icon: <ActivityIcon />, sortValue: (user) => user.activitiesCount, cell: (user) => (user.activitiesCount ? <span className="tabular-nums">{formatNumber(user.activitiesCount)}</span> : <Empty />) },
-    { id: "storage", header: "Stockage", icon: <HardDriveIcon />, sortValue: (user) => user.storageBytes, cell: (user) => (user.storageBytes ? <span className="tabular-nums">{formatBytes(user.storageBytes)}</span> : <Empty />) },
+    { id: "activities", header: "Activités", icon: <ActivityIcon />, copy: (user) => (user.activitiesCount ? String(user.activitiesCount) : null), sortValue: (user) => user.activitiesCount, cell: (user) => (user.activitiesCount ? <span className="tabular-nums">{formatNumber(user.activitiesCount)}</span> : <Empty />) },
+    { id: "storage", header: "Stockage", icon: <HardDriveIcon />, copy: (user) => (user.storageBytes ? formatBytes(user.storageBytes) : null), sortValue: (user) => user.storageBytes, cell: (user) => (user.storageBytes ? <span className="tabular-nums">{formatBytes(user.storageBytes)}</span> : <Empty />) },
     { id: "connections", header: "Connexions", icon: <LinkIcon />, cell: (user) => <ConnectionIcons user={user} /> },
     { id: "userTags", header: "Tags", icon: <TagIcon />, sortValue: (user) => user.userTags.length, cell: (user) => <UserTagIcons tags={user.userTags} /> },
     {
@@ -124,9 +124,9 @@ export const USERS: PocTableConfig<PocUser> = {
         ),
     },
     { id: "categories", header: "Catégorie", icon: <ShapesIcon />, cell: (user) => <CategoryPills categories={user.categories} /> },
-    { id: "note", header: "Note", icon: <StickyNoteIcon />, cell: (user) => (user.note ? <Truncate className="max-w-56">{user.note}</Truncate> : <Empty />) },
-    { id: "avatarKey", header: "Fichier avatar", icon: <FileImageIcon />, cell: (user) => (user.avatarKey ? <Truncate className="max-w-44 font-mono text-xs">{user.avatarKey}</Truncate> : <Empty />) },
-    { id: "id", header: "ID", icon: <HashIcon />, cell: (user) => <Truncate className="max-w-20 font-mono text-xs text-muted-foreground">{user.id}</Truncate> },
+    { id: "note", header: "Note", icon: <StickyNoteIcon />, copy: (user) => user.note, cell: (user) => (user.note ? <Truncate className="max-w-56">{user.note}</Truncate> : <Empty />) },
+    { id: "avatarKey", header: "Fichier avatar", icon: <FileImageIcon />, copy: (user) => user.avatarKey, cell: (user) => (user.avatarKey ? <Truncate className="max-w-44 font-mono text-xs">{user.avatarKey}</Truncate> : <Empty />) },
+    { id: "id", header: "ID", icon: <HashIcon />, copy: (user) => user.id, cell: (user) => <Truncate className="max-w-20 font-mono text-xs text-muted-foreground">{user.id}</Truncate> },
   ],
   facets: [
     {

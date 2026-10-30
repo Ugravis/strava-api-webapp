@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, InboxIcon, SearchXIcon, TriangleAlertIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, ChevronsLeftIcon, ChevronsRightIcon, InboxIcon, SearchXIcon, TriangleAlertIcon } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { CopyButton } from "./poc-bits";
 import { ColumnHeader, PocToolbar, SelectionBar } from "./poc-toolbar";
 
 const PAGE_SIZE = 20;
@@ -23,6 +24,8 @@ export interface PocColumn<T> {
   skeleton?: ReactNode;
   /** Out of the columns menu, always shown. */
   locked?: boolean;
+  /** The text a floating button copies on hover, none when null. */
+  copy?: (row: T) => string | null;
   className?: string;
 }
 
@@ -62,7 +65,10 @@ export interface PocTableConfig<T> {
   /** The main action of the list, e.g. to add an item. */
   create?: { label: string; onClick: () => void };
   card?: (row: T) => ReactNode;
-  defaultSort: Sort;
+  /** By date of creation, newest first, unless said otherwise. */
+  defaultSort?: Sort;
+  /** Applied by the system, shown active only once the user picks. */
+  defaultFilters?: Record<string, string[]>;
   selectable?: boolean;
   /** Greyed rows, e.g. hidden entries. */
   muted?: (row: T) => boolean;
@@ -85,12 +91,27 @@ export interface Sort {
 /** A line beside the pinned column once rows slide under it. */
 const SHADOW = "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border";
 
+export const DEFAULT_SORT: Sort = { id: "createdAt", desc: true };
+
+/*
+ * The choices of the user, apart from the defaults of the system: null (or
+ * no key) until the user picks, even the default, which the header then
+ * shows as active. A reset hands back to the system.
+ */
+export interface Picks {
+  filters: Record<string, string[]>;
+  sort: Sort | null;
+  /** A grouping, null for none on purpose. */
+  groupBy: string | null | undefined;
+  hidden: Set<string> | null;
+}
+
 export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; state: PocState }) {
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<Record<string, string[]>>({});
-  const [sort, setSort] = useState<Sort>(config.defaultSort);
-  const [groupBy, setGroupBy] = useState<string | null>(null);
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [filterPicks, setFilters] = useState<Record<string, string[]>>({});
+  const [sortPick, setSort] = useState<Sort | null>(null);
+  const [groupPick, setGroupBy] = useState<string | null | undefined>(undefined);
+  const [hiddenPick, setHidden] = useState<Set<string> | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [folded, setFolded] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
@@ -98,32 +119,39 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
   const [scrolled, setScrolled] = useState(false);
   const [viewId, setViewId] = useState(config.views?.[0]?.id ?? "");
 
+  const filters = { ...config.defaultFilters, ...filterPicks };
+  const sort = sortPick ?? config.defaultSort ?? DEFAULT_SORT;
+  const groupBy = groupPick ?? null;
+  const hidden = hiddenPick ?? new Set<string>();
+  const filtered = query.trim() !== "" || Object.values(filters).some((values) => values.length > 0);
+  const picks: Picks = { filters: filterPicks, sort: sortPick, groupBy: groupPick, hidden: hiddenPick };
+
   const view = config.views?.find((each) => each.id === viewId);
   const columns = config.columns.filter((column) => !hidden.has(column.id) && (!view?.columns || view.columns.includes(column.id)));
   const grouping = view?.cards ? undefined : config.groupings?.find((each) => each.id === groupBy);
-  const filtered = Object.values(filters).some((values) => values.length > 0) || query.trim() !== "";
 
   const rows = useMemo(() => {
     const source = state === "empty" ? [] : config.rows;
     const q = query.trim().toLowerCase();
-    const column = config.columns.find((each) => each.id === sort.id);
+    const order = sortPick ?? config.defaultSort ?? DEFAULT_SORT;
+    const column = config.columns.find((each) => each.id === order.id);
     const kept = source.filter(
       (row) =>
         (!q || config.search.text(row).toLowerCase().includes(q)) &&
         (config.facets ?? []).every((facet) => {
-          const wanted = filters[facet.id] ?? [];
+          const wanted = filterPicks[facet.id] ?? config.defaultFilters?.[facet.id] ?? [];
           return wanted.length === 0 || facet.values(row).some((value) => wanted.includes(value));
         }),
     );
     const compare = (a: T, b: T) => {
       if (!column?.sortValue) return 0;
       const [x, y] = [column.sortValue(a), column.sortValue(b)];
-      const order = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "fr");
-      return sort.desc ? -order : order;
+      const result = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "fr");
+      return order.desc ? -result : result;
     };
     // Grouped, the groups come first, each sorted within.
     return kept.sort((a, b) => (grouping ? grouping.key(a).localeCompare(grouping.key(b), "fr") : 0) || compare(a, b));
-  }, [config, state, query, filters, sort, grouping]);
+  }, [config, state, query, filterPicks, sortPick, grouping]);
 
   // Pages of the rows on screen: a folded group keeps its title only, out
   // of the count, and a group cut by a page repeats its title on the next.
@@ -168,13 +196,13 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
   /** Back to the table as it opened: filters, sort, groups and columns. */
   function resetAll() {
     reset();
-    setSort(config.defaultSort);
-    setGroupBy(null);
+    setSort(null);
+    setGroupBy(undefined);
     setFolded(new Set());
-    setHidden(new Set());
+    setHidden(null);
   }
 
-  const changed = filtered || sort.id !== config.defaultSort.id || sort.desc !== config.defaultSort.desc || groupBy !== null || hidden.size > 0;
+  const changed = query.trim() !== "" || Object.keys(filterPicks).length > 0 || sortPick !== null || groupPick !== undefined || hiddenPick !== null;
 
   function toggle(ids: string[], on: boolean) {
     setSelected((previous) => {
@@ -209,9 +237,10 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
         {columns.map((column, index) => (
           <TableCell
             key={column.id}
-            className={cn(index === 0 && pin(true), column.className)}
+            className={cn("group/cell relative", index === 0 && pin(true), column.className)}
           >
             {column.cell(row)}
+            {column.copy && <CopyButton value={column.copy(row)} />}
           </TableCell>
         ))}
         {config.actions && <TableCell className="w-px text-right">{config.actions(row)}</TableCell>}
@@ -297,6 +326,7 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
         }}
         onReset={resetAll}
         filtered={changed}
+        picks={picks}
         sort={sort}
         onSort={setSort}
         groupBy={groupBy}
@@ -328,8 +358,9 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
         )
       ) : (
       <div onScrollCapture={(event) => setScrolled((event.target as HTMLElement).scrollLeft > 0)}>
-      <Table containerClassName="max-h-[70vh] border-y" className="min-w-max">
-        <TableHeader className="sticky top-0 z-20">
+      <Table containerClassName="max-h-[70vh] border-y border-foreground/20 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]" className="min-w-max">
+        {/* The line under the names, drawn by each cell: borders of a sticky header scroll away. */}
+        <TableHeader className="sticky top-0 z-20 [&_th]:before:pointer-events-none [&_th]:before:absolute [&_th]:before:inset-x-0 [&_th]:before:bottom-0 [&_th]:before:h-px [&_th]:before:bg-foreground/20 [&_th:not(.sticky)]:relative [&_tr]:border-b-0">
           <TableRow>
             {config.selectable && (
               <TableHead className={cn(pin(false), pinned && "z-30", "w-10")}>
@@ -354,7 +385,7 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
         </TableHeader>
         <TableBody className="[&_tr:last-child]:border-b-0">{renderBody()}</TableBody>
       </Table>
-      {state !== "loading" && (state === "error" || entries.length === 0) && <div className="border-b py-16">{emptyState()}</div>}
+      {state !== "loading" && (state === "error" || entries.length === 0) && <div className="border-b border-foreground/20 py-16">{emptyState()}</div>}
       </div>
       )}
 
@@ -365,16 +396,22 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
             {visible < rows.length && ` (${rows.length - visible} repliés)`}
           </p>
           <div className="flex items-center gap-1">
+            <Button size="icon-xs" variant="ghost" disabled={current === 1} onClick={() => setPage(1)} aria-label="Première page">
+              <ChevronsLeftIcon />
+            </Button>
             <Button size="icon-xs" variant="ghost" disabled={current === 1} onClick={() => setPage(current - 1)} aria-label="Page précédente">
               <ChevronLeftIcon />
             </Button>
-            {Array.from({ length: pages }, (_, index) => index + 1).map((each) => (
-              <Button key={each} size="icon-xs" className="text-xs" variant={each === current ? "secondary" : "ghost"} onClick={() => setPage(each)} aria-current={each === current ? "page" : undefined}>
-                {each}
-              </Button>
-            ))}
+            <span className="flex items-center gap-1.5 px-1">
+              Page
+              <PageInput key={current} page={current} pages={pages} onPage={setPage} />
+              sur {pages}
+            </span>
             <Button size="icon-xs" variant="ghost" disabled={current === pages} onClick={() => setPage(current + 1)} aria-label="Page suivante">
               <ChevronRightIcon />
+            </Button>
+            <Button size="icon-xs" variant="ghost" disabled={current === pages} onClick={() => setPage(pages)} aria-label="Dernière page">
+              <ChevronsRightIcon />
             </Button>
           </div>
         </nav>
@@ -382,5 +419,27 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
 
       <SelectionBar count={selected.size} onClear={() => setSelected(new Set())} />
     </div>
+  );
+}
+
+/** The page typed in, applied on Enter or on leaving, kept within bounds. */
+function PageInput({ page, pages, onPage }: { page: number; pages: number; onPage: (value: number) => void }) {
+  const [text, setText] = useState(String(page));
+  function apply() {
+    const value = Math.min(Math.max(Math.round(Number(text)) || page, 1), pages);
+    setText(String(value));
+    onPage(value);
+  }
+  return (
+    <input
+      inputMode="numeric"
+      value={text}
+      onChange={(event) => setText(event.target.value.replace(/\D/g, ""))}
+      onBlur={apply}
+      onKeyDown={(event) => event.key === "Enter" && apply()}
+      onFocus={(event) => event.target.select()}
+      aria-label="Page"
+      className="h-6 w-9 rounded-md border bg-background text-center text-xs text-foreground tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+    />
   );
 }

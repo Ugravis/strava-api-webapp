@@ -238,7 +238,7 @@ function detailsOf(entry: AuditLogEntry): string[] {
   const fields = getAdminTranslations("user.moderatedFields");
   const kinds = getAdminTranslations("user.userTags");
   const titles = getAdminTranslations("system.maintenance.titles");
-  const categories = getAdminTranslations("users.reserved.categories");
+  const categories = getAdminTranslations("reservedUsernames.categories");
   const { until, fields: reset, kind, name, active, title, description, enabled, username, category } = entry.details ?? {};
   return [
     typeof until === "string" && t("until", { date: formatDateTime(until) }),

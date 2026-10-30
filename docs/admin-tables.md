@@ -123,6 +123,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `search` | Placeholder of the search field. No field without it. |
 | `facets` | Filter buttons of the header. |
 | `groupings` | The « Grouper » menu. Its titles fold their group. |
+| `defaultGroupBy` | A grouping applied by the system; « Aucun » then joins the menu. |
 | `views` | Any number of views, the first one the default. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, and `noSelection` / `noActions` to drop the checkboxes or the row menu. Two tables of other columns and cards, or a single table: as wanted. |
 | `create` | The blue « Nouveau » button. |
 | `defaultSort` | `createdAt` descending unless said otherwise. |
@@ -168,7 +169,7 @@ Other bits:
 - **Copy.** Texts and numbers get a copy button on hover (the builders do it). Dates, statuses and marks don't.
 - **Server-driven.** Search (debounced 250 ms), filters, sort, groups, folds and pages all go through `fetch`. Skeleton rows show while it runs; the last page keeps the counts and the pagination. While a call runs, every control that changes the rows is disabled (the search field stays editable, the typing only restarts the pause), and the skeleton keeps the widths of the columns.
 - **Defaults vs picks.** A header button turns blue only when the user picked it, even when the pick equals the default. Resetting hands control back to the system. « Grouper » has no « Aucun »: its reset item does that.
-- **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group`, `<id>.fold`, `<id>.hide`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
+- **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group` (`-` for none against a `defaultGroupBy`), `<id>.fold`, `<id>.hide`, `<id>.show`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
   - The table box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls. The header is sticky.
@@ -179,6 +180,7 @@ Other bits:
 - **Text.** French, written into the kit.
 - **Actions.** The row menu uses `RowActions`, always shown. Its column header is an icon.
 - **Filters.** A facet menu stays open while options are ticked.
+- **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column.
 
 ## Not in the kit
 

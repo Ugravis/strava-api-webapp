@@ -215,17 +215,23 @@ export function SortMenu<T>({ config, state }: MenuProps<T>) {
 }
 
 export function GroupMenu<T>({ config, state }: MenuProps<T>) {
-  const groupBy = state.picks.groupBy;
-  const current = config.groupings?.find((grouping) => grouping.id === groupBy);
+  const picked = state.picks.groupBy;
+  const current = state.grouping;
   return (
     <DropdownMenu modal={false}>
-      <ToolTrigger disabled={state.loading} active={groupBy !== undefined} label="Grouper" icon={<RowsIcon />}>
+      <ToolTrigger disabled={state.loading} active={picked !== undefined} label="Grouper" icon={<RowsIcon />}>
         {current?.label}
       </ToolTrigger>
       <DropdownMenuContent align="center" className="w-48">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Grouper par</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={groupBy ?? ""} onValueChange={(value: string) => state.setGroupBy(value)}>
+          <DropdownMenuRadioGroup value={current?.id ?? ""} onValueChange={(value: string) => state.setGroupBy(value)}>
+            {/* Without a default, the reset item ungroups. */}
+            {config.defaultGroupBy && (
+              <DropdownMenuRadioItem value="" closeOnClick>
+                Aucun
+              </DropdownMenuRadioItem>
+            )}
             {config.groupings?.map((grouping) => (
               <DropdownMenuRadioItem key={grouping.id} value={grouping.id} closeOnClick>
                 {grouping.label}
@@ -233,42 +239,52 @@ export function GroupMenu<T>({ config, state }: MenuProps<T>) {
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
-        <ResetItem disabled={groupBy === undefined} onClick={() => state.setGroupBy(undefined)} />
+        <ResetItem disabled={picked === undefined} onClick={() => state.setGroupBy(undefined)} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-export function ColumnsMenu<T>({ config, state }: MenuProps<T>) {
-  const { hidden, setHidden } = state;
-  // Those of the view only, the others never shown in it.
-  const columns = config.columns.filter((column) => !state.view?.columns || state.view.columns.includes(column.id));
-  const shown = columns.filter((column) => !hidden.has(column.id)).length;
+export function ColumnsMenu<T>({ state }: MenuProps<T>) {
+  const { hidden, shown, setHidden, setShown, view } = state;
+  // Those of every view; a column of the view is hidden, one of another view shown.
+  const inView = (id: string) => !view?.columns || view.columns.includes(id);
+  const visible = new Set(state.columns.map((column) => column.id));
+  const toggle = (id: string, on: boolean) => {
+    if (inView(id)) setHidden(new Set(on ? [...hidden].filter((each) => each !== id) : [...hidden, id]));
+    else setShown(new Set(on ? [...shown, id] : [...shown].filter((each) => each !== id)));
+  };
   return (
     <DropdownMenu modal={false}>
-      <ToolTrigger disabled={state.loading} active={state.picks.hidden !== null} label="Colonnes" icon={<ListIcon />}>
+      <ToolTrigger disabled={state.loading} active={state.picks.hidden !== null || state.picks.shown !== null} label="Colonnes" icon={<ListIcon />}>
         <span className="tabular-nums">
-          {shown}/{columns.length}
+          {visible.size}/{state.available.length}
         </span>
       </ToolTrigger>
       <DropdownMenuContent align="center" className="w-52">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Colonnes affichées</DropdownMenuLabel>
-          {columns
+          {state.available
             .filter((column) => !column.locked)
             .map((column) => (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                checked={!hidden.has(column.id)}
+                checked={visible.has(column.id)}
                 // The last column shown stays: a table of none would show nothing.
-                disabled={shown === 1 && !hidden.has(column.id)}
-                onCheckedChange={(on) => setHidden(new Set(on ? [...hidden].filter((id) => id !== column.id) : [...hidden, column.id]))}
+                disabled={visible.size === 1 && visible.has(column.id)}
+                onCheckedChange={(on) => toggle(column.id, on)}
               >
                 {column.header}
               </DropdownMenuCheckboxItem>
             ))}
         </DropdownMenuGroup>
-        <ResetItem disabled={state.picks.hidden === null} onClick={() => setHidden(null)} />
+        <ResetItem
+          disabled={state.picks.hidden === null && state.picks.shown === null}
+          onClick={() => {
+            setHidden(null);
+            setShown(null);
+          }}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

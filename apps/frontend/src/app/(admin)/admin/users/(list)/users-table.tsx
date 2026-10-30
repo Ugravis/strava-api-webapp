@@ -1,8 +1,9 @@
 "use client";
 
-import { type AdminUserSummary, highestAdminRole } from "@kilotrace/shared/admin";
+import { type AdminUserSummary, type AdminUserTagLook, highestAdminRole } from "@kilotrace/shared/admin";
 import type { TableQuery } from "@kilotrace/shared/table";
 import {
+  ActivityIcon,
   AtSignIcon,
   BanIcon,
   CalendarPlusIcon,
@@ -10,8 +11,10 @@ import {
   ClockIcon,
   CopyIcon,
   HashIcon,
+  ExternalLinkIcon,
   KeyRoundIcon,
   LinkIcon,
+  ListClockIcon,
   MailIcon,
   PanelRightOpenIcon,
   ShieldIcon,
@@ -29,6 +32,7 @@ import {
   type IconItem,
   iconsColumn,
   Mark,
+  numberColumn,
   RowActions,
   statusColumn,
   textColumn,
@@ -39,6 +43,7 @@ import { GoogleIcon } from "@/components/auth/google-icon";
 import { BadgeIcon } from "@/components/distances/badge-icon";
 import { StravaIcon } from "@/components/strava/strava-icon";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { userProfileHref } from "@/config/routes";
 import { cn } from "@/lib/utils";
 import { fetchUsersTable } from "../actions";
 
@@ -76,12 +81,14 @@ function UserMarks({ user }: { user: AdminUserSummary }) {
 const connectionItems = (user: AdminUserSummary): IconItem[] =>
   [...(user.stravaConnected ? ["strava" as const] : []), ...user.signInMethods].map((key) => ({ key, ...CONNECTIONS[key] }));
 
-const tagItems = (user: AdminUserSummary): IconItem[] =>
-  user.userTags.map((tag) => ({
-    key: tag.id,
-    label: tag.name,
-    icon: <BadgeIcon icon={tag.icon} className={cn(!tag.color && "text-muted-foreground")} style={tag.color ? { color: tag.color } : undefined} aria-hidden />,
-  }));
+function UserTagIcon({ tag }: { tag: AdminUserTagLook }) {
+  return <BadgeIcon icon={tag.icon} className={cn(!tag.color && "text-muted-foreground")} style={tag.color ? { color: tag.color } : undefined} aria-hidden />;
+}
+
+const tagItems = (user: AdminUserSummary): IconItem[] => user.userTags.map((tag) => ({ key: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} /> }));
+
+/** Key of the facet and of the group of the accounts without any tag. */
+const NO_TAG = "none";
 
 function copy(text: string, done: string) {
   navigator.clipboard.writeText(text).then(() => toast.success(done), () => toast.error("Copie impossible"));
@@ -89,9 +96,9 @@ function copy(text: string, done: string) {
 
 /**
  * The accounts; one opens in the panel above, at `<basePath>/<id>`, the list
- * keeping its picks in the URL.
+ * keeping its picks in the URL. `tags` is the catalog, in its order.
  */
-export function UsersTable({ basePath }: { basePath: string }) {
+export function UsersTable({ basePath, auditLogPath, tags }: { basePath: string; auditLogPath: string; tags: AdminUserTagLook[] }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -120,34 +127,55 @@ export function UsersTable({ basePath }: { basePath: string }) {
       search: "Nom, @username, e-mail ou ID",
       noun: (count) => (count > 1 ? "comptes" : "compte"),
       empty: { title: "Aucun compte", description: "Les comptes apparaîtront ici dès la première inscription." },
+      defaultSort: { id: "createdAt", desc: true },
       views: [
-        { id: "table", label: "Tableau" },
-        { id: "overview", label: "Aperçu", columns: ["user", "status", "lastSeenAt", "connections"] },
-        { id: "cards", label: "Cartes", layout: "cards", columns: ["user", "status", "email", "createdAt", "lastSeenAt", "connections", "userTags"] },
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["user", "createdAt", "lastSeenAt"] },
+        { id: "compact", label: "Table compacte", columns: ["user", "createdAt", "lastSeenAt", "userTags", "activities"] },
+        {
+          id: "detailed",
+          label: "Table détaillée",
+          columns: ["user", "displayName", "status", "email", "createdAt", "lastSeenAt", "connections", "userTags", "activities", "id"],
+        },
       ],
       columns: [
         userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user, marks: (user) => <UserMarks user={user} /> }),
         textColumn({ id: "displayName", header: "Nom affiché", icon: <TypeIcon />, sortable: true, value: (user) => user.displayName, width: "max-w-44" }),
-        statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, value: statusOf, statuses: STATUSES }),
-        textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, value: (user) => user.email, muted: true, width: "max-w-52" }),
+        statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, sortable: true, value: statusOf, statuses: STATUSES }),
+        textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, sortable: true, value: (user) => user.email, muted: true, width: "max-w-52" }),
         dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
         dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true }),
-        iconsColumn({ id: "connections", header: "Connexions", icon: <LinkIcon />, value: connectionItems }),
+        iconsColumn({ id: "connections", header: "Connexions", icon: <LinkIcon />, sortable: true, value: connectionItems }),
         iconsColumn({ id: "userTags", header: "Tags", icon: <TagIcon />, sortable: true, value: tagItems }),
-        codeColumn({ id: "id", header: "ID", icon: <HashIcon />, value: (user) => user.id, width: "max-w-20" }),
+        numberColumn({ id: "activities", header: "Activités", icon: <ActivityIcon />, sortable: true, value: (user) => user.activitiesCount }),
+        codeColumn({ id: "id", header: "ID", icon: <HashIcon />, sortable: true, value: (user) => user.id, width: "max-w-20" }),
       ],
       facets: [
-        { id: "status", label: "Statut", options: Object.entries(STATUSES).map(([value, { label }]) => ({ value, label })) },
-        {
-          id: "role",
-          label: "Rôle",
-          options: [...Object.entries(ROLES).map(([value, { label }]) => ({ value, label })), { value: "none", label: "Sans rôle" }],
-        },
         { id: "connections", label: "Connexion", options: Object.entries(CONNECTIONS).map(([value, { label, icon }]) => ({ value, label, icon })) },
+        {
+          id: "userTags",
+          label: "Tags",
+          options: [...tags.map((tag) => ({ value: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} /> })), { value: NO_TAG, label: "Sans tag" }],
+        },
       ],
       groupings: [
         { id: "status", label: "Statut", title: (key) => STATUSES[key as Status].label },
         { id: "role", label: "Rôle", title: (key) => ROLES[key]?.label ?? "Sans rôle" },
+        {
+          // By the first tag of the account, in the order of the catalog.
+          id: "userTags",
+          label: "Tag principal",
+          title: (key) => {
+            const tag = tags.find((each) => each.id === key);
+            return tag ? (
+              <span className="inline-flex items-center gap-1.5">
+                <UserTagIcon tag={tag} />
+                {tag.name}
+              </span>
+            ) : (
+              "Sans tag"
+            );
+          },
+        },
       ],
       actions: (user) => (
         <RowActions label={`Actions de @${user.username}`}>
@@ -156,6 +184,14 @@ export function UsersTable({ basePath }: { basePath: string }) {
               <PanelRightOpenIcon />
               Ouvrir la fiche
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.open(userProfileHref(user.username), "_blank", "noopener")}>
+              <ExternalLinkIcon />
+              Voir le profil public
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`${auditLogPath}?target=${user.id}`)}>
+              <ListClockIcon />
+              Voir le journal
+            </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
@@ -163,16 +199,12 @@ export function UsersTable({ basePath }: { basePath: string }) {
               <CopyIcon />
               Copier l&apos;ID
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => copy(user.email, "E-mail copié")}>
-              <MailIcon />
-              Copier l&apos;e-mail
-            </DropdownMenuItem>
           </DropdownMenuGroup>
         </RowActions>
       ),
     };
     // `closings` gives a new source, fetched again, each time the panel closes.
-  }, [router, basePath, closings]);
+  }, [router, basePath, auditLogPath, tags, closings]);
 
   return <DataTable config={config} />;
 }

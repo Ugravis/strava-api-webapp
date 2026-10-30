@@ -1,5 +1,6 @@
 import {
   type AdminUserDetail,
+  type AdminUsersOverview,
   type AdminUserSummary,
 } from '@kilotrace/shared/admin';
 import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
@@ -44,6 +45,12 @@ export class AdminUsersController {
     @TableQueryParam() query: TableQuery,
   ): Promise<TablePage<AdminUserSummary>> {
     return this.users.table(query);
+  }
+
+  @Get('overview')
+  @AnyMember()
+  overview(): Promise<AdminUsersOverview> {
+    return this.users.overview();
   }
 
   @Get(':id')

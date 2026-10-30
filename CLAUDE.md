@@ -14,6 +14,9 @@
 - Configs/Locks/Data: NEVER read full lockfiles, logs, GeoJSON, GPX, or Docker files. Use `jq`, `yq`, `grep`, `head`, `tail`.
 - Tests: Run targeted files only (never full suite). Silence linters (`--quiet`).
 
+## Admin Tables
+- Every back-office list uses the data table kit (`@/components/admin/data-table` + `runTableQuery`). Read `docs/admin-tables.md` first (skill `admin-table`).
+
 ## Output Rules
 - Output changed lines only (minimal diff style).
 - No unrequested architectural overhauls or passive code echoes.

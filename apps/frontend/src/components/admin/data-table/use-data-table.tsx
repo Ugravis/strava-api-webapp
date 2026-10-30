@@ -1,11 +1,26 @@
 "use client";
 
 import { TABLE_DEFAULT_SORT, TABLE_PAGE_SIZE, type TablePage, type TableQuery, type TableSort } from "@kilotrace/shared/table";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DataTableConfig, DataTablePicks } from "./types";
+import { Grid2x2Icon, LayoutGridIcon, TableIcon, TextAlignStartIcon } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import type { DataTableConfig, DataTableLayout, DataTablePicks, DataTableView } from "./types";
 import { usePhone, useTableParams, writeTableParams } from "./use-table-params";
 
 const SEARCH_DELAY = 250;
+
+/** Up to this number of columns, a table shows as a small grid in the menu of the views. */
+const FEW_COLUMNS = 5;
+
+/** The icon of a view, told by its layout, and for a table by its number of columns. */
+export function viewIcon<T>(view: DataTableView, config: DataTableConfig<T>): ReactNode {
+  const layout = view.layout ?? "table";
+  if (layout === "cards") return <LayoutGridIcon />;
+  if (layout === "list") return <TextAlignStartIcon />;
+  return (view.columns?.length ?? config.columns.length) <= FEW_COLUMNS ? <Grid2x2Icon /> : <TableIcon />;
+}
+
+/** Rows per page of each layout: a list holds many more rows than a table on a screen. */
+const PAGE_SIZES: Record<DataTableLayout, number> = { table: TABLE_PAGE_SIZE, cards: 24, list: 60 };
 
 /** The state of a table: the picks of the user from the URL, and the page the server answers. */
 export function useDataTable<T>(config: DataTableConfig<T>) {
@@ -46,7 +61,8 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     () => config.columns.filter((column) => !hiddenPick?.has(column.id) && (!view?.columns || view.columns.includes(column.id))),
     [config.columns, hiddenPick, view],
   );
-  const grouping = view?.cards ? undefined : config.groupings?.find((each) => each.id === groupPick);
+  const layout = view?.layout ?? "table";
+  const grouping = config.groupings?.find((each) => each.id === groupPick);
 
   // The search waits for a pause in the typing before asking the server.
   useEffect(() => {
@@ -66,7 +82,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     groupBy: grouping?.id ?? null,
     folded,
     page,
-    pageSize: config.pageSize ?? TABLE_PAGE_SIZE,
+    pageSize: view?.pageSize ?? config.pageSize ?? PAGE_SIZES[layout],
   };
   // One call per distinct request and source, the answer of an outdated one dropped.
   const body = JSON.stringify(request);
@@ -120,6 +136,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     hidden,
     view,
     viewId,
+    layout,
     columns,
     grouping,
     folded,
@@ -145,7 +162,8 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
       set({ fold: next.length > 0 ? next : null, page: null });
     },
     setHidden: (value: Set<string> | null) => set({ hide: value ? [...value] : null }),
-    setView: (value: string) => set({ view: value === config.views?.[0]?.id ? null : value }),
+    // Back to the first page: the pages of another view may hold another number of rows.
+    setView: (value: string) => set({ view: value === config.views?.[0]?.id ? null : value, page: null }),
     /** Search and filters back to the system's. */
     clearFilters: () => {
       clearSearch();

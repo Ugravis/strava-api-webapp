@@ -17,14 +17,11 @@ import {
   HardDriveIcon,
   HashIcon,
   HistoryIcon,
-  LayoutGridIcon,
   LinkIcon,
   MailIcon,
   PanelRightOpenIcon,
   ShapesIcon,
   StickyNoteIcon,
-  TableIcon,
-  TableOfContentsIcon,
   TagIcon,
   TypeIcon,
   ZapIcon,
@@ -40,8 +37,6 @@ import {
   type DataTableConfig,
   dateColumn,
   EmptyValue,
-  formatDate,
-  IconsCell,
   iconsColumn,
   localTableSource,
   numberColumn,
@@ -55,8 +50,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { UserAvatar } from "@/components/user/user-avatar";
-import { publicNameOf } from "@/lib/user";
 import { type PocActionKind, POC_NOW, POC_USERS, type PocUser } from "./poc-data";
 import { CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";
 
@@ -97,9 +90,11 @@ export const USERS: DataTableConfig<PocUser> = {
   empty: { title: "Aucun compte", description: "Les comptes apparaîtront ici dès la première inscription." },
   create: { label: "Nouveau", onClick: () => toast("Ouvrirait la création d'un compte") },
   views: [
-    { id: "table", label: "Tableau", icon: <TableIcon /> },
-    { id: "overview", label: "Aperçu", icon: <TableOfContentsIcon />, columns: ["user", "status", "lastSeenAt", "connections"] },
-    { id: "cards", label: "Cartes", icon: <LayoutGridIcon />, cards: true },
+    { id: "table", label: "Tableau" },
+    { id: "overview", label: "Aperçu", columns: ["user", "status", "lastSeenAt", "connections"] },
+    { id: "cards", label: "Cartes", layout: "cards", columns: ["user", "status", "email", "createdAt", "lastSeenAt", "activities", "connections", "userTags"] },
+    { id: "list", label: "Liste", layout: "list", columns: ["user", "status", "lastSeenAt"] },
+    { id: "actions", label: "Dernières actions", layout: "list", columns: ["lastAction"], noSelection: true, noActions: true },
   ],
   columns: [
     userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user, marks: (user) => <UserMarks user={user} /> }),
@@ -157,27 +152,6 @@ export const USERS: DataTableConfig<PocUser> = {
     { id: "status", label: "Statut", title: (key) => STATUSES[key as PocUser["status"]].label },
     { id: "role", label: "Rôle", title: (key) => (key === "~" ? "Sans rôle" : ROLES[key]!.label) },
   ],
-  card: (user) => (
-    <button
-      type="button"
-      onClick={() => open(user)}
-      className="flex w-full items-center gap-2.5 rounded-xl border bg-card px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-    >
-      <UserAvatar user={user} className="size-9" />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex items-center gap-1.5">
-          <Truncate className="text-sm font-medium">{publicNameOf(user)}</Truncate>
-          <UserMarks user={user} />
-          <span className="ml-auto shrink-0 pl-1">
-            <IconsCell items={connectionItems(user)} />
-          </span>
-        </span>
-        <span className="truncate text-xs text-muted-foreground">
-          @{user.username} • {formatDate(user.createdAt)}
-        </span>
-      </span>
-    </button>
-  ),
   bulkActions: () => (
     <>
       <Button size="sm" variant="ghost" onClick={() => toast("Exporterait la sélection")}>

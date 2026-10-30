@@ -44,7 +44,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
       mutation.disconnect();
     };
   }, []);
-  const cards = !!state.view?.cards;
+  const table = state.layout === "table";
   return (
     <div ref={root} className="group/toolbar flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center data-measuring:**:transition-none">
       <div className="flex min-w-0 items-center gap-2 sm:contents">
@@ -108,9 +108,9 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
             </Tip>
           )}
           <SortMenu config={config} state={state} />
-          {config.groupings && !cards && <GroupMenu config={config} state={state} />}
-          {!cards && <ColumnsMenu config={config} state={state} />}
-          {!cards && (
+          {config.groupings && <GroupMenu config={config} state={state} />}
+          <ColumnsMenu config={config} state={state} />
+          {table && (
             <Tip label="Figer la première colonne">
               {/* Never pinned on a phone: too narrow. */}
               <Button

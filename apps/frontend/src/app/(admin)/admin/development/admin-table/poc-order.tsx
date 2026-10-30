@@ -15,8 +15,8 @@ import {
 } from "@/components/admin/data-table";
 
 /*
- * Fake badges kept in an order of the database, one per collection: the
- * showcase of the rows moved by drag and drop.
+ * Fake badges kept in one order of the database, whatever their collection:
+ * the showcase of the rows moved by drag and drop.
  */
 
 type PocCollection = "distance" | "tiles" | "stations";
@@ -25,7 +25,7 @@ interface PocBadge {
   id: string;
   name: string;
   collection: PocCollection;
-  /** From 1, within its collection. */
+  /** From 1. */
   position: number;
   holders: number;
   createdAt: string;
@@ -49,16 +49,17 @@ const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMap((coll
     id: `${collection}-${index + 1}`,
     name,
     collection,
-    position: index + 1,
+    position: 0,
     holders: Math.round(1200 / (index + 1) ** 1.6) + at * 7,
     createdAt: new Date(Date.UTC(2026, 3 + at, 2 + index * 9)).toISOString(),
   })),
 );
+BADGES.forEach((badge, index) => (badge.position = index + 1));
 
-/** Places the badge before or after its new neighbour, then numbers its collection again. */
+/** Places the badge before or after its new neighbour, then numbers them all again. */
 async function moveBadge({ id, after, before }: TableMove) {
   const badge = BADGES.find((each) => each.id === id)!;
-  const others = BADGES.filter((each) => each.collection === badge.collection && each !== badge).sort((a, b) => a.position - b.position);
+  const others = BADGES.filter((each) => each !== badge).sort((a, b) => a.position - b.position);
   const at = before ? others.findIndex((each) => each.id === before) : others.findIndex((each) => each.id === after) + 1;
   others.splice(at, 0, badge);
   others.forEach((each, index) => (each.position = index + 1));
@@ -85,8 +86,12 @@ const BADGES_TABLE: DataTableConfig<PocBadge> = {
   noun: (count) => (count > 1 ? "badges" : "badge"),
   empty: { title: "Aucun badge", description: "Les badges apparaîtront ici dès leur création." },
   defaultSort: { id: "position", desc: false },
-  defaultGroupBy: "collection",
   maxHeight: "none",
+  views: [
+    { id: "table", label: "Tableau" },
+    { id: "cards", label: "Cartes", layout: "cards" },
+    { id: "list", label: "Liste", layout: "list", columns: ["position", "name", "collection"] },
+  ],
   columns: [
     orderColumn({ id: "position", header: "Ordre", value: (badge) => badge.position }),
     textColumn({ id: "name", header: "Badge", icon: <MedalIcon />, sortable: true, locked: true, value: (badge) => badge.name, width: "max-w-56" }),
@@ -97,7 +102,7 @@ const BADGES_TABLE: DataTableConfig<PocBadge> = {
   groupings: [{ id: "collection", label: "Collection", title: (key) => COLLECTIONS[key as PocCollection].label }],
 };
 
-/** Rows kept in order: moved by the handle of the « Ordre » column, within their collection. */
+/** Rows kept in order: moved by the handle of the « Ordre » column. */
 export function PocOrderTable() {
   return (
     <section className="flex flex-col gap-3">

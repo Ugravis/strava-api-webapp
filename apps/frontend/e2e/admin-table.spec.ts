@@ -80,7 +80,7 @@ test.describe("desktop", () => {
   });
 
   test("ordered rows, handles blocked by another sort", async ({ page }) => {
-    await open(page, "?badges.sort=-holders&badges.group=-");
+    await open(page, "?badges.sort=-holders");
     await settled(page);
     const section = page.locator("section", { has: page.getByRole("heading", { name: "Ordre" }) });
     await expect(section.getByRole("button", { name: "Déplacer" }).first()).toBeDisabled();

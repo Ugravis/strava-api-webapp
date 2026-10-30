@@ -123,12 +123,12 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `search` | Placeholder of the search field. No field without it. |
 | `facets` | Filter buttons of the header. |
 | `groupings` | The « Grouper » menu. Its titles fold their group. |
-| `views` | Table, a subset of columns (`columns`), or cards (`cards` + `card`). The first one is the default. |
+| `views` | Any number of views, the first one the default. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, and `noSelection` / `noActions` to drop the checkboxes or the row menu. Two tables of other columns and cards, or a single table: as wanted. |
 | `create` | The blue « Nouveau » button. |
 | `defaultSort` | `createdAt` descending unless said otherwise. |
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |
-| `pageSize` | 30 by default, at most 100. |
-| `height` | Height of the box of rows, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"auto"` grows with the rows. |
+| `pageSize` | Else the default of the layout: 30 for a table, 24 for cards, 60 for a list. At most 100. A view's own `pageSize` wins. |
+| `maxHeight` | Most height of the box of a table, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"none"` grows without a scroll of its own. |
 | `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons. |
 | `actions` | The `RowActions` menu at the end of the row. |
 | `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. |
@@ -171,12 +171,14 @@ Other bits:
 - **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group`, `<id>.fold`, `<id>.hide`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
-  - The table box keeps its height (`height`, `70vh` by default) whatever the number of rows. The header is sticky.
+  - The table box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls. The header is sticky.
+  - Cards and list draw the cells of the columns, no layout of their own: a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.
   - On a narrow desktop, the details of the tools hide when they would wrap the header.
 - **Text.** French, written into the kit.
-- **Actions.** The row menu uses `RowActions` (shown on hover). Its column header is an icon.
+- **Actions.** The row menu uses `RowActions`, always shown. Its column header is an icon.
+- **Filters.** A facet menu stays open while options are ticked.
 
 ## Not in the kit
 
@@ -189,6 +191,7 @@ Lists reordered by drag and drop (badges, tags) keep `components/admin/sortable-
 - grouped, filtered and sorted;
 - overview;
 - cards;
+- list;
 - loading;
 - empty;
 - error;

@@ -48,6 +48,12 @@ test.describe("desktop", () => {
     await expect(content(page)).toHaveScreenshot("cards.png");
   });
 
+  test("list", async ({ page }) => {
+    await open(page, "?users.view=list");
+    await expect(page.locator("ul li").first()).toBeVisible();
+    await expect(content(page)).toHaveScreenshot("list.png");
+  });
+
   test("loading keeps the widths of the columns", async ({ page }) => {
     await open(page);
     await settled(page);

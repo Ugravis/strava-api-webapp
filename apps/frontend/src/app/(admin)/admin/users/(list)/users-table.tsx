@@ -11,13 +11,10 @@ import {
   CopyIcon,
   HashIcon,
   KeyRoundIcon,
-  LayoutGridIcon,
   LinkIcon,
   MailIcon,
   PanelRightOpenIcon,
   ShieldIcon,
-  TableIcon,
-  TableOfContentsIcon,
   TagIcon,
   TypeIcon,
 } from "lucide-react";
@@ -29,24 +26,19 @@ import {
   type DataTableConfig,
   DataTable,
   dateColumn,
-  formatDate,
   type IconItem,
-  IconsCell,
   iconsColumn,
   Mark,
   RowActions,
   statusColumn,
   textColumn,
   type Tone,
-  Truncate,
   userColumn,
 } from "@/components/admin/data-table";
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { BadgeIcon } from "@/components/distances/badge-icon";
 import { StravaIcon } from "@/components/strava/strava-icon";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { UserAvatar } from "@/components/user/user-avatar";
-import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
 import { fetchUsersTable } from "../actions";
 
@@ -129,9 +121,9 @@ export function UsersTable({ basePath }: { basePath: string }) {
       noun: (count) => (count > 1 ? "comptes" : "compte"),
       empty: { title: "Aucun compte", description: "Les comptes apparaîtront ici dès la première inscription." },
       views: [
-        { id: "table", label: "Tableau", icon: <TableIcon /> },
-        { id: "overview", label: "Aperçu", icon: <TableOfContentsIcon />, columns: ["user", "status", "lastSeenAt", "connections"] },
-        { id: "cards", label: "Cartes", icon: <LayoutGridIcon />, cards: true },
+        { id: "table", label: "Tableau" },
+        { id: "overview", label: "Aperçu", columns: ["user", "status", "lastSeenAt", "connections"] },
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["user", "status", "email", "createdAt", "lastSeenAt", "connections", "userTags"] },
       ],
       columns: [
         userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user, marks: (user) => <UserMarks user={user} /> }),
@@ -157,27 +149,6 @@ export function UsersTable({ basePath }: { basePath: string }) {
         { id: "status", label: "Statut", title: (key) => STATUSES[key as Status].label },
         { id: "role", label: "Rôle", title: (key) => ROLES[key]?.label ?? "Sans rôle" },
       ],
-      card: (user) => (
-        <button
-          type="button"
-          onClick={() => open(user)}
-          className="flex w-full items-center gap-2.5 rounded-xl border bg-card px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <UserAvatar user={user} className="size-9" />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="flex items-center gap-1.5">
-              <Truncate className="text-sm font-medium">{publicNameOf(user)}</Truncate>
-              <UserMarks user={user} />
-              <span className="ml-auto shrink-0 pl-1">
-                <IconsCell items={connectionItems(user)} />
-              </span>
-            </span>
-            <span className="truncate text-xs text-muted-foreground">
-              @{user.username} • {formatDate(user.createdAt)}
-            </span>
-          </span>
-        </button>
-      ),
       actions: (user) => (
         <RowActions label={`Actions de @${user.username}`}>
           <DropdownMenuGroup>

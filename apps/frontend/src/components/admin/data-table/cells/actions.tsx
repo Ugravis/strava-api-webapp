@@ -7,10 +7,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { cn } from "@/lib/utils";
 import { Tip } from "../tip";
 
-/** Shown only on hover where a pointer hovers, always on touch screens. */
-const ON_HOVER =
-  "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100";
-
 /** Buttons side by side in a cell, e.g. a column of quick actions. */
 export function CellButtons({ children }: { children: ReactNode }) {
   return <span className="flex items-center gap-1">{children}</span>;
@@ -60,7 +56,7 @@ export function CellButton({
 export function RowActions({ label, children }: { label: string; children: ReactNode }) {
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className={ON_HOVER} aria-label={label} />}>
+      <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={label} />}>
         <MoreHorizontalIcon />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="w-48">

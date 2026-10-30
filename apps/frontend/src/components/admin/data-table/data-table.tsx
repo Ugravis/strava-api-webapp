@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDownIcon, ChevronRightIcon, MousePointerClickIcon } from "lucide-react";
-import { useLayoutEffect, useRef } from "react";
+import { MousePointerClickIcon } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { ColumnHeader } from "./column-header";
+import { DataTableItems, GroupTitle } from "./items";
 import { DataTableRow, EmptyState, Pagination, SelectionBar } from "./parts";
 import { Tip } from "./tip";
 import { DataTableToolbar } from "./toolbar";
@@ -23,8 +24,14 @@ const SHADOW =
  * user picks lives in the URL. `config` must be stable: a module constant,
  * or memoized.
  */
-export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
-  const state = useDataTable(config);
+export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
+  const state = useDataTable(base);
+  // The config as the view shows it: without checkboxes or row menu if it says so.
+  const { view } = state;
+  const config = useMemo(
+    () => ({ ...base, bulkActions: view?.noSelection ? undefined : base.bulkActions, actions: view?.noActions ? undefined : base.actions }),
+    [base, view],
+  );
   const { columns, loading, result, last, pinned, selected, toggle } = state;
   const entries = result?.entries ?? [];
   const shownIds = entries.flatMap((entry) => ("row" in entry ? [config.rowId(entry.row)] : []));
@@ -32,7 +39,8 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
   const someShown = shownIds.some((id) => selected.has(id));
   const selectable = !!config.bulkActions;
   const span = columns.length + (selectable ? 1 : 0) + (config.actions ? 1 : 0);
-  const skeletons = Math.min(last?.entries.length || 10, 12);
+  // As many as the last page: the box, as tall as its rows, keeps its height.
+  const skeletons = last?.entries.length || 10;
 
   // The skeleton keeps the widths of the columns as they were, set on the cells
   // before paint: rebuilt on the bars alone, the table would shrink and jump.
@@ -95,15 +103,10 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
         );
       }
       const { key, count } = entry.group;
-      const folded = state.folded.includes(key);
       return (
         <TableRow key={`group-${key}`} className="bg-muted/40 hover:bg-muted/60">
           <TableCell colSpan={span} className="py-1.5">
-            <button type="button" onClick={() => state.toggleFold(key)} aria-expanded={!folded} className="sticky left-3 flex items-center gap-1.5 text-xs font-medium">
-              {folded ? <ChevronRightIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />}
-              {state.grouping?.title(key)}
-              <span className="font-normal text-muted-foreground tabular-nums">{count}</span>
-            </button>
+            <GroupTitle title={state.grouping?.title(key)} count={count} folded={state.folded.includes(key)} onToggle={() => state.toggleFold(key)} className="sticky left-3" />
           </TableCell>
         </TableRow>
       );
@@ -112,37 +115,24 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
 
   // The pagination of the last page while the next one loads.
   const pager = result ?? (loading ? last : null);
-  const rows = entries.flatMap((entry) => ("row" in entry ? [entry.row] : []));
+  const blank = !loading && entries.length === 0;
 
   return (
     <div className="flex flex-col gap-3">
       <DataTableToolbar config={config} state={state} />
 
-      {state.view?.cards && config.card ? (
-        loading ? (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 9 }, (_, index) => (
-              <Skeleton key={index} className="h-14 rounded-xl" />
-            ))}
-          </div>
-        ) : rows.length > 0 ? (
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((row) => (
-              <li key={config.rowId(row)}>{config.card!(row)}</li>
-            ))}
-          </ul>
-        ) : (
-          <div className="rounded-xl border border-dashed py-12">{empty}</div>
-        )
+      {state.layout !== "table" ? (
+        <DataTableItems config={config} state={state} layout={state.layout} empty={empty} />
       ) : (
         <div
-          className="group/table relative min-h-64 border-y border-foreground/20"
-          style={{ height: config.height ?? "70vh" }}
+          // As tall as its rows, up to its most; room for the message when there are none.
+          className={cn("group/table relative flex flex-col border-y border-foreground/20", blank && "h-64")}
+          style={{ maxHeight: config.maxHeight ?? "70vh" }}
           // Straight on the box: a render of the whole table on each scroll would make it stutter.
           onScrollCapture={(event) => event.currentTarget.toggleAttribute("data-scrolled", (event.target as HTMLElement).scrollLeft > 0)}
         >
           <Table
-            containerClassName="h-full [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
+            containerClassName="min-h-0 flex-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
             className="min-w-max"
             aria-busy={loading}
           >
@@ -179,7 +169,7 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
             <TableBody className="[&_tr:last-child]:border-b-0">{renderBody()}</TableBody>
           </Table>
           {/* Under the names, outside the scrolling box: centred whatever the sideways scroll. */}
-          {!loading && entries.length === 0 && <div className="absolute inset-x-0 top-9 bottom-0 flex items-center justify-center p-4">{empty}</div>}
+          {blank && <div className="absolute inset-x-0 top-9 bottom-0 flex items-center justify-center p-4">{empty}</div>}
         </div>
       )}
 

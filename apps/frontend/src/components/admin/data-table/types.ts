@@ -37,14 +37,31 @@ export interface DataTableGrouping {
   title: (key: string) => ReactNode;
 }
 
-/** A way to show the rows: a table, with all or some columns, or cards. */
+/**
+ * How a view draws its rows, always with the cells of the columns: a table,
+ * cards of values one under the other, or items of values side by side,
+ * following each other on the line.
+ */
+export type DataTableLayout = "table" | "cards" | "list";
+
+/**
+ * A way to show the rows: any layout, with all or some columns. Its name is
+ * free, its icon is that of its layout: several tables of other columns
+ * look alike in the menu.
+ */
 export interface DataTableView {
   id: string;
   label: string;
-  icon: ReactNode;
+  /** A table by default. */
+  layout?: DataTableLayout;
   /** Shown columns, all by default. */
   columns?: string[];
-  cards?: boolean;
+  /** Rows per page, else the `pageSize` of the config, else the default of the layout. */
+  pageSize?: number;
+  /** Without the checkboxes of `bulkActions`, e.g. a list of short items. */
+  noSelection?: boolean;
+  /** Without the menu of `actions`. */
+  noActions?: boolean;
 }
 
 export interface DataTableConfig<T> {
@@ -63,20 +80,18 @@ export interface DataTableConfig<T> {
   views?: DataTableView[];
   /** The main action of the list, e.g. to add an item. */
   create?: { label: string; onClick: () => void };
-  /** A row as a card, for a view with `cards`. */
-  card?: (row: T) => ReactNode;
   /** By date of creation, newest first, unless said otherwise. */
   defaultSort?: TableSort;
   /** Applied by the system, shown active only once the user picks. */
   defaultFilters?: Record<string, string[]>;
-  /** Rows per page, 30 by default. */
+  /** Rows per page, else the default of the layout: 30 for a table, 24 for cards, 60 for a list. */
   pageSize?: number;
   /**
-   * Height of the box of rows, whatever their number: any CSS length, e.g.
-   * `"480px"` or `"calc(100dvh - 12rem)"`; 70vh by default. `"auto"` lets it
-   * grow with its rows, without a scroll of its own.
+   * Most height of the box of a table, which grows with its rows up to it:
+   * any CSS length, e.g. `"480px"` or `"calc(100dvh - 12rem)"`; 70vh by
+   * default. `"none"` lets it grow without a scroll of its own.
    */
-  height?: string;
+  maxHeight?: string;
   /** Buttons on the selected rows, in a bar at the bottom; rows get checkboxes with it. */
   bulkActions?: (ids: string[], clear: () => void) => ReactNode;
   /** Greyed rows, e.g. hidden entries. */

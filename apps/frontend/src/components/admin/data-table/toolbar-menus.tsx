@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Tip } from "./tip";
+import { viewIcon } from "./use-data-table";
 import type { DataTableConfig, DataTableFacet } from "./types";
 import type { DataTableState } from "./use-data-table";
 
@@ -89,7 +90,6 @@ export function FacetFilter({
           {facet.options.map((option) => (
             <DropdownMenuCheckboxItem
               key={option.value}
-              closeOnClick
               checked={value.includes(option.value)}
               onCheckedChange={(on) => onChange(on ? [...value, option.value] : value.filter((each) => each !== option.value))}
             >
@@ -115,17 +115,18 @@ export function ViewMenu<T>({ config, state }: MenuProps<T>) {
         className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg bg-neutral-900 px-2.5 text-[0.8rem] font-medium text-neutral-50 outline-none transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-neutral-800 [&_svg]:size-3.5"
         aria-label={`Vue : ${current?.label}`}
       >
-        {current?.icon}
+        {current && viewIcon(current, config)}
         <span className="max-sm:hidden">{current?.label}</span>
         <ChevronDownIcon className="opacity-60" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="w-44">
+      {/* As wide as its longest name, on one line. */}
+      <DropdownMenuContent align="center" className="w-auto min-w-44 whitespace-nowrap">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Vue</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={state.viewId} onValueChange={(value: string) => state.setView(value)}>
             {config.views?.map((each) => (
               <DropdownMenuRadioItem key={each.id} value={each.id} closeOnClick>
-                {each.icon}
+                {viewIcon(each, config)}
                 {each.label}
               </DropdownMenuRadioItem>
             ))}
@@ -240,22 +241,27 @@ export function GroupMenu<T>({ config, state }: MenuProps<T>) {
 
 export function ColumnsMenu<T>({ config, state }: MenuProps<T>) {
   const { hidden, setHidden } = state;
+  // Those of the view only, the others never shown in it.
+  const columns = config.columns.filter((column) => !state.view?.columns || state.view.columns.includes(column.id));
+  const shown = columns.filter((column) => !hidden.has(column.id)).length;
   return (
     <DropdownMenu modal={false}>
       <ToolTrigger disabled={state.loading} active={state.picks.hidden !== null} label="Colonnes" icon={<ListIcon />}>
         <span className="tabular-nums">
-          {config.columns.length - hidden.size}/{config.columns.length}
+          {shown}/{columns.length}
         </span>
       </ToolTrigger>
       <DropdownMenuContent align="center" className="w-52">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Colonnes affichées</DropdownMenuLabel>
-          {config.columns
+          {columns
             .filter((column) => !column.locked)
             .map((column) => (
               <DropdownMenuCheckboxItem
                 key={column.id}
                 checked={!hidden.has(column.id)}
+                // The last column shown stays: a table of none would show nothing.
+                disabled={shown === 1 && !hidden.has(column.id)}
                 onCheckedChange={(on) => setHidden(new Set(on ? [...hidden].filter((id) => id !== column.id) : [...hidden, column.id]))}
               >
                 {column.header}

@@ -4,13 +4,21 @@ import {
   ADMIN_BADGE_SLUG,
   MODERATABLE_FIELDS,
   type ModeratableField,
+  type AdminUserSummary,
   type ModerateUserRequest,
   type SuspendUserRequest,
 } from "@kilotrace/shared/admin";
+import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/admin/action-state";
 import { checkedId, reasonOf, runAdminAction } from "@/lib/admin/actions";
 import { adminRoutes } from "@/lib/admin/navigation";
+import { fetchAdminTable } from "@/lib/admin/table";
+
+/** A page of the table of the accounts. */
+export async function fetchUsersTable(query: TableQuery): Promise<TablePage<AdminUserSummary>> {
+  return fetchAdminTable<AdminUserSummary>("/users/table", query);
+}
 
 /*
  * Actions of the user panel, bound to the user id by the page. The backend

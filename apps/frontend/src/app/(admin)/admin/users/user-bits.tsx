@@ -90,17 +90,6 @@ export function UserTagIcon({ userTag, small }: { userTag: AdminUserTagLook; sma
   );
 }
 
-/** The non-sport badges of the account; a dash without any. */
-export function UserTagIcons({ user, small }: { user: AdminUserSummary; small?: boolean }) {
-  return (
-    <IconRow small={small}>
-      {user.userTags.map((userTag) => (
-        <UserTagIcon key={userTag.id} userTag={userTag} small={small} />
-      ))}
-    </IconRow>
-  );
-}
-
 function IconRow({ small, children }: { small?: boolean; children: ReactNode[] }) {
   if (children.length === 0) {
     // Nothing at all on a card, where the space is the dash.

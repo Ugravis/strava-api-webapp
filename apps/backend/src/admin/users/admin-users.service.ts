@@ -1,13 +1,17 @@
 import {
-  ADMIN_PAGE_SIZE,
   ADMIN_ROLES,
-  type AdminPage,
+  type AdminRole,
   type AdminUserDetail,
   type AdminUserSummary,
   highestAdminRole,
   isAdminRole,
   type ModeratableField,
 } from '@kilotrace/shared/admin';
+import {
+  mapTablePage,
+  type TablePage,
+  type TableQuery,
+} from '@kilotrace/shared/table';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'node:crypto';
@@ -27,17 +31,61 @@ import { avatarUrlFor } from '../../users/dto/user-response';
 import { UserTag } from '../../users/user-tag.entity';
 import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { isSuspended, User } from '../../users/user.entity';
-import { likeEscaped } from '../common/like-escaped';
-import type {
-  AdminUsersQueryDto,
-  ModerateUserDto,
-  SuspendUserDto,
-} from './admin-users.dto';
+import { runTableQuery, type TableSpec } from '../common/table-query';
+import type { ModerateUserDto, SuspendUserDto } from './admin-users.dto';
 
 const STRAVA = 'strava';
 const ACTIVE = '(user.suspended_at IS NULL OR user.suspended_until <= now())';
 const LAST_SEEN =
   '(SELECT MAX(session.last_seen_at) FROM sessions session WHERE session.user_id = "user"."id")';
+const STRAVA_LINKED = `EXISTS (SELECT 1 FROM provider_connections connection WHERE connection.user_id = "user"."id" AND connection.provider = '${STRAVA}')`;
+const GOOGLE_LINKED =
+  'EXISTS (SELECT 1 FROM oauth_accounts account WHERE account.user_id = "user"."id")';
+const role = (name: AdminRole) => `'${name}' = ANY(user.roles)`;
+
+/** The highest back-office role, '' without any, as in `highestAdminRole`. */
+const HIGHEST_ROLE = `CASE ${[...ADMIN_ROLES]
+  .reverse()
+  .map((name) => `WHEN ${role(name)} THEN '${name}'`)
+  .join(' ')} ELSE NULL END`;
+
+const USERS_TABLE: TableSpec = {
+  search: [
+    'user.username',
+    'user.display_name',
+    'user.email',
+    'CAST(user.id AS text)',
+  ],
+  sorts: {
+    user: 'user.username',
+    displayName: 'user.display_name',
+    createdAt: 'user.created_at',
+    lastSeenAt: LAST_SEEN,
+    userTags:
+      '(SELECT COUNT(*) FROM user_tag_assignments tag WHERE tag.user_id = "user"."id")',
+  },
+  tiebreak: 'user.id',
+  facets: {
+    status: { options: { active: ACTIVE, suspended: `NOT ${ACTIVE}` } },
+    role: {
+      options: {
+        ...Object.fromEntries(ADMIN_ROLES.map((name) => [name, role(name)])),
+        none: `NOT (${ADMIN_ROLES.map(role).join(' OR ')})`,
+      },
+    },
+    connections: {
+      options: {
+        strava: STRAVA_LINKED,
+        google: GOOGLE_LINKED,
+        password: 'user.password_hash IS NOT NULL',
+      },
+    },
+  },
+  groupings: {
+    status: `CASE WHEN ${ACTIVE} THEN 'active' ELSE 'suspended' END`,
+    role: HIGHEST_ROLE,
+  },
+};
 
 /** Rank of the highest back-office role, -1 without any. */
 function rankOf(user: User): number {
@@ -66,44 +114,13 @@ export class AdminUsersService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async page(query: AdminUsersQueryDto): Promise<AdminPage<AdminUserSummary>> {
-    const builder = this.users
-      .createQueryBuilder('user')
-      .offset((query.page - 1) * ADMIN_PAGE_SIZE)
-      .limit(ADMIN_PAGE_SIZE);
-    if (query.q) {
-      const contains = `%${likeEscaped(query.q.toLowerCase())}%`;
-      builder.andWhere(
-        `(user.username LIKE :contains OR lower(user.display_name) LIKE :contains OR lower(user.email) LIKE :contains OR CAST(user.id AS text) = :q)`,
-        { contains, q: query.q },
-      );
-    }
-    if (query.status === 'active') {
-      builder.andWhere(ACTIVE);
-    } else if (query.status === 'suspended') {
-      builder.andWhere(`NOT ${ACTIVE}`);
-    } else if (query.status === 'staff') {
-      builder.andWhere('cardinality(user.roles) > 0');
-    }
-    const descending = query.sort.endsWith('-desc');
-    const order = descending ? 'DESC' : 'ASC';
-    if (query.sort.startsWith('username')) {
-      builder.orderBy('user.username', order);
-    } else if (query.sort.startsWith('last-seen')) {
-      // Never seen last, whichever the direction.
-      builder.orderBy(LAST_SEEN, order, 'NULLS LAST');
-    } else {
-      builder.orderBy('user.created_at', order);
-    }
-    builder.addOrderBy('user.id');
-
-    const [users, total] = await builder.getManyAndCount();
-    return {
-      items: await this.summaries(users),
-      total,
-      page: query.page,
-      pageSize: ADMIN_PAGE_SIZE,
-    };
+  async table(query: TableQuery): Promise<TablePage<AdminUserSummary>> {
+    const page = await runTableQuery(
+      this.users.createQueryBuilder('user'),
+      query,
+      USERS_TABLE,
+    );
+    return mapTablePage(page, (users) => this.summaries(users));
   }
 
   async detail(id: string): Promise<AdminUserDetail> {

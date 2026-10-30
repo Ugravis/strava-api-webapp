@@ -6,6 +6,8 @@ import {
   AtSignIcon,
   BanIcon,
   CircleCheckIcon,
+  EyeIcon,
+  ZapIcon,
   EraserIcon,
   ShapesIcon,
   CalendarPlusIcon,
@@ -61,7 +63,9 @@ import {
   When,
 } from "./poc-bits";
 import { type PocActionKind, POC_USERS, type PocUser } from "./poc-data";
+import { serve } from "./poc-server";
 import type { PocTableConfig } from "./poc-table";
+import { Tip } from "./poc-toolbar";
 
 /** Shown only on hover where a pointer hovers, always on touch screens. */
 const ON_HOVER = "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100";
@@ -70,7 +74,8 @@ const open = (user: PocUser) => toast(`Ouvrirait le panneau de @${user.username}
 
 /** Every kind of field of the back office, on fake accounts. */
 export const USERS: PocTableConfig<PocUser> = {
-  rows: POC_USERS,
+  id: "users",
+  fetch: (request) => serve(POC_USERS, USERS, request),
   rowId: (user) => user.id,
   selectable: true,
   onOpen: open,
@@ -122,6 +127,44 @@ export const USERS: PocTableConfig<PocUser> = {
         ) : (
           <Empty />
         ),
+    },
+    {
+      id: "quick",
+      header: "Actions",
+      icon: <ZapIcon />,
+      cell: (user) => (
+        <span className="flex items-center gap-1">
+          <Button size="xs" variant="outline" onClick={() => open(user)}>
+            <EyeIcon data-icon="inline-start" />
+            Voir
+          </Button>
+          <Tip label="Envoyer un e-mail">
+            <Button size="icon-xs" variant="outline" aria-label="Envoyer un e-mail" onClick={() => toast(`Écrirait à ${user.email}`)}>
+              <MailIcon />
+            </Button>
+          </Tip>
+          {user.status === "suspended" ? (
+            <Tip label="Réactiver">
+              <Button size="icon-xs" variant="outline" aria-label="Réactiver" onClick={() => toast(`Réactiverait @${user.username}`)}>
+                <CircleCheckIcon />
+              </Button>
+            </Tip>
+          ) : (
+            <Tip label="Suspendre">
+              <Button size="icon-xs" variant="outline" aria-label="Suspendre" className="text-destructive hover:text-destructive" onClick={() => toast(`Ouvrirait la suspension de @${user.username}`)}>
+                <BanIcon />
+              </Button>
+            </Tip>
+          )}
+        </span>
+      ),
+      skeleton: (
+        <span className="flex items-center gap-1">
+          <Skeleton className="h-6 w-14 rounded-md" />
+          <Skeleton className="size-6 rounded-md" />
+          <Skeleton className="size-6 rounded-md" />
+        </span>
+      ),
     },
     { id: "categories", header: "Catégorie", icon: <ShapesIcon />, cell: (user) => <CategoryPills categories={user.categories} /> },
     { id: "note", header: "Note", icon: <StickyNoteIcon />, copy: (user) => user.note, cell: (user) => (user.note ? <Truncate className="max-w-56">{user.note}</Truncate> : <Empty />) },
@@ -178,7 +221,7 @@ export const USERS: PocTableConfig<PocUser> = {
       <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className={ON_HOVER} aria-label={`Actions de @${user.username}`} />}>
         <MoreHorizontalIcon />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="center" className="w-48">
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => open(user)}>
             <PanelRightOpenIcon />

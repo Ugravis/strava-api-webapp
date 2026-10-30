@@ -19,6 +19,7 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react";
+import { useLayoutEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,8 @@ import type { Picks, PocColumn, PocFacet, PocTableConfig, Sort } from "./poc-tab
 
 interface PocToolbarProps<T> {
   config: PocTableConfig<T>;
+  /** Rows per option of each facet, from the server. */
+  counts: Record<string, Record<string, number>>;
   query: string;
   onQuery: (value: string) => void;
   filters: Record<string, string[]>;
@@ -60,7 +63,7 @@ interface PocToolbarProps<T> {
   /** What the user chose, active in blue; the rest is the system's. */
   picks: Picks;
   onSort: (value: Sort | null) => void;
-  onGroupBy: (value: string | null | undefined) => void;
+  onGroupBy: (value: string | undefined) => void;
   onHidden: (value: Set<string> | null) => void;
 }
 
@@ -76,7 +79,7 @@ const ACTIVE =
 const IN_GROUP = "h-full rounded-none border-0";
 
 /** Its name in a bubble, after a short pause on it. */
-function Tip({ label, children }: { label: string; children: React.ReactElement }) {
+export function Tip({ label, children }: { label: string; children: React.ReactElement }) {
   return (
     <Tooltip>
       <TooltipTrigger delay={400} render={children} />
@@ -85,14 +88,44 @@ function Tip({ label, children }: { label: string; children: React.ReactElement 
   );
 }
 
-/** Search and filters on the left, the shape of the table on the right. */
+/**
+ * Search and filters on the left, the shape of the table on the right. On
+ * a phone, two lines: the view, the search and the main action, then the
+ * filters and the tools, sliding sideways.
+ */
 export function PocToolbar<T>(props: PocToolbarProps<T>) {
   const { config, query, onQuery, filters, onFilters, onReset, filtered } = props;
+  const root = useRef<HTMLDivElement>(null);
+  // On a wide screen, the details of the tools go only when they would push
+  // the header onto a second line. Set on the box, measured before paint.
+  useLayoutEffect(() => {
+    const element = root.current;
+    if (!element) return;
+    const fit = () => {
+      // Without transitions while measuring: a padding on its way would lie.
+      element.setAttribute("data-measuring", "");
+      element.removeAttribute("data-compact");
+      if (!window.matchMedia("(max-width: 639px)").matches && element.offsetHeight > 48) element.setAttribute("data-compact", "");
+      // The final layout settled before transitions come back, so nothing animates.
+      void element.offsetHeight;
+      element.removeAttribute("data-measuring");
+    };
+    fit();
+    const resize = new ResizeObserver(fit);
+    resize.observe(element);
+    const mutation = new MutationObserver(fit);
+    mutation.observe(element, { childList: true, subtree: true, characterData: true });
+    return () => {
+      resize.disconnect();
+      mutation.disconnect();
+    };
+  }, []);
+  const BLUE = "rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500";
   return (
-    <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+    <div ref={root} className="group/toolbar flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center data-measuring:**:transition-none">
+      <div className="flex min-w-0 items-center gap-2 sm:contents">
         {config.views && <ViewMenu {...props} />}
-          <InputGroup className="h-7 w-full bg-background sm:w-64 [&_svg]:size-3.5">
+        <InputGroup className="h-7 min-w-0 flex-1 bg-background sm:w-64 sm:flex-none [&_svg]:size-3.5">
           <InputGroupAddon className="text-foreground">
             <SearchIcon />
           </InputGroupAddon>
@@ -104,13 +137,20 @@ export function PocToolbar<T>(props: PocToolbarProps<T>) {
               </InputGroupButton>
             </InputGroupAddon>
           )}
-          </InputGroup>
+        </InputGroup>
+        {config.create && (
+          <Button size="icon-sm" onClick={config.create.onClick} aria-label={config.create.label} className={cn(BLUE, "sm:hidden")}>
+            <PlusIcon />
+          </Button>
+        )}
+      </div>
+      <div className="-m-1 flex items-center gap-2 overflow-x-auto p-1 [scrollbar-width:none] sm:contents">
         {config.facets && <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />}
         {config.facets?.map((facet) => (
           <FacetFilter
             key={facet.id}
             facet={facet}
-            rows={config.rows}
+            counts={props.counts[facet.id] ?? {}}
             value={filters[facet.id] ?? []}
             picked={facet.id in props.picks.filters}
             onChange={(value) => {
@@ -119,9 +159,7 @@ export function PocToolbar<T>(props: PocToolbarProps<T>) {
             }}
           />
         ))}
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <div role="group" aria-label="Affichage" className="flex h-7 divide-x overflow-hidden rounded-lg border bg-background">
+        <div role="group" aria-label="Affichage" className="ml-auto flex h-7 shrink-0 divide-x overflow-hidden rounded-lg border bg-background">
           {filtered && (
             <Tip label="Tout réinitialiser">
               <Button variant="ghost" size="icon-sm" onClick={onReset} aria-label="Tout réinitialiser" className={cn(IN_GROUP, "text-red-600/80 hover:text-red-600 dark:text-red-400/80 dark:hover:text-red-400")}>
@@ -134,10 +172,11 @@ export function PocToolbar<T>(props: PocToolbarProps<T>) {
           {!props.cards && <ColumnsMenu {...props} />}
           {!props.cards && (
             <Tip label="Figer la première colonne">
+              {/* Never pinned on a phone: too narrow. */}
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className={IN_GROUP}
+                className={cn(IN_GROUP, "max-sm:hidden")}
                 onClick={() => props.onPinned(!props.pinned)}
                 aria-pressed={props.pinned}
                 aria-label="Figer la première colonne"
@@ -148,7 +187,7 @@ export function PocToolbar<T>(props: PocToolbarProps<T>) {
           )}
         </div>
         {config.create && (
-          <Button size="sm" onClick={config.create.onClick} className="rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500">
+          <Button size="sm" onClick={config.create.onClick} className={cn(BLUE, "max-sm:hidden")}>
             <PlusIcon data-icon="inline-start" />
             {config.create.label}
           </Button>
@@ -160,13 +199,14 @@ export function PocToolbar<T>(props: PocToolbarProps<T>) {
 
 function FacetFilter<T>({
   facet,
-  rows,
+  counts,
   value,
   picked,
   onChange,
 }: {
   facet: PocFacet<T>;
-  rows: T[];
+  /** Rows per option, from the server. */
+  counts: Record<string, number>;
   value: string[];
   /** Chosen by the user: in blue with its values, else plain. */
   picked: boolean;
@@ -180,7 +220,7 @@ function FacetFilter<T>({
         <PlusCircleIcon data-icon="inline-start" />
         {facet.label}
         {picked && (
-          <>
+          <span className="contents max-sm:hidden">
             {labels.length === 0 ? (
               <Badge variant="secondary" className="rounded-sm bg-blue-500/15 px-1 font-normal text-inherit">
                 Tous
@@ -196,7 +236,7 @@ function FacetFilter<T>({
                 </Badge>
               ))
             )}
-          </>
+          </span>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="w-56">
@@ -211,7 +251,7 @@ function FacetFilter<T>({
               {option.icon}
               {option.label}
               <span className="ml-auto pl-2 text-xs text-muted-foreground tabular-nums">
-                {rows.filter((row) => facet.values(row).includes(option.value)).length}
+                {counts[option.value] ?? "–"}
               </span>
             </DropdownMenuCheckboxItem>
           ))}
@@ -232,7 +272,7 @@ function ViewMenu<T>({ config, view, onView }: PocToolbarProps<T>) {
         aria-label={`Vue : ${current?.label}`}
       >
         {current?.icon}
-        {current?.label}
+        <span className="max-sm:hidden">{current?.label}</span>
         <ChevronDownIcon className="opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="w-44">
@@ -269,9 +309,10 @@ function ResetItem({ disabled, onClick }: { disabled: boolean; onClick: () => vo
 function ToolTrigger({ active, label, icon, children }: { active: boolean; label: string; icon: React.ReactNode; children?: React.ReactNode }) {
   return (
     <Tip label={label}>
-      <DropdownMenuTrigger render={<Button variant="ghost" size={active ? "sm" : "icon-sm"} className={cn(IN_GROUP, active && ACTIVE_FILL)} aria-label={label} />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" size={active ? "sm" : "icon-sm"} className={cn(IN_GROUP, active && cn(ACTIVE_FILL, "max-sm:w-7 max-sm:px-0 group-data-compact/toolbar:w-7 group-data-compact/toolbar:px-0"))} aria-label={label} />}>
         {icon}
-        {active && children}
+        {/* The detail only where there is room for it, else the blue alone. */}
+        {active && <span className="contents max-sm:hidden group-data-compact/toolbar:hidden">{children}</span>}
       </DropdownMenuTrigger>
     </Tip>
   );
@@ -322,15 +363,12 @@ function GroupMenu<T>({ config, groupBy, onGroupBy, picks }: PocToolbarProps<T>)
   return (
     <DropdownMenu modal={false}>
       <ToolTrigger active={picks.groupBy !== undefined} label="Grouper" icon={<RowsIcon />}>
-        {current?.label ?? "Aucun"}
+        {current?.label}
       </ToolTrigger>
       <DropdownMenuContent align="center" className="w-48">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Grouper par</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={groupBy ?? ""} onValueChange={(value: string) => onGroupBy(value || null)}>
-            <DropdownMenuRadioItem value="" closeOnClick>
-              Aucun
-            </DropdownMenuRadioItem>
+          <DropdownMenuRadioGroup value={groupBy ?? ""} onValueChange={(value: string) => onGroupBy(value)}>
             {config.groupings?.map((grouping) => (
               <DropdownMenuRadioItem key={grouping.id} value={grouping.id} closeOnClick>
                 {grouping.label}

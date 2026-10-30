@@ -60,6 +60,16 @@ export function UserCell({ user }: { user: PocUser }) {
 export function Truncate({ children, className }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
+  // The bubble is mounted at the first hover only: hundreds of them in a
+  // table would slow every render of it.
+  const [armed, setArmed] = useState(false);
+  if (!armed) {
+    return (
+      <span onPointerEnter={() => setArmed(true)} className={cn("block min-w-0 truncate", className)}>
+        {children}
+      </span>
+    );
+  }
   return (
     <Tooltip open={open} onOpenChange={(next) => setOpen(next && !!ref.current && ref.current.scrollWidth > ref.current.clientWidth)}>
       <TooltipTrigger delay={500} render={<span ref={ref} className={cn("block min-w-0 truncate", className)} />}>
@@ -78,22 +88,27 @@ export function CopyButton({ value }: { value: string | null }) {
     const timer = setTimeout(() => setCopied(false), 1500);
     return () => clearTimeout(timer);
   }, [copied]);
+  // Mounted at the first hover only, as for `Truncate`.
+  const [armed, setArmed] = useState(false);
   if (!value) return null;
+  const button = (
+    <button
+      type="button"
+      aria-label={copied ? "Copié" : "Copier"}
+      onPointerEnter={() => setArmed(true)}
+      onClick={(event) => {
+        event.stopPropagation();
+        void navigator.clipboard.writeText(value).then(() => setCopied(true));
+      }}
+      className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity outline-none group-hover/cell:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3.5"
+    >
+      {copied ? <CopyCheckIcon className="text-foreground" /> : <CopyIcon />}
+    </button>
+  );
+  if (!armed) return button;
   return (
     <Tooltip>
-      <TooltipTrigger
-        delay={400}
-        closeOnClick={false}
-        render={<button type="button" />}
-        aria-label={copied ? "Copié" : "Copier"}
-        onClick={(event) => {
-          event.stopPropagation();
-          void navigator.clipboard.writeText(value).then(() => setCopied(true));
-        }}
-        className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity outline-none group-hover/cell:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3.5"
-      >
-        {copied ? <CopyCheckIcon className="text-foreground" /> : <CopyIcon />}
-      </TooltipTrigger>
+      <TooltipTrigger delay={400} closeOnClick={false} render={button} />
       <TooltipContent>{copied ? "Copié" : "Copier"}</TooltipContent>
     </Tooltip>
   );

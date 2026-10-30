@@ -1,16 +1,15 @@
 "use client";
 
-import { ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, ChevronsLeftIcon, ChevronsRightIcon, InboxIcon, SearchXIcon, TriangleAlertIcon } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, ChevronsLeftIcon, ChevronsRightIcon, InboxIcon, MousePointerClickIcon, SearchXIcon, TriangleAlertIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { memo, type ReactNode, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./poc-bits";
-import { ColumnHeader, PocToolbar, SelectionBar } from "./poc-toolbar";
-
-const PAGE_SIZE = 20;
+import { ColumnHeader, PocToolbar, SelectionBar, Tip } from "./poc-toolbar";
 
 export interface PocColumn<T> {
   id: string;
@@ -53,8 +52,37 @@ export interface PocTableView {
   cards?: boolean;
 }
 
+/** What the table asks the server for. */
+export interface PocRequest {
+  query: string;
+  filters: Record<string, string[]>;
+  sort: Sort;
+  groupBy: string | null;
+  folded: string[];
+  page: number;
+  pageSize: number;
+}
+
+/** One page of rows, as the server answers. */
+export interface PocPage<T> {
+  entries: Entry<T>[];
+  /** Rows matching the search and filters. */
+  total: number;
+  /** Of them, the rows outside folded groups. */
+  visible: number;
+  /** The page served, within bounds. */
+  page: number;
+  pages: number;
+  /** Rows on the pages before. */
+  before: number;
+  /** Rows per option of each facet. */
+  counts: Record<string, Record<string, number>>;
+}
+
 export interface PocTableConfig<T> {
-  rows: T[];
+  /** Names its parameters in the URL, unique on the page. */
+  id: string;
+  fetch: (request: PocRequest) => Promise<PocPage<T>>;
   rowId: (row: T) => string;
   /** The first one stays on screen while the table scrolls sideways. */
   columns: PocColumn<T>[];
@@ -69,6 +97,8 @@ export interface PocTableConfig<T> {
   defaultSort?: Sort;
   /** Applied by the system, shown active only once the user picks. */
   defaultFilters?: Record<string, string[]>;
+  /** Rows per page, 30 by default. */
+  pageSize?: number;
   selectable?: boolean;
   /** Greyed rows, e.g. hidden entries. */
   muted?: (row: T) => boolean;
@@ -80,18 +110,16 @@ export interface PocTableConfig<T> {
 }
 
 /** A line of a page: a row, or the title of its group. */
-type Entry<T> = { row: T } | { title: { key: string; count: number } };
+export type Entry<T> = { row: T } | { title: { key: string; count: number } };
 
-export type PocState = "data" | "loading" | "empty" | "error";
 export interface Sort {
   id: string;
   desc: boolean;
 }
 
-/** A line beside the pinned column once rows slide under it. */
-const SHADOW = "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border";
-
 export const DEFAULT_SORT: Sort = { id: "createdAt", desc: true };
+const PAGE_SIZE = 30;
+const SEARCH_DELAY = 250;
 
 /*
  * The choices of the user, apart from the defaults of the system: null (or
@@ -101,110 +129,169 @@ export const DEFAULT_SORT: Sort = { id: "createdAt", desc: true };
 export interface Picks {
   filters: Record<string, string[]>;
   sort: Sort | null;
-  /** A grouping, null for none on purpose. */
-  groupBy: string | null | undefined;
+  groupBy: string | undefined;
   hidden: Set<string> | null;
 }
 
-export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; state: PocState }) {
-  const [query, setQuery] = useState("");
-  const [filterPicks, setFilters] = useState<Record<string, string[]>>({});
-  const [sortPick, setSort] = useState<Sort | null>(null);
-  const [groupPick, setGroupBy] = useState<string | null | undefined>(undefined);
-  const [hiddenPick, setHidden] = useState<Set<string> | null>(null);
+/** A line beside the pinned column once rows slide under it, set on the box without a render. */
+const SHADOW =
+  "group-data-scrolled/table:after:pointer-events-none group-data-scrolled/table:after:absolute group-data-scrolled/table:after:inset-y-0 group-data-scrolled/table:after:right-0 group-data-scrolled/table:after:w-px group-data-scrolled/table:after:bg-border";
+
+const MOBILE = "(max-width: 639px)";
+function useMobile() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const query = window.matchMedia(MOBILE);
+      query.addEventListener("change", onChange);
+      return () => query.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(MOBILE).matches,
+    () => false,
+  );
+}
+
+/**
+ * The choices of the user, in the URL under the id of the table, so that
+ * several tables share a page: `?users.sort=-createdAt&users.f.status=active`.
+ * Written through the history, which Next follows without a server round trip.
+ */
+function useTableParams(id: string) {
+  const params = useSearchParams();
+  const get = (key: string) => params.get(`${id}.${key}`);
+  const list = (key: string) => {
+    const raw = get(key);
+    return raw === null ? null : raw.split(",").filter(Boolean);
+  };
+  return { get, list, set: (changes: Record<string, string | string[] | null>) => writeParams(id, changes) };
+}
+
+function writeParams(id: string, changes: Record<string, string | string[] | null>) {
+  const next = new URLSearchParams(window.location.search);
+  for (const [key, value] of Object.entries(changes)) {
+    if (value === null) next.delete(`${id}.${key}`);
+    else next.set(`${id}.${key}`, Array.isArray(value) ? value.join(",") : value);
+  }
+  const search = next.toString();
+  window.history.replaceState(null, "", search ? `?${search}` : window.location.pathname);
+}
+
+export function PocTable<T>({ config }: { config: PocTableConfig<T> }) {
+  const url = useTableParams(config.id);
+  const [query, setQuery] = useState(() => url.get("q") ?? "");
+  const [searched, setSearched] = useState(query);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [folded, setFolded] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
-  const [pinned, setPinned] = useState(true);
-  const [scrolled, setScrolled] = useState(false);
-  const [viewId, setViewId] = useState(config.views?.[0]?.id ?? "");
+  const [attempt, setAttempt] = useState(0);
+  const mobile = useMobile();
+
+  // Read back from the URL: whatever is absent is the system's.
+  const rawSort = url.get("sort");
+  const sortId = rawSort?.replace(/^-/, "");
+  const sortPick = rawSort && config.columns.some((column) => column.id === sortId && column.sortValue) ? { id: sortId!, desc: rawSort.startsWith("-") } : null;
+  const filterPicks = Object.fromEntries(
+    (config.facets ?? []).flatMap((facet) => {
+      const values = url.list(`f.${facet.id}`);
+      return values ? [[facet.id, values]] : [];
+    }),
+  );
+  const groupPick = config.groupings?.some((each) => each.id === url.get("group")) ? url.get("group")! : undefined;
+  const hideParam = url.get("hide");
+  const hiddenPick = useMemo(() => (hideParam === null ? null : new Set(hideParam.split(",").filter(Boolean))), [hideParam]);
+  const viewId = config.views?.some((each) => each.id === url.get("view")) ? url.get("view")! : (config.views?.[0]?.id ?? "");
+  const page = Math.max(Number(url.get("page")) || 1, 1);
+  const folded = url.list("fold") ?? [];
+  // Too narrow to keep a column on screen.
+  // A view setting of the moment, out of the URL.
+  const [pinnedPick, setPinned] = useState(true);
+  const pinned = pinnedPick && !mobile;
 
   const filters = { ...config.defaultFilters, ...filterPicks };
   const sort = sortPick ?? config.defaultSort ?? DEFAULT_SORT;
-  const groupBy = groupPick ?? null;
   const hidden = hiddenPick ?? new Set<string>();
-  const filtered = query.trim() !== "" || Object.values(filters).some((values) => values.length > 0);
   const picks: Picks = { filters: filterPicks, sort: sortPick, groupBy: groupPick, hidden: hiddenPick };
 
   const view = config.views?.find((each) => each.id === viewId);
-  const columns = config.columns.filter((column) => !hidden.has(column.id) && (!view?.columns || view.columns.includes(column.id)));
-  const grouping = view?.cards ? undefined : config.groupings?.find((each) => each.id === groupBy);
+  const columns = useMemo(
+    () => config.columns.filter((column) => !hiddenPick?.has(column.id) && (!view?.columns || view.columns.includes(column.id))),
+    [config.columns, hiddenPick, view],
+  );
+  const grouping = view?.cards ? undefined : config.groupings?.find((each) => each.id === groupPick);
 
-  const rows = useMemo(() => {
-    const source = state === "empty" ? [] : config.rows;
-    const q = query.trim().toLowerCase();
-    const order = sortPick ?? config.defaultSort ?? DEFAULT_SORT;
-    const column = config.columns.find((each) => each.id === order.id);
-    const kept = source.filter(
-      (row) =>
-        (!q || config.search.text(row).toLowerCase().includes(q)) &&
-        (config.facets ?? []).every((facet) => {
-          const wanted = filterPicks[facet.id] ?? config.defaultFilters?.[facet.id] ?? [];
-          return wanted.length === 0 || facet.values(row).some((value) => wanted.includes(value));
-        }),
-    );
-    const compare = (a: T, b: T) => {
-      if (!column?.sortValue) return 0;
-      const [x, y] = [column.sortValue(a), column.sortValue(b)];
-      const result = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "fr");
-      return order.desc ? -result : result;
-    };
-    // Grouped, the groups come first, each sorted within.
-    return kept.sort((a, b) => (grouping ? grouping.key(a).localeCompare(grouping.key(b), "fr") : 0) || compare(a, b));
-  }, [config, state, query, filterPicks, sortPick, grouping]);
-
-  // Pages of the rows on screen: a folded group keeps its title only, out
-  // of the count, and a group cut by a page repeats its title on the next.
-  const { pageList, visible } = useMemo(() => {
-    const list: Entry<T>[][] = [[]];
-    let count = 0;
-    const groups = grouping ? Map.groupBy(rows, grouping.key) : new Map([["", rows]]);
-    for (const [key, items] of groups) {
-      const title = { key, count: items.length };
-      const kept = folded.has(key) ? [] : items;
-      if (kept.length > 0 && count > 0 && count % PAGE_SIZE === 0) list.push([]);
-      if (grouping) list.at(-1)!.push({ title });
-      kept.forEach((row, index) => {
-        if (index > 0 && count % PAGE_SIZE === 0) list.push(grouping ? [{ title }] : []);
-        list.at(-1)!.push({ row });
-        count += 1;
+  // The search waits for a pause in the typing before asking the server.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearched((previous) => {
+        if (previous.trim() !== query.trim()) writeParams(config.id, { q: query.trim() || null, page: null });
+        return query;
       });
-    }
-    return { pageList: list, visible: count };
-  }, [rows, grouping, folded]);
+    }, SEARCH_DELAY);
+    return () => clearTimeout(timer);
+  }, [config.id, query]);
 
-  const pages = pageList.length;
-  const current = Math.min(page, pages);
-  const entries = pageList[current - 1]!;
+  const request: PocRequest = {
+    query: searched,
+    filters,
+    sort,
+    groupBy: grouping?.id ?? null,
+    folded,
+    page,
+    pageSize: config.pageSize ?? PAGE_SIZE,
+  };
+  // One call per distinct request, the answer of an outdated one dropped.
+  const body = JSON.stringify(request);
+  const key = `${body}#${attempt}`;
+  const [answer, setAnswer] = useState<{ key: string; page?: PocPage<T>; error?: true } | null>(null);
+  // While a call runs, the last page still feeds the counts and the pagination.
+  const [last, setLast] = useState<PocPage<T> | null>(null);
+  useEffect(() => {
+    let live = true;
+    const answered = `${body}#${attempt}`;
+    config.fetch(JSON.parse(body) as PocRequest).then(
+      (result) => {
+        if (!live) return;
+        setAnswer({ key: answered, page: result });
+        setLast(result);
+      },
+      () => live && setAnswer({ key: answered, error: true }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [config, body, attempt]);
+
+  const loading = answer?.key !== key;
+  const error = !loading && !!answer?.error;
+  const result = loading || error ? null : (answer?.page ?? null);
+  const entries = result?.entries ?? [];
+  const filtered = searched.trim() !== "" || Object.values(filters).some((values) => values.length > 0);
+
   const shown = entries.flatMap((entry) => ("row" in entry ? [entry.row] : []));
-  const before = pageList.slice(0, current - 1).reduce((sum, list) => sum + list.filter((entry) => "row" in entry).length, 0);
   const shownIds = shown.map(config.rowId);
   const allShown = shownIds.length > 0 && shownIds.every((id) => selected.has(id));
   const someShown = shownIds.some((id) => selected.has(id));
   const span = columns.length + (config.selectable ? 1 : 0) + (config.actions ? 1 : 0);
+  const skeletons = Math.min(last?.entries.length || 10, 12);
 
   /** Classes of the cells pinned on the left: the box, then the first column. */
-  const pin = (first: boolean) =>
-    pinned && cn("sticky left-0 z-10", first && config.selectable && "left-10", first && scrolled && SHADOW);
+  const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && config.selectable && "left-10", first && SHADOW) : "");
+
+  const setPage = (value: number) => url.set({ page: value > 1 ? String(value) : null });
+  const onSort = (value: Sort | null) => url.set({ sort: value ? `${value.desc ? "-" : ""}${value.id}` : null, page: null });
 
   function reset() {
     setQuery("");
-    setFilters({});
-    setPage(1);
+    setSearched("");
+    url.set({ q: null, page: null, ...Object.fromEntries((config.facets ?? []).map((facet) => [`f.${facet.id}`, null])) });
   }
 
   /** Back to the table as it opened: filters, sort, groups and columns. */
   function resetAll() {
     reset();
-    setSort(null);
-    setGroupBy(undefined);
-    setFolded(new Set());
-    setHidden(null);
+    url.set({ sort: null, group: null, fold: null, hide: null });
   }
 
   const changed = query.trim() !== "" || Object.keys(filterPicks).length > 0 || sortPick !== null || groupPick !== undefined || hiddenPick !== null;
 
-  function toggle(ids: string[], on: boolean) {
+  const toggle = useCallback((ids: string[], on: boolean) => {
     setSelected((previous) => {
       const next = new Set(previous);
       for (const id of ids) {
@@ -213,43 +300,14 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
       }
       return next;
     });
-  }
+  }, []);
 
   function renderRow(row: T) {
     const id = config.rowId(row);
-    const isSelected = selected.has(id);
-    return (
-      <TableRow
-        key={id}
-        data-state={isSelected ? "selected" : undefined}
-        onClick={(event) => {
-          // Buttons, links and checkboxes of the row keep their own click.
-          if ((event.target as HTMLElement).closest("button, a, [role=checkbox], [role=menuitem]")) return;
-          config.onOpen?.(row);
-        }}
-        className={cn("group/row", config.onOpen && "cursor-pointer", config.muted?.(row) && "text-muted-foreground")}
-      >
-        {config.selectable && (
-          <TableCell className={cn(pin(false), "w-10")}>
-            <Checkbox checked={isSelected} onCheckedChange={(on) => toggle([id], on)} aria-label="Sélectionner la ligne" />
-          </TableCell>
-        )}
-        {columns.map((column, index) => (
-          <TableCell
-            key={column.id}
-            className={cn("group/cell relative", index === 0 && pin(true), column.className)}
-          >
-            {column.cell(row)}
-            {column.copy && <CopyButton value={column.copy(row)} />}
-          </TableCell>
-        ))}
-        {config.actions && <TableCell className="w-px text-right">{config.actions(row)}</TableCell>}
-      </TableRow>
-    );
+    return <PocRow key={id} config={config} row={row} id={id} columns={columns} selected={selected.has(id)} pinBox={pin(false)} pinFirst={pin(true)} onToggle={toggle} />;
   }
 
   function emptyState() {
-    const error = state === "error";
     const Icon = error ? TriangleAlertIcon : filtered ? SearchXIcon : InboxIcon;
     return (
       <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
@@ -261,7 +319,7 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
           {error ? "L'API n'a pas répondu. Réessaie dans un instant." : filtered ? "Aucune ligne ne correspond à ces filtres." : config.empty.description}
         </p>
         {(error || filtered) && (
-          <Button variant="outline" size="sm" className="mt-1" onClick={error ? undefined : reset}>
+          <Button variant="outline" size="sm" className="mt-1" onClick={error ? () => setAttempt((count) => count + 1) : reset}>
             {error ? "Réessayer" : "Effacer les filtres"}
           </Button>
         )}
@@ -270,16 +328,16 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
   }
 
   function renderBody() {
-    if (state === "loading") {
-      return Array.from({ length: 10 }, (_, index) => (
+    if (loading) {
+      return Array.from({ length: skeletons }, (_, index) => (
         <TableRow key={index} className="hover:bg-background">
           {config.selectable && (
-            <TableCell className="w-10">
+            <TableCell className={cn(pin(false), "w-10")}>
               <Skeleton className="size-4 rounded-sm" />
             </TableCell>
           )}
-          {columns.map((column) => (
-            <TableCell key={column.id}>
+          {columns.map((column, at) => (
+            <TableCell key={column.id} className={cn(at === 0 && pin(true))}>
               {column.skeleton ?? <Skeleton className={cn("inline-block h-4", index % 2 ? "w-16" : "w-24")} />}
             </TableCell>
           ))}
@@ -287,21 +345,23 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
         </TableRow>
       ));
     }
-    if (state === "error" || entries.length === 0) return null;
     return entries.map((entry) => {
       if ("row" in entry) return renderRow(entry.row);
-      const { key, count } = entry.title;
+      const { key: group, count } = entry.title;
       return (
-        <TableRow key={`group-${key}`} className="bg-muted/40 hover:bg-muted/60">
+        <TableRow key={`group-${group}`} className="bg-muted/40 hover:bg-muted/60">
           <TableCell colSpan={span} className="py-1.5">
             <button
               type="button"
-              onClick={() => setFolded((previous) => new Set(previous.has(key) ? [...previous].filter((each) => each !== key) : [...previous, key]))}
-              aria-expanded={!folded.has(key)}
+              onClick={() => {
+                const next = folded.includes(group) ? folded.filter((each) => each !== group) : [...folded, group];
+                url.set({ fold: next.length > 0 ? next : null, page: null });
+              }}
+              aria-expanded={!folded.includes(group)}
               className="sticky left-3 flex items-center gap-1.5 text-xs font-medium"
             >
-              {folded.has(key) ? <ChevronRightIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />}
-              {grouping!.title(key)}
+              {folded.includes(group) ? <ChevronRightIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />}
+              {grouping?.title(group)}
               <span className="font-normal text-muted-foreground tabular-nums">{count}</span>
             </button>
           </TableCell>
@@ -310,107 +370,124 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
     });
   }
 
+  // The pagination of the last page while the next one loads.
+  const pager = result ?? (loading ? last : null);
+
   return (
     <div className="flex flex-col gap-3">
       <PocToolbar
         config={config}
+        counts={last?.counts ?? {}}
         query={query}
-        onQuery={(value) => {
-          setQuery(value);
-          setPage(1);
-        }}
+        onQuery={setQuery}
         filters={filters}
-        onFilters={(value) => {
-          setFilters(value);
-          setPage(1);
-        }}
+        onFilters={(value) => url.set({ page: null, ...Object.fromEntries((config.facets ?? []).map((facet) => [`f.${facet.id}`, value[facet.id] ?? null])) })}
         onReset={resetAll}
         filtered={changed}
         picks={picks}
         sort={sort}
-        onSort={setSort}
-        groupBy={groupBy}
-        onGroupBy={setGroupBy}
+        onSort={onSort}
+        groupBy={groupPick ?? null}
+        onGroupBy={(value) => url.set({ group: value ?? null, fold: null, page: null })}
         hidden={hidden}
-        onHidden={setHidden}
+        onHidden={(value) => url.set({ hide: value ? [...value] : null })}
         view={viewId}
-        onView={setViewId}
+        onView={(value) => url.set({ view: value === config.views?.[0]?.id ? null : value })}
         cards={!!view?.cards}
         pinned={pinned}
         onPinned={setPinned}
       />
 
       {view?.cards && config.card ? (
-        state === "data" && shown.length > 0 ? (
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((row) => (
-              <li key={config.rowId(row)}>{config.card!(row)}</li>
-            ))}
-          </ul>
-        ) : state === "loading" ? (
+        loading ? (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 9 }, (_, index) => (
               <Skeleton key={index} className="h-14 rounded-xl" />
             ))}
           </div>
+        ) : shown.length > 0 ? (
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {shown.map((row) => (
+              <li key={config.rowId(row)}>{config.card!(row)}</li>
+            ))}
+          </ul>
         ) : (
           <div className="rounded-xl border border-dashed py-12">{emptyState()}</div>
         )
       ) : (
-      <div onScrollCapture={(event) => setScrolled((event.target as HTMLElement).scrollLeft > 0)}>
-      <Table containerClassName="max-h-[70vh] border-y border-foreground/20 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]" className="min-w-max">
-        {/* The line under the names, drawn by each cell: borders of a sticky header scroll away. */}
-        <TableHeader className="sticky top-0 z-20 [&_th]:before:pointer-events-none [&_th]:before:absolute [&_th]:before:inset-x-0 [&_th]:before:bottom-0 [&_th]:before:h-px [&_th]:before:bg-foreground/20 [&_th:not(.sticky)]:relative [&_tr]:border-b-0">
-          <TableRow>
-            {config.selectable && (
-              <TableHead className={cn(pin(false), pinned && "z-30", "w-10")}>
-                <Checkbox
-                  checked={allShown}
-                  indeterminate={someShown && !allShown}
-                  onCheckedChange={(on) => toggle(shownIds, on)}
-                  aria-label="Sélectionner la page"
-                />
-              </TableHead>
-            )}
-            {columns.map((column, index) => (
-              <TableHead
-                key={column.id}
-                className={cn(index === 0 && pin(true), index === 0 && pinned && "z-30", column.className)}
-              >
-                <ColumnHeader column={column} sort={sort} onSort={setSort} onHide={column.locked ? undefined : () => setHidden(new Set([...hidden, column.id]))} />
-              </TableHead>
-            ))}
-            {config.actions && <TableHead className="w-px" aria-label="Actions" />}
-          </TableRow>
-        </TableHeader>
-        <TableBody className="[&_tr:last-child]:border-b-0">{renderBody()}</TableBody>
-      </Table>
-      {state !== "loading" && (state === "error" || entries.length === 0) && <div className="border-b border-foreground/20 py-16">{emptyState()}</div>}
-      </div>
+        <div
+          className="group/table relative h-[70vh] border-y border-foreground/20"
+          // Straight on the box: a render of the whole table on each scroll would make it stutter.
+          onScrollCapture={(event) => event.currentTarget.toggleAttribute("data-scrolled", (event.target as HTMLElement).scrollLeft > 0)}
+        >
+          <Table
+            containerClassName="h-full [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
+            className="min-w-max"
+            aria-busy={loading}
+          >
+            {/* The line under the names, drawn by each cell: borders of a sticky header scroll away. */}
+            <TableHeader className="sticky top-0 z-20 [&_th]:before:pointer-events-none [&_th]:before:absolute [&_th]:before:inset-x-0 [&_th]:before:bottom-0 [&_th]:before:h-px [&_th]:before:bg-foreground/20 [&_th:not(.sticky)]:relative [&_tr]:border-b-0">
+              <TableRow>
+                {config.selectable && (
+                  <TableHead className={cn(pin(false), pinned && "z-30", "w-10")}>
+                    <Checkbox
+                      checked={allShown}
+                      indeterminate={someShown && !allShown}
+                      onCheckedChange={(on) => toggle(shownIds, on)}
+                      aria-label="Sélectionner la page"
+                    />
+                  </TableHead>
+                )}
+                {columns.map((column, index) => (
+                  <TableHead key={column.id} className={cn(index === 0 && pin(true), index === 0 && pinned && "z-30", column.className)}>
+                    <ColumnHeader
+                      column={column}
+                      sort={sort}
+                      onSort={onSort}
+                      onHide={column.locked ? undefined : () => url.set({ hide: [...hidden, column.id] })}
+                    />
+                  </TableHead>
+                ))}
+                {config.actions && (
+                  <TableHead className="w-px text-center">
+                    <Tip label="Actions">
+                      <span className="inline-flex text-muted-foreground/70 [&_svg]:size-3.5">
+                        <MousePointerClickIcon aria-label="Actions" />
+                      </span>
+                    </Tip>
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody className="[&_tr:last-child]:border-b-0">{renderBody()}</TableBody>
+          </Table>
+          {/* Under the names, outside the scrolling box: centred whatever the sideways scroll. */}
+          {!loading && entries.length === 0 && <div className="absolute inset-x-0 top-9 bottom-0 flex items-center justify-center p-4">{emptyState()}</div>}
+        </div>
       )}
 
-      {state === "data" && visible > 0 && (
-        <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      {pager && pager.visible > 0 && (
+        <nav aria-label="Pagination" className={cn("flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground", loading && "pointer-events-none opacity-60")}>
           <p>
-            {before + 1}–{before + shown.length} sur {visible} {config.noun(visible)}
-            {visible < rows.length && ` (${rows.length - visible} repliés)`}
+            {pager.before + 1}–{pager.before + pager.entries.filter((entry) => "row" in entry).length} sur {pager.visible} {config.noun(pager.visible)}
+            {pager.visible < pager.total && ` (${pager.total - pager.visible} repliés)`}
           </p>
           <div className="flex items-center gap-1">
-            <Button size="icon-xs" variant="ghost" disabled={current === 1} onClick={() => setPage(1)} aria-label="Première page">
+            <Button size="icon-xs" variant="ghost" disabled={pager.page === 1} onClick={() => setPage(1)} aria-label="Première page">
               <ChevronsLeftIcon />
             </Button>
-            <Button size="icon-xs" variant="ghost" disabled={current === 1} onClick={() => setPage(current - 1)} aria-label="Page précédente">
+            <Button size="icon-xs" variant="ghost" disabled={pager.page === 1} onClick={() => setPage(pager.page - 1)} aria-label="Page précédente">
               <ChevronLeftIcon />
             </Button>
             <span className="flex items-center gap-1.5 px-1">
               Page
-              <PageInput key={current} page={current} pages={pages} onPage={setPage} />
-              sur {pages}
+              <PageInput key={pager.page} page={pager.page} pages={pager.pages} onPage={setPage} />
+              sur {pager.pages}
             </span>
-            <Button size="icon-xs" variant="ghost" disabled={current === pages} onClick={() => setPage(current + 1)} aria-label="Page suivante">
+            <Button size="icon-xs" variant="ghost" disabled={pager.page === pager.pages} onClick={() => setPage(pager.page + 1)} aria-label="Page suivante">
               <ChevronRightIcon />
             </Button>
-            <Button size="icon-xs" variant="ghost" disabled={current === pages} onClick={() => setPage(pages)} aria-label="Dernière page">
+            <Button size="icon-xs" variant="ghost" disabled={pager.page === pager.pages} onClick={() => setPage(pager.pages)} aria-label="Dernière page">
               <ChevronsRightIcon />
             </Button>
           </div>
@@ -421,6 +498,45 @@ export function PocTable<T>({ config, state }: { config: PocTableConfig<T>; stat
     </div>
   );
 }
+
+interface PocRowProps<T> {
+  config: PocTableConfig<T>;
+  row: T;
+  id: string;
+  columns: PocColumn<T>[];
+  selected: boolean;
+  pinBox: string;
+  pinFirst: string;
+  onToggle: (ids: string[], on: boolean) => void;
+}
+
+/** A row, drawn again only when its own props change, not on every change of the table. */
+const PocRow = memo(function PocRow<T>({ config, row, id, columns, selected, pinBox, pinFirst, onToggle }: PocRowProps<T>) {
+  return (
+    <TableRow
+      data-state={selected ? "selected" : undefined}
+      onClick={(event) => {
+        // Buttons, links and checkboxes of the row keep their own click.
+        if ((event.target as HTMLElement).closest("button, a, [role=checkbox], [role=menuitem]")) return;
+        config.onOpen?.(row);
+      }}
+      className={cn("group/row", config.onOpen && "cursor-pointer", config.muted?.(row) && "text-muted-foreground")}
+    >
+      {config.selectable && (
+        <TableCell className={cn(pinBox, "w-10")}>
+          <Checkbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />
+        </TableCell>
+      )}
+      {columns.map((column, index) => (
+        <TableCell key={column.id} className={cn("group/cell relative", index === 0 && pinFirst, column.className)}>
+          {column.cell(row)}
+          {column.copy && <CopyButton value={column.copy(row)} />}
+        </TableCell>
+      ))}
+      {config.actions && <TableCell className="w-px text-center">{config.actions(row)}</TableCell>}
+    </TableRow>
+  );
+}) as <T>(props: PocRowProps<T>) => ReactNode;
 
 /** The page typed in, applied on Enter or on leaving, kept within bounds. */
 function PageInput({ page, pages, onPage }: { page: number; pages: number; onPage: (value: number) => void }) {

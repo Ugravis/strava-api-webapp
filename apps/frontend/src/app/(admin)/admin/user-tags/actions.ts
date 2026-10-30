@@ -2,13 +2,21 @@
 
 import {
   ADMIN_BADGE_SLUG,
+  type AdminUserTag,
   type CreateUserTagRequest,
-  type ReorderRequest,
   type UpdateUserTagRequest,
 } from "@kilotrace/shared/admin";
+import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
+import type { TableMove } from "@/components/admin/data-table";
 import { reasonOf, runAdminAction } from "@/lib/admin/actions";
 import { getAdminTranslations } from "@/lib/admin/messages";
+import { fetchAdminTable } from "@/lib/admin/table";
+
+/** A page of the table of the user tags. */
+export async function fetchUserTagsTable(query: TableQuery): Promise<TablePage<AdminUserTag>> {
+  return fetchAdminTable<AdminUserTag>("/user-tags/table", query);
+}
 
 /*
  * Actions of the user tags page, bound to their ids by the page. The
@@ -36,9 +44,9 @@ export async function deleteUserTag(id: string, _: ActionResult | null, formData
   );
 }
 
-export async function reorderUserTags(ids: string[]): Promise<ActionResult> {
-  const body: ReorderRequest = { ids: ids.map(checkedSlug) };
-  return runAdminAction("/user-tags/order", "PUT", body);
+export async function moveUserTag({ id, after, before }: TableMove): Promise<ActionResult> {
+  const body: TableMove = { id: checkedSlug(id), after: after && checkedSlug(after), before: before && checkedSlug(before) };
+  return runAdminAction("/user-tags/move", "PUT", body);
 }
 
 /** A slug posted by the page, checked before it reaches a URL. */

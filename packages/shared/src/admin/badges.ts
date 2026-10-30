@@ -66,6 +66,11 @@ export interface AdminBadgeTheme {
   position: number;
 }
 
+/** `GET /api/admin/badge-themes/table`: a collection and its number of badges. */
+export interface AdminBadgeThemeRow extends AdminBadgeTheme {
+  badgesCount: number;
+}
+
 /** `GET /api/admin/badges`: the whole catalog, in display order. */
 export interface AdminBadgeCatalog {
   themes: AdminBadgeTheme[];
@@ -106,7 +111,3 @@ export interface CreateBadgeThemeRequest extends UpdateBadgeThemeRequest {
   id: string;
 }
 
-/** `PUT /api/admin/badges/order` and `/api/admin/badge-themes/order`. */
-export interface ReorderRequest {
-  ids: string[];
-}

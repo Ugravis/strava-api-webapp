@@ -1,4 +1,5 @@
 import type { AdminUserTag } from '@kilotrace/shared/admin';
+import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
   Delete,
@@ -13,7 +14,8 @@ import {
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
-import { ReorderDto } from '../badges/admin-badges.dto';
+import { TableMoveDto } from '../common/table-move';
+import { TableQueryParam } from '../common/table-query';
 import { CreateUserTagDto, UpdateUserTagDto } from './admin-user-tags.dto';
 import { AdminUserTagsService } from './admin-user-tags.service';
 
@@ -30,6 +32,14 @@ export class AdminUserTagsController {
     return this.userTags.catalog();
   }
 
+  @Get('table')
+  @AnyMember()
+  table(
+    @TableQueryParam({ id: 'position', desc: false }) query: TableQuery,
+  ): Promise<TablePage<AdminUserTag>> {
+    return this.userTags.table(query);
+  }
+
   @Post()
   @Permission('userTags.create')
   @Audited({ action: 'userTags.create', details: ['id', 'name'] })
@@ -38,13 +48,13 @@ export class AdminUserTagsController {
     return this.userTags.create(dto);
   }
 
-  /** Declared before `:id`, which would take `order` for an id. */
-  @Put('order')
+  /** Declared before `:id`, which would take `move` for an id. */
+  @Put('move')
   @Permission('userTags.edit')
-  @Audited({ action: 'userTags.reorder' })
+  @Audited({ action: 'userTags.reorder', details: ['id'] })
   @HttpCode(HttpStatus.NO_CONTENT)
-  reorder(@Body() dto: ReorderDto): Promise<void> {
-    return this.userTags.reorder(dto.ids);
+  move(@Body() dto: TableMoveDto): Promise<void> {
+    return this.userTags.move(dto);
   }
 
   @Patch(':id')

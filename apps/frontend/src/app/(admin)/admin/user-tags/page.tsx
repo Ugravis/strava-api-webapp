@@ -1,15 +1,17 @@
 import type { AdminUserTag } from "@kilotrace/shared/admin";
-import { SortableList } from "@/components/admin/sortable-list";
+import { CrownIcon, TagIcon, UsersIcon } from "lucide-react";
+import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { reorderUserTags } from "./actions";
-import { UserTagFormDialog, type UserTagRights, UserTagRow } from "./user-tag-bits";
+import { type UserTagRights, UserTagsTable } from "./user-tags-table";
+
+const number = new Intl.NumberFormat("fr-FR");
 
 /**
- * The user tags, badges owed to the membership, in the order of the
- * profiles: creating, editing (reordering by drag and drop included) and
+ * The figures of the user tags, badges owed to the membership, then the tags
+ * in the order of the profiles: creating, editing (reordering included) and
  * deleting each need their permission; the ones awarded by the code stay.
  */
 export default async function AdminUserTagsPage() {
@@ -22,38 +24,31 @@ export default async function AdminUserTagsPage() {
   const t = getAdminTranslations("userTags");
   const result = await adminApi<AdminUserTag[]>("/user-tags");
   const userTags = result.ok ? result.data : [];
+  const system = userTags.filter((userTag) => userTag.system).length;
+  const held = userTags.reduce((total, userTag) => total + userTag.holdersCount, 0);
+  const top = userTags.reduce<AdminUserTag | null>((best, userTag) => (userTag.holdersCount > (best?.holdersCount ?? 0) ? userTag : best), null);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageHeader title={t("title")} description={t("description")} />
-        {rights.create && <UserTagFormDialog />}
-      </div>
-
-      <section className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">{t("count", { count: userTags.length })}</p>
-        {userTags.length === 0 ? (
-          <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">{t("empty")}</p>
-        ) : rights.edit ? (
-          <SortableList
-            action={reorderUserTags}
-            handleLabel={t("dragHandle")}
-            className="flex flex-col gap-1.5"
-            items={userTags.map((userTag) => ({
-              id: userTag.id,
-              content: <UserTagRow userTag={userTag} rights={rights} />,
-            }))}
+    <>
+      <PageHeader title={t("title")} description={t("description")} />
+      {result.ok && (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          <StatTile
+            icon={TagIcon}
+            label="Tags"
+            value={number.format(userTags.length)}
+            detail={`dont ${number.format(system)} ${system > 1 ? "automatiques" : "automatique"}`}
           />
-        ) : (
-          <ul className="flex flex-col gap-1.5">
-            {userTags.map((userTag) => (
-              <li key={userTag.id}>
-                <UserTagRow userTag={userTag} rights={rights} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+          <StatTile icon={UsersIcon} label="Attributions" value={number.format(held)} detail="Tags portés, tous membres confondus" />
+          <StatTile
+            icon={CrownIcon}
+            label="Le plus porté"
+            value={top ? number.format(top.holdersCount) : "—"}
+            detail={top ? `${top.holdersCount > 1 ? "membres portent" : "membre porte"} « ${top.name} »` : "Aucun tag attribué"}
+          />
+        </div>
+      )}
+      <UserTagsTable rights={rights} />
+    </>
   );
 }

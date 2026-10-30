@@ -1,4 +1,13 @@
-import type { AdminBadge, AdminBadgeCatalog } from '@kilotrace/shared/admin';
+import type {
+  AdminBadge,
+  AdminBadgeCatalog,
+  AdminBadgeThemeRow,
+} from '@kilotrace/shared/admin';
+import {
+  mapTablePage,
+  type TablePage,
+  type TableQuery,
+} from '@kilotrace/shared/table';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -11,9 +20,64 @@ import type {
   UpdateBadgeDto,
   UpdateBadgeThemeDto,
 } from './admin-badges.dto';
-import { reorderedPositions } from './reorder';
+import { moveRow, type TableMoveDto } from '../common/table-move';
+import { runTableQuery, type TableSpec } from '../common/table-query';
 
 type Positioned = typeof Badge | typeof BadgeTheme;
+
+const FAVORITES =
+  '(SELECT COUNT(*) FROM user_favorite_badges f WHERE f.badge_id = badge.id)';
+const PROFILES =
+  '(SELECT COUNT(*) FROM user_profile_badges p WHERE p.badge_id = badge.id)';
+
+/**
+ * Key of the collection of a badge, in the order of the collections:
+ * `0003-astronomy`, `none` for none, last (digits sort first).
+ */
+const BADGE_THEME_KEY = `CASE WHEN theme.id IS NULL THEN 'none' ELSE lpad(theme.position::text, 4, '0') || '-' || theme.id END`;
+
+const BADGES_TABLE: TableSpec = {
+  search: ['badge.name', 'badge.id', 'badge.description'],
+  sorts: {
+    position: 'badge.position',
+    name: 'badge.name',
+    id: 'badge.id',
+    theme: 'theme.position',
+    metric: 'badge.metric',
+    family: 'badge.family',
+    favorites: FAVORITES,
+    profiles: PROFILES,
+    createdAt: 'badge.created_at',
+  },
+  defaultSort: { id: 'position', desc: false },
+  tiebreak: 'badge.id',
+  facets: {
+    status: {
+      options: { active: 'badge.active', inactive: 'NOT badge.active' },
+    },
+    theme: { column: `COALESCE(badge.theme_id, '~')` },
+    metric: { column: 'badge.metric' },
+    family: { column: 'badge.family' },
+  },
+  groupings: {
+    theme: BADGE_THEME_KEY,
+    metric: 'badge.metric',
+    family: 'badge.family',
+    status: `CASE WHEN badge.active THEN 'active' ELSE 'inactive' END`,
+  },
+};
+
+const THEMES_TABLE: TableSpec = {
+  search: ['theme.name', 'theme.id'],
+  sorts: {
+    position: 'theme.position',
+    name: 'theme.name',
+    id: 'theme.id',
+    badges: '(SELECT COUNT(*) FROM badges b WHERE b.theme_id = theme.id)',
+  },
+  defaultSort: { id: 'position', desc: false },
+  tiebreak: 'theme.id',
+};
 
 /**
  * The catalog of badges and their collections. Completions are computed
@@ -60,6 +124,42 @@ export class AdminBadgesService {
     };
   }
 
+  async table(query: TableQuery): Promise<TablePage<AdminBadge>> {
+    const base = this.badges
+      .createQueryBuilder('badge')
+      .leftJoin(BadgeTheme, 'theme', 'theme.id = badge.theme_id');
+    const page = await runTableQuery(base, query, BADGES_TABLE);
+    return mapTablePage(page, (badges) => this.withCounts(badges));
+  }
+
+  async themesTable(query: TableQuery): Promise<TablePage<AdminBadgeThemeRow>> {
+    const page = await runTableQuery(
+      this.themes.createQueryBuilder('theme'),
+      query,
+      THEMES_TABLE,
+    );
+    return mapTablePage(page, async (themes) => {
+      const counts = await this.counts(
+        'SELECT theme_id AS id, COUNT(*)::int AS count FROM badges WHERE theme_id = ANY($1) GROUP BY theme_id',
+        themes.map((theme) => theme.id),
+      );
+      return themes.map(({ id, name, position }) => ({
+        id,
+        name,
+        position,
+        badgesCount: counts.get(id) ?? 0,
+      }));
+    });
+  }
+
+  moveBadge(move: TableMoveDto): Promise<void> {
+    return moveRow(this.dataSource.manager, Badge, move);
+  }
+
+  moveTheme(move: TableMoveDto): Promise<void> {
+    return moveRow(this.dataSource.manager, BadgeTheme, move);
+  }
+
   /** A new badge, active, last of the catalog. */
   async createBadge(dto: CreateBadgeDto): Promise<void> {
     await this.checkTheme(dto.themeId);
@@ -96,10 +196,6 @@ export class AdminBadgesService {
     await this.badges.delete(id);
   }
 
-  reorderBadges(ids: string[]): Promise<void> {
-    return this.reorder(Badge, ids);
-  }
-
   /** A new collection, last. */
   async createTheme(dto: CreateBadgeThemeDto): Promise<void> {
     if (await this.themes.existsBy({ id: dto.id })) {
@@ -123,38 +219,40 @@ export class AdminBadgesService {
     await this.themes.delete(id);
   }
 
-  reorderThemes(ids: string[]): Promise<void> {
-    return this.reorder(BadgeTheme, ids);
+  private async withCounts(badges: Badge[]): Promise<AdminBadge[]> {
+    const ids = badges.map((badge) => badge.id);
+    const [favorites, profiles] = await Promise.all([
+      this.counts(
+        'SELECT badge_id AS id, COUNT(*)::int AS count FROM user_favorite_badges WHERE badge_id = ANY($1) GROUP BY badge_id',
+        ids,
+      ),
+      this.counts(
+        'SELECT badge_id AS id, COUNT(*)::int AS count FROM user_profile_badges WHERE badge_id = ANY($1) GROUP BY badge_id',
+        ids,
+      ),
+    ]);
+    return badges.map((badge) =>
+      toAdminBadge(
+        badge,
+        favorites.get(badge.id) ?? 0,
+        profiles.get(badge.id) ?? 0,
+      ),
+    );
   }
 
-  /** Gives the listed rows the positions they held between them, in order. */
-  private async reorder(entity: Positioned, ids: string[]): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
-      const rows: { id: string; position: number }[] = await manager
-        .getRepository(entity)
-        .createQueryBuilder('row')
-        .select(['row.id', 'row.position'])
-        .where('row.id IN (:...ids)', { ids })
-        .setLock('pessimistic_write')
-        .getMany();
-      const positions = reorderedPositions(
-        new Map(rows.map((row) => [row.id, row.position])),
-        ids,
-      );
-      if (positions.length === 0) {
-        return;
-      }
-      await manager.query(
-        `UPDATE ${manager.getRepository(entity).metadata.tableName} t
-         SET position = o.position
-         FROM unnest($1::varchar[], $2::int[]) AS o(id, position)
-         WHERE t.id = o.id`,
-        [
-          positions.map(([id]) => id),
-          positions.map(([, position]) => position),
-        ],
-      );
-    });
+  /** Counts by id, from a query selecting `id` and `count` of the ids `$1`. */
+  private async counts(
+    sql: string,
+    ids: string[],
+  ): Promise<Map<string, number>> {
+    if (ids.length === 0) {
+      return new Map();
+    }
+    const rows: { id: string; count: number }[] = await this.dataSource.query(
+      sql,
+      [ids],
+    );
+    return new Map(rows.map((row) => [row.id, row.count]));
   }
 
   private async nextPosition(entity: Positioned): Promise<number> {

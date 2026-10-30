@@ -1,12 +1,38 @@
 import type { AdminUserTag } from '@kilotrace/shared/admin';
+import {
+  mapTablePage,
+  type TablePage,
+  type TableQuery,
+} from '@kilotrace/shared/table';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { UserTag } from '../../users/user-tag.entity';
 import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
-import { reorderedPositions } from '../badges/reorder';
+import { moveRow, type TableMoveDto } from '../common/table-move';
+import { runTableQuery, type TableSpec } from '../common/table-query';
 import type { CreateUserTagDto, UpdateUserTagDto } from './admin-user-tags.dto';
+
+const USER_TAGS_TABLE: TableSpec = {
+  search: ['tag.name', 'tag.id', 'tag.description'],
+  sorts: {
+    position: 'tag.position',
+    name: 'tag.name',
+    id: 'tag.id',
+    holders:
+      '(SELECT COUNT(*) FROM user_tag_assignments a WHERE a.kind = tag.id)',
+    createdAt: 'tag.created_at',
+  },
+  defaultSort: { id: 'position', desc: false },
+  tiebreak: 'tag.id',
+  facets: {
+    kind: { options: { system: 'tag.system', custom: 'NOT tag.system' } },
+  },
+  groupings: {
+    kind: `CASE WHEN tag.system THEN 'system' ELSE 'custom' END`,
+  },
+};
 
 /** The catalog of the user tags, read by every profile at once. */
 @Injectable()
@@ -20,15 +46,35 @@ export class AdminUserTagsService {
   ) {}
 
   async catalog(): Promise<AdminUserTag[]> {
-    const [userTags, counts] = await Promise.all([
-      this.userTags.find({ order: { position: 'ASC', id: 'ASC' } }),
-      this.holders
-        .createQueryBuilder('held')
-        .select('held.kind', 'kind')
-        .addSelect('COUNT(*)::int', 'count')
-        .groupBy('held.kind')
-        .getRawMany<{ kind: string; count: number }>(),
-    ]);
+    return this.withHolders(
+      await this.userTags.find({ order: { position: 'ASC', id: 'ASC' } }),
+    );
+  }
+
+  async table(query: TableQuery): Promise<TablePage<AdminUserTag>> {
+    const page = await runTableQuery(
+      this.userTags.createQueryBuilder('tag'),
+      query,
+      USER_TAGS_TABLE,
+    );
+    return mapTablePage(page, (userTags) => this.withHolders(userTags));
+  }
+
+  move(move: TableMoveDto): Promise<void> {
+    return moveRow(this.dataSource.manager, UserTag, move);
+  }
+
+  private async withHolders(userTags: UserTag[]): Promise<AdminUserTag[]> {
+    if (userTags.length === 0) {
+      return [];
+    }
+    const counts = await this.holders
+      .createQueryBuilder('held')
+      .select('held.kind', 'kind')
+      .where('held.kind IN (:...ids)', { ids: userTags.map(({ id }) => id) })
+      .addSelect('COUNT(*)::int', 'count')
+      .groupBy('held.kind')
+      .getRawMany<{ kind: string; count: number }>();
     const countOf = new Map(counts.map(({ kind, count }) => [kind, count]));
     return userTags.map((userTag) => ({
       id: userTag.id,
@@ -75,26 +121,6 @@ export class AdminUserTagsService {
       );
     }
     await this.userTags.delete(id);
-  }
-
-  /** Gives the listed user tags the positions they held between them, in order. */
-  async reorder(ids: string[]): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
-      const rows = await manager
-        .getRepository(UserTag)
-        .createQueryBuilder('row')
-        .select(['row.id', 'row.position'])
-        .where('row.id IN (:...ids)', { ids })
-        .setLock('pessimistic_write')
-        .getMany();
-      const positions = reorderedPositions(
-        new Map(rows.map((row) => [row.id, row.position])),
-        ids,
-      );
-      for (const [id, position] of positions) {
-        await manager.update(UserTag, id, { position });
-      }
-    });
   }
 
   private async find(id: string): Promise<UserTag> {

@@ -71,48 +71,12 @@
   "users": {
     "title": "Utilisateurs",
     "description": "Comptes du site : consultation, modération, suspension et suppression.",
-    "search": "Rechercher par pseudo, nom, email ou id",
-    "empty": "Aucun utilisateur ne correspond.",
-    "status": {
-      "label": "Statut",
-      "all": "Tous",
-      "active": "Actifs",
-      "suspended": "Suspendus",
-      "staff": "Équipe"
-    },
-    "sort": {
-      "label": "Trier",
-      "created-desc": "Plus récents",
-      "created-asc": "Plus anciens",
-      "username-asc": "Pseudo (A → Z)",
-      "username-desc": "Pseudo (Z → A)",
-      "last-seen-desc": "Vus récemment",
-      "last-seen-asc": "Vus il y a longtemps"
-    },
-    "view": {
-      "label": "Affichage",
-      "cards": "Cartes",
-      "table": "Tableau"
-    },
-    "columns": {
-      "user": "Utilisateur",
-      "createdAt": "Inscription",
-      "lastSeenAt": "Dernière visite",
-      "connections": "Connexions",
-      "userTags": "Tags",
-      "status": "Statut",
-      "actions": "Actions"
-    },
     "badges": {
       "suspended": "Suspendu",
       "strava": "Strava",
       "private": "Privé",
       "public": "Public"
     },
-    "joined": "{date}",
-    "lastSeen": "Vu {date}",
-    "open": "Ouvrir la fiche de {name}",
-    "count": "{count, plural, =0 {Aucun compte} one {# compte} other {# comptes}}",
     "connections": {
       "strava": "Strava",
       "google": "Google",

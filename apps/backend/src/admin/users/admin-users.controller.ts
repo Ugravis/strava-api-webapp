@@ -1,8 +1,8 @@
 import {
-  type AdminPage,
   type AdminUserDetail,
   type AdminUserSummary,
 } from '@kilotrace/shared/admin';
+import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
   Delete,
@@ -13,15 +13,14 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
+import { TableQueryParam } from '../common/table-query';
 import {
-  AdminUsersQueryDto,
   UserTagParamsDto,
   ModerateUserDto,
   ReasonDto,
@@ -39,12 +38,12 @@ const TARGET = { type: 'user', param: 'id' };
 export class AdminUsersController {
   constructor(private readonly users: AdminUsersService) {}
 
-  @Get()
+  @Get('table')
   @AnyMember()
-  page(
-    @Query() query: AdminUsersQueryDto,
-  ): Promise<AdminPage<AdminUserSummary>> {
-    return this.users.page(query);
+  table(
+    @TableQueryParam() query: TableQuery,
+  ): Promise<TablePage<AdminUserSummary>> {
+    return this.users.table(query);
   }
 
   @Get(':id')

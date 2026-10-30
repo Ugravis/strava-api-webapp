@@ -68,10 +68,10 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     page,
     pageSize: config.pageSize ?? TABLE_PAGE_SIZE,
   };
-  // One call per distinct request, the answer of an outdated one dropped.
+  // One call per distinct request and source, the answer of an outdated one dropped.
   const body = JSON.stringify(request);
   const key = `${body}#${attempt}`;
-  const [answer, setAnswer] = useState<{ key: string; page?: TablePage<T>; error?: true } | null>(null);
+  const [answer, setAnswer] = useState<{ key: string; fetch: DataTableConfig<T>["fetch"]; page?: TablePage<T>; error?: true } | null>(null);
   // While a call runs, the last page still feeds the counts and the pagination.
   const [last, setLast] = useState<TablePage<T> | null>(null);
   const { fetch } = config;
@@ -81,17 +81,17 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     fetch(JSON.parse(body) as TableQuery).then(
       (result) => {
         if (!live) return;
-        setAnswer({ key: answered, page: result });
+        setAnswer({ key: answered, fetch, page: result });
         setLast(result);
       },
-      () => live && setAnswer({ key: answered, error: true }),
+      () => live && setAnswer({ key: answered, fetch, error: true }),
     );
     return () => {
       live = false;
     };
   }, [fetch, body, attempt]);
 
-  const loading = answer?.key !== key;
+  const loading = answer?.key !== key || answer.fetch !== fetch;
   const error = !loading && !!answer?.error;
   const result = loading || error ? null : (answer?.page ?? null);
 

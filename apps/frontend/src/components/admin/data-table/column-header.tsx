@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { DataTableColumn, TableSort } from "./types";
 
 /** A header opening its menu: sort either way, or hide the column. */
-export function ColumnHeader<T>({ column, sort, onSort, onHide }: { column: DataTableColumn<T>; sort: TableSort; onSort: (value: TableSort) => void; onHide?: () => void }) {
+export function ColumnHeader<T>({ column, sort, disabled, onSort, onHide }: { column: DataTableColumn<T>; sort: TableSort; disabled: boolean; onSort: (value: TableSort) => void; onHide?: () => void }) {
   if (!column.sortable && !onHide) {
     return (
       <span className="inline-flex items-center gap-1">
@@ -20,8 +20,9 @@ export function ColumnHeader<T>({ column, sort, onSort, onHide }: { column: Data
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
+        disabled={disabled}
         className={cn(
-          "group/header -mx-1.5 inline-flex h-7 items-center gap-1 rounded-md px-1.5 transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 data-popup-open:text-foreground",
+          "group/header -mx-1.5 inline-flex h-7 items-center gap-1 rounded-md px-1.5 transition-colors outline-none hover:text-foreground disabled:pointer-events-none focus-visible:ring-3 focus-visible:ring-ring/50 data-popup-open:text-foreground",
           active && "text-foreground",
         )}
       >

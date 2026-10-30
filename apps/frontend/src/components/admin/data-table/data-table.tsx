@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDownIcon, ChevronRightIcon, MousePointerClickIcon } from "lucide-react";
+import { useLayoutEffect, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,6 +34,21 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
   const span = columns.length + (selectable ? 1 : 0) + (config.actions ? 1 : 0);
   const skeletons = Math.min(last?.entries.length || 10, 12);
 
+  // The skeleton keeps the widths of the columns as they were, set on the cells
+  // before paint: rebuilt on the bars alone, the table would shrink and jump.
+  const head = useRef<HTMLTableRowElement>(null);
+  const widths = useRef(new Map<string, number>());
+  useLayoutEffect(() => {
+    const cells = head.current?.querySelectorAll<HTMLElement>("th[data-column]") ?? [];
+    for (const cell of cells) {
+      const width = loading ? widths.current.get(cell.dataset.column!) : undefined;
+      cell.style.minWidth = width ? `${width}px` : "";
+    }
+    if (!loading) {
+      for (const cell of cells) widths.current.set(cell.dataset.column!, cell.getBoundingClientRect().width);
+    }
+  }, [loading, columns, result]);
+
   /** Classes of the cells pinned on the left: the box, then the first column. */
   const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && selectable && "left-10", first && SHADOW) : "");
 
@@ -51,7 +67,10 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
           )}
           {columns.map((column, at) => (
             <TableCell key={column.id} className={cn(at === 0 && pin(true))}>
-              {column.skeleton ?? <Skeleton className={cn("inline-block h-4", index % 2 ? "w-16" : "w-24")} />}
+              {/* Of no width of its own: the cell keeps the width of its column. */}
+              <div className="w-0 min-w-full overflow-hidden">
+                {column.skeleton ?? <Skeleton className={cn("inline-block h-4", index % 2 ? "w-16" : "w-24")} />}
+              </div>
             </TableCell>
           ))}
           {config.actions && <TableCell />}
@@ -128,17 +147,18 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
           >
             {/* The line under the names, drawn by each cell: borders of a sticky header scroll away. */}
             <TableHeader className="sticky top-0 z-20 [&_th]:before:pointer-events-none [&_th]:before:absolute [&_th]:before:inset-x-0 [&_th]:before:bottom-0 [&_th]:before:h-px [&_th]:before:bg-foreground/20 [&_th:not(.sticky)]:relative [&_tr]:border-b-0">
-              <TableRow>
+              <TableRow ref={head}>
                 {selectable && (
                   <TableHead className={cn(pin(false), pinned && "z-30", "w-10")}>
-                    <Checkbox checked={allShown} indeterminate={someShown && !allShown} onCheckedChange={(on) => toggle(shownIds, on)} aria-label="Sélectionner la page" />
+                    <Checkbox disabled={loading} checked={allShown} indeterminate={someShown && !allShown} onCheckedChange={(on) => toggle(shownIds, on)} aria-label="Sélectionner la page" />
                   </TableHead>
                 )}
                 {columns.map((column, index) => (
-                  <TableHead key={column.id} className={cn(index === 0 && pin(true), index === 0 && pinned && "z-30", column.className)}>
+                  <TableHead key={column.id} data-column={column.id} className={cn(index === 0 && pin(true), index === 0 && pinned && "z-30", column.className)}>
                     <ColumnHeader
                       column={column}
                       sort={state.sort}
+                      disabled={loading}
                       onSort={state.setSort}
                       onHide={column.locked ? undefined : () => state.setHidden(new Set([...state.hidden, column.id]))}
                     />

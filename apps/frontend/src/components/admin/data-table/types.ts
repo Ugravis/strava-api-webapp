@@ -18,6 +18,8 @@ export interface DataTableColumn<T> {
   skeleton?: ReactNode;
   /** Out of the columns menu, always shown: the first column, mostly. */
   locked?: boolean;
+  /** Its header shows the icon alone, its name in a bubble: a narrow column. */
+  compact?: boolean;
   /** Its cells hold the drag handle of `reorder`: the column of `orderColumn`. */
   order?: boolean;
   /** The text a floating button copies on hover, none when null. */

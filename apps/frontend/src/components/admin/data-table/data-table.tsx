@@ -162,7 +162,9 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
       <DataTableToolbar config={config} state={state} />
 
       {state.layout !== "table" ? (
-        <DataTableItems config={config} state={state} layout={state.layout} empty={empty} />
+        <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
+          <DataTableItems config={config} state={state} layout={state.layout} empty={empty} />
+        </MaybeDnd>
       ) : (
         <div
           // As tall as its rows, up to its most; room for the message when there are none.
@@ -172,7 +174,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
           onScrollCapture={(event) => event.currentTarget.toggleAttribute("data-scrolled", (event.target as HTMLElement).scrollLeft > 0)}
         >
           {/* Rows dragged by the handle of an order column, else a plain table. */}
-          <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
+          <MaybeDnd on={movable} vertical id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
           <Table
             containerClassName="min-h-0 flex-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
             className="min-w-max"
@@ -227,11 +229,11 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
   );
 }
 
-/** The context of drag and drop around the table, only when its rows move. */
-function MaybeDnd({ on, children, ...props }: { on: boolean; children: ReactNode } & Pick<ComponentProps<typeof DndContext>, "id" | "sensors" | "onDragEnd">) {
+/** The context of drag and drop around the rows, only when they move: up and down only in a table. */
+function MaybeDnd({ on, vertical, children, ...props }: { on: boolean; vertical?: boolean; children: ReactNode } & Pick<ComponentProps<typeof DndContext>, "id" | "sensors" | "onDragEnd">) {
   if (!on) return children;
   return (
-    <DndContext {...props} collisionDetection={closestCenter} modifiers={[verticalOnly]}>
+    <DndContext {...props} collisionDetection={closestCenter} modifiers={vertical ? [verticalOnly] : undefined}>
       {children}
     </DndContext>
   );

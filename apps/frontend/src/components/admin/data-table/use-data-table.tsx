@@ -144,9 +144,9 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
   const result = fetched && moved?.key === key ? { ...fetched, entries: moved.entries } : fetched;
   const filtered = searched.trim() !== "" || Object.values(filters).some((values) => values.length > 0);
 
-  // Rows move by the handle of an order column, in a table sorted by it, neither searched nor filtered.
+  // Rows move by the handle of an order column, in any layout, sorted by it, neither searched nor filtered.
   const order = columns.find((column) => column.order);
-  const movable = !!config.reorder && !!order && layout === "table";
+  const movable = !!config.reorder && !!order;
   const blocked = !order
     ? null
     : saving

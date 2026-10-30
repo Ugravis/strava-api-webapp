@@ -3,6 +3,7 @@
 import { GripVerticalIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
 import { IconsCell, type IconItem, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { formatBytes } from "./format";
@@ -143,8 +144,10 @@ export function orderColumn<T>({ value, icon = <GripVerticalIcon />, ...base }: 
     icon,
     sortable: true,
     order: true,
+    compact: true,
+    className: cn("w-px", base.className),
     cell: (row) => <OrderCell value={value(row)} />,
-    skeleton: <Skeleton className="inline-block h-4 w-10" />,
+    skeleton: <Skeleton className="inline-block h-4 w-6" />,
   };
 }
 

@@ -1,11 +1,13 @@
 "use client";
 
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
+import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { type KeyboardEvent, memo, type MouseEvent, type ReactNode } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./cells/base";
+import { MovableItem } from "./reorder";
 import type { DataTableColumn, DataTableConfig } from "./types";
 import type { DataTableState } from "./use-data-table";
 
@@ -32,7 +34,10 @@ export function GroupTitle({ title, count, folded, onToggle, className }: { titl
  * one set apart.
  */
 export function DataTableItems<T>({ config, state, layout, empty }: { config: DataTableConfig<T>; state: DataTableState<T>; layout: "cards" | "list"; empty: ReactNode }) {
-  const { columns, loading, result, last, selected, toggle } = state;
+  const { loading, result, last, selected, toggle, movable, blocked } = state;
+  // The order column draws before the title, not as a value.
+  const order = state.columns.find((column) => column.order);
+  const columns = state.columns.filter((column) => !column.order);
   const entries = result?.entries ?? [];
   if (loading) {
     const count = last?.entries.length || 9;
@@ -51,22 +56,60 @@ export function DataTableItems<T>({ config, state, layout, empty }: { config: Da
     );
   }
   if (entries.length === 0) return <div className="rounded-xl border border-dashed py-12">{empty}</div>;
-  return (
-    <ul className={BOXES[layout]}>
-      {entries.map((entry) => {
-        if ("row" in entry) {
-          const id = config.rowId(entry.row);
-          return <Item key={id} config={config} row={entry.row} id={id} columns={columns} layout={layout} selected={selected.has(id)} onToggle={toggle} />;
-        }
-        const { key, count } = entry.group;
-        return (
-          <li key={`group-${key}`} className="col-span-full basis-full pt-1 first:pt-0">
-            <GroupTitle title={state.grouping?.title(key)} count={count} folded={state.folded.includes(key)} onToggle={() => state.toggleFold(key)} />
-          </li>
-        );
-      })}
-    </ul>
-  );
+  const nodes = entries.map((entry) => {
+    if ("row" in entry) {
+      const id = config.rowId(entry.row);
+      return (
+        <Item
+          key={id}
+          config={config}
+          row={entry.row}
+          id={id}
+          columns={columns}
+          order={order}
+          layout={layout}
+          selected={selected.has(id)}
+          onToggle={toggle}
+          movable={movable}
+          blocked={blocked}
+        />
+      );
+    }
+    const { key, count } = entry.group;
+    return (
+      <li key={`group-${key}`} className="col-span-full basis-full pt-1 first:pt-0">
+        <GroupTitle title={state.grouping?.title(key)} count={count} folded={state.folded.includes(key)} onToggle={() => state.toggleFold(key)} />
+      </li>
+    );
+  });
+  if (!movable) return <ul className={BOXES[layout]}>{nodes}</ul>;
+  // The items of each group in their own list: an item moves within its group only.
+  const parts: ReactNode[] = [];
+  let group = "";
+  let ids: string[] = [];
+  let items: ReactNode[] = [];
+  const flush = () => {
+    if (items.length > 0) {
+      parts.push(
+        <SortableContext key={`items-${group}`} items={ids} strategy={rectSortingStrategy}>
+          {items}
+        </SortableContext>,
+      );
+    }
+    [ids, items] = [[], []];
+  };
+  entries.forEach((entry, index) => {
+    if ("row" in entry) {
+      ids.push(config.rowId(entry.row));
+      items.push(nodes[index]);
+    } else {
+      flush();
+      group = entry.group.key;
+      parts.push(nodes[index]);
+    }
+  });
+  flush();
+  return <ul className={BOXES[layout]}>{parts}</ul>;
 }
 
 interface ItemProps<T> {
@@ -74,13 +117,17 @@ interface ItemProps<T> {
   row: T;
   id: string;
   columns: DataTableColumn<T>[];
+  /** Its cell before the title: the handle, then the place. */
+  order?: DataTableColumn<T>;
   layout: "cards" | "list";
   selected: boolean;
   onToggle: (ids: string[], on: boolean) => void;
+  movable: boolean;
+  blocked: string | null;
 }
 
 /** A row, drawn again only when its own props change, as a row of the table. */
-const Item = memo(function Item<T>({ config, row, id, columns, layout, selected, onToggle }: ItemProps<T>) {
+const Item = memo(function Item<T>({ config, row, id, columns, order, layout, selected, onToggle, movable, blocked }: ItemProps<T>) {
   const open = config.onOpen;
   const openFrom = (event: MouseEvent | KeyboardEvent) => {
     // Buttons, links and checkboxes of the item keep their own click.
@@ -88,14 +135,19 @@ const Item = memo(function Item<T>({ config, row, id, columns, layout, selected,
     open?.(row);
   };
   return (
-    <li className="min-w-0">
+    <MovableItem move={movable ? { id, blocked } : undefined} className="min-w-0">
       <ItemFrame
         layout={layout}
         selected={selected}
         muted={config.muted?.(row)}
         onClick={open && openFrom}
         onKeyDown={open && ((event) => event.key === "Enter" && event.target === event.currentTarget && openFrom(event))}
-        start={config.bulkActions && <Checkbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />}
+        start={
+          <>
+            {config.bulkActions && <Checkbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />}
+            {order && <span className="flex shrink-0 items-center">{order.cell(row)}</span>}
+          </>
+        }
         end={config.actions?.(row)}
       >
         {columns.map((column, at) => (
@@ -105,7 +157,7 @@ const Item = memo(function Item<T>({ config, row, id, columns, layout, selected,
           </Value>
         ))}
       </ItemFrame>
-    </li>
+    </MovableItem>
   );
 }) as <T>(props: ItemProps<T>) => ReactNode;
 

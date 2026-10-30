@@ -22,7 +22,7 @@
     "system": "Maintenance",
     "team": "Permissions",
     "dev": "Stack",
-    "commits": "Commits"
+    "development": "Développement"
   },
   "roles": {
     "support": "Support",
@@ -953,5 +953,27 @@
     "empty": "Aucun commit sur cette page.",
     "unconfigured": "Dépôt GitHub non configuré (GITHUB_REPOSITORY).",
     "unavailable": "Impossible de lire les commits de {repository} pour le moment. Un dépôt privé demande GITHUB_TOKEN."
+  },
+  "development": {
+    "title": "Développement",
+    "description": "Les prototypes du back-office et l'historique de la branche main.",
+    "prototypes": {
+      "title": "Prototypes",
+      "description": "Pages de démonstration sur des données fictives, gardées comme références.",
+      "adminTable": {
+        "title": "Table admin",
+        "description": "Le kit de table de toutes les listes du back-office : recherche, filtres, tri, groupes, vues, sélection, pagination.",
+        "live": "Ouvrir la démo",
+        "liveHint": "Branchée sur le kit : elle suit ses évolutions.",
+        "original": "Captures de la version d'origine",
+        "source": "Code d'origine : tag git <code>{tag}</code>",
+        "shots": {
+          "table": "Tableau",
+          "grouped": "Groupée et filtrée",
+          "cards": "Cartes",
+          "mobile": "Mobile"
+        }
+      }
+    }
   }
 }

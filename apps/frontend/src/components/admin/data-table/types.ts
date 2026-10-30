@@ -71,6 +71,12 @@ export interface DataTableConfig<T> {
   defaultFilters?: Record<string, string[]>;
   /** Rows per page, 30 by default. */
   pageSize?: number;
+  /**
+   * Height of the box of rows, whatever their number: any CSS length, e.g.
+   * `"480px"` or `"calc(100dvh - 12rem)"`; 70vh by default. `"auto"` lets it
+   * grow with its rows, without a scroll of its own.
+   */
+  height?: string;
   /** Buttons on the selected rows, in a bar at the bottom; rows get checkboxes with it. */
   bulkActions?: (ids: string[], clear: () => void) => ReactNode;
   /** Greyed rows, e.g. hidden entries. */

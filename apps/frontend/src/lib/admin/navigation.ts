@@ -17,11 +17,13 @@ export const adminRoutes = {
   system: "/admin/system",
   team: "/admin/team",
   dev: "/admin/dev",
-  commits: "/admin/commits",
+  development: "/admin/development",
+  /** Prototypes of the back office, kept as showcases. */
+  adminTablePoc: "/admin/development/admin-table",
 } as const;
 
 interface AdminNavItem {
-  key: "dashboard" | "statistics" | "users" | "badges" | "userTags" | "auditLog" | "system" | "team" | "dev" | "commits";
+  key: "dashboard" | "statistics" | "users" | "badges" | "userTags" | "auditLog" | "system" | "team" | "dev" | "development";
   href: string;
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
@@ -55,7 +57,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     items: [
       { key: "system", href: adminRoutes.system, icon: BoltIcon },
       { key: "dev", href: adminRoutes.dev, icon: PackageIcon },
-      { key: "commits", href: adminRoutes.commits, icon: GitCommitHorizontalIcon },
+      { key: "development", href: adminRoutes.development, icon: GitCommitHorizontalIcon },
     ],
   },
   {

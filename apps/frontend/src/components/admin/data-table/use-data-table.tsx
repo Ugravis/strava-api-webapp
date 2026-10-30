@@ -1,8 +1,10 @@
 "use client";
 
-import { TABLE_DEFAULT_SORT, TABLE_PAGE_SIZE, type TablePage, type TableQuery, type TableSort } from "@kilotrace/shared/table";
+import { TABLE_DEFAULT_SORT, TABLE_PAGE_SIZE, type TableEntry, type TablePage, type TableQuery, type TableSort } from "@kilotrace/shared/table";
+import { arrayMove } from "@dnd-kit/sortable";
 import { Grid2x2Icon, LayoutGridIcon, TableIcon, TextAlignStartIcon } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { DataTableConfig, DataTableLayout, DataTablePicks, DataTableView } from "./types";
 import { usePhone, useTableParams, writeTableParams } from "./use-table-params";
 
@@ -127,9 +129,66 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     };
   }, [fetch, body, attempt]);
 
+  // The key of the page on screen, for the answers coming after a move.
+  const current = useRef(key);
+  useEffect(() => {
+    current.current = key;
+  }, [key]);
+
+  // A row moved shows at once, until the page fetched again after the save carries it.
+  const [moved, setMoved] = useState<{ key: string; entries: TableEntry<T>[] } | null>(null);
+  const [saving, setSaving] = useState(false);
   const loading = answer?.key !== key || answer.fetch !== fetch;
   const error = !loading && !!answer?.error;
-  const result = loading || error ? null : (answer?.page ?? null);
+  const fetched = loading || error ? null : (answer?.page ?? null);
+  const result = fetched && moved?.key === key ? { ...fetched, entries: moved.entries } : fetched;
+  const filtered = searched.trim() !== "" || Object.values(filters).some((values) => values.length > 0);
+
+  // Rows move by the handle of an order column, in any layout, sorted by it, neither searched nor filtered.
+  const order = columns.find((column) => column.order);
+  const movable = !!config.reorder && !!order;
+  const blocked = !order
+    ? null
+    : saving
+      ? "Enregistrement de l'ordre…"
+      : sort.id !== order.id
+        ? `Trier par « ${order.header} » pour déplacer`
+        : filtered
+          ? "Effacer la recherche et les filtres pour déplacer"
+          : null;
+  const { reorder } = config;
+  const move = (id: string, over: string) => {
+    if (!result || !reorder || blocked) return;
+    const { entries } = result;
+    const idOf = (entry: TableEntry<T> | undefined) => (entry && "row" in entry ? config.rowId(entry.row) : null);
+    const from = entries.findIndex((entry) => idOf(entry) === id);
+    const to = entries.findIndex((entry) => idOf(entry) === over);
+    // Within its group only: a move to another would change its group.
+    const groupOf = (index: number) => entries.slice(0, index).filter((entry) => "group" in entry).length;
+    if (from < 0 || to < 0 || from === to || groupOf(from) !== groupOf(to)) return;
+    const next = arrayMove(entries, from, to);
+    const [above, below] = [idOf(next[to - 1]), idOf(next[to + 1])];
+    const asked = key;
+    setMoved({ key: asked, entries: next });
+    setSaving(true);
+    reorder(sort.desc ? { id, after: below, before: above } : { id, after: above, before: below })
+      .then(
+        (outcome) => !outcome.ok && toast.error(outcome.message),
+        () => toast.error("L'ordre n'a pas pu être enregistré."),
+      )
+      // Fetched again without skeleton: the places of the rows come from the server.
+      .then(() => fetch(JSON.parse(body) as TableQuery))
+      .then((page) => {
+        if (current.current !== asked) return;
+        setAnswer({ key: asked, fetch, page });
+        setLast(page);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        setMoved(null);
+        setSaving(false);
+      });
+  };
 
   const set = url.set;
   const clearSearch = () => {
@@ -172,7 +231,10 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     toggle,
     clearSelection: () => setSelected(new Set()),
     retry: () => setAttempt((count) => count + 1),
-    filtered: searched.trim() !== "" || Object.values(filters).some((values) => values.length > 0),
+    filtered,
+    movable,
+    blocked,
+    move,
     changed: query.trim() !== "" || Object.keys(filterPicks).length > 0 || sortPick !== null || groupPick !== undefined || hiddenPick !== null || shownPick !== null,
     setPage: (value: number) => set({ page: value > 1 ? String(value) : null }),
     setSort: (value: TableSort | null) => set({ sort: value ? `${value.desc ? "-" : ""}${value.id}` : null, page: null }),

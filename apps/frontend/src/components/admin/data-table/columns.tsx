@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
-import { IconsCell, type IconItem, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
+import { IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { formatBytes } from "./format";
 import { OrderCell } from "./reorder";
 import type { DataTableColumn } from "./types";
@@ -113,6 +113,22 @@ export function userColumn<T>({
     skeleton: (
       <span className="flex items-center gap-2">
         <Skeleton className="size-5 rounded-full" />
+        <Skeleton className="h-4 w-28" />
+      </span>
+    ),
+  };
+}
+
+/** An item told by its look, e.g. a badge or a tag, mostly the first column: locked, its name copied. */
+export function lookColumn<T>({ value, marks, ...base }: Base<T> & { value: (row: T) => Look; marks?: (row: T) => ReactNode }): DataTableColumn<T> {
+  return {
+    locked: true,
+    ...base,
+    cell: (row) => <LookCell look={value(row)} marks={marks?.(row)} />,
+    copy: (row) => value(row).name,
+    skeleton: (
+      <span className="flex items-center gap-2">
+        <Skeleton className="size-6 rounded-full" />
         <Skeleton className="h-4 w-28" />
       </span>
     ),

@@ -71,7 +71,13 @@ export interface UserOption {
 
 export interface FormDialogProps {
   action: Action;
-  trigger: { label: string; icon?: ReactNode; iconOnly?: boolean; variant?: "default" | "outline" | "ghost" };
+  /** Without it, `open` drives the dialog. */
+  trigger?: { label: string; icon?: ReactNode; iconOnly?: boolean; variant?: "default" | "outline" | "ghost" };
+  /** Opened from elsewhere, e.g. the « Nouveau » button of a table, along with `onOpenChange`. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** After the action went through, e.g. to fetch a table again. */
+  onSuccess?: () => void;
   title: string;
   description: string;
   submitLabel: string;
@@ -84,23 +90,27 @@ export interface FormDialogProps {
  * outcome is told by a toast. Generic: its texts come from the caller.
  */
 export function FormDialog(props: FormDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = props.open ?? own;
+  const setOpen = props.onOpenChange ?? setOwn;
   const { trigger } = props;
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button
-            variant={trigger.variant ?? "outline"}
-            size={trigger.iconOnly ? "icon-sm" : "sm"}
-            aria-label={trigger.iconOnly ? trigger.label : undefined}
-            title={trigger.iconOnly ? trigger.label : undefined}
-          />
-        }
-      >
-        {trigger.icon}
-        {!trigger.iconOnly && trigger.label}
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger
+          render={
+            <Button
+              variant={trigger.variant ?? "outline"}
+              size={trigger.iconOnly ? "icon-sm" : "sm"}
+              aria-label={trigger.iconOnly ? trigger.label : undefined}
+              title={trigger.iconOnly ? trigger.label : undefined}
+            />
+          }
+        >
+          {trigger.icon}
+          {!trigger.iconOnly && trigger.label}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
         {/* Remounted on every opening, so that the form starts from the saved values. */}
         {open && <FormDialogForm {...props} onDone={() => setOpen(false)} />}
@@ -116,6 +126,7 @@ function FormDialogForm({
   submitLabel,
   cancelLabel,
   fields,
+  onSuccess,
   onDone,
 }: FormDialogProps & { onDone: () => void }) {
   const [result, formAction] = useActionState(action, null);
@@ -125,11 +136,13 @@ function FormDialogForm({
   );
 
   const done = useEffectEvent(onDone);
+  const succeeded = useEffectEvent(() => onSuccess?.());
   useEffect(() => {
     if (!result) return;
     if (result.ok) {
       toast.success(result.message);
       done();
+      succeeded();
     } else {
       toast.error(result.message);
     }

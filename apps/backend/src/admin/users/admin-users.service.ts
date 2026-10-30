@@ -2,6 +2,7 @@ import {
   ADMIN_ROLES,
   type AdminRole,
   type AdminUserDetail,
+  type AdminUsersOverview,
   type AdminUserSummary,
   highestAdminRole,
   isAdminRole,
@@ -42,6 +43,15 @@ const STRAVA_LINKED = `EXISTS (SELECT 1 FROM provider_connections connection WHE
 const GOOGLE_LINKED =
   'EXISTS (SELECT 1 FROM oauth_accounts account WHERE account.user_id = "user"."id")';
 const role = (name: AdminRole) => `'${name}' = ANY(user.roles)`;
+const HAS_TAG = (id: string) =>
+  `EXISTS (SELECT 1 FROM user_tag_assignments tag WHERE tag.user_id = "user"."id" AND tag.kind = '${id}')`;
+/** The first tag of the account in the order of the catalog, the key of its group. */
+const FIRST_TAG =
+  '(SELECT tag.kind FROM user_tag_assignments tag JOIN user_tags look ON look.id = tag.kind WHERE tag.user_id = "user"."id" ORDER BY look.position LIMIT 1)';
+const ACTIVITIES =
+  '(SELECT COUNT(*) FROM activities activity WHERE activity.user_id = "user"."id")';
+const CONNECTIONS =
+  '((CASE WHEN user.password_hash IS NOT NULL THEN 1 ELSE 0 END) + (SELECT COUNT(*) FROM oauth_accounts account WHERE account.user_id = "user"."id") + (SELECT COUNT(*) FROM provider_connections connection WHERE connection.user_id = "user"."id"))';
 
 /** The highest back-office role, '' without any, as in `highestAdminRole`. */
 const HIGHEST_ROLE = `CASE ${[...ADMIN_ROLES]
@@ -61,8 +71,13 @@ const USERS_TABLE: TableSpec = {
     displayName: 'user.display_name',
     createdAt: 'user.created_at',
     lastSeenAt: LAST_SEEN,
+    status: `CASE WHEN ${ACTIVE} THEN 0 ELSE 1 END`,
+    email: 'user.email',
+    connections: CONNECTIONS,
     userTags:
       '(SELECT COUNT(*) FROM user_tag_assignments tag WHERE tag.user_id = "user"."id")',
+    activities: ACTIVITIES,
+    id: 'CAST(user.id AS text)',
   },
   tiebreak: 'user.id',
   facets: {
@@ -84,8 +99,27 @@ const USERS_TABLE: TableSpec = {
   groupings: {
     status: `CASE WHEN ${ACTIVE} THEN 'active' ELSE 'suspended' END`,
     role: HIGHEST_ROLE,
+    userTags: FIRST_TAG,
   },
 };
+
+/** The spec of the table with a facet of the tags of the catalog, read on each call. */
+function usersTableOf(tagIds: string[]): TableSpec {
+  return {
+    ...USERS_TABLE,
+    facets: {
+      ...USERS_TABLE.facets,
+      userTags: {
+        options: {
+          ...Object.fromEntries(tagIds.map((id) => [id, HAS_TAG(id)])),
+          none: 'NOT EXISTS (SELECT 1 FROM user_tag_assignments tag WHERE tag.user_id = "user"."id")',
+        },
+      },
+    },
+  };
+}
+
+const DAY_MS = 86_400_000;
 
 /** Rank of the highest back-office role, -1 without any. */
 function rankOf(user: User): number {
@@ -115,12 +149,36 @@ export class AdminUsersService {
   ) {}
 
   async table(query: TableQuery): Promise<TablePage<AdminUserSummary>> {
+    // Tag ids are slugs (`ADMIN_BADGE_SLUG`): safe inside the SQL of the facet.
+    const tags = await this.userTags.manager.find(UserTag, {
+      select: { id: true },
+    });
     const page = await runTableQuery(
       this.users.createQueryBuilder('user'),
       query,
-      USERS_TABLE,
+      usersTableOf(tags.map(({ id }) => id)),
     );
     return mapTablePage(page, (users) => this.summaries(users));
+  }
+
+  async overview(): Promise<AdminUsersOverview> {
+    const week = new Date(Date.now() - 7 * DAY_MS);
+    const row = await this.users
+      .createQueryBuilder('user')
+      .select('COUNT(*)', 'total')
+      .addSelect('COUNT(*) FILTER (WHERE user.created_at >= :week)', 'signups')
+      .addSelect(`COUNT(*) FILTER (WHERE ${LAST_SEEN} >= :week)`, 'active')
+      .addSelect(`COUNT(*) FILTER (WHERE NOT ${ACTIVE})`, 'suspended')
+      .addSelect(`COUNT(*) FILTER (WHERE ${STRAVA_LINKED})`, 'stravaConnected')
+      .setParameter('week', week)
+      .getRawOne<Record<string, string>>();
+    return {
+      total: Number(row?.total ?? 0),
+      signups: Number(row?.signups ?? 0),
+      active: Number(row?.active ?? 0),
+      suspended: Number(row?.suspended ?? 0),
+      stravaConnected: Number(row?.stravaConnected ?? 0),
+    };
   }
 
   async detail(id: string): Promise<AdminUserDetail> {
@@ -128,14 +186,12 @@ export class AdminUsersService {
     const [
       [summary],
       connection,
-      activitiesCount,
       followersCount,
       followingCount,
       sessionsCount,
     ] = await Promise.all([
       this.summaries([user]),
       this.connections.findOneBy({ userId: id, provider: STRAVA }),
-      this.activities.countBy({ userId: id }),
       this.follows.countBy({ followedId: id, pending: false }),
       this.follows.countBy({ followerId: id, pending: false }),
       this.sessions.countBy({ userId: id }),
@@ -151,7 +207,6 @@ export class AdminUsersService {
         connectedAt: connection.createdAt.toISOString(),
         lastSyncedAt: connection.lastSyncedAt?.toISOString() ?? null,
       },
-      activitiesCount,
       followersCount,
       followingCount,
       sessionsCount,
@@ -265,8 +320,8 @@ export class AdminUsersService {
       return [];
     }
     const ids = users.map(({ id }) => id);
-    const [lastSeen, connections, googleAccounts, userTags] = await Promise.all(
-      [
+    const [lastSeen, connections, googleAccounts, userTags, activities] =
+      await Promise.all([
         this.sessions
           .createQueryBuilder('session')
           .select('session.user_id', 'userId')
@@ -287,13 +342,22 @@ export class AdminUsersService {
           relations: { userTag: true },
           order: { userTag: { position: 'ASC' } },
         }),
-      ],
-    );
+        this.activities
+          .createQueryBuilder('activity')
+          .select('activity.user_id', 'userId')
+          .addSelect('COUNT(*)', 'count')
+          .where({ userId: In(ids) })
+          .groupBy('activity.user_id')
+          .getRawMany<{ userId: string; count: string }>(),
+      ]);
     const lastSeenById = new Map(
       lastSeen.map(({ userId, lastSeenAt }) => [userId, lastSeenAt]),
     );
     const connected = new Set(connections.map(({ userId }) => userId));
     const withGoogle = new Set(googleAccounts.map(({ userId }) => userId));
+    const activitiesById = new Map(
+      activities.map(({ userId, count }) => [userId, Number(count)]),
+    );
     return users.map((user) => ({
       id: user.id,
       username: user.username,
@@ -324,6 +388,7 @@ export class AdminUsersService {
           color: userTag!.color,
           awardedAt: awardedAt.toISOString(),
         })),
+      activitiesCount: activitiesById.get(user.id) ?? 0,
     }));
   }
 

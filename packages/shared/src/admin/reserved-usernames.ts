@@ -27,3 +27,9 @@ export interface ReserveUsernameRequest {
   category: ReservedUsernameCategory;
   note?: string;
 }
+
+/** `PATCH /api/admin/reserved-usernames/:username`: its username stays. */
+export interface UpdateReservedUsernameRequest {
+  category: ReservedUsernameCategory;
+  note: string | null;
+}

@@ -3,4 +3,5 @@ export interface AdminNavigationCounts {
   users: number;
   badges: number;
   userTags: number;
+  reservedUsernames: number;
 }

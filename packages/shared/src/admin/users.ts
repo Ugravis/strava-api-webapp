@@ -39,6 +39,18 @@ export interface AdminUserSummary {
   signInMethods: ("password" | "google")[];
   /** In the order of the catalog. */
   userTags: (AdminUserTagLook & { awardedAt: string })[];
+  activitiesCount: number;
+}
+
+/** `GET /api/admin/users/overview`: figures above the list of the accounts. */
+export interface AdminUsersOverview {
+  total: number;
+  /** Sign-ups of the last 7 days. */
+  signups: number;
+  /** Accounts seen in the last 7 days. */
+  active: number;
+  suspended: number;
+  stravaConnected: number;
 }
 
 /** `GET /api/admin/users/:id`: everything the back office shows of a user. */
@@ -48,7 +60,6 @@ export interface AdminUserDetail extends AdminUserSummary {
   countryCode: string | null;
   profilePrivate: boolean;
   strava: { accountName: string | null; connectedAt: string; lastSyncedAt: string | null } | null;
-  activitiesCount: number;
   followersCount: number;
   followingCount: number;
   sessionsCount: number;

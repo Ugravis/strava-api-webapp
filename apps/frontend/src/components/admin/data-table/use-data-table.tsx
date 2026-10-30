@@ -22,6 +22,16 @@ export function viewIcon<T>(view: DataTableView, config: DataTableConfig<T>): Re
 /** Rows per page of each layout: a list holds many more rows than a table on a screen. */
 const PAGE_SIZES: Record<DataTableLayout, number> = { table: TABLE_PAGE_SIZE, cards: 24, list: 60 };
 
+const NO_GROUP = "-";
+
+/** The columns of at least one view, all of them without views or with a view of all. */
+function availableColumns<T>(config: DataTableConfig<T>) {
+  const views = config.views ?? [];
+  if (views.length === 0 || views.some((each) => !each.columns)) return config.columns;
+  const ids = new Set(views.flatMap((each) => each.columns ?? []));
+  return config.columns.filter((column) => ids.has(column.id));
+}
+
 /** The state of a table: the picks of the user from the URL, and the page the server answers. */
 export function useDataTable<T>(config: DataTableConfig<T>) {
   const url = useTableParams(config.id);
@@ -41,9 +51,13 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
       return values ? [[facet.id, values]] : [];
     }),
   );
-  const groupPick = config.groupings?.some((each) => each.id === url.get("group")) ? url.get("group")! : undefined;
+  // `-` is the pick of no grouping, against a `defaultGroupBy`.
+  const groupParam = url.get("group");
+  const groupPick = groupParam === NO_GROUP ? "" : config.groupings?.some((each) => each.id === groupParam) ? groupParam! : undefined;
   const hideParam = url.get("hide");
   const hiddenPick = useMemo(() => (hideParam === null ? null : new Set(hideParam.split(",").filter(Boolean))), [hideParam]);
+  const showParam = url.get("show");
+  const shownPick = useMemo(() => (showParam === null ? null : new Set(showParam.split(",").filter(Boolean))), [showParam]);
   const viewId = config.views?.some((each) => each.id === url.get("view")) ? url.get("view")! : (config.views?.[0]?.id ?? "");
   const page = Math.max(Number(url.get("page")) || 1, 1);
   const folded = url.list("fold") ?? [];
@@ -54,15 +68,21 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
   const filters = { ...config.defaultFilters, ...filterPicks };
   const sort = sortPick ?? config.defaultSort ?? TABLE_DEFAULT_SORT;
   const hidden = hiddenPick ?? new Set<string>();
-  const picks: DataTablePicks = { filters: filterPicks, sort: sortPick, groupBy: groupPick, hidden: hiddenPick };
+  const shown = shownPick ?? new Set<string>();
+  const picks: DataTablePicks = { filters: filterPicks, sort: sortPick, groupBy: groupPick, hidden: hiddenPick, shown: shownPick };
 
   const view = config.views?.find((each) => each.id === viewId);
+  // Those of any view may be shown: the view's, less the hidden ones, plus the shown ones.
+  const available = useMemo(() => availableColumns(config), [config]);
   const columns = useMemo(
-    () => config.columns.filter((column) => !hiddenPick?.has(column.id) && (!view?.columns || view.columns.includes(column.id))),
-    [config.columns, hiddenPick, view],
+    () =>
+      available.filter((column) =>
+        !view?.columns || view.columns.includes(column.id) ? !hiddenPick?.has(column.id) : !!shownPick?.has(column.id),
+      ),
+    [available, hiddenPick, shownPick, view],
   );
   const layout = view?.layout ?? "table";
-  const grouping = config.groupings?.find((each) => each.id === groupPick);
+  const grouping = config.groupings?.find((each) => each.id === (groupPick ?? config.defaultGroupBy));
 
   // The search waits for a pause in the typing before asking the server.
   useEffect(() => {
@@ -134,6 +154,8 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     filters,
     sort,
     hidden,
+    shown,
+    available,
     view,
     viewId,
     layout,
@@ -151,17 +173,19 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     clearSelection: () => setSelected(new Set()),
     retry: () => setAttempt((count) => count + 1),
     filtered: searched.trim() !== "" || Object.values(filters).some((values) => values.length > 0),
-    changed: query.trim() !== "" || Object.keys(filterPicks).length > 0 || sortPick !== null || groupPick !== undefined || hiddenPick !== null,
+    changed: query.trim() !== "" || Object.keys(filterPicks).length > 0 || sortPick !== null || groupPick !== undefined || hiddenPick !== null || shownPick !== null,
     setPage: (value: number) => set({ page: value > 1 ? String(value) : null }),
     setSort: (value: TableSort | null) => set({ sort: value ? `${value.desc ? "-" : ""}${value.id}` : null, page: null }),
     setFilters: (value: Record<string, string[]>) =>
       set({ page: null, ...Object.fromEntries((config.facets ?? []).map((facet) => [`f.${facet.id}`, value[facet.id] ?? null])) }),
-    setGroupBy: (value: string | undefined) => set({ group: value ?? null, fold: null, page: null }),
+    /** `""` for no grouping, `undefined` back to the default. */
+    setGroupBy: (value: string | undefined) => set({ group: value === "" ? NO_GROUP : (value ?? null), fold: null, page: null }),
     toggleFold: (group: string) => {
       const next = folded.includes(group) ? folded.filter((each) => each !== group) : [...folded, group];
       set({ fold: next.length > 0 ? next : null, page: null });
     },
     setHidden: (value: Set<string> | null) => set({ hide: value ? [...value] : null }),
+    setShown: (value: Set<string> | null) => set({ show: value ? [...value] : null }),
     // Back to the first page: the pages of another view may hold another number of rows.
     setView: (value: string) => set({ view: value === config.views?.[0]?.id ? null : value, page: null }),
     /** Search and filters back to the system's. */
@@ -179,6 +203,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
         group: null,
         fold: null,
         hide: null,
+        show: null,
         ...Object.fromEntries((config.facets ?? []).map((facet) => [`f.${facet.id}`, null])),
       });
     },

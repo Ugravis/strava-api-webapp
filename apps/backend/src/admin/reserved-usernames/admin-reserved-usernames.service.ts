@@ -1,4 +1,9 @@
 import type { AdminReservedUsername } from '@kilotrace/shared/admin';
+import {
+  mapTablePage,
+  type TablePage,
+  type TableQuery,
+} from '@kilotrace/shared/table';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -7,7 +12,28 @@ import { isUniqueViolation } from '../../common/database-errors';
 import { ReservedUsername } from '../../users/reserved-username.entity';
 import { User } from '../../users/user.entity';
 import { toAuditUser } from '../common/audit-user';
-import type { ReserveUsernameDto } from './admin-reserved-usernames.dto';
+import { runTableQuery, type TableSpec } from '../common/table-query';
+import type {
+  ReserveUsernameDto,
+  UpdateReservedUsernameDto,
+} from './admin-reserved-usernames.dto';
+
+/** The author, '' for the initial list, '~' for a deleted account. */
+const AUTHOR = `CASE WHEN reserved.created_by_id IS NULL THEN NULL ELSE COALESCE(author.username, '~') END`;
+
+const RESERVED_TABLE: TableSpec = {
+  search: ['reserved.username', 'reserved.note'],
+  sorts: {
+    username: 'reserved.username',
+    category: 'reserved.category',
+    createdBy: 'author.username',
+    createdAt: 'reserved.created_at',
+    note: 'reserved.note',
+  },
+  tiebreak: 'reserved.username',
+  facets: { category: { column: 'reserved.category' } },
+  groupings: { category: 'reserved.category', createdBy: AUTHOR },
+};
 
 /**
  * Usernames nobody can take. A username already held by an account is
@@ -21,8 +47,17 @@ export class AdminReservedUsernamesService {
     @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
-  async list(): Promise<AdminReservedUsername[]> {
-    const entries = await this.reserved.find({ order: { username: 'ASC' } });
+  async table(query: TableQuery): Promise<TablePage<AdminReservedUsername>> {
+    const base = this.reserved
+      .createQueryBuilder('reserved')
+      .leftJoin(User, 'author', 'author.id = reserved.created_by_id');
+    const page = await runTableQuery(base, query, RESERVED_TABLE);
+    return mapTablePage(page, (entries) => this.entries(entries));
+  }
+
+  private async entries(
+    entries: ReservedUsername[],
+  ): Promise<AdminReservedUsername[]> {
     const authorIds = [
       ...new Set(entries.flatMap(({ createdById }) => createdById ?? [])),
     ];
@@ -63,6 +98,22 @@ export class AdminReservedUsernamesService {
         );
       }
       throw error;
+    }
+  }
+
+  async update(
+    username: string,
+    dto: UpdateReservedUsernameDto,
+  ): Promise<void> {
+    const { affected } = await this.reserved.update(
+      { username },
+      { category: dto.category, note: dto.note ?? null },
+    );
+    if (!affected) {
+      throw ApiErrors.notFound(
+        ApiErrorCode.NotFound,
+        'This username is not reserved',
+      );
     }
   }
 

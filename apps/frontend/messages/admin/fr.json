@@ -22,7 +22,8 @@
     "system": "Maintenance",
     "team": "Permissions",
     "dev": "Stack",
-    "development": "Développement"
+    "development": "Développement",
+    "reservedUsernames": "Pseudos"
   },
   "roles": {
     "support": "Support",
@@ -82,52 +83,15 @@
       "google": "Google",
       "password": "Email et mot de passe"
     },
-    "reserved": {
-      "title": "Pseudos réservés",
-      "description": "Pseudos que personne ne peut prendre à l'inscription ni en modifiant son profil.",
-      "count": "{count, plural, =0 {aucun} one {# pseudo} other {# pseudos}}",
-      "hint": "Un pseudo déjà porté par un compte ne peut pas être réservé : modérez d'abord le profil.",
-      "readOnly": "Lecture seule : votre rôle n'a pas la permission de réserver ou libérer un pseudo.",
-      "error": "Impossible de charger les pseudos réservés.",
-      "empty": "Aucun pseudo réservé.",
-      "initialList": "Liste initiale",
-      "deletedAuthor": "Compte supprimé",
-      "categories": {
-        "system": "Système",
-        "personality": "Personnalité",
-        "brand": "Marque",
-        "offensive": "Injurieux",
-        "other": "Autre"
-      },
-      "columns": {
-        "username": "Pseudo",
-        "category": "Catégorie",
-        "note": "Note",
-        "createdBy": "Ajouté par",
-        "createdAt": "Date",
-        "actions": "Actions"
-      },
-      "add": {
-        "trigger": "Réserver un pseudo",
-        "title": "Réserver un pseudo",
-        "description": "Personne ne pourra plus le prendre. Les utilisateurs verront qu'il est réservé.",
-        "submit": "Réserver",
-        "username": "Pseudo",
-        "usernameHint": "3 à 20 caractères : lettres, chiffres et _. Mis en minuscules.",
-        "category": "Catégorie",
-        "note": "Note (optionnelle)",
-        "noteHint": "Visible par l'équipe seulement."
-      },
-      "release": {
-        "trigger": "Libérer le pseudo",
-        "title": "Libérer @{username} ?",
-        "description": "Le pseudo redeviendra disponible pour tout le monde.",
-        "submit": "Libérer"
-      },
-      "errors": {
-        "taken": "Ce pseudo est porté par un compte : modérez d'abord le profil.",
-        "reserved": "Ce pseudo est déjà réservé."
-      }
+    "overview": {
+      "accounts": "Comptes",
+      "accountsDetail": "{share} reliés à Strava",
+      "signups": "Inscriptions",
+      "signupsDetail": "Ces 7 derniers jours",
+      "active": "Actifs",
+      "activeDetail": "{share} des comptes, ces 7 derniers jours",
+      "suspended": "Suspendus",
+      "suspendedDetail": "{share} des comptes"
     }
   },
   "user": {
@@ -938,6 +902,21 @@
           "mobile": "Mobile"
         }
       }
+    }
+  },
+  "reservedUsernames": {
+    "title": "Pseudos désactivés",
+    "description": "Pseudos que personne ne peut prendre à l’inscription ni en modifiant son profil.",
+    "categories": {
+      "system": "Système",
+      "personality": "Personnalité",
+      "brand": "Marque",
+      "offensive": "Injurieux",
+      "other": "Autre"
+    },
+    "errors": {
+      "taken": "Ce pseudo est porté par un compte : modérez d'abord le profil.",
+      "reserved": "Ce pseudo est déjà réservé."
     }
   }
 }

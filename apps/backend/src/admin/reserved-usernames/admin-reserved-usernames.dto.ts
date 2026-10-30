@@ -20,3 +20,14 @@ export class ReserveUsernameDto {
   @MaxLength(RESERVED_USERNAME_NOTE_MAX_LENGTH)
   note?: string | null;
 }
+
+export class UpdateReservedUsernameDto {
+  @IsIn(RESERVED_USERNAME_CATEGORIES)
+  category!: ReservedUsernameCategory;
+
+  @IsOptional()
+  @TrimToNull()
+  @IsString()
+  @MaxLength(RESERVED_USERNAME_NOTE_MAX_LENGTH)
+  note?: string | null;
+}

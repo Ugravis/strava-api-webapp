@@ -80,6 +80,8 @@ export interface DataTableConfig<T> {
   views?: DataTableView[];
   /** The main action of the list, e.g. to add an item. */
   create?: { label: string; onClick: () => void };
+  /** Applied by the system, as `defaultSort`; « Aucun » then joins the menu. */
+  defaultGroupBy?: string;
   /** By date of creation, newest first, unless said otherwise. */
   defaultSort?: TableSort;
   /** Applied by the system, shown active only once the user picks. */
@@ -113,6 +115,10 @@ export interface DataTableConfig<T> {
 export interface DataTablePicks {
   filters: Record<string, string[]>;
   sort: TableSort | null;
+  /** `""` once the user picks no grouping against a `defaultGroupBy`. */
   groupBy: string | undefined;
+  /** Of the columns of the current view. */
   hidden: Set<string> | null;
+  /** Of the columns of the other views. */
+  shown: Set<string> | null;
 }

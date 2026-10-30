@@ -1,6 +1,6 @@
 # Admin data tables
 
-Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on the POC page `/admin/table-poc` (#133), which stays as the live showcase of the kit on fake rows.
+Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on a POC (#133): its original code is the git tag `admin-table-poc-v1`, its captures are on the page Développement (`/admin/development`), and its demo, rebuilt on the kit, stays at `/admin/development/admin-table` as the live showcase on fake rows.
 
 ## Where things are
 
@@ -10,7 +10,8 @@ Every list of the back office is a `DataTable`: one header of search, filters an
 | Backend engine | `apps/backend/src/admin/common/table-query.ts` | `runTableQuery`, `TableSpec`, `@TableQueryParam()`. |
 | Server Action helper | `apps/frontend/src/lib/admin/table.ts` | `fetchAdminTable(path, query)`. |
 | Frontend kit | `apps/frontend/src/components/admin/data-table/` (import from `@/components/admin/data-table`) | `DataTable`, column builders, cells, `localTableSource`. |
-| Showcase | `apps/frontend/src/app/(admin)/admin/table-poc/` | Every feature on fake accounts: copy it. |
+| Showcase | `apps/frontend/src/app/(admin)/admin/development/admin-table/` | Every feature on fake accounts: copy it. |
+| Visual tests | `apps/frontend/e2e/admin-table.spec.ts` | Captures of every state of the showcase. |
 
 ## Recipe: a new table
 
@@ -127,6 +128,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `defaultSort` | `createdAt` descending unless said otherwise. |
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |
 | `pageSize` | 30 by default, at most 100. |
+| `height` | Height of the box of rows, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"auto"` grows with the rows. |
 | `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons. |
 | `actions` | The `RowActions` menu at the end of the row. |
 | `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. |
@@ -169,7 +171,7 @@ Other bits:
 - **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group`, `<id>.fold`, `<id>.hide`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
-  - The table box has a fixed height (`70vh`) whatever the number of rows. The header is sticky.
+  - The table box keeps its height (`height`, `70vh` by default) whatever the number of rows. The header is sticky.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.
   - On a narrow desktop, the details of the tools hide when they would wrap the header.
@@ -179,3 +181,26 @@ Other bits:
 ## Not in the kit
 
 Lists reordered by drag and drop (badges, tags) keep `components/admin/sortable-list.tsx`.
+
+## Visual tests
+
+`apps/frontend/e2e/admin-table.spec.ts` photographs every state of the showcase:
+- table;
+- grouped, filtered and sorted;
+- overview;
+- cards;
+- loading;
+- empty;
+- error;
+- selection;
+- phone.
+
+They run against the running dev stack, signed in as the admin test account. Local only: the CI has no stack.
+
+```bash
+pnpm --filter frontend exec playwright install chromium   # once
+pnpm --filter frontend test:visual                         # compare
+pnpm --filter frontend test:visual:update                  # accept a wanted change of design
+```
+
+Run them after any change of the kit. A failure means a pixel moved: check `test-results/` for the expected, actual and diff images.

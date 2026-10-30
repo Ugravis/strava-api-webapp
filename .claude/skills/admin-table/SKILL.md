@@ -6,7 +6,7 @@ description: Build or change a back-office list with the data table kit (DataTab
 # Admin data table
 
 1. Read `docs/admin-tables.md`. It holds the recipe, the config and builder reference, and the rules. Follow the rules as written.
-2. Read `apps/frontend/src/app/(admin)/admin/table-poc/poc-columns.tsx`: a complete config using every feature.
+2. Read `apps/frontend/src/app/(admin)/admin/development/admin-table/poc-columns.tsx`: a complete config using every feature.
 3. Build the three layers, in this order:
    1. **Backend.**
       - A `GET …/table` route in the admin controller of the domain, taking `@TableQueryParam()`.
@@ -20,6 +20,7 @@ description: Build or change a back-office list with the data table kit (DataTab
    - each grouping id ↔ `groupings`.
 5. Pick one builder per kind of field: `textColumn`, `codeColumn`, `numberColumn`, `bytesColumn`, `dateColumn`, `booleanColumn`, `statusColumn`, `pillsColumn`, `iconsColumn`, `userColumn`, `buttonsColumn`. Use `customColumn` only when none fits. A kind of field that comes back across tables deserves a new cell and builder in the kit, rather than a custom column repeated.
 6. Check:
+   - after a change of the kit, `pnpm --filter frontend test:visual`;
    - typecheck both apps;
    - `jest src/admin/common` in the backend;
    - then the page with agent-browser, signed in as the admin test account, including the URL state after a reload.

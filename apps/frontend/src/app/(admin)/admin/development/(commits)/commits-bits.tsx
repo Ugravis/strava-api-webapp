@@ -9,7 +9,7 @@ import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { cn } from "@/lib/utils";
 
-const hrefFor = (page: number) => (page > 1 ? `${adminRoutes.commits}?page=${page}` : adminRoutes.commits);
+const hrefFor = (page: number) => (page > 1 ? `${adminRoutes.development}?page=${page}` : adminRoutes.development);
 
 /** A page of the commits of `main`, merges on `main` as bands, the deployed one marked. */
 export async function CommitsList({ page }: { page: number }) {

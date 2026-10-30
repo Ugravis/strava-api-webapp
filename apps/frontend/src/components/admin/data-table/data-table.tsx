@@ -136,7 +136,8 @@ export function DataTable<T>({ config }: { config: DataTableConfig<T> }) {
         )
       ) : (
         <div
-          className="group/table relative h-[70vh] border-y border-foreground/20"
+          className="group/table relative min-h-64 border-y border-foreground/20"
+          style={{ height: config.height ?? "70vh" }}
           // Straight on the box: a render of the whole table on each scroll would make it stutter.
           onScrollCapture={(event) => event.currentTarget.toggleAttribute("data-scrolled", (event.target as HTMLElement).scrollLeft > 0)}
         >

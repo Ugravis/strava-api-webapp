@@ -6,9 +6,10 @@ import { memo, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { TableCell, TableRow } from "@/components/ui/table";
+import { TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./cells/base";
+import { MovableRow } from "./reorder";
 import type { DataTableColumn, DataTableConfig } from "./types";
 
 interface RowProps<T> {
@@ -20,12 +21,16 @@ interface RowProps<T> {
   pinBox: string;
   pinFirst: string;
   onToggle: (ids: string[], on: boolean) => void;
+  /** Dragged by its handle, unless `blocked` says why not. */
+  movable?: boolean;
+  blocked?: string | null;
 }
 
 /** A row, drawn again only when its own props change, not on every change of the table. */
-export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, columns, selected, pinBox, pinFirst, onToggle }: RowProps<T>) {
+export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, columns, selected, pinBox, pinFirst, onToggle, movable, blocked = null }: RowProps<T>) {
   return (
-    <TableRow
+    <MovableRow
+      move={movable ? { id, blocked } : undefined}
       data-state={selected ? "selected" : undefined}
       onClick={(event) => {
         // Buttons, links and checkboxes of the row keep their own click.
@@ -46,7 +51,7 @@ export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, col
         </TableCell>
       ))}
       {config.actions && <TableCell className="w-px text-center">{config.actions(row)}</TableCell>}
-    </TableRow>
+    </MovableRow>
   );
 }) as <T>(props: RowProps<T>) => ReactNode;
 

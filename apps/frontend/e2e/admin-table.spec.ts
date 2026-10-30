@@ -16,7 +16,10 @@ async function open(page: Page, search = "") {
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 }
 
-const settled = (page: Page) => expect(page.locator("table[aria-busy=false]")).toBeVisible();
+/** Both tables of the demo, the accounts and the ordered badges, with their rows in. */
+async function settled(page: Page) {
+  await expect(page.locator("table[aria-busy=false]")).toHaveCount(2);
+}
 
 /** The content of the page, without the sidebar. */
 const content = (page: Page) => page.getByRole("heading", { level: 1 }).locator("xpath=../..");
@@ -45,12 +48,14 @@ test.describe("desktop", () => {
   test("cards", async ({ page }) => {
     await open(page, "?users.view=cards");
     await expect(page.locator("ul li").first()).toBeVisible();
+    await expect(page.locator("table[aria-busy=false]")).toHaveCount(1);
     await expect(content(page)).toHaveScreenshot("cards.png");
   });
 
   test("list", async ({ page }) => {
     await open(page, "?users.view=list");
     await expect(page.locator("ul li").first()).toBeVisible();
+    await expect(page.locator("table[aria-busy=false]")).toHaveCount(1);
     await expect(content(page)).toHaveScreenshot("list.png");
   });
 
@@ -59,7 +64,7 @@ test.describe("desktop", () => {
     await settled(page);
     await server(page, "Chargement");
     await expect(page.locator("table[aria-busy=true]")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Trier" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Trier" }).first()).toBeDisabled();
     await expect(content(page)).toHaveScreenshot("loading.png");
   });
 
@@ -72,6 +77,14 @@ test.describe("desktop", () => {
     await server(page, "Erreur");
     await expect(page.getByText("Chargement impossible")).toBeVisible();
     await expect(content(page)).toHaveScreenshot("error.png");
+  });
+
+  test("ordered rows, handles blocked by another sort", async ({ page }) => {
+    await open(page, "?badges.sort=-holders&badges.group=-");
+    await settled(page);
+    const section = page.locator("section", { has: page.getByRole("heading", { name: "Ordre" }) });
+    await expect(section.getByRole("button", { name: "Déplacer" }).first()).toBeDisabled();
+    await expect(section).toHaveScreenshot("ordered.png");
   });
 
   test("selection", async ({ page }) => {

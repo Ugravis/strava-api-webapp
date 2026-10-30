@@ -1,7 +1,9 @@
 "use client";
 
+import { closestCenter, DndContext, type DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { MousePointerClickIcon } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useMemo, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ColumnHeader } from "./column-header";
 import { DataTableItems, GroupTitle } from "./items";
 import { DataTableRow, EmptyState, Pagination, SelectionBar } from "./parts";
+import { verticalOnly } from "./reorder";
 import { Tip } from "./tip";
 import { DataTableToolbar } from "./toolbar";
 import type { DataTableConfig } from "./types";
@@ -32,7 +35,14 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
     () => ({ ...base, bulkActions: view?.noSelection ? undefined : base.bulkActions, actions: view?.noActions ? undefined : base.actions }),
     [base, view],
   );
-  const { columns, loading, result, last, pinned, selected, toggle } = state;
+  const { columns, loading, result, last, pinned, selected, toggle, movable, blocked } = state;
+  // Stable across server and browser renders, unlike the ids dnd-kit counts.
+  const dndId = useId();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const onDragEnd = ({ active, over }: DragEndEvent) => over && state.move(String(active.id), String(over.id));
   const entries = result?.entries ?? [];
   const shownIds = entries.flatMap((entry) => ("row" in entry ? [config.rowId(entry.row)] : []));
   const allShown = shownIds.length > 0 && shownIds.every((id) => selected.has(id));
@@ -85,7 +95,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
         </TableRow>
       ));
     }
-    return entries.map((entry) => {
+    const nodes = entries.map((entry) => {
       if ("row" in entry) {
         const id = config.rowId(entry.row);
         return (
@@ -99,6 +109,8 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
             pinBox={pin(false)}
             pinFirst={pin(true)}
             onToggle={toggle}
+            movable={movable}
+            blocked={blocked}
           />
         );
       }
@@ -111,6 +123,34 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
         </TableRow>
       );
     });
+    if (!movable) return nodes;
+    // The rows of each group in their own list: a row moves within its group only.
+    const parts: ReactNode[] = [];
+    let group = "";
+    let ids: string[] = [];
+    let rows: ReactNode[] = [];
+    const flush = () => {
+      if (rows.length > 0) {
+        parts.push(
+          <SortableContext key={`rows-${group}`} items={ids} strategy={verticalListSortingStrategy}>
+            {rows}
+          </SortableContext>,
+        );
+      }
+      [ids, rows] = [[], []];
+    };
+    entries.forEach((entry, index) => {
+      if ("row" in entry) {
+        ids.push(config.rowId(entry.row));
+        rows.push(nodes[index]);
+      } else {
+        flush();
+        group = entry.group.key;
+        parts.push(nodes[index]);
+      }
+    });
+    flush();
+    return parts;
   }
 
   // The pagination of the last page while the next one loads.
@@ -131,6 +171,8 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
           // Straight on the box: a render of the whole table on each scroll would make it stutter.
           onScrollCapture={(event) => event.currentTarget.toggleAttribute("data-scrolled", (event.target as HTMLElement).scrollLeft > 0)}
         >
+          {/* Rows dragged by the handle of an order column, else a plain table. */}
+          <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
           <Table
             containerClassName="min-h-0 flex-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
             className="min-w-max"
@@ -168,6 +210,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
             </TableHeader>
             <TableBody className="[&_tr:last-child]:border-b-0">{renderBody()}</TableBody>
           </Table>
+          </MaybeDnd>
           {/* Under the names, outside the scrolling box: centred whatever the sideways scroll. */}
           {blank && <div className="absolute inset-x-0 top-9 bottom-0 flex items-center justify-center p-4">{empty}</div>}
         </div>
@@ -181,5 +224,15 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
         </SelectionBar>
       )}
     </div>
+  );
+}
+
+/** The context of drag and drop around the table, only when its rows move. */
+function MaybeDnd({ on, children, ...props }: { on: boolean; children: ReactNode } & Pick<ComponentProps<typeof DndContext>, "id" | "sensors" | "onDragEnd">) {
+  if (!on) return children;
+  return (
+    <DndContext {...props} collisionDetection={closestCenter} modifiers={[verticalOnly]}>
+      {children}
+    </DndContext>
   );
 }

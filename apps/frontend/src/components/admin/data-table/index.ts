@@ -3,7 +3,7 @@
  * Client side only: import it from "use client" modules.
  */
 export { DataTable } from "./data-table";
-export type { DataTableColumn, DataTableConfig, DataTableFacet, DataTableGrouping, DataTableLayout, DataTableView, TableEntry, TableGroup, TablePage, TableQuery, TableSort } from "./types";
+export type { DataTableColumn, DataTableConfig, DataTableFacet, DataTableGrouping, DataTableLayout, DataTableView, TableEntry, TableGroup, TablePage, TableMove, TableQuery, TableSort } from "./types";
 export {
   booleanColumn,
   buttonsColumn,
@@ -13,6 +13,7 @@ export {
   dateColumn,
   iconsColumn,
   numberColumn,
+  orderColumn,
   pillsColumn,
   statusColumn,
   textColumn,
@@ -24,4 +25,5 @@ export { IconsCell, type IconItem, Mark, type Pill, PillsCell, StatusCell, type 
 export { CellButton, CellButtons, RowActions } from "./cells/actions";
 export { formatBytes, formatDate, formatDateTime, formatNumber, formatRelative } from "./format";
 export { type LocalTableSpec, localTableSource } from "./local-source";
+export { OrderCell } from "./reorder";
 export { Tip } from "./tip";

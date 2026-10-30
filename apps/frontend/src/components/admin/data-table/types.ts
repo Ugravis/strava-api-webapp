@@ -1,5 +1,6 @@
 import type { TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
 import type { ReactNode } from "react";
+import type { ActionResult } from "../action-state";
 
 export type { TableEntry, TableGroup, TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
 
@@ -17,9 +18,21 @@ export interface DataTableColumn<T> {
   skeleton?: ReactNode;
   /** Out of the columns menu, always shown: the first column, mostly. */
   locked?: boolean;
+  /** Its cells hold the drag handle of `reorder`: the column of `orderColumn`. */
+  order?: boolean;
   /** The text a floating button copies on hover, none when null. */
   copy?: (row: T) => string | null;
   className?: string;
+}
+
+/**
+ * A row moved by drag and drop, between its new neighbours on the page, in
+ * ascending order: placed right before `before`, else right after `after`.
+ */
+export interface TableMove {
+  id: string;
+  after: string | null;
+  before: string | null;
 }
 
 /** A filter of the header: the rows having any of the values picked. */
@@ -96,6 +109,11 @@ export interface DataTableConfig<T> {
   maxHeight?: string;
   /** Buttons on the selected rows, in a bar at the bottom; rows get checkboxes with it. */
   bulkActions?: (ids: string[], clear: () => void) => ReactNode;
+  /**
+   * Saves a row moved by its handle, in an `orderColumn`. Rows move once
+   * sorted by it, without search or filters, within their group.
+   */
+  reorder?: (move: TableMove) => Promise<ActionResult>;
   /** Greyed rows, e.g. hidden entries. */
   muted?: (row: T) => boolean;
   /** Icon buttons or a menu, at the end of the row: `RowActions` mostly. */

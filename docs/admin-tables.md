@@ -134,6 +134,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `actions` | The `RowActions` menu at the end of the row. |
 | `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. |
 | `muted` | Greyed rows. |
+| `reorder` | Saves a row moved by the handle of an `orderColumn`: `(move: TableMove) => Promise<ActionResult>`. Only for rows kept in an order of the database. |
 
 ## Columns: one builder per kind of field
 
@@ -152,6 +153,7 @@ Each builder applies the rules of the kit: the cell of its kind, a copy button o
 | `pillsColumn({ value, max? })` | Labels among many: coloured pills, the rest counted. | `PillsCell` |
 | `iconsColumn({ value, max? })` | Things told by an icon: connections, tags. | `IconsCell` |
 | `buttonsColumn({ buttons, count? })` | Quick actions: `CellButtons` of `CellButton`s. | — |
+| `orderColumn({ value })` | The place of the row in an order of the database, e.g. badges, tags. Sortable, `grip-vertical` icon by default; with `reorder`, a drag handle before the number. | `OrderCell` |
 | `customColumn(column)` | Anything else: its own `cell`, plus `copy` / `skeleton` if relevant. | — |
 
 Other bits:
@@ -180,11 +182,12 @@ Other bits:
 - **Text.** French, written into the kit.
 - **Actions.** The row menu uses `RowActions`, always shown. Its column header is an icon.
 - **Filters.** A facet menu stays open while options are ticked.
+- **Order.** With an `orderColumn` and `reorder`, rows move by their handle, with the mouse, a finger or the keyboard (Space, arrows, Space), within their group and their page. Only once sorted by that column (either way), without search or filters, and not while a move saves: the handle is greyed otherwise, its bubble telling why. The new order shows at once; the page is then fetched again without skeleton, a failure told by a toast. `TableMove` gives the new neighbours on the page in ascending order: the server places the row right before `before`, else right after `after`, and numbers its order again.
 - **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column.
 
 ## Not in the kit
 
-Lists reordered by drag and drop (badges, tags) keep `components/admin/sortable-list.tsx`.
+Short lists reordered by drag and drop without a table keep `components/admin/sortable-list.tsx`.
 
 ## Visual tests
 
@@ -197,6 +200,7 @@ Lists reordered by drag and drop (badges, tags) keep `components/admin/sortable-
 - loading;
 - empty;
 - error;
+- ordered rows, handles blocked by another sort;
 - selection;
 - phone.
 

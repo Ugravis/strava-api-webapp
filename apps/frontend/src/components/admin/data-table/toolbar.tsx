@@ -85,6 +85,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
             counts={state.last?.counts[facet.id] ?? {}}
             value={state.filters[facet.id] ?? []}
             picked={facet.id in state.picks.filters}
+            disabled={state.loading}
             onChange={(value) => {
               const { [facet.id]: _, ...rest } = state.picks.filters;
               state.setFilters(value ? { ...rest, [facet.id]: value } : rest);
@@ -97,6 +98,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
               <Button
                 variant="ghost"
                 size="icon-sm"
+                disabled={state.loading}
                 onClick={state.resetAll}
                 aria-label="Tout réinitialiser"
                 className={cn(IN_GROUP, "text-red-600/80 hover:text-red-600 dark:text-red-400/80 dark:hover:text-red-400")}
@@ -115,6 +117,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
                 variant="ghost"
                 size="icon-sm"
                 className={cn(IN_GROUP, "max-sm:hidden")}
+                disabled={state.loading}
                 onClick={() => state.setPinned(!state.pinned)}
                 aria-pressed={state.pinned}
                 aria-label="Figer la première colonne"

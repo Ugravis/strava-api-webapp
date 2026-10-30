@@ -92,21 +92,21 @@ export function Pagination({ pager, loading, noun, onPage }: { pager: TablePage<
         {pager.visible < pager.total && ` (${pager.total - pager.visible} repliés)`}
       </p>
       <div className="flex items-center gap-1">
-        <Button size="icon-xs" variant="ghost" disabled={pager.page === 1} onClick={() => onPage(1)} aria-label="Première page">
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === 1} onClick={() => onPage(1)} aria-label="Première page">
           <ChevronsLeftIcon />
         </Button>
-        <Button size="icon-xs" variant="ghost" disabled={pager.page === 1} onClick={() => onPage(pager.page - 1)} aria-label="Page précédente">
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === 1} onClick={() => onPage(pager.page - 1)} aria-label="Page précédente">
           <ChevronLeftIcon />
         </Button>
         <span className="flex items-center gap-1.5 px-1">
           Page
-          <PageInput key={pager.page} page={pager.page} pages={pager.pages} onPage={onPage} />
+          <PageInput key={pager.page} disabled={loading} page={pager.page} pages={pager.pages} onPage={onPage} />
           sur {pager.pages}
         </span>
-        <Button size="icon-xs" variant="ghost" disabled={pager.page === pager.pages} onClick={() => onPage(pager.page + 1)} aria-label="Page suivante">
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === pager.pages} onClick={() => onPage(pager.page + 1)} aria-label="Page suivante">
           <ChevronRightIcon />
         </Button>
-        <Button size="icon-xs" variant="ghost" disabled={pager.page === pager.pages} onClick={() => onPage(pager.pages)} aria-label="Dernière page">
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === pager.pages} onClick={() => onPage(pager.pages)} aria-label="Dernière page">
           <ChevronsRightIcon />
         </Button>
       </div>
@@ -115,7 +115,7 @@ export function Pagination({ pager, loading, noun, onPage }: { pager: TablePage<
 }
 
 /** The page typed in, applied on Enter or on leaving, kept within bounds. */
-function PageInput({ page, pages, onPage }: { page: number; pages: number; onPage: (value: number) => void }) {
+function PageInput({ page, pages, disabled, onPage }: { page: number; disabled: boolean; pages: number; onPage: (value: number) => void }) {
   const [text, setText] = useState(String(page));
   function apply() {
     const value = Math.min(Math.max(Math.round(Number(text)) || page, 1), pages);
@@ -125,6 +125,7 @@ function PageInput({ page, pages, onPage }: { page: number; pages: number; onPag
   return (
     <input
       inputMode="numeric"
+      disabled={disabled}
       value={text}
       onChange={(event) => setText(event.target.value.replace(/\D/g, ""))}
       onBlur={apply}

@@ -164,7 +164,7 @@ Other bits:
 
 - **Icons.** Every column has a lucide icon before its name. Every icon-only button has a `Tip`.
 - **Copy.** Texts and numbers get a copy button on hover (the builders do it). Dates, statuses and marks don't.
-- **Server-driven.** Search (debounced 250 ms), filters, sort, groups, folds and pages all go through `fetch`. Skeleton rows show while it runs; the last page keeps the counts and the pagination.
+- **Server-driven.** Search (debounced 250 ms), filters, sort, groups, folds and pages all go through `fetch`. Skeleton rows show while it runs; the last page keeps the counts and the pagination. While a call runs, every control that changes the rows is disabled (the search field stays editable, the typing only restarts the pause), and the skeleton keeps the widths of the columns.
 - **Defaults vs picks.** A header button turns blue only when the user picked it, even when the pick equals the default. Resetting hands control back to the system. « Grouper » has no « Aucun »: its reset item does that.
 - **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group`, `<id>.fold`, `<id>.hide`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.

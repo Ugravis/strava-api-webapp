@@ -44,6 +44,7 @@ export function FacetFilter({
   counts,
   value,
   picked,
+  disabled,
   onChange,
 }: {
   facet: DataTableFacet;
@@ -52,13 +53,15 @@ export function FacetFilter({
   value: string[];
   /** Chosen by the user: in blue with its values, else plain. */
   picked: boolean;
+  /** While the server answers. */
+  disabled: boolean;
   /** Null hands the filter back to the system. */
   onChange: (value: string[] | null) => void;
 }) {
   const labels = facet.options.filter((option) => value.includes(option.value));
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" className={cn("rounded-lg", picked && ACTIVE)} />}>
+      <DropdownMenuTrigger disabled={disabled} render={<Button variant="outline" size="sm" className={cn("rounded-lg", picked && ACTIVE)} />}>
         <PlusCircleIcon data-icon="inline-start" />
         {facet.label}
         {picked && (
@@ -108,7 +111,8 @@ export function ViewMenu<T>({ config, state }: MenuProps<T>) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
-        className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg bg-neutral-900 px-2.5 text-[0.8rem] font-medium text-neutral-50 outline-none transition-opacity hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-neutral-800 [&_svg]:size-3.5"
+        disabled={state.loading}
+        className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg bg-neutral-900 px-2.5 text-[0.8rem] font-medium text-neutral-50 outline-none transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-neutral-800 [&_svg]:size-3.5"
         aria-label={`Vue : ${current?.label}`}
       >
         {current?.icon}
@@ -146,10 +150,11 @@ function ResetItem({ disabled, onClick }: { disabled: boolean; onClick: () => vo
 }
 
 /** An icon alone at rest; in use, in blue with what it does. */
-function ToolTrigger({ active, label, icon, children }: { active: boolean; label: string; icon: ReactNode; children?: ReactNode }) {
+function ToolTrigger({ active, disabled, label, icon, children }: { active: boolean; disabled: boolean; label: string; icon: ReactNode; children?: ReactNode }) {
   return (
     <Tip label={label}>
       <DropdownMenuTrigger
+        disabled={disabled}
         render={
           <Button
             variant="ghost"
@@ -174,7 +179,7 @@ export function SortMenu<T>({ config, state }: MenuProps<T>) {
   const changed = state.picks.sort !== null;
   return (
     <DropdownMenu modal={false}>
-      <ToolTrigger active={changed} label="Trier" icon={<ArrowDownUpIcon />}>
+      <ToolTrigger disabled={state.loading} active={changed} label="Trier" icon={<ArrowDownUpIcon />}>
         {current?.header}
         {sort.desc ? <ArrowDownIcon /> : <ArrowUpIcon />}
       </ToolTrigger>
@@ -213,7 +218,7 @@ export function GroupMenu<T>({ config, state }: MenuProps<T>) {
   const current = config.groupings?.find((grouping) => grouping.id === groupBy);
   return (
     <DropdownMenu modal={false}>
-      <ToolTrigger active={groupBy !== undefined} label="Grouper" icon={<RowsIcon />}>
+      <ToolTrigger disabled={state.loading} active={groupBy !== undefined} label="Grouper" icon={<RowsIcon />}>
         {current?.label}
       </ToolTrigger>
       <DropdownMenuContent align="center" className="w-48">
@@ -237,7 +242,7 @@ export function ColumnsMenu<T>({ config, state }: MenuProps<T>) {
   const { hidden, setHidden } = state;
   return (
     <DropdownMenu modal={false}>
-      <ToolTrigger active={state.picks.hidden !== null} label="Colonnes" icon={<ListIcon />}>
+      <ToolTrigger disabled={state.loading} active={state.picks.hidden !== null} label="Colonnes" icon={<ListIcon />}>
         <span className="tabular-nums">
           {config.columns.length - hidden.size}/{config.columns.length}
         </span>

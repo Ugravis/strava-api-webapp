@@ -5,6 +5,7 @@ import { AdminNavigation, ToAppLink } from "@/components/admin/admin-sidebar";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { AppShellSkeleton } from "@/components/app-shell/app-shell-skeleton";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SplitPanelArea, SplitPanelProvider } from "@/components/split-panel";
 import { requireAdminRole } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
@@ -38,11 +39,16 @@ async function AdminShell({ children }: { children: React.ReactNode }) {
       switchLink={<ToAppLink roles={roles} />}
       homeHref={adminRoutes.dashboard}
     >
-      {/* As the padded pages of the site. */}
-      <div className="flex min-h-[calc(100svh-3.5rem)] flex-1 flex-col p-4 md:min-h-svh md:p-6">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2 sm:py-4">{children}</div>
-      </div>
-      <SiteFooter authenticated />
+      {/* The detail of a row, on the right of any page, above the footer. */}
+      <SplitPanelProvider>
+        <SplitPanelArea>
+          {/* As the padded pages of the site. */}
+          <div className="flex min-h-[calc(100svh-3.5rem)] flex-1 flex-col p-4 md:min-h-svh md:p-6">
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2 sm:py-4">{children}</div>
+          </div>
+        </SplitPanelArea>
+        <SiteFooter authenticated />
+      </SplitPanelProvider>
     </AppShell>
   );
 }

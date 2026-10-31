@@ -178,7 +178,7 @@ Other bits:
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
   - The box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls, in every layout. The header of a table is sticky.
-  - Cards and list draw the cells of the columns, no layout of their own: a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
+  - Cards and list draw the cells of the columns, no layout of their own: as many cards in the width as fit at 14rem at least; a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.
   - On a narrow desktop, the details of the tools hide when they would wrap the header.

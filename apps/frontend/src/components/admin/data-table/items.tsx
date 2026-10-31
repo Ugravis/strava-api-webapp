@@ -13,7 +13,8 @@ import type { DataTableState } from "./use-data-table";
 
 /** The box of the items of each layout but the table, and of their skeletons. */
 const BOXES = {
-  cards: "grid gap-2 sm:grid-cols-2 lg:grid-cols-3",
+  // As many cards as the box holds at 14rem at least: 4 beside the sidebar of a laptop, 1 on a phone.
+  cards: "grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2",
   list: "flex flex-wrap items-start gap-2",
 };
 

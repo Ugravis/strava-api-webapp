@@ -142,7 +142,7 @@ Each builder applies the rules of the kit: the cell of its kind, a copy button o
 
 | Builder | Field | Cell |
 | --- | --- | --- |
-| `userColumn({ value, marks?, empty? })` | An account: avatar, @username, `Mark`s. Locked, copies the username. No account shows `empty` (e.g. « Système »), else a dash; a deleted one (no username) « Compte supprimé ». | `UserCell` |
+| `userColumn({ value, marks?, empty?, avatar? })` | An account: avatar (`avatar: false` when an `imageColumn` shows it), @username, `Mark`s. Locked, copies the username. No account shows `empty` (e.g. « Système »), else a dash; a deleted one (no username) « Compte supprimé ». | `UserCell` |
 | `lookColumn({ value, marks? })` | An item told by its look: icon in a disc (`background` or icon `color`), name, `Mark`s. Locked, copies the name. Badges, tags. | `LookCell` |
 | `textColumn({ value, muted?, width? })` | Free text, e-mail (`muted`). Truncated with the whole text in a bubble. Copied. | `TextCell` |
 | `codeColumn({ value, width? })` | Id, key, hash, in monospace. Copied. | `CodeCell` |

@@ -100,21 +100,22 @@ export function iconsColumn<T>({ value, max, ...base }: Base<T> & { value: (row:
   return { ...base, cell: (row) => <IconsCell items={value(row)} max={max} />, skeleton: <Skeleton className="h-6 w-14 rounded-md" /> };
 }
 
-/** An account, mostly the first column: locked, its @username copied; null shows `empty`, else a dash. */
+/** An account, mostly the first column: locked, its @username copied; null shows `empty`, else a dash; `avatar: false` when an image column shows it. */
 export function userColumn<T>({
   value,
   marks,
   empty,
+  avatar = true,
   ...base
-}: Base<T> & { value: (row: T) => CellUser | null; marks?: (row: T) => ReactNode; empty?: string }): DataTableColumn<T> {
+}: Base<T> & { value: (row: T) => CellUser | null; marks?: (row: T) => ReactNode; empty?: string; avatar?: boolean }): DataTableColumn<T> {
   return {
     locked: true,
     ...base,
-    cell: (row) => <UserCell user={value(row)} marks={marks?.(row)} empty={empty} />,
+    cell: (row) => <UserCell user={value(row)} marks={marks?.(row)} empty={empty} avatar={avatar} />,
     copy: (row) => value(row)?.username ?? null,
     skeleton: (
       <span className="flex items-center gap-2">
-        <Skeleton className="size-5 rounded-full" />
+        {avatar && <Skeleton className="size-5 rounded-full" />}
         <Skeleton className="h-4 w-28" />
       </span>
     ),

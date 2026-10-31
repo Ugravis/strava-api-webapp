@@ -34,6 +34,7 @@ export function toAdminCommit(
     title: title ? title.trim() : subject,
     pullRequest: pullRequest ? Number(pullRequest[1]) : null,
     author: commit.commit.author?.name ?? commit.author?.login ?? '—',
+    login: commit.author?.login ?? null,
     avatarUrl: commit.author?.avatar_url ?? null,
     date: commit.commit.author?.date ?? new Date(0).toISOString(),
     url: commit.html_url,

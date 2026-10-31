@@ -29,6 +29,7 @@ describe('toAdminCommit', () => {
       title: 'feat: admin dev page',
       pullRequest: 126,
       author: 'Ulysse',
+      login: 'ugravis',
       avatarUrl: 'https://avatars/u',
       date: '2026-10-28T14:00:00Z',
       url: 'https://github.com/o/r/commit/abc',

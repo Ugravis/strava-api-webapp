@@ -49,11 +49,11 @@ interface History {
 /** Searched, filtered, sorted and grouped in memory: GitHub does none of it. */
 const COMMITS_TABLE: MemoryTableSpec<AdminCommit> = {
   search: (commit) =>
-    `${commit.title} ${commit.author} ${commit.sha} ${commit.pullRequest === null ? '' : `#${commit.pullRequest}`}`,
+    `${commit.title} ${commit.author} ${commit.login ?? ''} ${commit.sha} ${commit.pullRequest === null ? '' : `#${commit.pullRequest}`}`,
   sorts: {
     date: (commit) => commit.date,
     title: (commit) => commit.title,
-    author: (commit) => commit.author,
+    author: (commit) => commit.login ?? commit.author,
     pullRequest: (commit) => commit.pullRequest,
   },
   facets: {
@@ -64,7 +64,7 @@ const COMMITS_TABLE: MemoryTableSpec<AdminCommit> = {
   },
   groupings: {
     kind: (commit) => String(ADMIN_COMMIT_KINDS.indexOf(commit.kind)),
-    author: (commit) => commit.author,
+    author: (commit) => commit.login ?? '',
   },
 };
 

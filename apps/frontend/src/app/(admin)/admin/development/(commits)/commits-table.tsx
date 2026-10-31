@@ -14,8 +14,8 @@ import {
   Mark,
   statusColumn,
   type Tone,
+  userColumn,
 } from "@/components/admin/data-table";
-import { UserAvatar } from "@/components/user/user-avatar";
 import { fetchCommitsTable } from "./actions";
 
 const KINDS: Record<AdminCommitKind, { label: string; tone: Tone }> = {
@@ -62,16 +62,13 @@ export function CommitsTable({ deployed }: { deployed: string | null }) {
           cell: (commit) => <LinkCell href={pullRequestHref(commit)}>#{commit.pullRequest}</LinkCell>,
           copy: (commit) => (commit.pullRequest === null ? null : `#${commit.pullRequest}`),
         }),
-        lookColumn({
+        userColumn({
           id: "author",
           header: "Auteur",
           icon: <UserPenIcon />,
           sortable: true,
           locked: false,
-          value: (commit) => ({
-            icon: <UserAvatar user={{ username: commit.author, displayName: commit.author, avatarUrl: commit.avatarUrl }} className="size-6" fallbackClassName="text-[9px]" />,
-            name: commit.author,
-          }),
+          value: (commit) => (commit.login ? { username: commit.login, displayName: commit.author, avatarUrl: commit.avatarUrl } : null),
         }),
         dateColumn({ id: "date", header: "Date", icon: <ClockIcon />, sortable: true, value: (commit) => commit.date, relative: true }),
         codeColumn({ id: "sha", header: "SHA", icon: <HashIcon />, value: (commit) => commit.sha.slice(0, 7), width: "max-w-20" }),
@@ -80,7 +77,7 @@ export function CommitsTable({ deployed }: { deployed: string | null }) {
       groupings: [
         // Keys sent in the order of the kinds: their rank.
         { id: "kind", label: "Type", title: (key) => KINDS[ADMIN_COMMIT_KINDS[Number(key)] ?? "commit"].label },
-        { id: "author", label: "Auteur", title: (key) => key },
+        { id: "author", label: "Auteur", title: (key) => (key ? `@${key}` : "Sans compte GitHub") },
       ],
     };
   }, [deployed]);

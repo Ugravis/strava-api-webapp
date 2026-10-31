@@ -50,7 +50,8 @@ export interface AdminCommit {
   pullRequest: number | null;
   /** Name of the git author, or their GitHub login. */
   author: string;
-  /** GitHub avatar of the author, null without a GitHub account. */
+  /** GitHub login and avatar of the author, null without a GitHub account. */
+  login: string | null;
   avatarUrl: string | null;
   date: string;
   url: string;

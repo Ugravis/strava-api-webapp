@@ -18,6 +18,9 @@ import {
 } from "@/components/admin/data-table";
 import { fetchCommitsTable } from "./actions";
 
+/** The icon of the commit in the colour of its kind, as the dots of « Type » (blue-500, violet-500); a plain commit stays grey. */
+const ICON_COLORS: Record<AdminCommitKind, string | null> = { release: "#3b82f6", merge: "#8b5cf6", commit: null };
+
 const KINDS: Record<AdminCommitKind, { label: string; tone: Tone }> = {
   release: { label: "Release", tone: "blue" },
   merge: { label: "Merge", tone: "violet" },
@@ -50,7 +53,7 @@ export function CommitsTable({ deployed }: { deployed: string | null }) {
           header: "Commit",
           icon: <GitCommitHorizontalIcon />,
           sortable: true,
-          value: (commit) => ({ icon: commit.kind !== "commit" ? <GitMergeIcon /> : <GitCommitHorizontalIcon />, name: commit.title }),
+          value: (commit) => ({ icon: commit.kind !== "commit" ? <GitMergeIcon /> : <GitCommitHorizontalIcon />, name: commit.title, color: ICON_COLORS[commit.kind] }),
           marks: (commit) => isDeployed(commit) && <Mark label="Déployé" tone="green" icon={<RocketIcon />} />,
         }),
         statusColumn({ id: "kind", header: "Type", icon: <CircleDotIcon />, value: (commit) => commit.kind, statuses: KINDS }),

@@ -7,7 +7,7 @@ Every list of the back office is a `DataTable`: one header of search, filters an
 | Layer | Path | Role |
 | --- | --- | --- |
 | Contract | `packages/shared/src/table/index.ts` (`@kilotrace/shared/table`) | `TableQuery`, `TablePage`, wire format, page layout. Browser-safe. |
-| Backend engine | `apps/backend/src/admin/common/table-query.ts` | `runTableQuery`, `TableSpec`, `@TableQueryParam()`. |
+| Backend engine | `apps/backend/src/admin/common/table-query.ts` | `runTableQuery`, `TableSpec`, `@TableQueryParam()`. Rows held in memory (e.g. from an outside API): `serveTablePage` of the contract. |
 | Server Action helper | `apps/frontend/src/lib/admin/table.ts` | `fetchAdminTable(path, query)`. |
 | Frontend kit | `apps/frontend/src/components/admin/data-table/` (import from `@/components/admin/data-table`) | `DataTable`, column builders, cells, `localTableSource`. |
 | Showcase | `apps/frontend/src/app/(admin)/admin/development/admin-table/` | Every feature on fake accounts: copy it. |
@@ -112,7 +112,7 @@ The page, a server component, checks access and renders `<UsersTable />`.
 
 ### Without a server: `localTableSource`
 
-For a short list already loaded in full, or a demo, `fetch: localTableSource(rows, spec)` serves the same pages in the browser. `spec` mirrors the `TableSpec`, with functions instead of SQL (see `poc-columns.tsx`).
+For a short list already loaded in full, or a demo, `fetch: localTableSource(rows, spec)` serves the same pages in the browser. `spec` mirrors the `TableSpec`, with functions instead of SQL (see `poc-columns.tsx`). The same cut is `serveTablePage(rows, spec, query)` in `@kilotrace/shared/table`, for a backend serving rows it does not read from SQL, e.g. the commits of GitHub.
 
 ## Config reference (`DataTableConfig<T>`)
 
@@ -124,7 +124,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `facets` | Filter buttons of the header. |
 | `groupings` | The « Grouper » menu. Its titles fold their group. |
 | `defaultGroupBy` | A grouping applied by the system; « Aucun » then joins the menu. |
-| `views` | Any number of views, the first one the default. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, and `noSelection` / `noActions` to drop the checkboxes or the row menu. Two tables of other columns and cards, or a single table: as wanted. |
+| `views` | Any number of views, the first one the default. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, `noSelection` / `noActions` to drop the checkboxes or the row menu, and `params` sent to `fetch` as its second argument when the view changes the rows themselves, e.g. `{ branch: "develop" }`. Two tables of other columns and cards, or a single table: as wanted. |
 | `create` | The blue « Nouveau » button. |
 | `defaultSort` | `createdAt` descending unless said otherwise. |
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |

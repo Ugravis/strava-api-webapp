@@ -11,6 +11,9 @@ import type { DataTableConfig } from "./types";
 import type { DataTableState } from "./use-data-table";
 import { PHONE } from "./use-table-params";
 
+/** Taken one after the other while the header overflows, on a wide screen. */
+const STEPS = ["data-compact", "data-iconic", "data-wrap"];
+
 const CREATE = "rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500";
 
 /**
@@ -20,16 +23,25 @@ const CREATE = "rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue
  */
 export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig<T>; state: DataTableState<T> }) {
   const root = useRef<HTMLDivElement>(null);
-  // On a wide screen, the details of the tools go only when they would push
-  // the header onto a second line. Set on the box, measured before paint.
+  // On a wide screen, the search, then the filters, narrow down as the window
+  // does; the details of the tools go next, then the labels of the view and
+  // the main action, and the header wraps only once it still overflows. Set
+  // on the box, measured before paint.
   useLayoutEffect(() => {
     const element = root.current;
     if (!element) return;
     const fit = () => {
       // Without transitions while measuring: a padding on its way would lie.
       element.setAttribute("data-measuring", "");
-      element.removeAttribute("data-compact");
-      if (!window.matchMedia(PHONE).matches && element.offsetHeight > 48) element.setAttribute("data-compact", "");
+      for (const step of STEPS) element.removeAttribute(step);
+      if (!window.matchMedia(PHONE).matches) {
+        for (const step of STEPS) {
+          if (element.scrollWidth <= element.clientWidth) break;
+          element.setAttribute(step, "");
+        }
+      }
+      // The labels of the filters cut short fade out.
+      for (const label of element.querySelectorAll<HTMLElement>("[data-facet-label]")) label.toggleAttribute("data-cut", label.scrollWidth > label.clientWidth);
       // The final layout settled before transitions come back, so nothing animates.
       void element.offsetHeight;
       element.removeAttribute("data-measuring");
@@ -46,11 +58,11 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
   }, []);
   const table = state.layout === "table";
   return (
-    <div ref={root} className="group/toolbar flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center data-measuring:**:transition-none">
+    <div ref={root} className="group/toolbar flex flex-col gap-2 sm:flex-row sm:items-center sm:data-wrap:flex-wrap data-measuring:**:transition-none">
       <div className="flex min-w-0 items-center gap-2 sm:contents">
         {config.views && <ViewMenu config={config} state={state} />}
         {config.search && (
-          <InputGroup className="h-7 min-w-0 flex-1 bg-background sm:w-64 sm:flex-none [&_svg]:size-3.5">
+          <InputGroup className="h-7 min-w-0 flex-1 bg-background sm:w-64 sm:min-w-32 sm:flex-[0_100_16rem] [&_svg]:size-3.5">
             <InputGroupAddon className="text-foreground">
               <SearchIcon />
             </InputGroupAddon>
@@ -76,7 +88,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
           </Button>
         )}
       </div>
-      <div className="-m-1 flex items-center gap-2 overflow-x-auto p-1 [scrollbar-width:none] sm:contents">
+      <div className="-m-1 flex items-center gap-2 overflow-x-auto p-1 scrollbar-none sm:contents">
         {config.facets && (config.views || config.search) && <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />}
         {config.facets?.map((facet) => (
           <FacetFilter
@@ -128,9 +140,9 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
           )}
         </div>
         {config.create && (
-          <Button size="sm" onClick={config.create.onClick} className={cn(CREATE, "max-sm:hidden")}>
+          <Button size="sm" onClick={config.create.onClick} aria-label={config.create.label} className={cn(CREATE, "max-sm:hidden group-data-iconic/toolbar:w-7 group-data-iconic/toolbar:px-0 group-data-iconic/toolbar:has-data-[icon=inline-start]:pl-0")}>
             <PlusIcon data-icon="inline-start" />
-            {config.create.label}
+            <span className="group-data-iconic/toolbar:hidden">{config.create.label}</span>
           </Button>
         )}
       </div>

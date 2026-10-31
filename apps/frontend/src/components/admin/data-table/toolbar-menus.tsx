@@ -62,28 +62,31 @@ export function FacetFilter({
   const labels = facet.options.filter((option) => value.includes(option.value));
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger disabled={disabled} render={<Button variant="outline" size="sm" className={cn("rounded-lg", picked && ACTIVE)} />}>
+      <DropdownMenuTrigger disabled={disabled} render={<Button variant="outline" size="sm" className={cn("rounded-lg sm:min-w-12 sm:shrink", picked && ACTIVE)} />}>
         <PlusCircleIcon data-icon="inline-start" />
-        {facet.label}
-        {picked && (
-          <span className="contents max-sm:hidden">
-            {labels.length === 0 ? (
-              <Badge variant="secondary" className={BADGE}>
-                Tous
-              </Badge>
-            ) : labels.length > 2 ? (
-              <Badge variant="secondary" className={BADGE}>
-                {labels.length} sélectionnés
-              </Badge>
-            ) : (
-              labels.map((option) => (
-                <Badge key={option.value} variant="secondary" className={BADGE}>
-                  {option.label}
+        {/* Narrowed down once the search is at its narrowest, to its first letters, which fade out. */}
+        <span data-facet-label className="flex min-w-0 items-center gap-1 overflow-hidden data-cut:mask-r-from-50%">
+          {facet.label}
+          {picked && (
+            <span className="contents max-sm:hidden">
+              {labels.length === 0 ? (
+                <Badge variant="secondary" className={BADGE}>
+                  Tous
                 </Badge>
-              ))
-            )}
-          </span>
-        )}
+              ) : labels.length > 2 ? (
+                <Badge variant="secondary" className={BADGE}>
+                  {labels.length} sélectionnés
+                </Badge>
+              ) : (
+                labels.map((option) => (
+                  <Badge key={option.value} variant="secondary" className={BADGE}>
+                    {option.label}
+                  </Badge>
+                ))
+              )}
+            </span>
+          )}
+        </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="w-56">
         <DropdownMenuGroup>
@@ -116,7 +119,7 @@ export function ViewMenu<T>({ config, state }: MenuProps<T>) {
         aria-label={`Vue : ${current?.label}`}
       >
         {current && viewIcon(current, config)}
-        <span className="max-sm:hidden">{current?.label}</span>
+        <span className="max-sm:hidden group-data-iconic/toolbar:hidden">{current?.label}</span>
         <ChevronDownIcon className="opacity-60" />
       </DropdownMenuTrigger>
       {/* As wide as its longest name, on one line. */}

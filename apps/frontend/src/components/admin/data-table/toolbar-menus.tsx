@@ -246,12 +246,12 @@ export function GroupMenu<T>({ config, state }: MenuProps<T>) {
 }
 
 export function ColumnsMenu<T>({ state }: MenuProps<T>) {
-  const { hidden, shown, setHidden, setShown, view } = state;
-  // Those of every view; a column of the view is hidden, one of another view shown.
+  const { hidden, shown, setHidden, setShown, view, grouped } = state;
+  // Those of every view; a column of the view is hidden, one of another view or of the grouping shown.
   const inView = (id: string) => !view?.columns || view.columns.includes(id);
   const visible = new Set(state.columns.map((column) => column.id));
   const toggle = (id: string, on: boolean) => {
-    if (inView(id)) setHidden(new Set(on ? [...hidden].filter((each) => each !== id) : [...hidden, id]));
+    if (inView(id) && id !== grouped) setHidden(new Set(on ? [...hidden].filter((each) => each !== id) : [...hidden, id]));
     else setShown(new Set(on ? [...shown, id] : [...shown].filter((each) => each !== id)));
   };
   return (

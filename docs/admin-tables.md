@@ -178,7 +178,7 @@ Other bits:
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
   - The box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls, in every layout. The header of a table is sticky.
-  - Cards and list draw the cells of the columns, no layout of their own: a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
+  - Cards and list draw the cells of the columns, no layout of their own: as many cards in the width as fit at 14rem at least; a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.
   - On a narrow desktop, the details of the tools hide when they would wrap the header.
@@ -187,7 +187,7 @@ Other bits:
 - **Filters.** A facet menu stays open while options are ticked.
 - **Order.** With an `orderColumn` and `reorder`, rows move by their handle, in every layout (up and down in a table, any way in cards and list), with the mouse, a finger or the keyboard (Space, arrows, Space), within their group and their page. Hiding the order column hides the handles. Only once sorted by that column (either way), without search or filters, and not while a move saves: the handle is greyed otherwise, its bubble telling why. The new order shows at once; the page is then fetched again without skeleton, a failure told by a toast. `TableMove` gives the new neighbours on the page in ascending order: the server places the row right before `before`, else right after `after`, and numbers its order again.
 - **Sort.** « Trier » shows only with a sortable column, e.g. not on the commits, which GitHub serves in its own order.
-- **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column.
+- **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column. The column of the current grouping (same id, not locked), `defaultGroupBy` included, is hidden by the system: its group titles already tell its value. Ticking it again shows it (`show`), whatever the grouping.
 
 ## Not in the kit
 

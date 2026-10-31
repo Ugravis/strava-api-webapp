@@ -10,6 +10,10 @@ export interface AdminTeamMember {
   role: AdminRole;
   /** Latest request of any session, null without one. */
   lastSeenAt: string | null;
+  /** Entries of the logs the member authored, masked ones left out. */
+  logsCount: number;
+  /** When the current role was granted, from the logs; null when given outside the back office. */
+  roleSince: string | null;
 }
 
 /** `GET /api/admin/team/candidates?q=`: an account outside the team. */

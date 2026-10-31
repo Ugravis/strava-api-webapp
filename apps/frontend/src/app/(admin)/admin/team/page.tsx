@@ -41,7 +41,7 @@ export default async function AdminTeamPage() {
               <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} />
             ))}
           </div>
-          <TeamTable meId={me?.id ?? null} canEdit={canEdit} usersPath={adminRoutes.users} />
+          <TeamTable meId={me?.id ?? null} canEdit={canEdit} usersPath={adminRoutes.users} auditLogPath={adminRoutes.auditLog} />
         </>
       ) : (
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>

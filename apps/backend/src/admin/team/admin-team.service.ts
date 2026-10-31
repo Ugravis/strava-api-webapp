@@ -38,12 +38,19 @@ const HIGHEST_ROLE = `CASE ${[...ADMIN_ROLES]
   .map((name) => `WHEN ${hasRole(name)} THEN '${name}'`)
   .join(' ')} END`;
 
+/** Entries of the logs authored by the member, masked ones left out. */
+const LOGS_COUNT = `(SELECT COUNT(*) FROM admin_audit_log entry WHERE entry.actor_id = "user"."id" AND entry.hidden_at IS NULL)`;
+/** The latest grant of a role to the member, i.e. of the current one. */
+const ROLE_SINCE = `(SELECT MAX(entry.created_at) FROM admin_audit_log entry WHERE entry.target_type = 'user' AND entry.target_id = CAST("user"."id" AS text) AND entry.action IN ('roles.grant', 'roles.bootstrap') AND entry.succeeded)`;
+
 const TEAM_TABLE: TableSpec = {
   search: ['user.username', 'user.display_name', 'user.email'],
   sorts: {
     member: 'user.username',
     role: RANK,
     email: 'user.email',
+    logsCount: LOGS_COUNT,
+    roleSince: ROLE_SINCE,
     lastSeenAt:
       '(SELECT MAX(session.last_seen_at) FROM sessions session WHERE session.user_id = "user"."id")',
   },
@@ -110,6 +117,20 @@ export class AdminTeamService {
     const lastSeenById = new Map(
       lastSeen.map(({ userId, lastSeenAt }) => [userId, lastSeenAt]),
     );
+    const logs = users.length
+      ? await this.users
+          .createQueryBuilder('user')
+          .select('user.id', 'id')
+          .addSelect(LOGS_COUNT, 'logsCount')
+          .addSelect(ROLE_SINCE, 'roleSince')
+          .where({ id: In(users.map(({ id }) => id)) })
+          .getRawMany<{
+            id: string;
+            logsCount: string;
+            roleSince: Date | null;
+          }>()
+      : [];
+    const logsById = new Map(logs.map((row) => [row.id, row]));
     return users.flatMap((user) => {
       const role = highestAdminRole(user.roles);
       return role
@@ -122,6 +143,9 @@ export class AdminTeamService {
               email: user.email,
               role,
               lastSeenAt: lastSeenById.get(user.id)?.toISOString() ?? null,
+              logsCount: Number(logsById.get(user.id)?.logsCount ?? 0),
+              roleSince:
+                logsById.get(user.id)?.roleSince?.toISOString() ?? null,
             },
           ]
         : [];

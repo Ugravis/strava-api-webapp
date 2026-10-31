@@ -2,13 +2,13 @@
 
 import { ADMIN_ROLES, type AdminRole, type AdminTeamMember } from "@kilotrace/shared/admin";
 import type { TableQuery } from "@kilotrace/shared/table";
-import { AtSignIcon, ClockIcon, CopyIcon, KeyRoundIcon, MailIcon, PanelRightOpenIcon, UserMinusIcon, UserRoundCogIcon, UserRoundIcon } from "lucide-react";
+import { AtSignIcon, CalendarCheckIcon, ClockIcon, CopyIcon, KeyRoundIcon, ListClockIcon, MailIcon, PanelRightOpenIcon, UserMinusIcon, UserRoundCogIcon, UserRoundIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { type FormField, FormDialog } from "@/components/admin/form-dialog";
-import { type DataTableConfig, DataTable, dateColumn, Mark, pillsColumn, RowActions, textColumn, type Tone, userColumn } from "@/components/admin/data-table";
+import { type DataTableConfig, DataTable, dateColumn, Mark, numberColumn, pillsColumn, RowActions, textColumn, type Tone, userColumn } from "@/components/admin/data-table";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { publicNameOf } from "@/lib/user";
 import { addMember, changeRole, fetchTeamTable, removeMember, searchCandidates } from "./actions";
@@ -39,7 +39,7 @@ function copy(text: string, done: string) {
  * The team, highest role first. Every member reads, `canEdit` adds members,
  * changes their role or removes them, never on one's own row.
  */
-export function TeamTable({ meId, canEdit, usersPath }: { meId: string | null; canEdit: boolean; usersPath: string }) {
+export function TeamTable({ meId, canEdit, usersPath, auditLogPath }: { meId: string | null; canEdit: boolean; usersPath: string; auditLogPath: string }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   // Kept once closed, so that the texts stay while the dialogs fade out.
@@ -65,8 +65,8 @@ export function TeamTable({ meId, canEdit, usersPath }: { meId: string | null; c
       empty: { title: "Aucun membre", description: "Personne dans l'équipe pour l'instant." },
       defaultSort: { id: "role", desc: true },
       views: [
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["member", "role", "email", "logsCount"] },
         { id: "table", label: "Table" },
-        { id: "cards", label: "Cartes", layout: "cards", columns: ["member", "role", "lastSeenAt"] },
       ],
       columns: [
         userColumn({
@@ -78,7 +78,9 @@ export function TeamTable({ meId, canEdit, usersPath }: { meId: string | null; c
           marks: (member) => member.id === meId && <Mark label="Vous" tone="sky" icon={<UserRoundIcon />} />,
         }),
         pillsColumn({ id: "role", header: "Rôle", icon: <KeyRoundIcon />, sortable: true, value: (member) => [ROLES[member.role]] }),
+        dateColumn({ id: "roleSince", header: "Rôle depuis", icon: <CalendarCheckIcon />, sortable: true, value: (member) => member.roleSince }),
         textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, sortable: true, value: (member) => member.email, muted: true, width: "max-w-52" }),
+        numberColumn({ id: "logsCount", header: "Logs", icon: <ListClockIcon />, sortable: true, zero: true, value: (member) => member.logsCount }),
         dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (member) => member.lastSeenAt, relative: true }),
       ],
       facets: [{ id: "role", label: "Rôle", options: [...ADMIN_ROLES].reverse().map((role) => ({ value: role, label: ROLES[role].label })) }],
@@ -90,6 +92,10 @@ export function TeamTable({ meId, canEdit, usersPath }: { meId: string | null; c
             <DropdownMenuItem onClick={() => open(member)}>
               <PanelRightOpenIcon />
               Ouvrir la fiche
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`${auditLogPath}?actor=${member.id}`)}>
+              <ListClockIcon />
+              Voir ses logs
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => copy(member.email, "E-mail copié")}>
               <CopyIcon />
@@ -113,7 +119,7 @@ export function TeamTable({ meId, canEdit, usersPath }: { meId: string | null; c
       ),
     };
     // `version` gives a new source, fetched again, after each change.
-  }, [canEdit, meId, router, usersPath, version]);
+  }, [auditLogPath, canEdit, meId, router, usersPath, version]);
 
   const changingName = changing.member ? publicNameOf(changing.member) : "";
   const removingName = removing.member ? publicNameOf(removing.member) : "";

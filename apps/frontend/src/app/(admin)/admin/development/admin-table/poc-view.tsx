@@ -6,7 +6,8 @@ import { useSplitPanel } from "@/components/split-panel";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { fetchPocUsers, USERS } from "./poc-columns";
 import { POC_USERS, type PocUser } from "./poc-data";
-import { PocUserDetail } from "./poc-detail";
+import { PocUserPanel } from "./poc-detail";
+import { usePocVersion } from "./poc-store";
 
 type PocState = "data" | "loading" | "empty" | "error";
 const STATES: Record<PocState, string> = { data: "Données", loading: "Chargement", empty: "Vide", error: "Erreur" };
@@ -17,8 +18,10 @@ const EMPTY: TablePage<PocUser> = { entries: [], total: 0, visible: 0, page: 1, 
 export function PocView() {
   const [state, setState] = useState<PocState>("data");
   const { open, isOpen, activeId } = useSplitPanel();
+  const version = usePocVersion();
   const openUser = useCallback(
-    (user: PocUser) => open(<PocUserDetail user={user} />, { id: user.id, title: `@${user.username}` }),
+    // Opened at once on its skeleton, the account loaded by the panel.
+    (user: PocUser) => open(<PocUserPanel id={user.id} />, { id: user.id, title: `@${user.username}` }),
     [open],
   );
   // A shared link: the row of `?row=`, once on arrival.
@@ -50,7 +53,7 @@ export function PocView() {
           ))}
         </ToggleGroup>
       </div>
-      <DataTable config={config} onRowClick={openUser} activeRowId={isOpen ? activeId : null} />
+      <DataTable config={config} onRowClick={openUser} activeRowId={isOpen ? activeId : null} refreshKey={version} />
     </>
   );
 }

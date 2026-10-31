@@ -267,7 +267,7 @@ export function DetailField({
           <div
             onClick={edit && start}
             className={cn(
-              "min-w-0 flex-1 break-words [&_[class*='max-w-']]:max-w-full",
+              "min-w-0 flex-1 wrap-break-word **:[[class*='max-w-']]:max-w-full",
               edit && "cursor-text",
               edit && !children && (multiline ? "whitespace-pre-line" : "truncate"),
             )}

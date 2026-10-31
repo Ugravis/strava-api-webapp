@@ -29,8 +29,15 @@ interface RowProps<T> {
   blocked?: string | null;
 }
 
-/** The row opened: shaded, a bar of the primary colour along its first cell. */
-const ACTIVE = "data-active:bg-muted data-active:[&>td:first-child]:shadow-[inset_2px_0_0_var(--color-primary)]";
+/*
+ * Rows checked and the one opened, tinted blue alike, a bar along the first
+ * cell of the latter:
+ * opaque, so that pinned cells, which inherit it, still hide what slides under.
+ */
+const ACTIVE = cn(
+  "data-[state=selected]:bg-[color-mix(in_oklab,var(--color-blue-500)_7%,var(--color-background))] data-[state=selected]:hover:bg-[color-mix(in_oklab,var(--color-blue-500)_10%,var(--color-background))]",
+  "data-active:bg-[color-mix(in_oklab,var(--color-blue-500)_7%,var(--color-background))] data-active:hover:bg-[color-mix(in_oklab,var(--color-blue-500)_10%,var(--color-background))] data-active:[&>td:first-child]:shadow-[inset_2px_0_0_var(--color-blue-500)]",
+);
 
 /** A row, drawn again only when its own props change, not on every change of the table. */
 export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, columns, selected, active, onOpen, pinBox, pinFirst, onToggle, movable, blocked = null }: RowProps<T>) {

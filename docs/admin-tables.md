@@ -143,7 +143,7 @@ Props of `DataTable` besides `config`, for what changes with the page:
 | --- | --- |
 | `onRowClick` | Click on a row (or Enter on a card), stable (`useCallback`). Buttons, links, checkboxes and menu items of the row keep their own click. |
 | `refreshKey` | A new value fetches the page again without skeleton, e.g. a version bumped once a row changed in its detail. |
-| `activeRowId` | The row opened: shaded, with a primary bar on its first cell (a primary border on a card), kept in sight. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. Past the last row of the page, the next page opens on its first row; before the first, the previous one on its last. |
+| `activeRowId` | The row opened: tinted blue like the checked rows, with a blue bar on its first cell (a blue border on a card), kept in sight. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. Past the last row of the page, the next page opens on its first row; before the first, the previous one on its last. |
 
 ## Columns: one builder per kind of field
 
@@ -190,7 +190,7 @@ Other bits:
   - Cards and list draw the cells of the columns, no layout of their own: as many cards in the width as fit at 14rem at least; a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.
-  - On a narrow desktop, the details of the tools hide when they would wrap the header.
+  - On a narrow desktop, the header fits in steps before it wraps: the search narrows (down to 8rem), then the featured filters, down to their first letters faded out; then the details of the tools hide; then the view and « Nouveau » buttons keep their icon only. It wraps only once it still overflows.
 - **Text.** French, written into the kit.
 - **Actions.** The row menu uses `RowActions`, always shown. Its column header is an icon.
 - **Filters.** A facet menu stays open while options are ticked.

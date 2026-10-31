@@ -273,7 +273,7 @@ export function DataTable<T>({
       {state.layout !== "table" ? (
         // Up to the same most as a table, then scrolls: the pagination stays in sight.
         <div
-          className="-m-1 overflow-y-auto p-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
+          className="-m-1 overflow-y-auto p-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] scrollbar-thin"
           style={{ maxHeight: config.maxHeight ?? "70vh" }}
         >
           <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
@@ -291,7 +291,7 @@ export function DataTable<T>({
           {/* Rows dragged by the handle of an order column, else a plain table. */}
           <MaybeDnd on={movable} vertical id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
           <Table
-            containerClassName="min-h-0 flex-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
+            containerClassName="min-h-0 flex-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] scrollbar-thin"
             className="min-w-max"
             aria-busy={loading}
           >

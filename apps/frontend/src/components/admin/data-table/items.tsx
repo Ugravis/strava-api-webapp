@@ -227,8 +227,8 @@ function ItemFrame({
       data-active={active || undefined}
       aria-current={active || undefined}
       className={cn(
-        "border bg-card text-sm outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 data-[state=selected]:bg-muted data-active:border-primary data-active:bg-muted",
-        onClick && "cursor-pointer hover:bg-muted/50",
+        "border bg-card text-sm outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 data-[state=selected]:bg-[color-mix(in_oklab,var(--color-blue-500)_7%,var(--color-card))] data-active:border-blue-500 data-active:bg-[color-mix(in_oklab,var(--color-blue-500)_7%,var(--color-card))]",
+        onClick && "cursor-pointer hover:bg-muted/50 data-[state=selected]:hover:bg-[color-mix(in_oklab,var(--color-blue-500)_10%,var(--color-card))] data-active:hover:bg-[color-mix(in_oklab,var(--color-blue-500)_10%,var(--color-card))]",
         muted && "text-muted-foreground",
         layout === "cards" ? "flex h-full flex-col rounded-xl" : "flex max-w-full items-center gap-3 rounded-lg px-2.5 py-1",
       )}

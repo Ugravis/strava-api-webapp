@@ -18,6 +18,9 @@ interface RowProps<T> {
   id: string;
   columns: DataTableColumn<T>[];
   selected: boolean;
+  /** The row opened, e.g. in the detail panel. */
+  active: boolean;
+  onOpen?: (row: T) => void;
   pinBox: string;
   pinFirst: string;
   onToggle: (ids: string[], on: boolean) => void;
@@ -26,18 +29,24 @@ interface RowProps<T> {
   blocked?: string | null;
 }
 
+/** The row opened: shaded, a bar of the primary colour along its first cell. */
+const ACTIVE = "data-active:bg-muted data-active:[&>td:first-child]:shadow-[inset_2px_0_0_var(--color-primary)]";
+
 /** A row, drawn again only when its own props change, not on every change of the table. */
-export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, columns, selected, pinBox, pinFirst, onToggle, movable, blocked = null }: RowProps<T>) {
+export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, columns, selected, active, onOpen, pinBox, pinFirst, onToggle, movable, blocked = null }: RowProps<T>) {
   return (
     <MovableRow
       move={movable ? { id, blocked } : undefined}
       data-state={selected ? "selected" : undefined}
+      data-row-id={id}
+      data-active={active || undefined}
+      aria-current={active || undefined}
       onClick={(event) => {
         // Buttons, links and checkboxes of the row keep their own click.
         if ((event.target as HTMLElement).closest("button, a, [role=checkbox], [role=menuitem]")) return;
-        config.onOpen?.(row);
+        onOpen?.(row);
       }}
-      className={cn("group/row", config.onOpen && "cursor-pointer", config.muted?.(row) && "text-muted-foreground")}
+      className={cn("group/row", onOpen && "cursor-pointer", ACTIVE, config.muted?.(row) && "text-muted-foreground")}
     >
       {config.bulkActions && (
         <TableCell className={cn(pinBox, "w-10")}>

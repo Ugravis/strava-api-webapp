@@ -129,7 +129,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `defaultSort` | `createdAt` descending unless said otherwise. |
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |
 | `pageSize` | Else the default of the layout: 30 for a table, 24 for cards, 60 for a list. At most 100. A view's own `pageSize` wins. |
-| `maxHeight` | Most height of the box of a table, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"none"` grows without a scroll of its own. |
+| `maxHeight` | Most height of the box, in every layout, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"none"` grows without a scroll of its own. |
 | `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons. |
 | `actions` | The `RowActions` menu at the end of the row. |
 | `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. |
@@ -175,7 +175,7 @@ Other bits:
 - **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group` (`-` for none against a `defaultGroupBy`), `<id>.fold`, `<id>.hide`, `<id>.show`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
-  - The table box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls. The header is sticky.
+  - The box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls, in every layout. The header of a table is sticky.
   - Cards and list draw the cells of the columns, no layout of their own: a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.

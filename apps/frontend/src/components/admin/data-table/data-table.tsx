@@ -162,9 +162,15 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
       <DataTableToolbar config={config} state={state} />
 
       {state.layout !== "table" ? (
-        <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
-          <DataTableItems config={config} state={state} layout={state.layout} empty={empty} />
-        </MaybeDnd>
+        // Up to the same most as a table, then scrolls: the pagination stays in sight.
+        <div
+          className="-m-1 overflow-y-auto p-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]"
+          style={{ maxHeight: config.maxHeight ?? "70vh" }}
+        >
+          <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
+            <DataTableItems config={config} state={state} layout={state.layout} empty={empty} />
+          </MaybeDnd>
+        </div>
       ) : (
         <div
           // As tall as its rows, up to its most; room for the message when there are none.

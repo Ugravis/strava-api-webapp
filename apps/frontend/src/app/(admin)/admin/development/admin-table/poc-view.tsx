@@ -1,19 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable, type TablePage } from "@/components/admin/data-table";
+import { useSplitPanel } from "@/components/split-panel";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { fetchPocUsers, USERS } from "./poc-columns";
-import type { PocUser } from "./poc-data";
+import { POC_USERS, type PocUser } from "./poc-data";
+import { PocUserDetail } from "./poc-detail";
 
 type PocState = "data" | "loading" | "empty" | "error";
 const STATES: Record<PocState, string> = { data: "Données", loading: "Chargement", empty: "Vide", error: "Erreur" };
 
 const EMPTY: TablePage<PocUser> = { entries: [], total: 0, visible: 0, page: 1, pages: 1, before: 0, counts: {} };
 
-/** The table, and above it how the fake server answers. */
+/** The table, and above it how the fake server answers. A click on a row opens its detail. */
 export function PocView() {
   const [state, setState] = useState<PocState>("data");
+  const { open, isOpen, activeId } = useSplitPanel();
+  const openUser = useCallback(
+    (user: PocUser) => open(<PocUserDetail user={user} />, { id: user.id, title: `@${user.username}` }),
+    [open],
+  );
+  // A shared link: the row of `?row=`, once on arrival.
+  useEffect(() => {
+    const user = POC_USERS.find((each) => each.id === new URLSearchParams(window.location.search).get("row"));
+    if (user) openUser(user);
+  }, [openUser]);
   const config = useMemo(
     () => ({
       ...USERS,
@@ -38,7 +50,7 @@ export function PocView() {
           ))}
         </ToggleGroup>
       </div>
-      <DataTable config={config} />
+      <DataTable config={config} onRowClick={openUser} activeRowId={isOpen ? activeId : null} />
     </>
   );
 }

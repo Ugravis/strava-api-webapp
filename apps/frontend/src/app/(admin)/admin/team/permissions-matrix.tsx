@@ -4,9 +4,8 @@ import { CrownIcon, KeyRoundIcon, LockIcon, ShieldCheckIcon, ShieldIcon } from "
 import { createContext, type ReactNode, use, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
-import { customColumn, type DataTableConfig, DataTable, localTableSource } from "@/components/admin/data-table";
+import { customColumn, type DataTableConfig, DataTable, localTableSource, TableCheckbox } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Stored roles, mirrored here: the admin contracts never reach the browser. */
@@ -57,10 +56,10 @@ const Grants = createContext<{
 function GrantBox({ row, role }: { row: Row; role: EditableRole | "super-admin" }) {
   const state = use(Grants)!;
   if (role === "super-admin") {
-    return <Checkbox aria-label={`${row.label}, ${state.labels.roles[role]}`} checked disabled />;
+    return <TableCheckbox aria-label={`${row.label}, ${state.labels.roles[role]}`} checked disabled />;
   }
   return (
-    <Checkbox
+    <TableCheckbox
       aria-label={`${row.label}, ${state.labels.roles[role]}`}
       checked={state.grants[role].includes(row.key)}
       disabled={state.disabled || row.locked}
@@ -115,9 +114,9 @@ export function PermissionsMatrix({
         id: role,
         header: labels.roles[role],
         icon: ROLE_ICONS[role],
-        className: "w-32",
+        className: "w-32 text-center",
         cell: (row) => <GrantBox row={row} role={role} />,
-        skeleton: <Skeleton className="size-4 rounded-sm" />,
+        skeleton: <Skeleton className="inline-block size-4 rounded-sm align-middle" />,
       });
     return {
       id: "permissions",

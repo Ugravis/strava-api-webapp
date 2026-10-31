@@ -3,7 +3,7 @@
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { type KeyboardEvent, memo, type MouseEvent, type ReactNode } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TableCheckbox } from "./cells/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./cells/base";
@@ -144,7 +144,7 @@ const Item = memo(function Item<T>({ config, row, id, columns, order, layout, se
         onKeyDown={open && ((event) => event.key === "Enter" && event.target === event.currentTarget && openFrom(event))}
         start={
           <>
-            {config.bulkActions && <Checkbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />}
+            {config.bulkActions && <TableCheckbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />}
             {order && <span className="flex shrink-0 items-center">{order.cell(row)}</span>}
           </>
         }

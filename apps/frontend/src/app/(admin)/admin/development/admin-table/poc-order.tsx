@@ -1,10 +1,13 @@
 "use client";
 
-import { CalendarPlusIcon, LayersIcon, MedalIcon, UsersIcon } from "lucide-react";
+import { CalendarPlusIcon, ImageIcon, LayersIcon, MedalIcon, UsersIcon } from "lucide-react";
+import { useCallback, useEffect } from "react";
 import {
+  type CellImage,
   DataTable,
   type DataTableConfig,
   dateColumn,
+  imageColumn,
   localTableSource,
   numberColumn,
   orderColumn,
@@ -13,15 +16,19 @@ import {
   textColumn,
   type Tone,
 } from "@/components/admin/data-table";
+import { useSplitPanel } from "@/components/split-panel";
+import { landscape } from "./poc-data";
+import { PocBadgePanel } from "./poc-badge-detail";
+import { usePocVersion } from "./poc-store";
 
 /*
  * Fake badges kept in one order of the database, whatever their collection:
  * the showcase of the rows moved by drag and drop.
  */
 
-type PocCollection = "distance" | "tiles" | "stations";
+export type PocCollection = "distance" | "tiles" | "stations";
 
-interface PocBadge {
+export interface PocBadge {
   id: string;
   name: string;
   collection: PocCollection;
@@ -29,9 +36,11 @@ interface PocBadge {
   position: number;
   holders: number;
   createdAt: string;
+  /** None on some, to show the empty cover. */
+  picture: CellImage | null;
 }
 
-const COLLECTIONS: Record<PocCollection, { label: string; tone: Tone }> = {
+export const COLLECTIONS: Record<PocCollection, { label: string; tone: Tone }> = {
   distance: { label: "Distance", tone: "blue" },
   tiles: { label: "Tuiles", tone: "fuchsia" },
   stations: { label: "Gares", tone: "amber" },
@@ -44,7 +53,7 @@ const NAMES: Record<PocCollection, string[]> = {
 };
 
 /** Changed by the moves, like a database would be. */
-const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMap((collection, at) =>
+export const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMap((collection, at) =>
   NAMES[collection].map((name, index) => ({
     id: `${collection}-${index + 1}`,
     name,
@@ -52,6 +61,7 @@ const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMap((coll
     position: 0,
     holders: Math.round(1200 / (index + 1) ** 1.6) + at * 7,
     createdAt: new Date(Date.UTC(2026, 3 + at, 2 + index * 9)).toISOString(),
+    picture: index === 3 ? null : { src: landscape(at * 120 + index * 25, index * 20), alt: `Image du badge ${name}` },
   })),
 );
 BADGES.forEach((badge, index) => (badge.position = index + 1));
@@ -67,7 +77,7 @@ async function moveBadge({ id, after, before }: TableMove) {
   return { ok: true, message: "Ordre enregistré" };
 }
 
-const BADGES_TABLE: DataTableConfig<PocBadge> = {
+export const BADGES_TABLE: DataTableConfig<PocBadge> = {
   id: "badges",
   fetch: localTableSource(BADGES, {
     search: (badge) => badge.name,
@@ -95,6 +105,7 @@ const BADGES_TABLE: DataTableConfig<PocBadge> = {
   columns: [
     orderColumn({ id: "position", header: "Ordre", value: (badge) => badge.position }),
     textColumn({ id: "name", header: "Badge", icon: <MedalIcon />, sortable: true, locked: true, value: (badge) => badge.name, width: "max-w-56" }),
+    imageColumn({ id: "picture", header: "Image", icon: <ImageIcon />, value: (badge) => badge.picture }),
     pillsColumn({ id: "collection", header: "Collection", icon: <LayersIcon />, value: (badge) => [COLLECTIONS[badge.collection]] }),
     numberColumn({ id: "holders", header: "Détenteurs", icon: <UsersIcon />, sortable: true, value: (badge) => badge.holders }),
     dateColumn({ id: "createdAt", header: "Création", icon: <CalendarPlusIcon />, sortable: true, value: (badge) => badge.createdAt }),
@@ -102,15 +113,24 @@ const BADGES_TABLE: DataTableConfig<PocBadge> = {
   groupings: [{ id: "collection", label: "Collection", title: (key) => COLLECTIONS[key as PocCollection].label }],
 };
 
-/** Rows kept in order: moved by the handle of the « Ordre » column. */
+/** Rows kept in order: moved by the handle of the « Ordre » column. A click on a row opens its detail. */
 export function PocOrderTable() {
+  const { open, isOpen, activeId } = useSplitPanel();
+  const version = usePocVersion();
+  // Opened at once on its skeleton, the badge loaded by the panel.
+  const openBadge = useCallback((badge: PocBadge) => open(<PocBadgePanel id={badge.id} />, { id: badge.id, title: badge.name }), [open]);
+  // A shared link: the badge of `?row=`, once on arrival. Its ids never meet those of the accounts.
+  useEffect(() => {
+    const badge = BADGES.find((each) => each.id === new URLSearchParams(window.location.search).get("row"));
+    if (badge) openBadge(badge);
+  }, [openBadge]);
   return (
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="font-medium">Ordre</h2>
         <p className="text-sm text-muted-foreground">Glisser une ligne par sa poignée, triée par « Ordre », sans recherche ni filtre.</p>
       </div>
-      <DataTable config={BADGES_TABLE} />
+      <DataTable config={BADGES_TABLE} onRowClick={openBadge} activeRowId={isOpen ? activeId : null} refreshKey={version} />
     </section>
   );
 }

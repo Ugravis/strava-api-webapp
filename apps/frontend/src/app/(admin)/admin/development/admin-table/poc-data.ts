@@ -49,7 +49,7 @@ function random(seed: number) {
 }
 
 /** A landscape drawn in SVG, its colours from `hue`: pictures without a network. */
-function landscape(hue: number, peak: number) {
+export function landscape(hue: number, peak: number) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270"><defs><linearGradient id="s" x2="0" y2="1"><stop offset="0" stop-color="hsl(${hue} 70% 78%)"/><stop offset="1" stop-color="hsl(${(hue + 40) % 360} 80% 90%)"/></linearGradient></defs><rect width="480" height="270" fill="url(#s)"/><circle cx="${360 - peak}" cy="70" r="28" fill="hsl(${(hue + 60) % 360} 90% 96%)"/><path d="M0 200 L${110 + peak / 2} ${90 + peak / 3} L230 190 L${330 - peak / 3} ${60 + peak / 4} L480 180 V270 H0Z" fill="hsl(${hue} 35% 45%)"/><path d="M0 230 Q120 190 240 225 T480 215 V270 H0Z" fill="hsl(${hue} 40% 28%)"/></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }

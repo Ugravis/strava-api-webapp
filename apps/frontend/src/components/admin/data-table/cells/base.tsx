@@ -38,8 +38,15 @@ export function Truncate({ children, className }: { children: ReactNode; classNa
   );
 }
 
-/** Floats at the right of its cell on hover, copies its text. Set by the `copy` of a column. */
-export function CopyButton({ value }: { value: string | null }) {
+/** The look of the buttons floating at the right of a value on hover: copy, and those of a detail. */
+export const FLOATING_BUTTON =
+  "inline-flex size-6 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground shadow-xs outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-3.5";
+
+/**
+ * Floats at the right of its cell on hover, copies its text. Set by the `copy`
+ * of a column. `inline` leaves the place and the hover to a group of buttons.
+ */
+export function CopyButton({ value, inline }: { value: string | null; inline?: boolean }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -58,7 +65,10 @@ export function CopyButton({ value }: { value: string | null }) {
         event.stopPropagation();
         void navigator.clipboard.writeText(value).then(() => setCopied(true));
       }}
-      className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity outline-none group-hover/cell:opacity-100 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-3.5"
+      className={cn(
+        FLOATING_BUTTON,
+        !inline && "absolute top-1/2 right-1.5 -translate-y-1/2 opacity-0 transition-opacity group-hover/cell:opacity-100 focus-visible:opacity-100",
+      )}
     >
       {copied ? <CopyCheckIcon className="text-foreground" /> : <CopyIcon />}
     </button>

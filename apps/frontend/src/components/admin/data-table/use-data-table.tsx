@@ -197,6 +197,19 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
       });
   };
 
+  // Fetched again without skeleton: a row changed elsewhere, e.g. in its detail.
+  const refresh = () => {
+    const asked = key;
+    fetch(...(JSON.parse(body) as [TableQuery, Record<string, string>])).then(
+      (page) => {
+        if (current.current !== asked) return;
+        setAnswer({ key: asked, fetch, page });
+        setLast(page);
+      },
+      () => undefined,
+    );
+  };
+
   const set = url.set;
   const clearSearch = () => {
     setQuery("");
@@ -239,6 +252,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     toggle,
     clearSelection: () => setSelected(new Set()),
     retry: () => setAttempt((count) => count + 1),
+    refresh,
     filtered,
     movable,
     blocked,

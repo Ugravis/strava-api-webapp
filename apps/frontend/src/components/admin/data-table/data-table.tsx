@@ -29,18 +29,29 @@ const SHADOW =
  * rows the server serves page by page, and the pagination. Everything the
  * user picks lives in the URL. `config` must be stable: a module constant,
  * or memoized. `onRowClick` (stable too) opens a row, e.g. in a detail panel;
- * `activeRowId` highlights the one opened, which the arrows then move.
+ * `activeRowId` highlights the one opened, which the arrows then move, from
+ * page to page. A new `refreshKey` fetches the page again without skeleton,
+ * e.g. once a row changed in its detail.
  */
 export function DataTable<T>({
   config: base,
   onRowClick,
   activeRowId = null,
+  refreshKey,
 }: {
   config: DataTableConfig<T>;
   onRowClick?: (row: T) => void;
   activeRowId?: string | null;
+  refreshKey?: unknown;
 }) {
   const state = useDataTable(base);
+  const refresh = useEffectEvent(() => state.refresh());
+  const refreshed = useRef(refreshKey);
+  useEffect(() => {
+    if (Object.is(refreshed.current, refreshKey)) return;
+    refreshed.current = refreshKey;
+    refresh();
+  }, [refreshKey]);
   // The config as the view shows it: without checkboxes or row menu if it says so.
   const { view } = state;
   const config = useMemo(
@@ -113,6 +124,16 @@ export function DataTable<T>({
   );
   useEffect(() => cancel, []);
 
+  // Past the last row of the page, the next one, opened on its first row; before the first, the previous one, on its last.
+  const edge = useRef<"first" | "last" | null>(null);
+  useEffect(() => {
+    if (loading || !edge.current || !openRow) return;
+    const rows = entries.flatMap((entry) => ("row" in entry ? [entry.row] : []));
+    const row = edge.current === "first" ? rows[0] : rows.at(-1);
+    edge.current = null;
+    if (row) openRow(row);
+  }, [loading, entries, openRow]);
+
   // Up and down from the active row, to the next one shown: left to a field or a menu that handles them.
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -125,8 +146,17 @@ export function DataTable<T>({
       if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
       const target = event.target;
       if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=true], [role=menu], [role=listbox], [role=dialog]")) return;
-      const next = rows[at + (event.key === "ArrowDown" ? 1 : -1)];
-      if (!next) return;
+      const down = event.key === "ArrowDown";
+      const next = rows[at + (down ? 1 : -1)];
+      if (!next) {
+        const page = result?.page ?? 1;
+        if (!result || (down ? page >= result.pages : page <= 1)) return;
+        event.preventDefault();
+        cancel();
+        edge.current = down ? "first" : "last";
+        state.setPage(page + (down ? 1 : -1));
+        return;
+      }
       event.preventDefault();
       const lone = event.timeStamp - lastPress.current > ARROW_REST;
       lastPress.current = event.timeStamp;
@@ -137,7 +167,7 @@ export function DataTable<T>({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [active, openRow, loading, entries, config]);
+  }, [active, openRow, loading, entries, config, result, state]);
   // The active row kept in sight as the arrows move it.
   useEffect(() => {
     if (active === null) return;

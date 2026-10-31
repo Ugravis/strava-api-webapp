@@ -55,11 +55,11 @@ export function ImageCell({ image }: { image: CellImage | null | undefined }) {
   );
 }
 
-/** The cover at the top of a card, as the card preview of Notion; a click opens it whole. Light grey without an image. */
-export function ImageCover({ image }: { image: CellImage | null | undefined }) {
-  if (!image) return <div aria-hidden className="h-32 w-full shrink-0 rounded-t-xl border-b bg-muted" />;
+/** The cover at the top of a card, as the card preview of Notion; a click opens it whole. Light grey without an image. `className` resizes it, e.g. in a detail. */
+export function ImageCover({ image, className }: { image: CellImage | null | undefined; className?: string }) {
+  if (!image) return <div aria-hidden className={cn("h-32 w-full shrink-0 rounded-t-xl border-b bg-muted", className)} />;
   return (
-    <ImageButton image={image} className="block h-32 w-full shrink-0 rounded-t-xl border-b bg-muted">
+    <ImageButton image={image} className={cn("block h-32 w-full shrink-0 rounded-t-xl border-b bg-muted", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={image.src} alt={image.alt} loading="lazy" className="size-full object-cover" />
     </ImageButton>

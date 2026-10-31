@@ -109,6 +109,7 @@ The page, a server component, checks access and renders `<UsersTable />`.
 
 - `config` must be stable: a module constant, or a `useMemo`. A new `fetch` on each render would fetch on each render.
 - When the config needs hooks, e.g. `useRouter` for `onOpen`, build it inside the component with `useMemo`.
+- A detail panel on the click of a row: `<DataTable config={...} onRowClick={openRow} activeRowId={id} />`, with the split panel kit (`docs/split-panel.md`).
 
 ### Without a server: `localTableSource`
 
@@ -132,9 +133,16 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `maxHeight` | Most height of the box, in every layout, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"none"` grows without a scroll of its own. |
 | `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons. |
 | `actions` | The `RowActions` menu at the end of the row. |
-| `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. |
+| `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. The `onRowClick` prop of `DataTable` wins over it. |
 | `muted` | Greyed rows. |
 | `reorder` | Saves a row moved by the handle of an `orderColumn`: `(move: TableMove) => Promise<ActionResult>`. Only for rows kept in an order of the database. |
+
+Props of `DataTable` besides `config`, for what changes with the page:
+
+| Prop | Use |
+| --- | --- |
+| `onRowClick` | Click on a row (or Enter on a card), stable (`useCallback`). Buttons, links, checkboxes and menu items of the row keep their own click. |
+| `activeRowId` | The row opened: shaded, with a primary bar on its first cell (a primary border on a card), kept in sight. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. |
 
 ## Columns: one builder per kind of field
 

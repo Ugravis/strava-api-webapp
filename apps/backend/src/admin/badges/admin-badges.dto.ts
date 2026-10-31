@@ -105,13 +105,3 @@ export class CreateBadgeThemeDto extends UpdateBadgeThemeDto {
   @MaxLength(ADMIN_BADGE_THEME_ID_MAX_LENGTH)
   id!: string;
 }
-
-export class ReorderDto {
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(1000)
-  @ArrayUnique()
-  @IsString({ each: true })
-  @MaxLength(ADMIN_BADGE_ID_MAX_LENGTH, { each: true })
-  ids!: string[];
-}

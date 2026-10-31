@@ -4,18 +4,32 @@ import {
   ADMIN_BADGE_FAMILIES,
   ADMIN_BADGE_METRICS,
   ADMIN_BADGE_SLUG,
+  type AdminBadge,
   type AdminBadgeFamily,
   type AdminBadgeMetric,
+  type AdminBadgeThemeRow,
   type CreateBadgeRequest,
   type CreateBadgeThemeRequest,
-  type ReorderRequest,
   type SetBadgeActiveRequest,
   type UpdateBadgeRequest,
   type UpdateBadgeThemeRequest,
 } from "@kilotrace/shared/admin";
+import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
+import type { TableMove } from "@/components/admin/data-table";
 import { reasonOf, runAdminAction } from "@/lib/admin/actions";
+import { fetchAdminTable } from "@/lib/admin/table";
 import { scaleOf } from "./units";
+
+/** A page of the table of the badges. */
+export async function fetchBadgesTable(query: TableQuery): Promise<TablePage<AdminBadge>> {
+  return fetchAdminTable<AdminBadge>("/badges/table", query);
+}
+
+/** A page of the table of the collections. */
+export async function fetchThemesTable(query: TableQuery): Promise<TablePage<AdminBadgeThemeRow>> {
+  return fetchAdminTable<AdminBadgeThemeRow>("/badge-themes/table", query);
+}
 
 /*
  * Actions of the badges page, bound to their ids by the page. The backend
@@ -41,9 +55,18 @@ export async function deleteBadge(id: string, _: ActionResult | null, formData: 
   return runAdminAction(`/badges/${checkedSlug(id)}`, "DELETE", { reason: reasonOf(formData) ?? "" });
 }
 
-export async function reorderBadges(ids: string[]): Promise<ActionResult> {
-  const body: ReorderRequest = { ids: ids.map(checkedSlug) };
-  return runAdminAction("/badges/order", "PUT", body);
+/** Activates or deactivates the selection one by one, stopping at the first failure. */
+export async function setBadgesActive(ids: string[], active: boolean): Promise<ActionResult> {
+  let result: ActionResult = { ok: true, message: "" };
+  for (const id of ids) {
+    result = await setBadgeActive(id, active);
+    if (!result.ok) break;
+  }
+  return result;
+}
+
+export async function moveBadge(move: TableMove): Promise<ActionResult> {
+  return runAdminAction("/badges/move", "PUT", movedOf(move));
 }
 
 export async function createTheme(_: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -60,9 +83,13 @@ export async function deleteTheme(id: string, _: ActionResult | null, formData: 
   return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "DELETE", { reason: reasonOf(formData) ?? "" });
 }
 
-export async function reorderThemes(ids: string[]): Promise<ActionResult> {
-  const body: ReorderRequest = { ids: ids.map(checkedSlug) };
-  return runAdminAction("/badge-themes/order", "PUT", body);
+export async function moveTheme(move: TableMove): Promise<ActionResult> {
+  return runAdminAction("/badge-themes/move", "PUT", movedOf(move));
+}
+
+/** A move posted by the table, its ids checked. */
+function movedOf({ id, after, before }: TableMove): TableMove {
+  return { id: checkedSlug(id), after: after && checkedSlug(after), before: before && checkedSlug(before) };
 }
 
 /** A slug posted by the page, checked before it reaches a URL. */

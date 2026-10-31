@@ -1,4 +1,9 @@
-import { type AdminBadgeCatalog } from '@kilotrace/shared/admin';
+import type {
+  AdminBadge,
+  AdminBadgeCatalog,
+  AdminBadgeThemeRow,
+} from '@kilotrace/shared/admin';
+import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
   Delete,
@@ -13,10 +18,11 @@ import {
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
+import { TableMoveDto } from '../common/table-move';
+import { TableQueryParam } from '../common/table-query';
 import {
   CreateBadgeDto,
   CreateBadgeThemeDto,
-  ReorderDto,
   SetBadgeActiveDto,
   UpdateBadgeDto,
   UpdateBadgeThemeDto,
@@ -25,6 +31,7 @@ import { AdminBadgesService } from './admin-badges.service';
 
 const BADGE = { type: 'badge', param: 'id' };
 const THEME = { type: 'badge_theme', param: 'id' };
+const BY_POSITION = { id: 'position', desc: false };
 
 /** The catalog of badges: support reads, admins edit. */
 @AdminController('badges')
@@ -37,21 +44,29 @@ export class AdminBadgesController {
     return this.badges.catalog();
   }
 
+  @Get('table')
+  @AnyMember()
+  table(
+    @TableQueryParam(BY_POSITION) query: TableQuery,
+  ): Promise<TablePage<AdminBadge>> {
+    return this.badges.table(query);
+  }
+
+  /** Declared before `:id`, which would take `move` for an id. */
+  @Put('move')
+  @Permission('badges.edit')
+  @Audited({ action: 'badges.reorder', details: ['id'] })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  move(@Body() dto: TableMoveDto): Promise<void> {
+    return this.badges.moveBadge(dto);
+  }
+
   @Post()
   @Permission('badges.create')
   @Audited({ action: 'badges.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateBadgeDto): Promise<void> {
     return this.badges.createBadge(dto);
-  }
-
-  /** Declared before `:id`, which would take `order` for an id. */
-  @Put('order')
-  @Permission('badges.edit')
-  @Audited({ action: 'badges.reorder' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  reorder(@Body() dto: ReorderDto): Promise<void> {
-    return this.badges.reorderBadges(dto.ids);
   }
 
   @Patch(':id')
@@ -87,20 +102,28 @@ export class AdminBadgesController {
 export class AdminBadgeThemesController {
   constructor(private readonly badges: AdminBadgesService) {}
 
+  @Get('table')
+  @AnyMember()
+  table(
+    @TableQueryParam(BY_POSITION) query: TableQuery,
+  ): Promise<TablePage<AdminBadgeThemeRow>> {
+    return this.badges.themesTable(query);
+  }
+
+  @Put('move')
+  @Permission('badges.edit')
+  @Audited({ action: 'badges.themes.reorder', details: ['id'] })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  move(@Body() dto: TableMoveDto): Promise<void> {
+    return this.badges.moveTheme(dto);
+  }
+
   @Post()
   @Permission('badges.create')
   @Audited({ action: 'badges.themes.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateBadgeThemeDto): Promise<void> {
     return this.badges.createTheme(dto);
-  }
-
-  @Put('order')
-  @Permission('badges.edit')
-  @Audited({ action: 'badges.themes.reorder' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  reorder(@Body() dto: ReorderDto): Promise<void> {
-    return this.badges.reorderThemes(dto.ids);
   }
 
   @Patch(':id')

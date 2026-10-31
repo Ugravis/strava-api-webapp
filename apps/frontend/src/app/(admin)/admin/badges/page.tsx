@@ -1,16 +1,20 @@
-import type { AdminBadge, AdminBadgeCatalog } from "@kilotrace/shared/admin";
-import { SortableList } from "@/components/admin/sortable-list";
+import type { AdminBadgeCatalog } from "@kilotrace/shared/admin";
+import { HeartIcon, LayersIcon, MedalIcon, UserRoundIcon } from "lucide-react";
+import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { reorderBadges, reorderThemes } from "./actions";
-import { BadgeFormDialog, type BadgeRights, BadgeRow, ThemeFormDialog, ThemeRow } from "./badge-bits";
+import type { BadgeRights } from "./badge-bits";
+import { BadgesTable } from "./badges-table";
+import { ThemesTable } from "./themes-table";
+
+const number = new Intl.NumberFormat("fr-FR");
+const plural = (count: number, one: string, other: string) => `${number.format(count)} ${count > 1 ? other : one}`;
 
 /**
- * The catalog of badges, by collection: creating, editing (toggling and
- * reordering by drag and drop included) and deleting each need their permission.
+ * The figures of the catalog, then its collections and its badges: creating,
+ * editing (toggling and reordering included) and deleting each need their permission.
  */
 export default async function AdminBadgesPage() {
   const { permissions } = await requireAdminMember();
@@ -22,108 +26,42 @@ export default async function AdminBadgesPage() {
   const t = getAdminTranslations("badges");
   const result = await adminApi<AdminBadgeCatalog>("/badges");
   const { themes, badges } = result.ok ? result.data : { themes: [], badges: [] };
-
-  const inTheme = (id: string | null) => badges.filter((badge) => badge.themeId === id);
-  const groups = [
-    ...themes.map((theme) => ({ key: theme.id, title: theme.name, badges: inTheme(theme.id) })),
-    { key: "", title: t("noTheme"), badges: inTheme(null) },
-  ];
   const inactive = badges.filter((badge) => !badge.active).length;
-  const handleLabel = t("dragHandle");
+  const loose = badges.filter((badge) => !badge.themeId).length;
+  const sum = (count: (badge: (typeof badges)[number]) => number) => badges.reduce((total, badge) => total + count(badge), 0);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageHeader title={t("title")} description={t("description")} />
-        {rights.create && <BadgeFormDialog themes={themes} />}
-      </div>
-
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>{t("themes.title")}</CardTitle>
-          <CardDescription>{t("themes.description")}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {themes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("themes.empty")}</p>
-          ) : rights.edit ? (
-            <SortableList
-              action={reorderThemes}
-              handleLabel={handleLabel}
-              className="divide-y"
-              items={themes.map((theme) => ({
-                id: theme.id,
-                content: <ThemeRow theme={theme} count={inTheme(theme.id).length} rights={rights} />,
-              }))}
-            />
-          ) : (
-            <ul className="divide-y">
-              {themes.map((theme) => (
-                <li key={theme.id}>
-                  <ThemeRow theme={theme} count={inTheme(theme.id).length} rights={rights} />
-                </li>
-              ))}
-            </ul>
-          )}
-          {rights.create && (
-            <div>
-              <ThemeFormDialog />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <p className="text-sm text-muted-foreground">
-        {t("count", { count: badges.length })} {inactive > 0 && t("inactiveCount", { count: inactive })}
-      </p>
-
-      {groups
-        .filter((group) => group.key !== "" || group.badges.length > 0)
-        .map((group) => (
-          <section key={group.key || "none"} className="flex flex-col gap-2">
-            <h2 className="flex items-baseline gap-2 text-base font-semibold">
-              {group.title}
-              <span className="text-xs font-normal text-muted-foreground">{t("count", { count: group.badges.length })}</span>
-            </h2>
-            {group.badges.length === 0 ? (
-              <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">{t("emptyTheme")}</p>
-            ) : (
-              <BadgeList badges={group.badges} rights={rights} themes={themes} handleLabel={handleLabel} />
-            )}
-          </section>
-        ))}
-    </div>
-  );
-}
-
-function BadgeList({
-  badges,
-  rights,
-  themes,
-  handleLabel,
-}: {
-  badges: AdminBadge[];
-  rights: BadgeRights;
-  themes: AdminBadgeCatalog["themes"];
-  handleLabel: string;
-}) {
-  if (!rights.edit) {
-    return (
-      <ul className="flex flex-col gap-1.5">
-        {badges.map((badge) => (
-          <li key={badge.id}>
-            <BadgeRow badge={badge} themes={themes} rights={rights} />
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  return (
-    <SortableList
-      action={reorderBadges}
-      handleLabel={handleLabel}
-      className="flex flex-col gap-1.5"
-      items={badges.map((badge) => ({ id: badge.id, content: <BadgeRow badge={badge} themes={themes} rights={rights} /> }))}
-    />
+    <>
+      <PageHeader title={t("title")} description={t("description")} />
+      {result.ok && (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatTile
+            icon={MedalIcon}
+            label="Badges"
+            value={number.format(badges.length)}
+            detail={inactive > 0 ? `dont ${plural(inactive, "désactivé", "désactivés")}` : "Tous actifs"}
+          />
+          <StatTile
+            icon={LayersIcon}
+            label="Collections"
+            value={number.format(themes.length)}
+            detail={loose > 0 ? `${plural(loose, "badge", "badges")} sans collection` : "Chaque badge a sa collection"}
+          />
+          <StatTile icon={HeartIcon} label="Favoris" value={number.format(sum((badge) => badge.favoritesCount))} detail="Badges mis en favori" />
+          <StatTile icon={UserRoundIcon} label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail="Badges épinglés sur un profil" />
+        </div>
+      )}
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-medium">Collections</h2>
+          <p className="text-sm text-muted-foreground">Regroupent des badges de tous les sports, en onglets sur la page Succès.</p>
+        </div>
+        <ThemesTable rights={rights} />
+      </section>
+      <section className="flex flex-col gap-3">
+        <h2 className="font-medium">Badges</h2>
+        <BadgesTable themes={themes} rights={rights} />
+      </section>
+    </>
   );
 }

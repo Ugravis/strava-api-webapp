@@ -109,3 +109,33 @@ export function UserCell({
     </span>
   );
 }
+
+export interface Look {
+  /** The icon, drawn in a disc. */
+  icon: ReactNode;
+  name: string;
+  /** `#rrggbb` filling the disc; the icon takes black or white, whichever reads better. */
+  background?: string | null;
+  /** `#rrggbb` of the icon, on the default disc. */
+  color?: string | null;
+}
+
+/** An item told by its look, e.g. a badge or a tag: its icon in a disc, then its name, on a single line. */
+export function LookCell({ look, marks }: { look: Look; marks?: ReactNode }) {
+  const style = look.background ? { backgroundColor: look.background, color: textOn(look.background) } : look.color ? { color: look.color } : undefined;
+  return (
+    <span className="flex max-w-48 items-center gap-2 sm:max-w-64">
+      <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-3.5" style={style} aria-hidden>
+        {look.icon}
+      </span>
+      <Truncate className="font-medium text-foreground">{look.name}</Truncate>
+      {marks}
+    </span>
+  );
+}
+
+/** Black or white, whichever reads better on the colour. */
+function textOn(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? "#000" : "#fff";
+}

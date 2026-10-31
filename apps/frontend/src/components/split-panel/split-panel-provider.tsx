@@ -36,6 +36,9 @@ export interface SplitPanelState {
   mobile: boolean;
   mode: SplitPanelMode;
   toggleMode: () => void;
+  /** Over the whole page, as a page of its own; the mode comes back on leaving. */
+  expanded: boolean;
+  setExpanded: (expanded: boolean) => void;
   folded: boolean;
   setFolded: (folded: boolean) => void;
   width: number;
@@ -85,7 +88,8 @@ function writeParams(changes: Record<string, string | null>) {
 /**
  * The side panel of a section: a detail on the right of its pages, floating
  * over them (overlay) or beside them (split), over their whole width on a
- * phone. Owns the mode (`?panel=`, else `localStorage`), the width, the
+ * phone, or over the whole page (`?panel=full`). Owns the mode (`?panel=`,
+ * else `localStorage`), the width, the
  * entries shown, `Esc`, and closes on a change of page. Pages only hand it
  * their content through `useSplitPanel()`; `SplitPanelArea` draws it.
  */
@@ -97,17 +101,19 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<{ entries: Entry[]; at: number } | null>(null);
   const [folded, setFolded] = useState(false);
   const storedMode = useStored(MODE_KEY);
-  const mode: SplitPanelMode = (params.get(MODE_PARAM) ?? storedMode) === "split" ? "split" : "overlay";
+  const asked = params.get(MODE_PARAM);
+  const expanded = asked === "full" && !mobile;
+  const mode: SplitPanelMode = ((asked === "full" ? null : asked) ?? storedMode) === "split" ? "split" : "overlay";
   const storedWidth = Number(useStored(WIDTH_KEY));
   // Followed at once by the page while the edge is dragged, then stored.
   const [dragged, setDragged] = useState<number | null>(null);
   const width = dragged ?? (storedWidth > 0 ? storedWidth : DEFAULT_WIDTH);
 
   // Read by `open`, which stays stable for the pages.
-  const modeRef = useRef(mode);
+  const modeRef = useRef<string>(mode);
   useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
+    modeRef.current = expanded ? "full" : mode;
+  }, [mode, expanded]);
 
   const open = useCallback((content: ReactNode, options: SplitPanelOptions = {}) => {
     setHistory((last) => {
@@ -135,7 +141,12 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
   const isOpen = history !== null;
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && !event.defaultPrevented && close();
+    // Out of the whole page first, then closed.
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (new URLSearchParams(window.location.search).get(MODE_PARAM) === "full") writeParams({ [MODE_PARAM]: localStorage.getItem(MODE_KEY) ?? "overlay" });
+      else close();
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen, close]);
@@ -160,6 +171,8 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
       store(MODE_KEY, next);
       writeParams({ [MODE_PARAM]: next });
     },
+    expanded,
+    setExpanded: (next) => writeParams({ [MODE_PARAM]: next ? "full" : mode }),
     folded,
     setFolded,
     width,

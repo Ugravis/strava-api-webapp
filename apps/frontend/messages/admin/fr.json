@@ -621,7 +621,7 @@
   },
   "commits": {
     "title": "Commits",
-    "description": "Historique de la branche main sur GitHub, du plus récent au plus ancien.",
+    "description": "Historique des branches main et develop sur GitHub, une vue chacune.",
     "upToDate": "Le commit déployé est à jour avec main.",
     "undeployed": "{count, plural, one {# commit sur main pas encore déployé.} other {# commits sur main pas encore déployés.}}",
     "noDeployed": "Commit déployé non renseigné (GIT_COMMIT).",
@@ -630,7 +630,7 @@
   },
   "development": {
     "title": "Développement",
-    "description": "Les prototypes du back-office et l'historique de la branche main.",
+    "description": "Les prototypes du back-office et l'historique des branches main et develop.",
     "prototypes": {
       "title": "Prototypes",
       "description": "Pages de démonstration sur des données fictives, gardées comme références.",

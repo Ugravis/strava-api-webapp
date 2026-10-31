@@ -149,7 +149,7 @@ Each builder applies the rules of the kit: the cell of its kind, a copy button o
 | `numberColumn({ value, zero?, unit? })` | A count. `0` shows as empty unless `zero`. Copied. | `NumberCell` |
 | `bytesColumn({ value })` | A weight of files, e.g. « 1,4 Mo ». Copied. | `BytesCell` |
 | `dateColumn({ value, time?, relative?, now? })` | A date, a date and time, or how long ago (`relative`, exact date on hover). | `DateCell`, `RelativeDateCell` |
-| `imageColumn({ value })` | An image `{ src, alt }`: a cover, a capture. A thumbnail in a table and a list; in cards, the first one after the title is the cover at the top of the card, as the card preview of Notion. A click opens it whole in a popup. | `ImageCell`, `ImageCover` |
+| `imageColumn({ value })` | An image `{ src, alt }`: a cover, a capture. A thumbnail in a table and a list; in cards, the first one after the title is the cover at the top of the card, as the card preview of Notion, light grey without an image. A click opens it whole in a popup. | `ImageCell`, `ImageCover` |
 | `booleanColumn({ value })` | Yes as a check, no as empty. | `BooleanCell` |
 | `statusColumn({ value, statuses })` | A state among a few: a dot of colour and a label. | `StatusCell` |
 | `pillsColumn({ value, max? })` | Labels among many: coloured pills, the rest counted. | `PillsCell` |

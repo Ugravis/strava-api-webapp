@@ -55,9 +55,9 @@ export function ImageCell({ image }: { image: CellImage | null | undefined }) {
   );
 }
 
-/** The cover at the top of a card, as the card preview of Notion; a click opens it whole. Nothing without an image. */
+/** The cover at the top of a card, as the card preview of Notion; a click opens it whole. Light grey without an image. */
 export function ImageCover({ image }: { image: CellImage | null | undefined }) {
-  if (!image) return null;
+  if (!image) return <div aria-hidden className="h-32 w-full shrink-0 rounded-t-xl border-b bg-muted" />;
   return (
     <ImageButton image={image} className="block h-32 w-full shrink-0 rounded-t-xl border-b bg-muted">
       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -33,6 +33,10 @@ export function ThemesTable({ rights }: { rights: BadgeRights }) {
       empty: { title: "Aucune collection", description: "Les collections regroupent des badges de tous les sports, en onglets sur la page Succès." },
       defaultSort: { id: "position", desc: false },
       maxHeight: "none",
+      views: [
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["position", "name", "id", "badges"] },
+        { id: "table", label: "Tableau", columns: ["position", "name", "id", "badges"] },
+      ],
       columns: [
         orderColumn({ id: "position", header: "Ordre", value: (theme) => theme.position }),
         textColumn({ id: "name", header: "Collection", icon: <LayersIcon />, sortable: true, locked: true, value: (theme) => theme.name, width: "max-w-56" }),

@@ -70,8 +70,8 @@ export function UserTagsTable({ rights }: { rights: UserTagRights }) {
       defaultSort: { id: "position", desc: false },
       maxHeight: "none",
       views: [
-        { id: "table", label: "Tableau", columns: ["position", "name", "description", "kind", "holders"] },
         { id: "cards", label: "Cartes", layout: "cards", columns: ["position", "name", "description", "kind", "holders"] },
+        { id: "table", label: "Tableau", columns: ["position", "name", "description", "kind", "holders"] },
       ],
       columns: [
         orderColumn({ id: "position", header: "Ordre", value: (userTag) => userTag.position }),

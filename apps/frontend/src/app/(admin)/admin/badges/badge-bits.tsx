@@ -40,12 +40,12 @@ export const METRICS: Record<AdminBadgeMetric, { label: string; unit: string; to
   stations: { label: "Gares", unit: "gares", tone: "sky" },
 };
 
-export const FAMILIES: Record<AdminBadgeFamily, string> = {
-  all: "Tous sports",
-  run: "Course à pied",
-  hike: "Marche",
-  ride: "Vélo",
-  swim: "Natation",
+export const FAMILIES: Record<AdminBadgeFamily, { label: string; tone: Tone }> = {
+  all: { label: "Tous sports", tone: "gray" },
+  run: { label: "Course à pied", tone: "red" },
+  hike: { label: "Marche", tone: "green" },
+  ride: { label: "Vélo", tone: "blue" },
+  swim: { label: "Natation", tone: "cyan" },
 };
 
 /** Pattern of the slugs, for the browser; the backend checks it again. */
@@ -109,7 +109,7 @@ export function BadgeFormDialog({ badge, themes, ...dialog }: Controlled & { bad
       name: "family",
       label: "Sports",
       defaultValue: badge?.family ?? "all",
-      options: ADMIN_BADGE_FAMILIES.map((value) => ({ value, label: FAMILIES[value] })),
+      options: ADMIN_BADGE_FAMILIES.map((value) => ({ value, label: FAMILIES[value].label })),
       half: true,
     },
     {

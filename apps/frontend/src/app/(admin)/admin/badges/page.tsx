@@ -13,7 +13,7 @@ const number = new Intl.NumberFormat("fr-FR");
 const plural = (count: number, one: string, other: string) => `${number.format(count)} ${count > 1 ? other : one}`;
 
 /**
- * The figures of the catalog, then its badges and its collections: creating,
+ * The figures of the catalog, then its collections and its badges: creating,
  * editing (toggling and reordering included) and deleting each need their permission.
  */
 export default async function AdminBadgesPage() {
@@ -52,15 +52,15 @@ export default async function AdminBadgesPage() {
         </div>
       )}
       <section className="flex flex-col gap-3">
-        <h2 className="font-medium">Badges</h2>
-        <BadgesTable themes={themes} rights={rights} />
-      </section>
-      <section className="flex flex-col gap-3">
         <div>
           <h2 className="font-medium">Collections</h2>
           <p className="text-sm text-muted-foreground">Regroupent des badges de tous les sports, en onglets sur la page Succès.</p>
         </div>
         <ThemesTable rights={rights} />
+      </section>
+      <section className="flex flex-col gap-3">
+        <h2 className="font-medium">Badges</h2>
+        <BadgesTable themes={themes} rights={rights} />
       </section>
     </>
   );

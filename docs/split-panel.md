@@ -58,4 +58,4 @@ The table then highlights the row opened and moves it with ↑ / ↓, which open
 
 - One provider per section, in its layout, under a `Suspense` (it reads the search params); `SplitPanelArea` around the pages, the footer outside it.
 - Several tables of a page may open the panel: they share `?row=`, so their ids must never meet (e.g. uuids and slugs). Back and forward then go from one table to the other.
-- The content is built by the page; nothing about the panel goes in it.
+- The content is built by the page; nothing about the panel goes in it. In the back office, with the detail kit (`docs/admin-detail.md`).

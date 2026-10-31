@@ -20,7 +20,8 @@ description: Build or change a back-office list with the data table kit (DataTab
    - each grouping id ↔ `groupings`.
 5. Pick one builder per kind of field: `textColumn`, `codeColumn`, `numberColumn`, `bytesColumn`, `dateColumn`, `booleanColumn`, `statusColumn`, `pillsColumn`, `iconsColumn`, `userColumn`, `lookColumn`, `buttonsColumn`, `orderColumn`. Use `customColumn` only when none fits. A kind of field that comes back across tables deserves a new cell and builder in the kit, rather than a custom column repeated.
 6. Rows kept in an order of the database (badges, tags…): an `orderColumn` on the position, plus `reorder` in the config, a Server Action taking a `TableMove` (`{ id, after, before }`). Its backend route places the row right before `before`, else right after `after`, and numbers the order again, in one transaction. The position is a sort of the `TableSpec`. See « Order » in the doc.
-7. Check:
+7. Rows opened on click: skill `split-panel` for the panel, skill `admin-detail` for its content.
+8. Check:
    - after a change of the kit, `pnpm --filter frontend test:visual`;
    - typecheck both apps;
    - `jest src/admin/common` in the backend;

@@ -17,6 +17,10 @@
 ## Admin Tables
 - Every back-office list uses the data table kit (`@/components/admin/data-table` + `runTableQuery`). Read `docs/admin-tables.md` first (skill `admin-table`).
 
+## Split Panel & Details
+- Every side panel uses the split panel kit (`@/components/split-panel`), generic, knowing nothing of tables. Read `docs/split-panel.md` first (skill `split-panel`).
+- Every detail of a back-office row (panel, dialog or page) uses the detail kit (`@/components/admin/detail`). Read `docs/admin-detail.md` first (skill `admin-detail`).
+
 ## Output Rules
 - Output changed lines only (minimal diff style).
 - No unrequested architectural overhauls or passive code echoes.

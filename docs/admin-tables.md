@@ -187,7 +187,7 @@ Other bits:
 - **Filters.** A facet menu stays open while options are ticked.
 - **Order.** With an `orderColumn` and `reorder`, rows move by their handle, in every layout (up and down in a table, any way in cards and list), with the mouse, a finger or the keyboard (Space, arrows, Space), within their group and their page. Hiding the order column hides the handles. Only once sorted by that column (either way), without search or filters, and not while a move saves: the handle is greyed otherwise, its bubble telling why. The new order shows at once; the page is then fetched again without skeleton, a failure told by a toast. `TableMove` gives the new neighbours on the page in ascending order: the server places the row right before `before`, else right after `after`, and numbers its order again.
 - **Sort.** « Trier » shows only with a sortable column, e.g. not on the commits, which GitHub serves in its own order.
-- **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column.
+- **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column. The column of the current grouping (same id, not locked), `defaultGroupBy` included, is hidden by the system: its group titles already tell its value. Ticking it again shows it (`show`), whatever the grouping.
 
 ## Not in the kit
 

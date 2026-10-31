@@ -74,17 +74,23 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
   const picks: DataTablePicks = { filters: filterPicks, sort: sortPick, groupBy: groupPick, hidden: hiddenPick, shown: shownPick };
 
   const view = config.views?.find((each) => each.id === viewId);
+  const grouping = config.groupings?.find((each) => each.id === (groupPick ?? config.defaultGroupBy));
   // Those of any view may be shown: the view's, less the hidden ones, plus the shown ones.
   const available = useMemo(() => availableColumns(config), [config]);
+  // The column of the grouping says what its titles already say: hidden by the system, until shown by the user.
+  const grouped = available.find((column) => column.id === grouping?.id && !column.locked)?.id ?? null;
   const columns = useMemo(
     () =>
       available.filter((column) =>
-        !view?.columns || view.columns.includes(column.id) ? !hiddenPick?.has(column.id) : !!shownPick?.has(column.id),
+        column.id === grouped
+          ? !!shownPick?.has(column.id)
+          : !view?.columns || view.columns.includes(column.id)
+            ? !hiddenPick?.has(column.id)
+            : !!shownPick?.has(column.id),
       ),
-    [available, hiddenPick, shownPick, view],
+    [available, grouped, hiddenPick, shownPick, view],
   );
   const layout = view?.layout ?? "table";
-  const grouping = config.groupings?.find((each) => each.id === (groupPick ?? config.defaultGroupBy));
 
   // The search waits for a pause in the typing before asking the server.
   useEffect(() => {
@@ -221,6 +227,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     layout,
     columns,
     grouping,
+    grouped,
     folded,
     pinned,
     setPinned,

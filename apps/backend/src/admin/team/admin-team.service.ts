@@ -6,6 +6,11 @@ import {
   type AdminTeamMember,
   highestAdminRole,
 } from '@kilotrace/shared/admin';
+import {
+  mapTablePage,
+  type TablePage,
+  type TableQuery,
+} from '@kilotrace/shared/table';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -16,9 +21,44 @@ import { avatarUrlFor } from '../../users/dto/user-response';
 import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { User } from '../../users/user.entity';
 import { likeEscaped } from '../common/like-escaped';
+import { runTableQuery, type TableSpec } from '../common/table-query';
 
 /** User tag shown on the profiles of the team, kept in step with the roles. */
 const TEAM_USER_TAG = 'team';
+
+const hasRole = (name: AdminRole) => `'${name}' = ANY(user.roles)`;
+/** The rank of the highest role, from 1 for the lowest. */
+const RANK = `CASE ${[...ADMIN_ROLES]
+  .map((name, index) => ({ name, rank: index + 1 }))
+  .reverse()
+  .map(({ name, rank }) => `WHEN ${hasRole(name)} THEN ${rank}`)
+  .join(' ')} END`;
+const HIGHEST_ROLE = `CASE ${[...ADMIN_ROLES]
+  .reverse()
+  .map((name) => `WHEN ${hasRole(name)} THEN '${name}'`)
+  .join(' ')} END`;
+
+const TEAM_TABLE: TableSpec = {
+  search: ['user.username', 'user.display_name', 'user.email'],
+  sorts: {
+    member: 'user.username',
+    role: RANK,
+    email: 'user.email',
+    lastSeenAt:
+      '(SELECT MAX(session.last_seen_at) FROM sessions session WHERE session.user_id = "user"."id")',
+  },
+  defaultSort: { id: 'role', desc: true },
+  tiebreak: 'user.id',
+  facets: {
+    role: {
+      options: Object.fromEntries(
+        ADMIN_ROLES.map((name) => [name, `${HIGHEST_ROLE} = '${name}'`]),
+      ),
+    },
+  },
+  // Highest role first: the key of a group is its rank from the top.
+  groupings: { role: `${ADMIN_ROLES.length + 1} - ${RANK}` },
+};
 
 /**
  * Back-office roles of the accounts. One role per member, each granting
@@ -39,6 +79,25 @@ export class AdminTeamService {
       .createQueryBuilder('user')
       .where('cardinality(user.roles) > 0')
       .getMany();
+    return (await this.membersOf(users)).sort(
+      (a, b) =>
+        ADMIN_ROLES.indexOf(b.role) - ADMIN_ROLES.indexOf(a.role) ||
+        a.username.localeCompare(b.username),
+    );
+  }
+
+  /** A page of the data table of the team. */
+  async table(query: TableQuery): Promise<TablePage<AdminTeamMember>> {
+    // Only back-office roles, so that every row maps to a member.
+    const base = this.users
+      .createQueryBuilder('user')
+      .where(`(${ADMIN_ROLES.map(hasRole).join(' OR ')})`);
+    const page = await runTableQuery(base, query, TEAM_TABLE);
+    return mapTablePage(page, (users) => this.membersOf(users));
+  }
+
+  /** The members in the shape of the API, in the order of `users`. */
+  private async membersOf(users: User[]): Promise<AdminTeamMember[]> {
     const lastSeen = users.length
       ? await this.sessions
           .createQueryBuilder('session')
@@ -51,28 +110,22 @@ export class AdminTeamService {
     const lastSeenById = new Map(
       lastSeen.map(({ userId, lastSeenAt }) => [userId, lastSeenAt]),
     );
-    return users
-      .flatMap((user) => {
-        const role = highestAdminRole(user.roles);
-        return role
-          ? [
-              {
-                id: user.id,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: avatarUrlFor(user),
-                email: user.email,
-                role,
-                lastSeenAt: lastSeenById.get(user.id)?.toISOString() ?? null,
-              },
-            ]
-          : [];
-      })
-      .sort(
-        (a, b) =>
-          ADMIN_ROLES.indexOf(b.role) - ADMIN_ROLES.indexOf(a.role) ||
-          a.username.localeCompare(b.username),
-      );
+    return users.flatMap((user) => {
+      const role = highestAdminRole(user.roles);
+      return role
+        ? [
+            {
+              id: user.id,
+              username: user.username,
+              displayName: user.displayName,
+              avatarUrl: avatarUrlFor(user),
+              email: user.email,
+              role,
+              lastSeenAt: lastSeenById.get(user.id)?.toISOString() ?? null,
+            },
+          ]
+        : [];
+    });
   }
 
   /** Accounts outside the team matching `q`, for the addition of a member. */

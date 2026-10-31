@@ -12,9 +12,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
+import { adminRoutes } from "@/lib/admin/navigation";
 import { savePermissions } from "./actions";
 import { type MatrixCategory, PermissionsMatrix } from "./permissions-matrix";
-import { AddMemberDialog, RoleSummary, TeamTable } from "./team-bits";
+import { RoleSummary } from "./team-bits";
+import { TeamTable } from "./team-table";
 
 /** Members of the team, their roles, and what each role grants. */
 export default async function AdminTeamPage() {
@@ -29,10 +31,7 @@ export default async function AdminTeamPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageHeader title={t("title")} description={t("description")} />
-        {canEdit && <AddMemberDialog />}
-      </div>
+      <PageHeader title={t("title")} description={t("description")} />
       {!canEdit && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
 
       {result.ok ? (
@@ -42,7 +41,7 @@ export default async function AdminTeamPage() {
               <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} />
             ))}
           </div>
-          <TeamTable members={result.data} meId={me?.id ?? null} canEdit={canEdit} />
+          <TeamTable meId={me?.id ?? null} canEdit={canEdit} usersPath={adminRoutes.users} />
         </>
       ) : (
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>

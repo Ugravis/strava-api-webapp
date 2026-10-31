@@ -2,22 +2,30 @@
 
 import {
   type AdminTeamCandidate,
+  type AdminTeamMember,
   EDITABLE_ADMIN_ROLES,
   isAdminPermission,
   isAdminRole,
   type SetRolePermissionsRequest,
   type SetTeamRoleRequest,
 } from "@kilotrace/shared/admin";
+import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
 import type { UserOption } from "@/components/admin/form-dialog";
 import { checkedId, runAdminAction } from "@/lib/admin/actions";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
+import { fetchAdminTable } from "@/lib/admin/table";
 
 /*
  * Actions of the permissions page. The backend checks the permissions
  * and the fields, and records every change.
  */
+
+/** A page of the table of the team. */
+export async function fetchTeamTable(query: TableQuery): Promise<TablePage<AdminTeamMember>> {
+  return fetchAdminTable<AdminTeamMember>("/team/table", query);
+}
 
 export async function searchCandidates(query: string): Promise<UserOption[]> {
   const result = await adminApi<AdminTeamCandidate[]>(`/team/candidates?q=${encodeURIComponent(query.slice(0, 100))}`).catch(

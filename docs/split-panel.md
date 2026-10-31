@@ -16,10 +16,12 @@ A detail panel on the right of the pages of a section, e.g. the row of a table o
 - **Width.** Dragged by the margin left of the card (the grey gutter in split mode), its grip shown on hover, by the distance moved: a mere click changes nothing; nothing animates while it is dragged. Between 320 px and 70 % of the window, kept in `localStorage` (`split-panel.width`); a double click goes back to 400 px, the default.
 - **Back and forward.** Arrows in the header, as in a browser, through the contents opened since the panel opened (50 at most). Opening another one drops those ahead. `?row=` follows.
 - **Folding.** A button in the header slides the panel out without closing it; a handle stays on the right edge to bring it back. In split mode the page takes the whole width meanwhile. Opening another content unfolds it.
+- **Full screen.** A button in the header lays the panel over the whole page, as a page of its own (`?panel=full`), without gutter or card, its content in a centred column; the arrows of the table still move from row to row. The same button, or `Esc`, comes back to the mode it left. Neither fold nor mode nor resize meanwhile; never on a phone.
 - **Phone** (under 768 px): over the whole width of the page, under the header of the site and above the footer, never split, not resizable.
-- **Closing.** The X, `Esc` (unless a menu or a dialog handled it first), or a change of page.
+- **Closing.** The X, `Esc` (unless a menu or a dialog handled it first; out of full screen first), or a change of page.
 - **URL.** `open(content, { id })` writes `?row=<id>&panel=<mode>` through the history (no server round trip); `close()` removes both. A link with `?row=` is shared: the page opens that row on arrival, in the mode of `?panel=`.
-- **Content.** Pages hand only the content; the panel draws the header (back, forward, title, fold, mode, close) and scrolls its body.
+- **Header.** Icon buttons, each named in a bubble after 400 ms.
+- **Content.** Pages hand only the content, scrolled with the thin scrollbar of the tables; the panel draws the header (back, forward, title, fold, full screen, mode, close) and scrolls its body, a column at least as tall as the panel (so that a sticky row of buttons sits at the bottom).
 
 ## API
 
@@ -55,5 +57,5 @@ The table then highlights the row opened and moves it with ↑ / ↓, which open
 ## Rules
 
 - One provider per section, in its layout, under a `Suspense` (it reads the search params); `SplitPanelArea` around the pages, the footer outside it.
-- One table per page drives `?row=`: two tables would share the key.
+- Several tables of a page may open the panel: they share `?row=`, so their ids must never meet (e.g. uuids and slugs). Back and forward then go from one table to the other.
 - The content is built by the page; nothing about the panel goes in it.

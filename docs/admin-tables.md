@@ -142,7 +142,8 @@ Props of `DataTable` besides `config`, for what changes with the page:
 | Prop | Use |
 | --- | --- |
 | `onRowClick` | Click on a row (or Enter on a card), stable (`useCallback`). Buttons, links, checkboxes and menu items of the row keep their own click. |
-| `activeRowId` | The row opened: shaded, with a primary bar on its first cell (a primary border on a card), kept in sight. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. |
+| `refreshKey` | A new value fetches the page again without skeleton, e.g. a version bumped once a row changed in its detail. |
+| `activeRowId` | The row opened: shaded, with a primary bar on its first cell (a primary border on a card), kept in sight. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. Past the last row of the page, the next page opens on its first row; before the first, the previous one on its last. |
 
 ## Columns: one builder per kind of field
 

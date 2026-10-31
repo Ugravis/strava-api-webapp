@@ -1,8 +1,15 @@
 import {
   ADMIN_COMMITS_PER_PAGE,
+  type AdminCommit,
   type AdminCommitsResponse,
 } from '@kilotrace/shared/admin';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { TablePage, TableQuery } from '@kilotrace/shared/table';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import adminConfig, { type AdminConfig } from '../../config/admin.config';
 import {
   firstParentLine,
@@ -72,6 +79,36 @@ export class AdminGithubService {
       pages,
       deployed,
       undeployed: deployed ? await this.aheadBy(repository, deployed) : null,
+    };
+  }
+
+  /**
+   * The same pages for the data table: GitHub neither searches nor sorts,
+   * so only the page is read from the query, of a fixed size.
+   */
+  async table(query: TableQuery): Promise<TablePage<AdminCommit>> {
+    let result = await this.commits(query.page);
+    if (result.status === 'ok' && query.page > result.pages) {
+      result = await this.commits(result.pages);
+    }
+    if (result.status !== 'ok') {
+      throw new ServiceUnavailableException('GitHub unavailable');
+    }
+    const { commits, page, pages, repository } = result;
+    // Every page is full but the last one, asked once for the total.
+    const last =
+      pages > 1
+        ? ((await this.page(repository, pages))?.commits ?? [])
+        : commits;
+    const total = (pages - 1) * ADMIN_COMMITS_PER_PAGE + last.length;
+    return {
+      entries: commits.map((row) => ({ row })),
+      total,
+      visible: total,
+      page,
+      pages,
+      before: (page - 1) * ADMIN_COMMITS_PER_PAGE,
+      counts: {},
     };
   }
 

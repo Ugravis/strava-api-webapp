@@ -77,13 +77,15 @@ export interface DataTableView {
   noSelection?: boolean;
   /** Without the menu of `actions`. */
   noActions?: boolean;
+  /** Sent to `fetch` with the query, e.g. the branch of a history: the rows themselves change. */
+  params?: Record<string, string>;
 }
 
 export interface DataTableConfig<T> {
   /** Names its parameters in the URL, unique on the page. */
   id: string;
-  /** Asks the server for a page: a Server Action, or `localTableSource`. */
-  fetch: (query: TableQuery) => Promise<TablePage<T>>;
+  /** Asks the server for a page: a Server Action, or `localTableSource`; `params` are those of the current view. */
+  fetch: (query: TableQuery, params: Record<string, string>) => Promise<TablePage<T>>;
   rowId: (row: T) => string;
   /** The first one stays on screen while the table scrolls sideways. */
   columns: DataTableColumn<T>[];

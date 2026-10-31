@@ -4,7 +4,7 @@ import type { TablePage } from "@kilotrace/shared/table";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon, InboxIcon, SearchXIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { memo, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TableCheckbox } from "./cells/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, col
     >
       {config.bulkActions && (
         <TableCell className={cn(pinBox, "w-10")}>
-          <Checkbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />
+          <TableCheckbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />
         </TableCell>
       )}
       {columns.map((column, index) => (

@@ -2,6 +2,7 @@ import {
   type AdminTeamCandidate,
   type AdminTeamMember,
 } from '@kilotrace/shared/admin';
+import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
   Delete,
@@ -18,6 +19,7 @@ import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
+import { TableQueryParam } from '../common/table-query';
 import { SetTeamRoleDto, TeamCandidatesQueryDto } from './admin-team.dto';
 import { AdminTeamService } from './admin-team.service';
 
@@ -35,6 +37,14 @@ export class AdminTeamController {
   @AnyMember()
   members(): Promise<AdminTeamMember[]> {
     return this.team.members();
+  }
+
+  @Get('table')
+  @AnyMember()
+  table(
+    @TableQueryParam() query: TableQuery,
+  ): Promise<TablePage<AdminTeamMember>> {
+    return this.team.table(query);
   }
 
   @Get('candidates')

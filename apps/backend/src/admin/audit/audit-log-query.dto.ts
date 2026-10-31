@@ -55,3 +55,16 @@ export class AuditLogQueryDto extends AdminPageQueryDto {
   @IsIn(AUDIT_VISIBILITIES)
   visibility: AuditVisibility = 'all';
 }
+
+/** The entries of one author or of one target, besides the table query. */
+export class AuditTableScopeDto {
+  @IsOptional()
+  @IsUUID()
+  actor?: string;
+
+  /** Id of the entity acted upon, of any type. */
+  @IsOptional()
+  @IsString()
+  @Matches(/^[\w-]{1,100}$/)
+  target?: string;
+}

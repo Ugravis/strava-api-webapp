@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
-
-const cell = "px-3 py-2";
+import { MigrationsTable } from "./migrations-table";
 
 /** Libraries of the frontend, read where it runs rather than asked to the backend. */
 const FRONTEND_DEPENDENCIES: AdminDependencyVersion[] = [
@@ -108,47 +107,11 @@ export function MigrationsSection({ applied, pending }: { applied: AdminMigratio
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           <div className="min-w-0 flex-1">
             <p className="font-medium">{t("pending", { count: pending.length })}</p>
-            <ul className="mt-1 font-mono text-xs">
-              {pending.map((migration) => (
-                <li key={migration.name} className="truncate">
-                  {migration.name}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       )}
-      {applied.length > 0 ? <MigrationsTable migrations={applied} /> : <p className="text-sm text-muted-foreground">{t("empty")}</p>}
+      <MigrationsTable migrations={[...pending, ...applied]} />
     </section>
-  );
-}
-
-function MigrationsTable({ migrations }: { migrations: AdminMigration[] }) {
-  const t = getAdminTranslations("dev.migrations.columns");
-  return (
-    // Every column stays, the table scrolling sideways on narrow screens.
-    <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-[32rem] text-sm">
-        <thead className="bg-muted text-left text-xs text-muted-foreground">
-          <tr>
-            <th className={`${cell} w-12 text-right font-medium`}>{t("id")}</th>
-            <th className={`${cell} font-medium`}>{t("name")}</th>
-            <th className={`${cell} font-medium`}>{t("createdAt")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {migrations.map((migration) => (
-            <tr key={migration.name} className="border-t odd:bg-background even:bg-muted/50">
-              <td className={`${cell} text-right text-muted-foreground tabular-nums`}>{migration.id}</td>
-              <td className={`${cell} max-w-96 truncate font-mono text-xs`} title={migration.name}>
-                {migration.name}
-              </td>
-              <td className={`${cell} text-muted-foreground`}>{formatDateTime(migration.createdAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 

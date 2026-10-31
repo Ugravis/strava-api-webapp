@@ -30,10 +30,18 @@ export interface AdminDevResponse {
   pending: AdminMigration[];
 }
 
-/** Commits of `main` per page of the commits page. */
-export const ADMIN_COMMITS_PER_PAGE = 30;
+/** Branches whose history the development page lists. */
+export const ADMIN_COMMIT_BRANCHES = ["main", "develop"] as const;
+export type AdminCommitBranch = (typeof ADMIN_COMMIT_BRANCHES)[number];
 
-/** A commit of `main`, as GitHub reports it. */
+/**
+ * A release: a merge made on `main` itself (on its first-parent line); a
+ * merge: any other one, e.g. a pull request merged into `develop`.
+ */
+export const ADMIN_COMMIT_KINDS = ["release", "merge", "commit"] as const;
+export type AdminCommitKind = (typeof ADMIN_COMMIT_KINDS)[number];
+
+/** A commit of a branch, as GitHub reports it. */
 export interface AdminCommit {
   sha: string;
   /** First line of the message, the title of the pull request for a merge of one. */
@@ -42,25 +50,19 @@ export interface AdminCommit {
   pullRequest: number | null;
   /** Name of the git author, or their GitHub login. */
   author: string;
+  /** GitHub login and avatar of the author, null without a GitHub account. */
+  login: string | null;
+  avatarUrl: string | null;
   date: string;
   url: string;
-  /** Has several parents: a pull request or a branch merged. */
-  merge: boolean;
-  /**
-   * A merge made on `main` itself (on its first-parent line), rather than
-   * one brought by a merged branch, e.g. a feature merged into `develop`.
-   */
-  mainMerge: boolean;
+  kind: AdminCommitKind;
 }
 
-/** `GET /api/admin/dev/commits?page=`: commits of `main`, the latest first. */
+/** `GET /api/admin/dev/commits`: where production stands against `main`. */
 export type AdminCommitsResponse =
   | {
       status: "ok";
       repository: string;
-      commits: AdminCommit[];
-      page: number;
-      pages: number;
       deployed: string | null;
       /** Commits of `main` the deployed one lacks, null when unknown. */
       undeployed: number | null;

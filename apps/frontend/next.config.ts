@@ -4,6 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 const isDevelopment = process.env.NODE_ENV === "development";
 const mapTiles = "https://tiles.openfreemap.org";
+/** Avatars of the commit authors, on the development page of the back office. */
+const githubAvatars = "https://avatars.githubusercontent.com";
 
 // Inline scripts stay allowed: nonces would force every page to render
 // dynamically, which defeats cache components. The development server also
@@ -12,7 +14,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${mapTiles}`,
+  `img-src 'self' data: blob: ${mapTiles} ${githubAvatars}`,
   "font-src 'self' data:",
   `connect-src 'self' ${mapTiles}${isDevelopment ? " ws:" : ""}`,
   "worker-src 'self' blob:",

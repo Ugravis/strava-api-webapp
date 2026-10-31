@@ -106,8 +106,8 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     page,
     pageSize: view?.pageSize ?? config.pageSize ?? PAGE_SIZES[layout],
   };
-  // One call per distinct request and source, the answer of an outdated one dropped.
-  const body = JSON.stringify(request);
+  // One call per distinct request, view parameters and source, the answer of an outdated one dropped.
+  const body = JSON.stringify([request, view?.params ?? {}]);
   const key = `${body}#${attempt}`;
   const [answer, setAnswer] = useState<{ key: string; fetch: DataTableConfig<T>["fetch"]; page?: TablePage<T>; error?: true } | null>(null);
   // While a call runs, the last page still feeds the counts and the pagination.
@@ -116,7 +116,8 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
   useEffect(() => {
     let live = true;
     const answered = `${body}#${attempt}`;
-    fetch(JSON.parse(body) as TableQuery).then(
+    const [query, params] = JSON.parse(body) as [TableQuery, Record<string, string>];
+    fetch(query, params).then(
       (result) => {
         if (!live) return;
         setAnswer({ key: answered, fetch, page: result });
@@ -177,7 +178,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
         () => toast.error("L'ordre n'a pas pu être enregistré."),
       )
       // Fetched again without skeleton: the places of the rows come from the server.
-      .then(() => fetch(JSON.parse(body) as TableQuery))
+      .then(() => fetch(...(JSON.parse(body) as [TableQuery, Record<string, string>])))
       .then((page) => {
         if (current.current !== asked) return;
         setAnswer({ key: asked, fetch, page });

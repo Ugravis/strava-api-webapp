@@ -1,7 +1,7 @@
 import {
   firstParentLine,
   type GithubCommit,
-  lastPage,
+  stitchHistory,
   toAdminCommit,
 } from './github-commits';
 
@@ -16,21 +16,24 @@ const github = (
     message,
     author: { name: 'Ulysse', date: '2026-10-28T14:00:00Z' },
   },
-  author: { login: 'ugravis' },
+  author: { login: 'ugravis', avatar_url: 'https://avatars/u' },
   parents: parents.map((parent) => ({ sha: parent })),
 });
 
 describe('toAdminCommit', () => {
   it('reads the title and number of a merged pull request', () => {
-    expect(toAdminCommit(github('abc', ['m', 'f']), new Set(['abc']))).toEqual({
+    expect(
+      toAdminCommit(github('abc', ['m', 'f']), new Set(['abc']), 'main'),
+    ).toEqual({
       sha: 'abc',
       title: 'feat: admin dev page',
       pullRequest: 126,
       author: 'Ulysse',
+      login: 'ugravis',
+      avatarUrl: 'https://avatars/u',
       date: '2026-10-28T14:00:00Z',
       url: 'https://github.com/o/r/commit/abc',
-      merge: true,
-      mainMerge: true,
+      kind: 'release',
     });
   });
 
@@ -38,20 +41,27 @@ describe('toAdminCommit', () => {
     const commit = toAdminCommit(
       github('def', ['m'], 'fix(frontend): a bug\n\nDetails.'),
       new Set(['def']),
+      'main',
     );
 
     expect(commit).toMatchObject({
       title: 'fix(frontend): a bug',
       pullRequest: null,
-      merge: false,
-      mainMerge: false,
+      kind: 'commit',
     });
   });
 
-  it('tells a merge brought by a branch from a merge on main', () => {
-    expect(toAdminCommit(github('abc', ['m', 'f']), new Set()).mainMerge).toBe(
-      false,
-    );
+  it('tells a merge brought by a branch from a release on main', () => {
+    expect(
+      toAdminCommit(github('abc', ['m', 'f']), new Set(), 'main').kind,
+    ).toBe('merge');
+  });
+
+  it('has no release on develop', () => {
+    expect(
+      toAdminCommit(github('abc', ['m', 'f']), new Set(['abc']), 'develop')
+        .kind,
+    ).toBe('merge');
   });
 });
 
@@ -74,17 +84,32 @@ describe('firstParentLine', () => {
   });
 });
 
-describe('lastPage', () => {
-  it('reads the last page of the Link header', () => {
-    const link =
-      '<https://api.github.com/repos/o/r/commits?sha=main&per_page=30&page=2>; rel="next", ' +
-      '<https://api.github.com/repos/o/r/commits?sha=main&per_page=30&page=7>; rel="last"';
+describe('stitchHistory', () => {
+  const known = [github('c', ['b']), github('b', ['a']), github('a', [])];
 
-    expect(lastPage(link, 1)).toBe(7);
+  it('puts the new commits before the known history', () => {
+    const fresh = [github('e', ['d']), github('d', ['c']), github('c', ['b'])];
+
+    expect(stitchHistory(fresh, known)?.map(({ sha }) => sha)).toEqual([
+      'e',
+      'd',
+      'c',
+      'b',
+      'a',
+    ]);
   });
 
-  it('is the current page on the last one', () => {
-    expect(lastPage('<https://x?page=6>; rel="prev"', 7)).toBe(7);
-    expect(lastPage(null, 1)).toBe(1);
+  it('drops the known commits no longer on the branch', () => {
+    const fresh = [github('x', ['b']), github('b', ['a'])];
+
+    expect(stitchHistory(fresh, known)?.map(({ sha }) => sha)).toEqual([
+      'x',
+      'b',
+      'a',
+    ]);
+  });
+
+  it('needs more pages without a shared commit', () => {
+    expect(stitchHistory([github('z', ['y'])], known)).toBeNull();
   });
 });

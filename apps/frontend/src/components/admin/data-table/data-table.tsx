@@ -4,7 +4,7 @@ import { closestCenter, DndContext, type DragEndEvent, KeyboardSensor, PointerSe
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { MousePointerClickIcon } from "lucide-react";
 import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useMemo, useRef } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { TableCheckbox } from "./cells/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -191,7 +191,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
               <TableRow ref={head}>
                 {selectable && (
                   <TableHead className={cn(pin(false), pinned && "z-30", "w-10")}>
-                    <Checkbox disabled={loading} checked={allShown} indeterminate={someShown && !allShown} onCheckedChange={(on) => toggle(shownIds, on)} aria-label="Sélectionner la page" />
+                    <TableCheckbox disabled={loading} checked={allShown} indeterminate={someShown && !allShown} onCheckedChange={(on) => toggle(shownIds, on)} aria-label="Sélectionner la page" />
                   </TableHead>
                 )}
                 {columns.map((column, index) => (

@@ -107,7 +107,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
               </Button>
             </Tip>
           )}
-          <SortMenu config={config} state={state} />
+          {config.columns.some((column) => column.sortable) && <SortMenu config={config} state={state} />}
           {config.groupings && <GroupMenu config={config} state={state} />}
           <ColumnsMenu config={config} state={state} />
           {table && (

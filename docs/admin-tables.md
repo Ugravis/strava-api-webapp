@@ -109,7 +109,7 @@ The page, a server component, checks access and renders `<UsersTable />`.
 
 - `config` must be stable: a module constant, or a `useMemo`. A new `fetch` on each render would fetch on each render.
 - When the config needs hooks, e.g. `useRouter` for `onOpen`, build it inside the component with `useMemo`.
-- A detail panel on the click of a row: `<DataTable config={...} onRowClick={openRow} activeRowId={id} />`, with the split panel kit (`docs/split-panel.md`).
+- A detail panel on the click of a row: `<DataTable config={...} onRowClick={openRow} activeRowId={id} />`, with the split panel kit (`docs/split-panel.md`), its content built with the detail kit (`docs/admin-detail.md`).
 
 ### Without a server: `localTableSource`
 

@@ -34,7 +34,21 @@ export function GroupTitle({ title, count, folded, onToggle, className }: { titl
  * under the other in a card, side by side in an item of the list, the first
  * one set apart.
  */
-export function DataTableItems<T>({ config, state, layout, empty }: { config: DataTableConfig<T>; state: DataTableState<T>; layout: "cards" | "list"; empty: ReactNode }) {
+export function DataTableItems<T>({
+  config,
+  state,
+  layout,
+  empty,
+  onOpen,
+  activeRowId,
+}: {
+  config: DataTableConfig<T>;
+  state: DataTableState<T>;
+  layout: "cards" | "list";
+  empty: ReactNode;
+  onOpen?: (row: T) => void;
+  activeRowId: string | null;
+}) {
   const { loading, result, last, selected, toggle, movable, blocked } = state;
   // The order column draws before the title, not as a value.
   const order = state.columns.find((column) => column.order);
@@ -73,6 +87,8 @@ export function DataTableItems<T>({ config, state, layout, empty }: { config: Da
           cover={cover}
           layout={layout}
           selected={selected.has(id)}
+          active={id === activeRowId}
+          onOpen={onOpen}
           onToggle={toggle}
           movable={movable}
           blocked={blocked}
@@ -127,14 +143,16 @@ interface ItemProps<T> {
   cover?: DataTableColumn<T>;
   layout: "cards" | "list";
   selected: boolean;
+  /** The row opened, e.g. in the detail panel. */
+  active: boolean;
+  onOpen?: (row: T) => void;
   onToggle: (ids: string[], on: boolean) => void;
   movable: boolean;
   blocked: string | null;
 }
 
 /** A row, drawn again only when its own props change, as a row of the table. */
-const Item = memo(function Item<T>({ config, row, id, columns, order, cover, layout, selected, onToggle, movable, blocked }: ItemProps<T>) {
-  const open = config.onOpen;
+const Item = memo(function Item<T>({ config, row, id, columns, order, cover, layout, selected, active, onOpen: open, onToggle, movable, blocked }: ItemProps<T>) {
   const openFrom = (event: MouseEvent | KeyboardEvent) => {
     // Buttons, links and checkboxes of the item keep their own click.
     if ((event.target as HTMLElement).closest("button, a, [role=checkbox], [role=menuitem]")) return;
@@ -145,6 +163,8 @@ const Item = memo(function Item<T>({ config, row, id, columns, order, cover, lay
       <ItemFrame
         layout={layout}
         selected={selected}
+        id={id}
+        active={active}
         muted={config.muted?.(row)}
         onClick={open && openFrom}
         onKeyDown={open && ((event) => event.key === "Enter" && event.target === event.currentTarget && openFrom(event))}
@@ -172,6 +192,8 @@ const Item = memo(function Item<T>({ config, row, id, columns, order, cover, lay
 function ItemFrame({
   layout,
   selected,
+  id,
+  active,
   muted,
   onClick,
   onKeyDown,
@@ -182,6 +204,8 @@ function ItemFrame({
 }: {
   layout: "cards" | "list";
   selected?: boolean;
+  id?: string;
+  active?: boolean;
   muted?: boolean;
   onClick?: (event: MouseEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
@@ -199,8 +223,11 @@ function ItemFrame({
       onClick={onClick}
       onKeyDown={onKeyDown}
       data-state={selected ? "selected" : undefined}
+      data-row-id={id}
+      data-active={active || undefined}
+      aria-current={active || undefined}
       className={cn(
-        "border bg-card text-sm outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 data-[state=selected]:bg-muted",
+        "border bg-card text-sm outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 data-[state=selected]:bg-muted data-active:border-primary data-active:bg-muted",
         onClick && "cursor-pointer hover:bg-muted/50",
         muted && "text-muted-foreground",
         layout === "cards" ? "flex h-full flex-col rounded-xl" : "flex max-w-full items-center gap-3 rounded-lg px-2.5 py-1",

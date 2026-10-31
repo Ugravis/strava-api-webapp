@@ -3,7 +3,7 @@
 import { closestCenter, DndContext, type DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { MousePointerClickIcon } from "lucide-react";
-import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { TableCheckbox } from "./cells/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,9 @@ import { DataTableToolbar } from "./toolbar";
 import type { DataTableConfig } from "./types";
 import { useDataTable } from "./use-data-table";
 
+/** Rest of the arrows, pressed in a row or held down, after which the row reached opens. */
+const ARROW_REST = 150;
+
 /** A line beside the pinned column once rows slide under it, set on the box without a render. */
 const SHADOW =
   "group-data-scrolled/table:after:pointer-events-none group-data-scrolled/table:after:absolute group-data-scrolled/table:after:inset-y-0 group-data-scrolled/table:after:right-0 group-data-scrolled/table:after:w-px group-data-scrolled/table:after:bg-border";
@@ -25,9 +28,18 @@ const SHADOW =
  * The table of the back office: a header of search, filters and tools, the
  * rows the server serves page by page, and the pagination. Everything the
  * user picks lives in the URL. `config` must be stable: a module constant,
- * or memoized.
+ * or memoized. `onRowClick` (stable too) opens a row, e.g. in a detail panel;
+ * `activeRowId` highlights the one opened, which the arrows then move.
  */
-export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
+export function DataTable<T>({
+  config: base,
+  onRowClick,
+  activeRowId = null,
+}: {
+  config: DataTableConfig<T>;
+  onRowClick?: (row: T) => void;
+  activeRowId?: string | null;
+}) {
   const state = useDataTable(base);
   // The config as the view shows it: without checkboxes or row menu if it says so.
   const { view } = state;
@@ -35,6 +47,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
     () => ({ ...base, bulkActions: view?.noSelection ? undefined : base.bulkActions, actions: view?.noActions ? undefined : base.actions }),
     [base, view],
   );
+  const onOpen = onRowClick ?? config.onOpen;
   const { columns, loading, result, last, pinned, selected, toggle, movable, blocked } = state;
   // Stable across server and browser renders, unlike the ids dnd-kit counts.
   const dndId = useId();
@@ -66,6 +79,70 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
       for (const cell of cells) widths.current.set(cell.dataset.column!, cell.getBoundingClientRect().width);
     }
   }, [loading, columns, result]);
+
+  /*
+   * Pressed in a row, quickly or held down, the arrows only move the
+   * highlight, cheap on memoized rows: the row opens once they rest, so that
+   * neither the content of the panel nor the URL, which renders the table
+   * again, follow each step. A lone press opens at once.
+   */
+  const [cursor, setCursor] = useState<string | null>(null);
+  if (cursor !== null && cursor === activeRowId) setCursor(null);
+  const active = cursor ?? activeRowId;
+  const pending = useRef<{ row: T; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const lastPress = useRef(0);
+  const cancel = () => {
+    if (pending.current) clearTimeout(pending.current.timer);
+    pending.current = null;
+  };
+  const flush = useEffectEvent(() => {
+    const row = pending.current?.row;
+    cancel();
+    if (row) onOpen?.(row);
+  });
+  // A click wins over a row still waiting.
+  const openRow = useMemo(
+    () =>
+      onOpen &&
+      ((row: T) => {
+        cancel();
+        setCursor(null);
+        onOpen(row);
+      }),
+    [onOpen],
+  );
+  useEffect(() => cancel, []);
+
+  // Up and down from the active row, to the next one shown: left to a field or a menu that handles them.
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (active === null || !openRow || loading) return;
+    const rows = entries.flatMap((entry) => ("row" in entry ? [entry.row] : []));
+    const at = rows.findIndex((row) => config.rowId(row) === active);
+    if (at === -1) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=true], [role=menu], [role=listbox], [role=dialog]")) return;
+      const next = rows[at + (event.key === "ArrowDown" ? 1 : -1)];
+      if (!next) return;
+      event.preventDefault();
+      const lone = event.timeStamp - lastPress.current > ARROW_REST;
+      lastPress.current = event.timeStamp;
+      if (lone && !pending.current) return openRow(next);
+      cancel();
+      pending.current = { row: next, timer: setTimeout(flush, ARROW_REST) };
+      setCursor(config.rowId(next));
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [active, openRow, loading, entries, config]);
+  // The active row kept in sight as the arrows move it.
+  useEffect(() => {
+    if (active === null) return;
+    box.current?.querySelector(`[data-row-id="${CSS.escape(active)}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [active, result]);
 
   /** Classes of the cells pinned on the left: the box, then the first column. */
   const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && selectable && "left-10", first && SHADOW) : "");
@@ -106,6 +183,8 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
             id={id}
             columns={columns}
             selected={selected.has(id)}
+            active={id === active}
+            onOpen={openRow}
             pinBox={pin(false)}
             pinFirst={pin(true)}
             onToggle={toggle}
@@ -158,7 +237,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
   const blank = !loading && entries.length === 0;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={box} className="flex flex-col gap-3">
       <DataTableToolbar config={config} state={state} />
 
       {state.layout !== "table" ? (
@@ -168,7 +247,7 @@ export function DataTable<T>({ config: base }: { config: DataTableConfig<T> }) {
           style={{ maxHeight: config.maxHeight ?? "70vh" }}
         >
           <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
-            <DataTableItems config={config} state={state} layout={state.layout} empty={empty} />
+            <DataTableItems config={config} state={state} layout={state.layout} empty={empty} onOpen={openRow} activeRowId={active} />
           </MaybeDnd>
         </div>
       ) : (

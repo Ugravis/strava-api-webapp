@@ -242,34 +242,11 @@
   "auditLog": {
     "title": "Logs",
     "description": "Chaque action du back office. Rien ne peut y être modifié ni supprimé.",
-    "empty": "Aucune entrée ne correspond.",
     "filters": {
-      "action": "Domaine",
-      "domains": {
-        "all": "Toutes",
-        "users": "Utilisateurs",
-        "usernames": "Pseudos réservés",
-        "roles": "Rôles",
-        "badges": "Badges",
-        "userTags": "Tags",
-        "system": "Système"
-      },
-      "visibility": "Visibilité",
-      "visibilities": {
-        "all": "Toutes les entrées",
-        "visible": "Entrées non masquées",
-        "hidden": "Entrées masquées"
-      },
       "target": "Cible : {name}",
       "actor": "Auteur : {name}",
       "clear": "Retirer le filtre"
     },
-    "system": "Système",
-    "deleted": "Compte supprimé",
-    "failed": "Échec ({status})",
-    "hidden": "Masquée",
-    "hide": "Masquer aux autres rôles",
-    "show": "Ne plus masquer",
     "details": {
       "until": "Jusqu'au {date}",
       "fields": "Champs : {fields}",
@@ -340,32 +317,6 @@
           }
         }
       }
-    },
-    "search": "Rechercher une raison, une action ou un utilisateur",
-    "columns": {
-      "date": "Date",
-      "users": "Auteur → cible",
-      "action": "Action",
-      "reason": "Raison",
-      "actions": "Actions"
-    },
-    "count": "{count, plural, =0 {Aucune entrée} one {# entrée} other {# entrées}}",
-    "open": "Ouvrir l'entrée du {date}",
-    "entry": {
-      "title": "Entrée du journal",
-      "date": "Date",
-      "actor": "Auteur",
-      "target": "Cible",
-      "action": "Action",
-      "details": "Détails",
-      "reason": "Raison",
-      "outcome": "Résultat",
-      "succeeded": "Réussie ({status})",
-      "failed": "Échouée ({status})",
-      "id": "Id",
-      "hidden": "Masquée le {date}",
-      "visible": "Visible de tous les rôles admin",
-      "visibility": "Visibilité"
     }
   },
   "statistics": {
@@ -502,17 +453,9 @@
       "files": "{count, plural, =0 {Aucun fichier} one {# fichier} other {# fichiers}}",
       "previewsHint": "Cache, régénéré à la demande",
       "heaviest": "Avatars les plus lourds",
-      "heaviestEmpty": "Aucun avatar importé.",
       "orphansTitle": "Fichiers orphelins",
       "orphansDescription": "Avatars qu'aucun compte n'utilise plus (remplacés ou comptes supprimés), importés il y a plus d'une heure.",
-      "orphansEmpty": "Aucun fichier orphelin.",
       "orphansMore": "… et {count, plural, one {# autre} other {# autres}}",
-      "columns": {
-        "file": "Fichier",
-        "user": "Compte",
-        "size": "Poids",
-        "date": "Importé"
-      },
       "delete": {
         "trigger": "Supprimer les orphelins",
         "title": "Supprimer les fichiers orphelins ?",
@@ -529,43 +472,11 @@
     "description": "Les membres de l'équipe, leur rôle et les permissions de chaque rôle.",
     "readOnly": "Lecture seule : seuls les super-admins gèrent l'équipe.",
     "error": "L'équipe n'a pas pu être chargée.",
-    "empty": "Personne dans l'équipe pour l'instant.",
-    "you": "Vous",
     "count": "{count, plural, one {# membre} other {# membres}}",
-    "columns": {
-      "member": "Membre",
-      "role": "Rôle",
-      "email": "Email",
-      "lastSeenAt": "Dernière visite",
-      "actions": "Actions"
-    },
     "roleHints": {
       "support": "Voit tout le back-office, avec les actions cochées pour le support.",
       "admin": "Voit tout le back-office, avec les actions cochées pour les admins.",
       "super-admin": "Toutes les permissions, y compris l'équipe."
-    },
-    "roleField": "Rôle",
-    "roleHint": "Les permissions de chaque rôle se règlent dans le tableau sous l'équipe. Super-admin : tout, y compris l'équipe.",
-    "add": {
-      "trigger": "Ajouter un membre",
-      "title": "Ajouter un membre",
-      "description": "Le compte reçoit le rôle choisi et le tag Équipe sur son profil, et en est notifié.",
-      "user": "Compte",
-      "placeholder": "Pseudo, nom ou email",
-      "empty": "Aucun compte hors de l'équipe ne correspond.",
-      "submit": "Ajouter"
-    },
-    "change": {
-      "trigger": "Changer le rôle",
-      "title": "Changer le rôle de {name}",
-      "description": "Le membre est notifié de son nouveau rôle.",
-      "submit": "Enregistrer"
-    },
-    "remove": {
-      "trigger": "Retirer de l'équipe",
-      "title": "Retirer {name} de l'équipe ?",
-      "description": "Le compte perd l'accès au back-office et le tag Équipe. Il en est notifié.",
-      "submit": "Retirer"
     },
     "permissions": {
       "title": "Permissions des rôles",
@@ -705,28 +616,15 @@
     "migrations": {
       "title": "Migrations",
       "description": "{count, plural, =0 {Aucune migration appliquée.} one {# migration appliquée, la plus récente en premier.} other {# migrations appliquées, les plus récentes en premier.}}",
-      "pending": "{count, plural, one {# migration en attente} other {# migrations en attente}}",
-      "empty": "Aucune migration appliquée.",
-      "columns": {
-        "id": "N°",
-        "name": "Nom",
-        "createdAt": "Créée"
-      }
+      "pending": "{count, plural, one {# migration en attente} other {# migrations en attente}}"
     }
   },
   "commits": {
     "title": "Commits",
     "description": "Historique de la branche main sur GitHub, du plus récent au plus ancien.",
-    "legend": {
-      "mainMerge": "Merge sur main",
-      "merge": "Merge d'une branche",
-      "commit": "Commit"
-    },
-    "deployed": "Déployé",
     "upToDate": "Le commit déployé est à jour avec main.",
     "undeployed": "{count, plural, one {# commit sur main pas encore déployé.} other {# commits sur main pas encore déployés.}}",
     "noDeployed": "Commit déployé non renseigné (GIT_COMMIT).",
-    "empty": "Aucun commit sur cette page.",
     "unconfigured": "Dépôt GitHub non configuré (GITHUB_REPOSITORY).",
     "unavailable": "Impossible de lire les commits de {repository} pour le moment. Un dépôt privé demande GITHUB_TOKEN."
   },

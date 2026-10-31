@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
 import { type CellUser, IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
+import { type CellImage, ImageCell, ImageCover } from "./cells/image";
 import { formatBytes } from "./format";
 import { OrderCell } from "./reorder";
 import type { DataTableColumn } from "./types";
@@ -16,7 +17,7 @@ import type { DataTableColumn } from "./types";
  * For anything else, a `DataTableColumn` by hand, or `customColumn`.
  */
 
-type Base<T> = Pick<DataTableColumn<T>, "id" | "header" | "icon" | "sortable" | "locked" | "className">;
+type Base<T> = Pick<DataTableColumn<T>, "id" | "header" | "icon" | "sortable" | "locked" | "className" | "href">;
 
 /** A free text, e.g. a name, a note, an e-mail (`muted`). */
 export function textColumn<T>({ value, muted, width, ...base }: Base<T> & { value: (row: T) => string | null | undefined; muted?: boolean; width?: string }): DataTableColumn<T> {
@@ -133,6 +134,16 @@ export function lookColumn<T>({ value, marks, ...base }: Base<T> & { value: (row
         <Skeleton className="h-4 w-28" />
       </span>
     ),
+  };
+}
+
+/** An image, e.g. a cover: a thumbnail in a table or a list, the cover of a card; a click opens it whole. */
+export function imageColumn<T>({ value, ...base }: Base<T> & { value: (row: T) => CellImage | null | undefined }): DataTableColumn<T> {
+  return {
+    ...base,
+    cell: (row) => <ImageCell image={value(row)} />,
+    cover: (row) => <ImageCover image={value(row)} />,
+    skeleton: <Skeleton className="h-6 w-9 rounded-sm" />,
   };
 }
 

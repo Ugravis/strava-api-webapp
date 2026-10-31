@@ -24,6 +24,10 @@ export interface DataTableColumn<T> {
   order?: boolean;
   /** The text a floating button copies on hover, none when null. */
   copy?: (row: T) => string | null;
+  /** An outside page its value opens in a new tab, underlined on hover; none when null. */
+  href?: (row: T) => string | null;
+  /** In cards, drawn as the cover at the top of the card instead of a value: the image of `imageColumn`. */
+  cover?: (row: T) => ReactNode;
   className?: string;
 }
 

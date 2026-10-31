@@ -52,6 +52,15 @@ test.describe("desktop", () => {
     await expect(content(page)).toHaveScreenshot("cards.png");
   });
 
+  test("image popup, link hovered", async ({ page }) => {
+    await open(page, "?users.hide=displayName,status,email,createdAt,lastSeenAt,activities,storage,connections,userTags,lastAction,quick,categories,note");
+    await settled(page);
+    await page.locator('a[href*="strava.com/athletes"]').first().hover();
+    await expect(content(page)).toHaveScreenshot("link.png");
+    await page.getByRole("button", { name: /^Agrandir/ }).first().click();
+    await expect(page.getByRole("dialog")).toHaveScreenshot("image-popup.png");
+  });
+
   test("list", async ({ page }) => {
     await open(page, "?users.view=list");
     await expect(page.locator("ul li").first()).toBeVisible();

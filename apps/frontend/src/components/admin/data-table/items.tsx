@@ -6,7 +6,7 @@ import { type KeyboardEvent, memo, type MouseEvent, type ReactNode } from "react
 import { TableCheckbox } from "./cells/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "./cells/base";
+import { CopyButton, drawCell } from "./cells/base";
 import { MovableItem } from "./reorder";
 import type { DataTableColumn, DataTableConfig } from "./types";
 import type { DataTableState } from "./use-data-table";
@@ -37,14 +37,16 @@ export function DataTableItems<T>({ config, state, layout, empty }: { config: Da
   const { loading, result, last, selected, toggle, movable, blocked } = state;
   // The order column draws before the title, not as a value.
   const order = state.columns.find((column) => column.order);
-  const columns = state.columns.filter((column) => !column.order);
+  // In a card, the first image after the title draws as its cover, not as a value.
+  const cover = layout === "cards" ? state.columns.filter((column) => !column.order).slice(1).find((column) => column.cover) : undefined;
+  const columns = state.columns.filter((column) => !column.order && column !== cover);
   const entries = result?.entries ?? [];
   if (loading) {
     const count = last?.entries.length || 9;
     return (
       <div className={BOXES[layout]} aria-busy>
         {Array.from({ length: count }, (_, index) => (
-          <ItemFrame key={index} layout={layout}>
+          <ItemFrame key={index} layout={layout} cover={cover && <Skeleton className="h-32 w-full rounded-none rounded-t-xl border-b" />}>
             {columns.map((column, at) => (
               <Value key={column.id} column={column} layout={layout} first={at === 0}>
                 {column.skeleton ?? <Skeleton className={cn("inline-block h-4", index % 2 ? "w-16" : "w-24")} />}
@@ -67,6 +69,7 @@ export function DataTableItems<T>({ config, state, layout, empty }: { config: Da
           id={id}
           columns={columns}
           order={order}
+          cover={cover}
           layout={layout}
           selected={selected.has(id)}
           onToggle={toggle}
@@ -119,6 +122,8 @@ interface ItemProps<T> {
   columns: DataTableColumn<T>[];
   /** Its cell before the title: the handle, then the place. */
   order?: DataTableColumn<T>;
+  /** Its image at the top of the card. */
+  cover?: DataTableColumn<T>;
   layout: "cards" | "list";
   selected: boolean;
   onToggle: (ids: string[], on: boolean) => void;
@@ -127,7 +132,7 @@ interface ItemProps<T> {
 }
 
 /** A row, drawn again only when its own props change, as a row of the table. */
-const Item = memo(function Item<T>({ config, row, id, columns, order, layout, selected, onToggle, movable, blocked }: ItemProps<T>) {
+const Item = memo(function Item<T>({ config, row, id, columns, order, cover, layout, selected, onToggle, movable, blocked }: ItemProps<T>) {
   const open = config.onOpen;
   const openFrom = (event: MouseEvent | KeyboardEvent) => {
     // Buttons, links and checkboxes of the item keep their own click.
@@ -149,10 +154,11 @@ const Item = memo(function Item<T>({ config, row, id, columns, order, layout, se
           </>
         }
         end={config.actions?.(row)}
+        cover={cover?.cover?.(row)}
       >
         {columns.map((column, at) => (
           <Value key={column.id} column={column} layout={layout} first={at === 0}>
-            {column.cell(row)}
+            {drawCell(column, row)}
             {column.copy && <CopyButton value={column.copy(row)} />}
           </Value>
         ))}
@@ -170,6 +176,7 @@ function ItemFrame({
   onKeyDown,
   start,
   end,
+  cover,
   children,
 }: {
   layout: "cards" | "list";
@@ -179,6 +186,8 @@ function ItemFrame({
   onKeyDown?: (event: KeyboardEvent) => void;
   start?: ReactNode;
   end?: ReactNode;
+  /** At the top of a card: the image of an `imageColumn`. */
+  cover?: ReactNode;
   children: ReactNode[];
 }) {
   const [first, ...rest] = children;
@@ -198,6 +207,7 @@ function ItemFrame({
     >
       {layout === "cards" ? (
         <>
+          {cover}
           <div className="flex min-h-11 items-center gap-2 border-b px-3 py-1.5">
             {start}
             {first}

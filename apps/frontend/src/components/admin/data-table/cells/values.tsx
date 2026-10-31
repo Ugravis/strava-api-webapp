@@ -75,7 +75,7 @@ export function LinkCell({ href, children, className }: { href: string | null | 
     <Link
       href={href}
       {...(external && { target: "_blank", rel: "noreferrer" })}
-      className={cn("block max-w-56 truncate underline-offset-4 hover:underline", className)}
+      className={cn("block max-w-56 truncate underline-offset-2 hover:underline", className)}
     >
       {children}
     </Link>

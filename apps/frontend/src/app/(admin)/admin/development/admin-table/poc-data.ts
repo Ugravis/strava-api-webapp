@@ -27,6 +27,10 @@ export interface PocUser {
   categories: PocCategory[];
   /** Key of the avatar in the bucket. */
   avatarKey: string | null;
+  /** Id of the athlete on Strava, linked to their page there. */
+  stravaId: number | null;
+  /** Cover picture of the profile. */
+  cover: { src: string; alt: string } | null;
 }
 
 /** Fixed, so that relative dates do not drift between renders. */
@@ -42,6 +46,12 @@ function random(seed: number) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
   };
+}
+
+/** A landscape drawn in SVG, its colours from `hue`: pictures without a network. */
+function landscape(hue: number, peak: number) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270"><defs><linearGradient id="s" x2="0" y2="1"><stop offset="0" stop-color="hsl(${hue} 70% 78%)"/><stop offset="1" stop-color="hsl(${(hue + 40) % 360} 80% 90%)"/></linearGradient></defs><rect width="480" height="270" fill="url(#s)"/><circle cx="${360 - peak}" cy="70" r="28" fill="hsl(${(hue + 60) % 360} 90% 96%)"/><path d="M0 200 L${110 + peak / 2} ${90 + peak / 3} L230 190 L${330 - peak / 3} ${60 + peak / 4} L480 180 V270 H0Z" fill="hsl(${hue} 35% 45%)"/><path d="M0 230 Q120 190 240 225 T480 215 V270 H0Z" fill="hsl(${hue} 40% 28%)"/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 const TAGS: AdminUserTagLook[] = [
@@ -114,6 +124,8 @@ export const POC_USERS: PocUser[] = Array.from({ length: 57 }, (_, index) => {
         : { kind: ACTIONS[index % ACTIONS.length]![0], label: ACTIONS[index % ACTIONS.length]![1], failedStatus: index % 8 === 5 ? 403 : null },
     // None to all five, to see the pills overflow.
     categories: index === 2 ? CATEGORIES : CATEGORIES.filter((_, at) => (index + at * 3) % 7 < 2),
+    stravaId: index % 4 === 2 ? null : 1_000_000 + index * 48_271,
+    cover: index % 5 === 1 ? null : { src: landscape(Math.floor(next() * 360), Math.floor(next() * 120)), alt: `Couverture de @${username}` },
     avatarKey: index % 3 === 2 ? null : `avatars/${index.toString(16).padStart(8, "0")}-5c1d-4f2a-9e8b/${1_729_000_000 + index * 4_513}.webp`,
   };
 });

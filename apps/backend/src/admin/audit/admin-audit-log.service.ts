@@ -3,6 +3,11 @@ import {
   type AdminPage,
   type AuditLogEntry,
 } from '@kilotrace/shared/admin';
+import {
+  mapTablePage,
+  type TablePage,
+  type TableQuery,
+} from '@kilotrace/shared/table';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { EntityManager } from 'typeorm';
@@ -11,6 +16,7 @@ import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialE
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { User } from '../../users/user.entity';
 import { toAuditUser } from '../common/audit-user';
+import { runTableQuery, type TableSpec } from '../common/table-query';
 import { AdminAuditLog } from './admin-audit-log.entity';
 import type { AuditLogQueryDto } from './audit-log-query.dto';
 
@@ -20,6 +26,48 @@ const MATCHING_USERS =
 function likeEscaped(text: string): string {
   return text.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
+
+/** The name of a user, by an id of the entry: author or target. */
+const userName = (id: string) =>
+  `(SELECT concat_ws(' ', u.username, u.display_name) FROM users u WHERE CAST(u.id AS text) = ${id})`;
+
+/** The domain of an action, the start of its name. */
+const DOMAIN = "split_part(entry.action, '.', 1)";
+
+const DOMAINS = ['users', 'usernames', 'roles', 'badges', 'userTags', 'system'];
+
+/** The author by username: `''` for the system, `~` for a deleted account. */
+const ACTOR = `COALESCE((SELECT u.username FROM users u WHERE u.id = entry.actor_id), CASE WHEN entry.actor_id IS NULL THEN '' ELSE '~' END)`;
+
+const auditTable = (withHidden: boolean): TableSpec => ({
+  search: [
+    'entry.reason',
+    'entry.action',
+    userName('CAST(entry.actor_id AS text)'),
+    userName('entry.target_id'),
+  ],
+  sorts: { createdAt: 'entry.created_at', action: 'entry.action' },
+  tiebreak: 'entry.id',
+  facets: {
+    domain: {
+      options: Object.fromEntries(
+        DOMAINS.map((domain) => [domain, `${DOMAIN} = '${domain}'`]),
+      ),
+    },
+    outcome: {
+      options: { succeeded: 'entry.succeeded', failed: 'NOT entry.succeeded' },
+    },
+    ...(withHidden && {
+      visibility: {
+        options: {
+          visible: 'entry.hidden_at IS NULL',
+          hidden: 'entry.hidden_at IS NOT NULL',
+        },
+      },
+    }),
+  },
+  groupings: { domain: DOMAIN, actor: ACTOR },
+});
 
 export interface AuditEntry {
   actorId: string | null;
@@ -90,6 +138,42 @@ export class AdminAuditLogService {
     }
 
     const [rows, total] = await builder.getManyAndCount();
+    return {
+      items: await this.entriesOf(rows, withHidden),
+      total,
+      page: query.page,
+      pageSize: ADMIN_PAGE_SIZE,
+    };
+  }
+
+  /**
+   * A page of the data table of the entries, optionally of one author or
+   * one target. Masked entries are left out unless `withHidden`.
+   */
+  async table(
+    query: TableQuery,
+    scope: { actor?: string; target?: string },
+    withHidden: boolean,
+  ): Promise<TablePage<AuditLogEntry>> {
+    const base = this.entries.createQueryBuilder('entry');
+    if (scope.actor) {
+      base.andWhere('entry.actor_id = :actor', { actor: scope.actor });
+    }
+    if (scope.target) {
+      base.andWhere('entry.target_id = :target', { target: scope.target });
+    }
+    if (!withHidden) {
+      base.andWhere('entry.hidden_at IS NULL');
+    }
+    const page = await runTableQuery(base, query, auditTable(withHidden));
+    return mapTablePage(page, (rows) => this.entriesOf(rows, withHidden));
+  }
+
+  /** The entries in the shape of the API, their users read at once. */
+  private async entriesOf(
+    rows: AdminAuditLog[],
+    withHidden: boolean,
+  ): Promise<AuditLogEntry[]> {
     const userIds = new Set(
       rows.flatMap((row) => [
         ...(row.actorId ? [row.actorId] : []),
@@ -102,30 +186,25 @@ export class AdminAuditLogService {
         : []
       ).map((user) => [user.id, user]),
     );
-    return {
-      items: rows.map((row) => ({
-        id: row.id,
-        actor: row.actorId
-          ? toAuditUser(row.actorId, users.get(row.actorId))
+    return rows.map((row) => ({
+      id: row.id,
+      actor: row.actorId
+        ? toAuditUser(row.actorId, users.get(row.actorId))
+        : null,
+      action: row.action,
+      targetType: row.targetType,
+      targetId: row.targetId,
+      targetUser:
+        row.targetType === 'user' && row.targetId
+          ? toAuditUser(row.targetId, users.get(row.targetId))
           : null,
-        action: row.action,
-        targetType: row.targetType,
-        targetId: row.targetId,
-        targetUser:
-          row.targetType === 'user' && row.targetId
-            ? toAuditUser(row.targetId, users.get(row.targetId))
-            : null,
-        reason: row.reason,
-        details: row.details,
-        succeeded: row.succeeded,
-        status: row.status,
-        createdAt: row.createdAt.toISOString(),
-        ...(withHidden && { hiddenAt: row.hiddenAt?.toISOString() ?? null }),
-      })),
-      total,
-      page: query.page,
-      pageSize: ADMIN_PAGE_SIZE,
-    };
+      reason: row.reason,
+      details: row.details,
+      succeeded: row.succeeded,
+      status: row.status,
+      createdAt: row.createdAt.toISOString(),
+      ...(withHidden && { hiddenAt: row.hiddenAt?.toISOString() ?? null }),
+    }));
   }
 
   /**

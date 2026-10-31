@@ -1,4 +1,5 @@
 import { type AdminPage, type AuditLogEntry } from '@kilotrace/shared/admin';
+import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
 import {
   Delete,
   Get,
@@ -13,9 +14,10 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
+import { TableQueryParam } from '../common/table-query';
 import { AdminPermissionsService } from '../permissions/admin-permissions.service';
 import { AdminAuditLogService } from './admin-audit-log.service';
-import { AuditLogQueryDto } from './audit-log-query.dto';
+import { AuditLogQueryDto, AuditTableScopeDto } from './audit-log-query.dto';
 import { NotAudited } from './audited.decorator';
 
 @AdminController('audit-log')
@@ -33,6 +35,20 @@ export class AdminAuditLogController {
   ): Promise<AdminPage<AuditLogEntry>> {
     return this.audit.page(
       query,
+      await this.permissions.can(user.roles, 'audit.hide'),
+    );
+  }
+
+  @Get('table')
+  @AnyMember()
+  async table(
+    @CurrentUser() user: User,
+    @TableQueryParam() query: TableQuery,
+    @Query() scope: AuditTableScopeDto,
+  ): Promise<TablePage<AuditLogEntry>> {
+    return this.audit.table(
+      query,
+      scope,
       await this.permissions.can(user.roles, 'audit.hide'),
     );
   }

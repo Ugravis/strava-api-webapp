@@ -138,17 +138,18 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 
 ## Columns: one builder per kind of field
 
-Each builder applies the rules of the kit: the cell of its kind, a copy button on texts and numbers, a skeleton of its shape, and `EmptyValue` (—) for a missing value. Every builder takes `id`, `header`, `icon`, and optionally `sortable`, `locked` and `className`.
+Each builder applies the rules of the kit: the cell of its kind, a copy button on every value of text or numbers, a skeleton of its shape, and `EmptyValue` (—) for a missing value. Every builder takes `id`, `header`, `icon`, and optionally `sortable`, `locked`, `className` and `href`.
 
 | Builder | Field | Cell |
 | --- | --- | --- |
-| `userColumn({ value, marks?, empty? })` | An account: avatar, @username, `Mark`s. Locked, copies the username. No account shows `empty` (e.g. « Système »), else a dash; a deleted one (no username) « Compte supprimé ». | `UserCell` |
+| `userColumn({ value, marks?, empty?, avatar? })` | An account: avatar (`avatar: false` when an `imageColumn` shows it), @username, `Mark`s. Locked, copies the username. No account shows `empty` (e.g. « Système »), else a dash; a deleted one (no username) « Compte supprimé ». | `UserCell` |
 | `lookColumn({ value, marks? })` | An item told by its look: icon in a disc (`background` or icon `color`), name, `Mark`s. Locked, copies the name. Badges, tags. | `LookCell` |
 | `textColumn({ value, muted?, width? })` | Free text, e-mail (`muted`). Truncated with the whole text in a bubble. Copied. | `TextCell` |
 | `codeColumn({ value, width? })` | Id, key, hash, in monospace. Copied. | `CodeCell` |
 | `numberColumn({ value, zero?, unit? })` | A count. `0` shows as empty unless `zero`. Copied. | `NumberCell` |
 | `bytesColumn({ value })` | A weight of files, e.g. « 1,4 Mo ». Copied. | `BytesCell` |
 | `dateColumn({ value, time?, relative?, now? })` | A date, a date and time, or how long ago (`relative`, exact date on hover). | `DateCell`, `RelativeDateCell` |
+| `imageColumn({ value })` | An image `{ src, alt }`: a cover, a capture. A thumbnail in a table and a list; in cards, the first one after the title is the cover at the top of the card, as the card preview of Notion, light grey without an image. A click opens it whole in a popup. | `ImageCell`, `ImageCover` |
 | `booleanColumn({ value })` | Yes as a check, no as empty. | `BooleanCell` |
 | `statusColumn({ value, statuses })` | A state among a few: a dot of colour and a label. | `StatusCell` |
 | `pillsColumn({ value, max? })` | Labels among many: coloured pills, the rest counted. | `PillsCell` |
@@ -161,7 +162,7 @@ Other bits:
 
 - `Truncate`: always give it a `max-w-*`.
 - `Mark`: a small icon pill beside a name, e.g. a role or a suspension.
-- `LinkCell`.
+- `LinkCell`: a link of its own text, e.g. `#99` to a pull request.
 - `Tip`: the bubble of every icon-only button.
 - `formatDate`, `formatDateTime`, `formatRelative`, `formatNumber`, `formatBytes`: French, Paris time.
 - Colours go through `Tone`: `gray`, `green`, `red`, `amber`, `blue`, `violet`, `sky`, `cyan`, `fuchsia`. No raw colour classes in configs.
@@ -169,7 +170,8 @@ Other bits:
 ## Rules
 
 - **Icons.** Every column has a lucide icon before its name. Every icon-only button has a `Tip`.
-- **Copy.** Texts and numbers get a copy button on hover (the builders do it). Dates, statuses and marks don't.
+- **Outside links.** A value opening an outside page (GitHub, Strava…) takes `href: (row) => url | null`: it opens in a new tab and is underlined on hover, in every layout. The row keeps its own click elsewhere. Inside the app, a `LinkCell` in a `customColumn`.
+- **Copy.** Every value made of text or numbers gets a copy button on hover (the builders do it): texts, numbers, accounts, looks, statuses (their label), pills and icons (all their names), dates (the exact date and time, even when shown relative). Images, checks, buttons and the order don't. A `customColumn` showing text gives its `copy`.
 - **Server-driven.** Search (debounced 250 ms), filters, sort, groups, folds and pages all go through `fetch`. Skeleton rows show while it runs; the last page keeps the counts and the pagination. While a call runs, every control that changes the rows is disabled (the search field stays editable, the typing only restarts the pause), and the skeleton keeps the widths of the columns.
 - **Defaults vs picks.** A header button turns blue only when the user picked it, even when the pick equals the default. Resetting hands control back to the system. « Grouper » has no « Aucun »: its reset item does that.
 - **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group` (`-` for none against a `defaultGroupBy`), `<id>.fold`, `<id>.hide`, `<id>.show`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.

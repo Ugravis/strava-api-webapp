@@ -107,17 +107,20 @@ export function UserCell({
   user,
   marks,
   empty,
+  avatar = true,
 }: {
   user: CellUser | null;
   /** `Mark`s after the name. */
   marks?: ReactNode;
   empty?: string;
+  /** Without the avatar, e.g. shown by an image column of its own. */
+  avatar?: boolean;
 }) {
   if (!user) return empty ? <span className="text-muted-foreground">{empty}</span> : <EmptyValue />;
   if (!user.username) return <span className="text-muted-foreground italic">Compte supprimé</span>;
   return (
     <span className="flex max-w-40 items-center gap-2 sm:max-w-56">
-      <UserAvatar user={{ ...user, username: user.username }} className="size-5" fallbackClassName="text-[9px]" />
+      {avatar && <UserAvatar user={{ ...user, username: user.username }} className="size-5" fallbackClassName="text-[9px]" />}
       <Truncate className="font-medium text-foreground">@{user.username}</Truncate>
       {marks}
     </span>

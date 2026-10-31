@@ -4,6 +4,7 @@ import { CopyCheckIcon, CopyIcon } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { DataTableColumn } from "../types";
 
 /** A missing value. */
 export function EmptyValue() {
@@ -87,5 +88,16 @@ export function MoreCount({ names }: { names: string[] }) {
     <span title={names.join(", ")} className="px-0.5 text-xs text-muted-foreground tabular-nums">
       +{names.length}
     </span>
+  );
+}
+
+/** The value of a cell, opening the outside page of its `href` when it has one. */
+export function drawCell<T>(column: DataTableColumn<T>, row: T): ReactNode {
+  const href = column.href?.(row);
+  if (!href) return column.cell(row);
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="inline-block max-w-full align-middle underline-offset-2 hover:underline">
+      {column.cell(row)}
+    </a>
   );
 }

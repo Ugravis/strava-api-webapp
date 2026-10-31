@@ -1,7 +1,7 @@
 "use client";
 
 import type { AdminUploadFile } from "@kilotrace/shared/admin";
-import { AtSignIcon, CalendarClockIcon, FileImageIcon, HardDriveIcon } from "lucide-react";
+import { AtSignIcon, CalendarClockIcon, FileImageIcon, HardDriveIcon, ImageIcon } from "lucide-react";
 import { useMemo } from "react";
 import {
   bytesColumn,
@@ -10,6 +10,7 @@ import {
   type DataTableConfig,
   DataTable,
   dateColumn,
+  imageColumn,
   localTableSource,
   userColumn,
 } from "@/components/admin/data-table";
@@ -26,9 +27,11 @@ const sourceOf = (files: AdminUploadFile[]) =>
     },
   });
 
-const COLUMNS: Record<"file" | "user" | "size" | "lastModified", DataTableColumn<AdminUploadFile>> = {
+const COLUMNS: Record<"file" | "image" | "user" | "size" | "lastModified", DataTableColumn<AdminUploadFile>> = {
   file: codeColumn({ id: "file", header: "Fichier", icon: <FileImageIcon />, sortable: true, locked: true, value: (file) => file.key, width: "max-w-64" }),
-  user: userColumn({ id: "user", header: "Compte", icon: <AtSignIcon />, sortable: true, locked: false, value: (file) => file.user }),
+  // Served by the public route of the avatars, orphans included.
+  image: imageColumn({ id: "image", header: "Image", icon: <ImageIcon />, value: (file) => ({ src: `/api/${file.key}`, alt: file.user?.username ? `Avatar de @${file.user.username}` : file.key }) }),
+  user: userColumn({ id: "user", header: "Compte", icon: <AtSignIcon />, sortable: true, locked: false, avatar: false, value: (file) => file.user }),
   size: bytesColumn({ id: "size", header: "Taille", icon: <HardDriveIcon />, sortable: true, value: (file) => file.bytes }),
   lastModified: dateColumn({ id: "lastModified", header: "Modifié", icon: <CalendarClockIcon />, sortable: true, time: true, value: (file) => file.lastModified }),
 };
@@ -37,6 +40,10 @@ const BASE = {
   rowId: (file: AdminUploadFile) => file.key,
   noun: (count: number) => (count > 1 ? "fichiers" : "fichier"),
   defaultSort: { id: "size", desc: true },
+  views: [
+    { id: "table", label: "Tableau" },
+    { id: "cards", label: "Cartes", layout: "cards" },
+  ],
 } satisfies Partial<DataTableConfig<AdminUploadFile>>;
 
 /** The heaviest avatars still used by an account. */
@@ -48,7 +55,7 @@ export function HeaviestTable({ files }: { files: AdminUploadFile[] }) {
       fetch: sourceOf(files),
       search: "Fichier ou @username",
       empty: { title: "Aucun avatar importé", description: "Les avatars importés par les comptes apparaîtront ici." },
-      columns: [COLUMNS.file, COLUMNS.user, COLUMNS.size, COLUMNS.lastModified],
+      columns: [COLUMNS.file, COLUMNS.image, COLUMNS.user, COLUMNS.size, COLUMNS.lastModified],
     }),
     [files],
   );
@@ -64,7 +71,7 @@ export function OrphansTable({ files }: { files: AdminUploadFile[] }) {
       fetch: sourceOf(files),
       search: "Fichier",
       empty: { title: "Aucun fichier orphelin", description: "Chaque avatar stocké est utilisé par un compte." },
-      columns: [COLUMNS.file, COLUMNS.size, COLUMNS.lastModified],
+      columns: [COLUMNS.file, COLUMNS.image, COLUMNS.size, COLUMNS.lastModified],
     }),
     [files],
   );

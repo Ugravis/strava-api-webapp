@@ -8,7 +8,7 @@ import { TableCheckbox } from "./cells/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "./cells/base";
+import { CopyButton, drawCell } from "./cells/base";
 import { MovableRow } from "./reorder";
 import type { DataTableColumn, DataTableConfig } from "./types";
 
@@ -46,7 +46,7 @@ export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, col
       )}
       {columns.map((column, index) => (
         <TableCell key={column.id} className={cn("group/cell relative", index === 0 && pinFirst, column.className)}>
-          {column.cell(row)}
+          {drawCell(column, row)}
           {column.copy && <CopyButton value={column.copy(row)} />}
         </TableCell>
       ))}

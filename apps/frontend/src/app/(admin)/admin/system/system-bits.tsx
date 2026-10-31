@@ -3,7 +3,6 @@ import { MAINTENANCE_DESCRIPTION_MAX_LENGTH, MAINTENANCE_TITLES, type Maintenanc
 import {
   ADMIN_REASON_MAX_LENGTH,
   ADMIN_REASON_MIN_LENGTH,
-  type AdminUploadFile,
   type AdminUploadsAudit,
 } from "@kilotrace/shared/admin";
 import { FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
@@ -12,7 +11,6 @@ import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
-import { UserLink } from "@/components/admin/user-link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,8 +18,7 @@ import { adminApi } from "@/lib/admin/api";
 import { formatBytes, formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { clearMaintenance, deleteOrphans, setMaintenance, setSignups } from "./actions";
-
-const cell = "px-3 py-2";
+import { HeaviestTable, OrphansTable } from "./uploads-tables";
 
 /** The banner shown to the signed-in users, and its form for the super-admins. */
 export function MaintenanceCard({ maintenance, canEdit }: { maintenance: MaintenanceBanner | null; canEdit: boolean }) {
@@ -153,96 +150,48 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
         />
       </div>
 
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>{t("heaviest")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {heaviest.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("heaviestEmpty")}</p>
-          ) : (
-            <FilesTable files={heaviest} withUser />
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-medium">{t("heaviest")}</h3>
+        <HeaviestTable files={heaviest} />
+      </div>
 
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>{t("orphansTitle")}</CardTitle>
-          <CardDescription>{t("orphansDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {orphans.count === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("orphansEmpty")}</p>
-          ) : (
-            <>
-              <FilesTable files={orphans.files} />
-              {orphans.count > orphans.files.length && (
-                <p className="text-xs text-muted-foreground">{t("orphansMore", { count: orphans.count - orphans.files.length })}</p>
-              )}
-              {canEdit && (
-                <div>
-                  <ActionDialog
-                    action={deleteOrphans}
-                    trigger={{ label: t("delete.trigger"), icon: <Trash2Icon /> }}
-                    title={t("delete.title")}
-                    description={t("delete.description")}
-                    submitLabel={t("delete.submit")}
-                    cancelLabel={common("cancel")}
-                    destructive
-                    reason={{
-                      label: common("reason"),
-                      placeholder: common("reasonPlaceholder"),
-                      hint: common("reasonHint", { min: ADMIN_REASON_MIN_LENGTH, max: ADMIN_REASON_MAX_LENGTH }),
-                      presetsLabel: common("presets"),
-                      presets: t.raw("delete.presets") as string[],
-                      required: true,
-                      min: ADMIN_REASON_MIN_LENGTH,
-                      max: ADMIN_REASON_MAX_LENGTH,
-                    }}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function FilesTable({ files, withUser }: { files: AdminUploadFile[]; withUser?: boolean }) {
-  const t = getAdminTranslations("system.uploads.columns");
-  const log = getAdminTranslations("auditLog");
-  return (
-    // Every column stays, the table scrolling sideways on narrow screens.
-    <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-xl text-sm">
-        <thead className="bg-muted text-left text-xs text-muted-foreground">
-          <tr>
-            <th className={`${cell} font-medium`}>{t("file")}</th>
-            {withUser && <th className={`${cell} font-medium`}>{t("user")}</th>}
-            <th className={`${cell} text-right font-medium`}>{t("size")}</th>
-            <th className={`${cell} font-medium`}>{t("date")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {files.map((file) => (
-            <tr key={file.key} className="border-t odd:bg-background even:bg-muted/50">
-              <td className={`${cell} max-w-64 truncate font-mono text-xs`} title={file.key}>
-                {file.key}
-              </td>
-              {withUser && (
-                <td className={cell}>
-                  <UserLink user={file.user} fallback="—" deleted={log("deleted")} />
-                </td>
-              )}
-              <td className={`${cell} text-right tabular-nums`}>{formatBytes(file.bytes)}</td>
-              <td className={`${cell} text-muted-foreground`}>{file.lastModified ? formatDateTime(file.lastModified) : "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="flex flex-col gap-2">
+        <div>
+          <h3 className="text-sm font-medium">{t("orphansTitle")}</h3>
+          <p className="text-sm text-muted-foreground">{t("orphansDescription")}</p>
+        </div>
+        <OrphansTable files={orphans.files} />
+        {orphans.count > 0 && (
+          <>
+            {orphans.count > orphans.files.length && (
+              <p className="text-xs text-muted-foreground">{t("orphansMore", { count: orphans.count - orphans.files.length })}</p>
+            )}
+            {canEdit && (
+              <div>
+                <ActionDialog
+                  action={deleteOrphans}
+                  trigger={{ label: t("delete.trigger"), icon: <Trash2Icon /> }}
+                  title={t("delete.title")}
+                  description={t("delete.description")}
+                  submitLabel={t("delete.submit")}
+                  cancelLabel={common("cancel")}
+                  destructive
+                  reason={{
+                    label: common("reason"),
+                    placeholder: common("reasonPlaceholder"),
+                    hint: common("reasonHint", { min: ADMIN_REASON_MIN_LENGTH, max: ADMIN_REASON_MAX_LENGTH }),
+                    presetsLabel: common("presets"),
+                    presets: t.raw("delete.presets") as string[],
+                    required: true,
+                    min: ADMIN_REASON_MIN_LENGTH,
+                    max: ADMIN_REASON_MAX_LENGTH,
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

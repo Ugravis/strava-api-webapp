@@ -75,7 +75,7 @@ export async function fetchUsersTable(query: TableQuery): Promise<TablePage<Admi
 }
 ```
 
-A failed call throws, and the table shows its error state with a retry button.
+A failed call throws, and the table shows its error state with a retry button. A scope of the page outside the picks of the table, e.g. `?target=` on the logs, goes as the third argument: `fetchAdminTable(path, query, { target })`.
 
 ### 3. Frontend: the config and the table
 
@@ -142,7 +142,7 @@ Each builder applies the rules of the kit: the cell of its kind, a copy button o
 
 | Builder | Field | Cell |
 | --- | --- | --- |
-| `userColumn({ value, marks? })` | An account: avatar, @username, `Mark`s. Locked, copies the username. | `UserCell` |
+| `userColumn({ value, marks?, empty? })` | An account: avatar, @username, `Mark`s. Locked, copies the username. No account shows `empty` (e.g. « Système »), else a dash; a deleted one (no username) « Compte supprimé ». | `UserCell` |
 | `lookColumn({ value, marks? })` | An item told by its look: icon in a disc (`background` or icon `color`), name, `Mark`s. Locked, copies the name. Badges, tags. | `LookCell` |
 | `textColumn({ value, muted?, width? })` | Free text, e-mail (`muted`). Truncated with the whole text in a bubble. Copied. | `TextCell` |
 | `codeColumn({ value, width? })` | Id, key, hash, in monospace. Copied. | `CodeCell` |
@@ -184,6 +184,7 @@ Other bits:
 - **Actions.** The row menu uses `RowActions`, always shown. Its column header is an icon.
 - **Filters.** A facet menu stays open while options are ticked.
 - **Order.** With an `orderColumn` and `reorder`, rows move by their handle, in every layout (up and down in a table, any way in cards and list), with the mouse, a finger or the keyboard (Space, arrows, Space), within their group and their page. Hiding the order column hides the handles. Only once sorted by that column (either way), without search or filters, and not while a move saves: the handle is greyed otherwise, its bubble telling why. The new order shows at once; the page is then fetched again without skeleton, a failure told by a toast. `TableMove` gives the new neighbours on the page in ascending order: the server places the row right before `before`, else right after `after`, and numbers its order again.
+- **Sort.** « Trier » shows only with a sortable column, e.g. not on the commits, which GitHub serves in its own order.
 - **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column.
 
 ## Not in the kit

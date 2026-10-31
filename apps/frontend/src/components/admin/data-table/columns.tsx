@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
-import { IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
+import { type CellUser, IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { formatBytes } from "./format";
 import { OrderCell } from "./reorder";
 import type { DataTableColumn } from "./types";
@@ -99,17 +99,18 @@ export function iconsColumn<T>({ value, max, ...base }: Base<T> & { value: (row:
   return { ...base, cell: (row) => <IconsCell items={value(row)} max={max} />, skeleton: <Skeleton className="h-6 w-14 rounded-md" /> };
 }
 
-/** An account, mostly the first column: locked, its @username copied. */
+/** An account, mostly the first column: locked, its @username copied; null shows `empty`, else a dash. */
 export function userColumn<T>({
   value,
   marks,
+  empty,
   ...base
-}: Base<T> & { value: (row: T) => { username: string; displayName: string | null; avatarUrl: string | null }; marks?: (row: T) => ReactNode }): DataTableColumn<T> {
+}: Base<T> & { value: (row: T) => CellUser | null; marks?: (row: T) => ReactNode; empty?: string }): DataTableColumn<T> {
   return {
     locked: true,
     ...base,
-    cell: (row) => <UserCell user={value(row)} marks={marks?.(row)} />,
-    copy: (row) => value(row).username,
+    cell: (row) => <UserCell user={value(row)} marks={marks?.(row)} empty={empty} />,
+    copy: (row) => value(row)?.username ?? null,
     skeleton: (
       <span className="flex items-center gap-2">
         <Skeleton className="size-5 rounded-full" />

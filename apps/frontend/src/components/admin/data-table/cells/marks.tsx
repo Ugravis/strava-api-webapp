@@ -92,18 +92,32 @@ export function Mark({ label, tone, icon }: { label: string; tone: Tone; icon: R
   );
 }
 
-/** An account: avatar, @username and its marks, on a single line. */
+/** An account as the API names it: no username once deleted. */
+export interface CellUser {
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
+/**
+ * An account: avatar, @username and its marks, on a single line. No account
+ * shows `empty`, e.g. « Système », else a dash; a deleted one says so.
+ */
 export function UserCell({
   user,
   marks,
+  empty,
 }: {
-  user: { username: string; displayName: string | null; avatarUrl: string | null };
+  user: CellUser | null;
   /** `Mark`s after the name. */
   marks?: ReactNode;
+  empty?: string;
 }) {
+  if (!user) return empty ? <span className="text-muted-foreground">{empty}</span> : <EmptyValue />;
+  if (!user.username) return <span className="text-muted-foreground italic">Compte supprimé</span>;
   return (
     <span className="flex max-w-40 items-center gap-2 sm:max-w-56">
-      <UserAvatar user={user} className="size-5" fallbackClassName="text-[9px]" />
+      <UserAvatar user={{ ...user, username: user.username }} className="size-5" fallbackClassName="text-[9px]" />
       <Truncate className="font-medium text-foreground">@{user.username}</Truncate>
       {marks}
     </span>

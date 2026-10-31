@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { store, useStored, writeParams } from "./storage";
 
 export type SplitPanelMode = "overlay" | "split";
 
@@ -57,33 +58,6 @@ const MODE_PARAM = "panel";
 const DEFAULT_WIDTH = 400;
 /** Entries kept for back and forward. */
 const MAX_HISTORY = 50;
-
-/** A choice kept in `localStorage`, read again by every panel when it changes. */
-const listeners = new Set<() => void>();
-function subscribe(onChange: () => void) {
-  listeners.add(onChange);
-  return () => listeners.delete(onChange);
-}
-function store(key: string, value: string | null) {
-  if (value === null) localStorage.removeItem(key);
-  else localStorage.setItem(key, value);
-  listeners.forEach((listener) => listener());
-}
-/** The server knows neither: the defaults until the browser reads them. */
-function useStored(key: string) {
-  return useSyncExternalStore(subscribe, () => localStorage.getItem(key), () => null);
-}
-
-/** Written through the history, which Next follows without a server round trip. Null removes the key. */
-function writeParams(changes: Record<string, string | null>) {
-  const next = new URLSearchParams(window.location.search);
-  for (const [key, value] of Object.entries(changes)) {
-    if (value === null) next.delete(key);
-    else next.set(key, value);
-  }
-  const search = next.toString();
-  window.history.replaceState(null, "", search ? `?${search}` : window.location.pathname);
-}
 
 /**
  * The side panel of a section: a detail on the right of its pages, floating

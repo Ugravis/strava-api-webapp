@@ -8,7 +8,7 @@ export interface GithubCommit {
     message: string;
     author: { name: string; date: string } | null;
   };
-  author: { login: string } | null;
+  author: { login: string; avatar_url: string } | null;
   parents: { sha: string }[];
 }
 
@@ -34,6 +34,7 @@ export function toAdminCommit(
     title: title ? title.trim() : subject,
     pullRequest: pullRequest ? Number(pullRequest[1]) : null,
     author: commit.commit.author?.name ?? commit.author?.login ?? '—',
+    avatarUrl: commit.author?.avatar_url ?? null,
     date: commit.commit.author?.date ?? new Date(0).toISOString(),
     url: commit.html_url,
     kind: !merge

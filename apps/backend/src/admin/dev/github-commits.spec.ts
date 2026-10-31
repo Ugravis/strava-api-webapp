@@ -16,7 +16,7 @@ const github = (
     message,
     author: { name: 'Ulysse', date: '2026-10-28T14:00:00Z' },
   },
-  author: { login: 'ugravis' },
+  author: { login: 'ugravis', avatar_url: 'https://avatars/u' },
   parents: parents.map((parent) => ({ sha: parent })),
 });
 
@@ -29,6 +29,7 @@ describe('toAdminCommit', () => {
       title: 'feat: admin dev page',
       pullRequest: 126,
       author: 'Ulysse',
+      avatarUrl: 'https://avatars/u',
       date: '2026-10-28T14:00:00Z',
       url: 'https://github.com/o/r/commit/abc',
       kind: 'release',

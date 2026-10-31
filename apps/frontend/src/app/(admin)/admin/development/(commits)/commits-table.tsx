@@ -13,9 +13,9 @@ import {
   lookColumn,
   Mark,
   statusColumn,
-  textColumn,
   type Tone,
 } from "@/components/admin/data-table";
+import { UserAvatar } from "@/components/user/user-avatar";
 import { fetchCommitsTable } from "./actions";
 
 const KINDS: Record<AdminCommitKind, { label: string; tone: Tone }> = {
@@ -62,7 +62,17 @@ export function CommitsTable({ deployed }: { deployed: string | null }) {
           cell: (commit) => <LinkCell href={pullRequestHref(commit)}>#{commit.pullRequest}</LinkCell>,
           copy: (commit) => (commit.pullRequest === null ? null : `#${commit.pullRequest}`),
         }),
-        textColumn({ id: "author", header: "Auteur", icon: <UserPenIcon />, sortable: true, value: (commit) => commit.author, width: "max-w-40" }),
+        lookColumn({
+          id: "author",
+          header: "Auteur",
+          icon: <UserPenIcon />,
+          sortable: true,
+          locked: false,
+          value: (commit) => ({
+            icon: <UserAvatar user={{ username: commit.author, displayName: commit.author, avatarUrl: commit.avatarUrl }} className="size-6" fallbackClassName="text-[9px]" />,
+            name: commit.author,
+          }),
+        }),
         dateColumn({ id: "date", header: "Date", icon: <ClockIcon />, sortable: true, value: (commit) => commit.date, relative: true }),
         codeColumn({ id: "sha", header: "SHA", icon: <HashIcon />, value: (commit) => commit.sha.slice(0, 7), width: "max-w-20" }),
       ],

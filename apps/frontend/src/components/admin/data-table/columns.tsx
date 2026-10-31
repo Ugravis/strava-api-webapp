@@ -7,17 +7,21 @@ import { cn } from "@/lib/utils";
 import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
 import { type CellUser, IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { type CellImage, ImageCell, ImageCover } from "./cells/image";
-import { formatBytes } from "./format";
+import { formatBytes, formatDate, formatDateTime } from "./format";
 import { OrderCell } from "./reorder";
 import type { DataTableColumn } from "./types";
 
 /*
  * One builder per kind of field, applying the rules of the kit: the cell of
- * its kind, a copy button on texts and numbers, a skeleton of its shape.
+ * its kind, a copy button on every value of text or numbers, a skeleton of
+ * its shape.
  * For anything else, a `DataTableColumn` by hand, or `customColumn`.
  */
 
 type Base<T> = Pick<DataTableColumn<T>, "id" | "header" | "icon" | "sortable" | "locked" | "className" | "href">;
+
+/** The names of the items of a cell, all of them, those counted included; none when empty. */
+const labelsOf = (items: { label: string }[]) => (items.length > 0 ? items.map((item) => item.label).join(", ") : null);
 
 /** A free text, e.g. a name, a note, an e-mail (`muted`). */
 export function textColumn<T>({ value, muted, width, ...base }: Base<T> & { value: (row: T) => string | null | undefined; muted?: boolean; width?: string }): DataTableColumn<T> {
@@ -63,6 +67,11 @@ export function dateColumn<T>({
   return {
     ...base,
     cell: (row) => (relative ? <RelativeDateCell iso={value(row)} now={now} /> : <DateCell iso={value(row)} time={time} />),
+    // The exact date, even for a relative one: « il y a 3 jours » tells nothing once pasted.
+    copy: (row) => {
+      const iso = value(row);
+      return iso ? (time || relative ? formatDateTime(iso) : formatDate(iso)) : null;
+    },
     skeleton: <Skeleton className="inline-block h-4 w-20" />,
   };
 }
@@ -81,6 +90,7 @@ export function statusColumn<T, K extends string>({
   return {
     ...base,
     cell: (row) => <StatusCell {...statuses[value(row)]} />,
+    copy: (row) => statuses[value(row)].label,
     skeleton: (
       <span className="flex items-center gap-1.5">
         <Skeleton className="size-1.5 rounded-full" />
@@ -92,12 +102,12 @@ export function statusColumn<T, K extends string>({
 
 /** Labels among many, e.g. categories. */
 export function pillsColumn<T>({ value, max, ...base }: Base<T> & { value: (row: T) => Pill[]; max?: number }): DataTableColumn<T> {
-  return { ...base, cell: (row) => <PillsCell items={value(row)} max={max} />, skeleton: <Skeleton className="h-5 w-20 rounded-full" /> };
+  return { ...base, cell: (row) => <PillsCell items={value(row)} max={max} />, copy: (row) => labelsOf(value(row)), skeleton: <Skeleton className="h-5 w-20 rounded-full" /> };
 }
 
 /** Things told by their icon, e.g. connections or tags. */
 export function iconsColumn<T>({ value, max, ...base }: Base<T> & { value: (row: T) => IconItem[]; max?: number }): DataTableColumn<T> {
-  return { ...base, cell: (row) => <IconsCell items={value(row)} max={max} />, skeleton: <Skeleton className="h-6 w-14 rounded-md" /> };
+  return { ...base, cell: (row) => <IconsCell items={value(row)} max={max} />, copy: (row) => labelsOf(value(row)), skeleton: <Skeleton className="h-6 w-14 rounded-md" /> };
 }
 
 /** An account, mostly the first column: locked, its @username copied; null shows `empty`, else a dash; `avatar: false` when an image column shows it. */

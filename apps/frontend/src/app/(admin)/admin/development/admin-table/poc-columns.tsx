@@ -125,6 +125,7 @@ export const USERS: DataTableConfig<PocUser> = {
         ) : (
           <EmptyValue />
         ),
+      copy: ({ lastAction }) => lastAction?.label ?? null,
     }),
     buttonsColumn({
       id: "quick",

@@ -38,13 +38,30 @@ export interface PocBadge {
   createdAt: string;
   /** None on some, to show the empty cover. */
   picture: CellImage | null;
+  /** Of its icon, `#rrggbb`; none on some. */
+  color: string | null;
+  /** A Lucide icon, e.g. `medal`. */
+  icon: string;
+  /** In the unit of its collection. */
+  threshold: number;
+  /** Still won. */
+  active: boolean;
+  /** A day `YYYY-MM-DD`, before which it is not won. */
+  availableFrom: string | null;
+  /** An instant after which it is no longer won. */
+  endsAt: string | null;
 }
 
-export const COLLECTIONS: Record<PocCollection, { label: string; tone: Tone }> = {
-  distance: { label: "Distance", tone: "blue" },
-  tiles: { label: "Tuiles", tone: "fuchsia" },
-  stations: { label: "Gares", tone: "amber" },
+export const COLLECTIONS: Record<PocCollection, { label: string; tone: Tone; unit: string; icon: string }> = {
+  distance: { label: "Distance", tone: "blue", unit: "km", icon: "route" },
+  tiles: { label: "Tuiles", tone: "fuchsia", unit: "tuiles", icon: "grid-3x3" },
+  stations: { label: "Gares", tone: "amber", unit: "gares", icon: "train-front" },
 };
+
+/** The collections as the options of a list. */
+export const COLLECTION_OPTIONS = Object.entries(COLLECTIONS).map(([value, { label, tone }]) => ({ value, label, tone }));
+
+const COLORS = ["#2563eb", "#c026d3", "#d97706", null, "#16a34a"];
 
 const NAMES: Record<PocCollection, string[]> = {
   distance: ["Premier kilomètre", "Semi-marathon", "Marathon", "Tour de France", "Équateur"],
@@ -62,6 +79,12 @@ export const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMa
     holders: Math.round(1200 / (index + 1) ** 1.6) + at * 7,
     createdAt: new Date(Date.UTC(2026, 3 + at, 2 + index * 9)).toISOString(),
     picture: index === 3 ? null : { src: landscape(at * 120 + index * 25, index * 20), alt: `Image du badge ${name}` },
+    color: COLORS[(at + index) % COLORS.length]!,
+    icon: COLLECTIONS[collection].icon,
+    threshold: 10 ** (index + 1) / (collection === "tiles" ? 10 : 1),
+    active: index !== 2,
+    availableFrom: index % 2 === 0 ? `2026-0${4 + at}-01` : null,
+    endsAt: index === 4 ? new Date(Date.UTC(2027, 0, 1, 23)).toISOString() : null,
   })),
 );
 BADGES.forEach((badge, index) => (badge.position = index + 1));

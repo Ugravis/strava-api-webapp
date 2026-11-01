@@ -38,7 +38,7 @@ import {
 import { UserAvatar } from "@/components/user/user-avatar";
 import { USERS } from "./poc-columns";
 import { POC_NOW, type PocUser } from "./poc-data";
-import { CONNECTIONS, connectionsOf, tagItems, UserMarks } from "./poc-marks";
+import { CATEGORY_OPTIONS, CONNECTIONS, connectionsOf, tagItems, UserMarks } from "./poc-marks";
 import { loadPocUser, savePocUser, usePocVersion } from "./poc-store";
 
 /** Every action of the demo only says what it would do. */
@@ -179,7 +179,19 @@ export function PocUserDetail({ user }: { user: PocUser }) {
         </DetailFields>
       </DetailSection>
       <DetailSection title="Activité">
-        <DetailColumnFields row={user} columns={USERS.columns} ids={["activities", "storage", "categories"]} />
+        {/* Drawn by its column, several picked in a list, saved as the list closes. */}
+        <DetailColumnFields
+          row={user}
+          columns={USERS.columns}
+          ids={[
+            "activities",
+            "storage",
+            {
+              id: "categories",
+              edit: { kind: "multiselect", value: user.categories, options: CATEGORY_OPTIONS, onSave: (categories) => savePocUser(user.id, { categories: categories as PocUser["categories"] }) },
+            },
+          ]}
+        />
       </DetailSection>
       <DetailSection title="Technique">
         <DetailColumnFields row={user} columns={USERS.columns} ids={["id", "avatarKey"]} />

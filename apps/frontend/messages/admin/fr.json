@@ -51,7 +51,6 @@
     "reasonPlaceholder": "Expliquez la décision, elle est consignée dans le journal.",
     "reasonHint": "Entre {min} et {max} caractères.",
     "presets": "Raisons fréquentes",
-    "confirmation": "Tapez {expected} pour confirmer",
     "done": "Action effectuée.",
     "failed": "L'action a échoué.",
     "errors": {
@@ -61,28 +60,11 @@
       "429": "Trop d'actions d'affilée, réessayez dans une minute.",
       "other": "Une erreur est survenue, réessayez.",
       "409": "Cet identifiant est déjà utilisé."
-    },
-    "panel": {
-      "label": "Panneau",
-      "fold": "Replier le panneau",
-      "unfold": "Déplier le panneau",
-      "close": "Fermer le panneau"
     }
   },
   "users": {
     "title": "Utilisateurs",
     "description": "Comptes du site : consultation, modération, suspension et suppression.",
-    "badges": {
-      "suspended": "Suspendu",
-      "strava": "Strava",
-      "private": "Privé",
-      "public": "Public"
-    },
-    "connections": {
-      "strava": "Strava",
-      "google": "Google",
-      "password": "Email et mot de passe"
-    },
     "overview": {
       "accounts": "Comptes",
       "accountsDetail": "{share} reliés à Strava",
@@ -95,139 +77,6 @@
     }
   },
   "user": {
-    "title": "Fiche utilisateur",
-    "notFound": "Ce compte n'existe plus.",
-    "self": "C'est votre compte : les actions sont désactivées.",
-    "protected": "Membre de l'équipe de rang égal ou supérieur : les actions sont désactivées.",
-    "readOnly": "Lecture seule : votre rôle n'a la permission d'aucune action sur les comptes.",
-    "sections": {
-      "account": "Compte",
-      "profile": "Profil",
-      "strava": "Strava",
-      "community": "Communauté",
-      "suspension": "Suspension",
-      "userTags": "Tags",
-      "history": "Historique",
-      "actions": "Actions",
-      "connections": "Connexions"
-    },
-    "fields": {
-      "id": "Id",
-      "email": "Email",
-      "createdAt": "Inscription",
-      "lastSeenAt": "Dernière visite",
-      "signIn": "Connexion",
-      "sessions": "Sessions actives",
-      "displayName": "Nom affiché",
-      "username": "Pseudo",
-      "bio": "Bio",
-      "city": "Ville",
-      "country": "Pays",
-      "visibility": "Profil",
-      "stravaAccount": "Compte",
-      "stravaConnectedAt": "Lié le",
-      "stravaLastSync": "Dernière synchro",
-      "activities": "Activités",
-      "followers": "Abonnés",
-      "following": "Abonnements",
-      "suspendedSince": "Depuis",
-      "suspendedUntil": "Jusqu'au",
-      "suspensionReason": "Raison",
-      "indefinite": "Durée indéterminée"
-    },
-    "signIn": {
-      "password": "Email et mot de passe",
-      "google": "Google"
-    },
-    "stravaNone": "Aucun compte Strava lié.",
-    "userTags": {
-      "grant": "Attribuer",
-      "revoke": "Retirer",
-      "granted": "Attribué le {date}"
-    },
-    "historyEmpty": "Aucune action sur ce compte.",
-    "historyAll": "Tout l'historique",
-    "actions": {
-      "moderate": {
-        "trigger": "Modérer le profil",
-        "title": "Réinitialiser des champs du profil",
-        "description": "Les champs choisis sont effacés ; le pseudo est remplacé par un pseudo généré. L'utilisateur est notifié avec la raison.",
-        "fields": "Champs à réinitialiser",
-        "submit": "Réinitialiser",
-        "presets": [
-          "Contenu offensant ou haineux",
-          "Usurpation d'identité",
-          "Publicité ou spam",
-          "Informations personnelles d'un tiers"
-        ],
-        "short": "Modérer"
-      },
-      "suspend": {
-        "trigger": "Suspendre",
-        "title": "Suspendre le compte",
-        "description": "Les sessions sont fermées, la connexion est refusée avec la raison et le profil est masqué. Les données et la synchro Strava sont conservées.",
-        "duration": "Durée",
-        "durations": {
-          "1": "24 heures",
-          "7": "7 jours",
-          "30": "30 jours",
-          "indefinite": "Indéterminée",
-          "custom": "Jusqu'à une date"
-        },
-        "until": "Fin de la suspension",
-        "submit": "Suspendre",
-        "presets": [
-          "Comportement abusif envers la communauté",
-          "Spam ou activité automatisée",
-          "Usurpation d'identité",
-          "Non-respect des conditions d'utilisation"
-        ],
-        "short": "Suspendre"
-      },
-      "lift": {
-        "trigger": "Lever la suspension",
-        "title": "Lever la suspension",
-        "description": "Le compte peut de nouveau se connecter et son profil redevient visible.",
-        "submit": "Lever",
-        "short": "Lever"
-      },
-      "revokeSessions": {
-        "trigger": "Déconnecter partout",
-        "title": "Fermer toutes les sessions",
-        "description": "L'utilisateur est déconnecté de tous ses appareils et peut se reconnecter aussitôt.",
-        "submit": "Déconnecter",
-        "short": "Déconnecter",
-        "presets": [
-          "Session compromise ou appareil perdu",
-          "Demande de l'utilisateur",
-          "Activité suspecte sur le compte"
-        ]
-      },
-      "unlinkStrava": {
-        "trigger": "Délier Strava",
-        "title": "Délier le compte Strava",
-        "description": "L'accès est révoqué chez Strava et les activités synchronisées sont supprimées. L'utilisateur est notifié avec la raison et pourra relier son compte.",
-        "submit": "Délier",
-        "presets": [
-          "Compte Strava d'un tiers",
-          "Données incohérentes à resynchroniser",
-          "Demande de l'utilisateur"
-        ],
-        "short": "Délier Strava"
-      },
-      "delete": {
-        "trigger": "Supprimer le compte",
-        "title": "Supprimer définitivement le compte",
-        "description": "Le compte et toutes ses données sont supprimés, l'accès Strava est révoqué. Irréversible ; seul le journal garde la trace de l'action.",
-        "submit": "Supprimer",
-        "presets": [
-          "Demande d'effacement (RGPD)",
-          "Compte frauduleux",
-          "Compte en double"
-        ],
-        "short": "Supprimer"
-      }
-    },
     "moderatedFields": {
       "username": "Pseudo",
       "displayName": "Nom affiché",
@@ -235,9 +84,11 @@
       "city": "Ville et pays",
       "avatar": "Photo"
     },
-    "profileHint": "Saisi librement par l'utilisateur : à modérer si besoin.",
-    "backToList": "Retour aux utilisateurs",
-    "historyBy": "par {name}"
+    "userTags": {
+      "grant": "Attribuer",
+      "revoke": "Retirer",
+      "granted": "Attribué le {date}"
+    }
   },
   "auditLog": {
     "title": "Logs",

@@ -23,7 +23,7 @@ export {
 } from "./columns";
 export { CopyButton, drawCell, FLOATING_BUTTON, EmptyValue, IconBox, MoreCount, Truncate } from "./cells/base";
 export { BooleanCell, BytesCell, CodeCell, DateCell, LinkCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
-export { type CellUser, IconsCell, type IconItem, type Look, LookCell, Mark, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
+export { type CellUser, IconsCell, type IconItem, type Look, LookCell, lookStyle, Mark, type Pill, PILL_TONES, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 export { type CellImage, ImageCell, ImageCover } from "./cells/image";
 export { CellButton, CellButtons, RowActions } from "./cells/actions";
 export { TableCheckbox } from "./cells/checkbox";

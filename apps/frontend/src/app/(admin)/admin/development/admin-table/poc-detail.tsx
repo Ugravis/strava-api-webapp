@@ -16,9 +16,9 @@ import {
   UserPlusIcon,
   XIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import { toast } from "sonner";
 import {
+  DetailAction,
   DetailActions,
   DetailColumnFields,
   DetailCover,
@@ -27,13 +27,14 @@ import {
   DetailFields,
   DetailHeader,
   DetailItem,
+  DetailItemButton,
   DetailItems,
   DetailLoader,
+  DetailSkeleton,
   DetailSection,
   DetailTimeline,
   DetailTimelineItem,
 } from "@/components/admin/detail";
-import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { USERS } from "./poc-columns";
 import { POC_NOW, type PocUser } from "./poc-data";
@@ -43,20 +44,11 @@ import { loadPocUser, savePocUser, usePocVersion } from "./poc-store";
 /** Every action of the demo only says what it would do. */
 const would = (what: string) => () => toast(`Ouvrirait : ${what}`);
 
-/** A small icon button of a line of `DetailItems`. */
-function ItemButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
-  return (
-    <Button variant="ghost" size="icon-xs" aria-label={label} title={label} onClick={onClick}>
-      {children}
-    </Button>
-  );
-}
-
 /** The account loaded by the panel, its skeleton meanwhile; loaded again once saved. */
 export function PocUserPanel({ id }: { id: string }) {
   const version = usePocVersion();
   return (
-    <DetailLoader id={id} load={loadPocUser} refreshKey={version}>
+    <DetailLoader id={id} load={loadPocUser} refreshKey={version} skeleton={<DetailSkeleton cover actions={3} sections={[6, 2, 3, 3]} />}>
       {(user) => <PocUserDetail user={user} />}
     </DetailLoader>
   );
@@ -99,26 +91,13 @@ export function PocUserDetail({ user }: { user: PocUser }) {
         title={user.displayName ?? `@${user.username}`}
         subtitle={`@${user.username}`}
         marks={<UserMarks user={user} />}
-        actions={
-          <Button variant="outline" size="icon-sm" aria-label="Modifier" title="Modifier" onClick={would(`la modification de @${user.username}`)}>
-            <PencilIcon aria-hidden />
-          </Button>
-        }
+        actions={<DetailAction label="Modifier" icon={<PencilIcon aria-hidden />} onClick={would(`la modification de @${user.username}`)} />}
       />
       {/* A row of buttons right under the header. */}
       <DetailActions>
-        <Button variant="outline" size="sm" onClick={would("un e-mail")}>
-          <MailIcon aria-hidden />
-          Écrire
-        </Button>
-        <Button variant="outline" size="sm" onClick={would("la remise à zéro du nom")}>
-          <RotateCcwIcon aria-hidden />
-          Réinitialiser le nom
-        </Button>
-        <Button variant="destructive" size="sm" onClick={would("la suspension")}>
-          <BanIcon aria-hidden />
-          Suspendre
-        </Button>
+        <DetailAction label="Écrire" icon={<MailIcon aria-hidden />} onClick={would("un e-mail")} />
+        <DetailAction label="Réinitialiser le nom" icon={<RotateCcwIcon aria-hidden />} onClick={would("la remise à zéro du nom")} />
+        <DetailAction label="Suspendre" icon={<BanIcon aria-hidden />} variant="destructive" onClick={would("la suspension")} />
       </DetailActions>
       {user.status === "suspended" && (
         <DetailSection title="Suspension" tone="danger">
@@ -161,13 +140,13 @@ export function PocUserDetail({ user }: { user: PocUser }) {
                     icon={CONNECTIONS[key].icon}
                     actions={
                       key === "password" ? (
-                        <ItemButton label="Envoyer un lien de réinitialisation" onClick={would("la réinitialisation du mot de passe")}>
+                        <DetailItemButton label="Envoyer un lien de réinitialisation" onClick={would("la réinitialisation du mot de passe")}>
                           <KeyRoundIcon />
-                        </ItemButton>
+                        </DetailItemButton>
                       ) : (
-                        <ItemButton label={`Délier ${CONNECTIONS[key].label}`} onClick={would(`la déliaison de ${CONNECTIONS[key].label}`)}>
+                        <DetailItemButton label={`Délier ${CONNECTIONS[key].label}`} onClick={would(`la déliaison de ${CONNECTIONS[key].label}`)}>
                           <UnlinkIcon />
-                        </ItemButton>
+                        </DetailItemButton>
                       )
                     }
                   >
@@ -186,9 +165,9 @@ export function PocUserDetail({ user }: { user: PocUser }) {
                     key={tag.key}
                     icon={tag.icon}
                     actions={
-                      <ItemButton label={`Retirer ${tag.label}`} onClick={would(`le retrait du tag ${tag.label}`)}>
+                      <DetailItemButton label={`Retirer ${tag.label}`} onClick={would(`le retrait du tag ${tag.label}`)}>
                         <XIcon />
-                      </ItemButton>
+                      </DetailItemButton>
                     }
                   >
                     {tag.label}

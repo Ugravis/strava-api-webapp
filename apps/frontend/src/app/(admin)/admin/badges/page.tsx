@@ -56,7 +56,7 @@ export default async function AdminBadgesPage() {
           <h2 className="font-medium">Collections</h2>
           <p className="text-sm text-muted-foreground">Regroupent des badges de tous les sports, en onglets sur la page Succès.</p>
         </div>
-        <ThemesTable rights={rights} />
+        <ThemesTable themes={themes} rights={rights} />
       </section>
       <section className="flex flex-col gap-3">
         <h2 className="font-medium">Badges</h2>

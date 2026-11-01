@@ -62,7 +62,8 @@ export function DetailFieldButton({ label, disabled, onClick, children }: { labe
 /**
  * A label and its value, « — » when it has none. On hover, buttons float at
  * the right of the value, in the look of the copy button of the tables:
- * `tools` (any `DetailFieldButton`), copy (`copy`), edit (`edit`). `stacked`
+ * `tools` (any `DetailFieldButton`), copy, edit (`edit`). A text or a number
+ * is copied as shown; `copy` gives the text of any other value, `null` none. `stacked`
  * sets the value under its label across the whole width, a long text, the
  * buttons then at the top right of the panel. The value may be `DetailItems`,
  * one line per value.
@@ -96,6 +97,7 @@ export function DetailField({
   const multiline = !!edit?.multiline;
   const value = children ?? (edit ? edit.value : undefined);
   const empty = value === null || value === undefined || value === "" || value === false;
+  const copied = copy !== undefined ? copy : typeof value === "string" || typeof value === "number" ? String(value) : null;
   const start = () => edit && setDraft(edit.value ?? "");
 
   const save = async () => {
@@ -134,10 +136,10 @@ export function DetailField({
       </DetailFieldButton>
     </>
   ) : (
-    (tools || copy || edit) && (
+    (tools || copied || edit) && (
       <>
         {tools}
-        {copy && <CopyButton value={copy} inline />}
+        {copied && <CopyButton value={copied} inline />}
         {edit && (
           <DetailFieldButton label={`Modifier : ${label}`} onClick={start}>
             <PencilIcon />

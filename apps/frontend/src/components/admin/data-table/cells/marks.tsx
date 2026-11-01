@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { cn } from "@/lib/utils";
 import { EmptyValue, IconBox, MoreCount, Truncate } from "./base";
@@ -20,7 +20,8 @@ const DOTS: Record<Tone, string> = {
   fuchsia: "bg-fuchsia-500",
 };
 
-const PILLS: Record<Tone, string> = {
+/** The colours of a pill, also the pill of a section of a detail. */
+export const PILL_TONES: Record<Tone, string> = {
   gray: "bg-muted text-muted-foreground",
   green: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   red: "bg-destructive/15 text-destructive",
@@ -53,7 +54,7 @@ export function PillsCell({ items, max = 2 }: { items: Pill[]; max?: number }) {
   return (
     <span className="flex items-center gap-1">
       {items.slice(0, max).map((item) => (
-        <span key={item.label} className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-medium", PILLS[item.tone])}>
+        <span key={item.label} className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-medium", PILL_TONES[item.tone])}>
           {item.label}
         </span>
       ))}
@@ -86,7 +87,7 @@ export function IconsCell({ items, max = 3 }: { items: IconItem[]; max?: number 
 /** A small round icon in a pill, beside a name: a role, a suspension. */
 export function Mark({ label, tone, icon }: { label: string; tone: Tone; icon: ReactNode }) {
   return (
-    <span role="img" aria-label={label} title={label} className={cn("inline-flex h-4 shrink-0 items-center rounded-full px-1 [&_svg]:size-2.5", PILLS[tone])}>
+    <span role="img" aria-label={label} title={label} className={cn("inline-flex h-4 shrink-0 items-center rounded-full px-1 [&_svg]:size-2.5", PILL_TONES[tone])}>
       {icon}
     </span>
   );
@@ -139,7 +140,7 @@ export interface Look {
 
 /** An item told by its look, e.g. a badge or a tag: its icon in a disc, then its name, on a single line. */
 export function LookCell({ look, marks }: { look: Look; marks?: ReactNode }) {
-  const style = look.background ? { backgroundColor: look.background, color: textOn(look.background) } : look.color ? { color: look.color } : undefined;
+  const style = lookStyle(look);
   return (
     <span className="flex max-w-48 items-center gap-2 sm:max-w-64">
       <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-3.5" style={style} aria-hidden>
@@ -149,6 +150,11 @@ export function LookCell({ look, marks }: { look: Look; marks?: ReactNode }) {
       {marks}
     </span>
   );
+}
+
+/** The colours of the disc of a look, also the media of a detail. */
+export function lookStyle({ background, color }: Pick<Look, "background" | "color">): CSSProperties | undefined {
+  return background ? { backgroundColor: background, color: textOn(background) } : color ? { color } : undefined;
 }
 
 /** Black or white, whichever reads better on the colour. */

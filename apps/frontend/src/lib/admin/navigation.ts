@@ -9,8 +9,6 @@ export const adminRoutes = {
   dashboard: "/admin/dashboard",
   statistics: "/admin/statistics",
   users: "/admin/users",
-  /** The panel of a user, opened above the current page. */
-  user: (id: string) => `/admin/users/${id}`,
   badges: "/admin/badges",
   userTags: "/admin/user-tags",
   reservedUsernames: "/admin/reserved-usernames",

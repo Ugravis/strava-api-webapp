@@ -153,6 +153,7 @@ export function imageColumn<T>({ value, ...base }: Base<T> & { value: (row: T) =
   return {
     ...base,
     cell: (row) => <ImageCell image={value(row)} />,
+    copy: (row) => value(row)?.src ?? null,
     cover: (row) => <ImageCover image={value(row)} />,
     skeleton: <Skeleton className="h-6 w-9 rounded-sm" />,
   };

@@ -41,7 +41,7 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
           {scope.actor && <FilterBadge label={t("filters.actor", { name: names(scope.actor) })} clear={t("filters.clear")} href={href("actor")} />}
         </div>
       )}
-      <AuditTable scope={scope} superAdmin={permissions.includes("audit.hide")} usersPath={adminRoutes.users} />
+      <AuditTable scope={scope} superAdmin={permissions.includes("audit.hide")} />
     </>
   );
 }

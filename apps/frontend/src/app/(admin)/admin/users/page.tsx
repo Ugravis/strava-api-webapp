@@ -11,9 +11,9 @@ import { UsersTable } from "./users-table";
 const number = new Intl.NumberFormat("fr-FR");
 const percent = (part: number, total: number) => (total > 0 ? `${Math.round((part / total) * 100)} %` : "—");
 
-/** The figures of the accounts, then the accounts; one opens in the panel above. */
+/** The figures of the accounts, then the accounts; one opens in the side panel. */
 export default async function AdminUsersPage() {
-  await requireAdminMember();
+  const me = await requireAdminMember();
   const t = getAdminTranslations("users");
   const o = getAdminTranslations("users.overview");
   const [overview, tags] = await Promise.all([adminApi<AdminUsersOverview>("/users/overview"), adminApi<AdminUserTag[]>("/user-tags")]);
@@ -34,7 +34,7 @@ export default async function AdminUsersPage() {
           <StatTile icon={BanIcon} label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} />
         </div>
       )}
-      <UsersTable basePath={adminRoutes.users} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
+      <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
     </>
   );
 }

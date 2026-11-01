@@ -14,11 +14,11 @@ import {
   type UpdateBadgeRequest,
   type UpdateBadgeThemeRequest,
 } from "@kilotrace/shared/admin";
-import type { TablePage, TableQuery } from "@kilotrace/shared/table";
+import { TABLE_MAX_PAGE_SIZE, type TablePage, type TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
 import type { TableMove } from "@/components/admin/data-table";
 import { reasonOf, runAdminAction } from "@/lib/admin/actions";
-import { fetchAdminTable } from "@/lib/admin/table";
+import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
 import { scaleOf } from "./units";
 
 /** A page of the table of the badges. */
@@ -29,6 +29,30 @@ export async function fetchBadgesTable(query: TableQuery): Promise<TablePage<Adm
 /** A page of the table of the collections. */
 export async function fetchThemesTable(query: TableQuery): Promise<TablePage<AdminBadgeThemeRow>> {
   return fetchAdminTable<AdminBadgeThemeRow>("/badge-themes/table", query);
+}
+
+/** A badge for its detail, null once deleted. */
+export async function loadBadge(id: string): Promise<AdminBadge | null> {
+  if (!ADMIN_BADGE_SLUG.test(id)) return null;
+  return fetchAdminRow<AdminBadge>("/badges/table", id, (badge) => badge.id);
+}
+
+/** A collection for its detail, with its badges in their order; null once deleted. */
+export async function loadTheme(id: string): Promise<{ theme: AdminBadgeThemeRow; badges: AdminBadge[] } | null> {
+  if (!ADMIN_BADGE_SLUG.test(id)) return null;
+  const [theme, badges] = await Promise.all([
+    fetchAdminRow<AdminBadgeThemeRow>("/badge-themes/table", id, (each) => each.id),
+    fetchAdminTable<AdminBadge>("/badges/table", {
+      q: "",
+      filters: { theme: [id] },
+      sort: { id: "position", desc: false },
+      groupBy: null,
+      folded: [],
+      page: 1,
+      pageSize: TABLE_MAX_PAGE_SIZE,
+    }),
+  ]);
+  return theme && { theme, badges: badges.entries.flatMap((entry) => ("row" in entry ? [entry.row] : [])) };
 }
 
 /*
@@ -44,6 +68,11 @@ export async function createBadge(_: ActionResult | null, formData: FormData): P
 export async function updateBadge(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const body: UpdateBadgeRequest = badgeOf(formData);
   return runAdminAction(`/badges/${checkedSlug(id)}`, "PATCH", body);
+}
+
+/** The same, edited in place from the detail: every field sent, as the backend replaces them all. */
+export async function saveBadge(id: string, body: UpdateBadgeRequest): Promise<ActionResult> {
+  return runAdminAction(`/badges/${checkedSlug(id)}`, "PATCH", { ...body, name: body.name.trim(), description: body.description.trim() });
 }
 
 export async function setBadgeActive(id: string, active: boolean): Promise<ActionResult> {
@@ -76,6 +105,12 @@ export async function createTheme(_: ActionResult | null, formData: FormData): P
 
 export async function updateTheme(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const body: UpdateBadgeThemeRequest = { name: text(formData, "name") };
+  return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "PATCH", body);
+}
+
+/** Renamed in place from the detail. */
+export async function saveTheme(id: string, name: string): Promise<ActionResult> {
+  const body: UpdateBadgeThemeRequest = { name: name.trim() };
   return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "PATCH", body);
 }
 

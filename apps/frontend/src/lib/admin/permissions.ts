@@ -1,4 +1,3 @@
-import "server-only";
 import { ADMIN_ROLES, type AdminMeResponse, type AdminPermission, highestAdminRole } from "@kilotrace/shared/admin";
 
 /** Rank of the highest back-office role, -1 without any, as the backend compares them. */

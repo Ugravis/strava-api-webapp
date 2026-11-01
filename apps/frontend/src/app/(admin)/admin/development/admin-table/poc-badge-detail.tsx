@@ -3,6 +3,7 @@
 import { CopyIcon, MedalIcon, PencilIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
+  DetailAction,
   DetailActions,
   DetailColumnFields,
   DetailCover,
@@ -10,9 +11,9 @@ import {
   DetailFields,
   DetailHeader,
   DetailLoader,
+  DetailSkeleton,
   DetailSection,
 } from "@/components/admin/detail";
-import { Button } from "@/components/ui/button";
 import { BADGES_TABLE, COLLECTIONS, type PocBadge } from "./poc-order";
 import { loadPocBadge, savePocBadge, usePocVersion } from "./poc-store";
 
@@ -29,7 +30,7 @@ const RULES: Record<PocBadge["collection"], string> = {
 export function PocBadgePanel({ id }: { id: string }) {
   const version = usePocVersion();
   return (
-    <DetailLoader id={id} load={loadPocBadge} refreshKey={version}>
+    <DetailLoader id={id} load={loadPocBadge} refreshKey={version} skeleton={<DetailSkeleton cover sections={[4, 1]} />}>
       {(badge) => <PocBadgeDetail badge={badge} />}
     </DetailLoader>
   );
@@ -64,18 +65,9 @@ export function PocBadgeDetail({ badge }: { badge: PocBadge }) {
       </DetailSection>
       {/* Kept at the bottom of the panel as the detail scrolls. */}
       <DetailActions sticky>
-        <Button size="sm" onClick={() => toast(`Ouvrirait la modification de ${badge.name}`)}>
-          <PencilIcon aria-hidden />
-          Modifier
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => toast(`Ouvrirait la copie de ${badge.name}`)}>
-          <CopyIcon aria-hidden />
-          Dupliquer
-        </Button>
-        <Button variant="destructive" size="sm" className="ml-auto" onClick={() => toast(`Ouvrirait la suppression de ${badge.name}`)}>
-          <Trash2Icon aria-hidden />
-          Supprimer
-        </Button>
+        <DetailAction label="Modifier" icon={<PencilIcon aria-hidden />} variant="default" onClick={() => toast(`Ouvrirait la modification de ${badge.name}`)} />
+        <DetailAction label="Dupliquer" icon={<CopyIcon aria-hidden />} onClick={() => toast(`Ouvrirait la copie de ${badge.name}`)} />
+        <DetailAction label="Supprimer" icon={<Trash2Icon aria-hidden />} variant="destructive" onClick={() => toast(`Ouvrirait la suppression de ${badge.name}`)} />
       </DetailActions>
     </>
   );

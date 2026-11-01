@@ -11,11 +11,17 @@ import type { ActionResult } from "@/components/admin/action-state";
 import type { TableMove } from "@/components/admin/data-table";
 import { reasonOf, runAdminAction } from "@/lib/admin/actions";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { fetchAdminTable } from "@/lib/admin/table";
+import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
 
 /** A page of the table of the user tags. */
 export async function fetchUserTagsTable(query: TableQuery): Promise<TablePage<AdminUserTag>> {
   return fetchAdminTable<AdminUserTag>("/user-tags/table", query);
+}
+
+/** A user tag for its detail, null once deleted. */
+export async function loadUserTag(id: string): Promise<AdminUserTag | null> {
+  if (!ADMIN_BADGE_SLUG.test(id)) return null;
+  return fetchAdminRow<AdminUserTag>("/user-tags/table", id, (userTag) => userTag.id);
 }
 
 /*
@@ -33,6 +39,17 @@ export async function createUserTag(_: ActionResult | null, formData: FormData):
 export async function updateUserTag(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const body: UpdateUserTagRequest = userTagOf(formData);
   return runAdminAction(`/user-tags/${checkedSlug(id)}`, "PATCH", body);
+}
+
+/** The same, edited in place from the detail: every field sent, as the backend replaces them all. */
+export async function saveUserTag(id: string, body: UpdateUserTagRequest): Promise<ActionResult> {
+  const update: UpdateUserTagRequest = {
+    name: body.name.trim(),
+    description: body.description?.trim() || null,
+    icon: body.icon,
+    color: body.color || null,
+  };
+  return runAdminAction(`/user-tags/${checkedSlug(id)}`, "PATCH", update);
 }
 
 export async function deleteUserTag(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {

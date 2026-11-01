@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { type CellImage, ImageCover } from "@/components/admin/data-table";
+import { type CellImage, ImageCover, type Look, lookStyle } from "@/components/admin/data-table";
 
 /**
  * A large image across the top of the detail, above its header; a click opens
@@ -41,5 +41,21 @@ export function DetailHeader({
       </div>
       {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
     </header>
+  );
+}
+
+/**
+ * The `media` of a `DetailHeader` told by an icon: a large disc, in the look
+ * of the first column of its table (`background` fills it, `color` tints the icon).
+ */
+export function DetailMedia({ icon, background, color }: { icon: ReactNode } & Pick<Look, "background" | "color">) {
+  return (
+    <span
+      className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-6"
+      style={lookStyle({ background, color })}
+      aria-hidden
+    >
+      {icon}
+    </span>
   );
 }

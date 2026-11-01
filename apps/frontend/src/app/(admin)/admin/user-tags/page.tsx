@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { type UserTagRights, UserTagsTable } from "./user-tags-table";
+import type { UserTagRights } from "./user-tag-bits";
+import { UserTagsTable } from "./user-tags-table";
 
 const number = new Intl.NumberFormat("fr-FR");
 

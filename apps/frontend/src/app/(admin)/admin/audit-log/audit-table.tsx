@@ -45,9 +45,8 @@ import {
   UserPenIcon,
   ZapIcon,
 } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PanelLink } from "@/components/admin/panel-link";
 import {
   type DataTableConfig,
   DataTable,
@@ -63,7 +62,10 @@ import {
 } from "@/components/admin/data-table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useSplitPanel } from "@/components/split-panel";
 import { UserAvatar } from "@/components/user/user-avatar";
+import { loadUserDetail } from "../users/actions";
+import { UserRowPanel } from "../users/user-detail";
 import { type AuditScope, fetchAuditTable, setEntryHidden } from "./actions";
 import type { AuditRow } from "./audit-row";
 
@@ -133,11 +135,22 @@ function copy(text: string, done: string) {
  * shows one again. A row opens the whole entry; `scope` keeps the entries
  * of one author or one target.
  */
-export function AuditTable({ scope, superAdmin, usersPath }: { scope: AuditScope; superAdmin: boolean; usersPath: string }) {
+export function AuditTable({ scope, superAdmin }: { scope: AuditScope; superAdmin: boolean }) {
   // Kept once closed, so that the texts stay while the dialog fades out.
   const [open, setOpen] = useState<{ open: boolean; entry: AuditRow | null }>({ open: false, entry: null });
   // Each change gives a new source, fetched again.
   const [version, setVersion] = useState(0);
+  // A user of an entry opens in the side panel, over the logs.
+  const { open: openPanel } = useSplitPanel();
+  const openUser = useCallback(
+    (user: { id: string; username: string }) => openPanel(<UserRowPanel id={user.id} />, { id: user.id, title: `@${user.username}` }),
+    [openPanel],
+  );
+  // A shared link: the user of `?row=`, once on arrival, fetched by id.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("row");
+    if (id) loadUserDetail(id).then((data) => data && openUser(data.user), () => {});
+  }, [openUser]);
 
   const config = useMemo<DataTableConfig<AuditRow>>(() => {
     const toggle = async (entry: AuditRow) => {
@@ -224,10 +237,16 @@ export function AuditTable({ scope, superAdmin, usersPath }: { scope: AuditScope
           <DialogHeader>
             <DialogTitle>Entrée du journal</DialogTitle>
           </DialogHeader>
-          {/* A link inside, e.g. to a user, closes the dialog on its way. */}
-          <div onClick={(event) => event.target instanceof Element && event.target.closest("a") && setOpen({ ...open, open: false })}>
-            {open.entry && <EntryDetails entry={open.entry} usersPath={usersPath} />}
-          </div>
+          {open.entry && (
+            <EntryDetails
+              entry={open.entry}
+              // The dialog closes on its way to the panel.
+              onUser={(user) => {
+                setOpen({ ...open, open: false });
+                openUser(user);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>
@@ -235,17 +254,17 @@ export function AuditTable({ scope, superAdmin, usersPath }: { scope: AuditScope
 }
 
 /** Everything about an entry, in its dialog. */
-function EntryDetails({ entry, usersPath }: { entry: AuditRow; usersPath: string }) {
+function EntryDetails({ entry, onUser }: { entry: AuditRow; onUser: (user: { id: string; username: string }) => void }) {
   const status = entry.status ?? "—";
   return (
     <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2 text-sm">
       <Item label="Date">{formatDateTime(entry.createdAt)}</Item>
       <Item label="Auteur">
-        <UserLink user={entry.actor} fallback="Système" usersPath={usersPath} />
+        <UserLink user={entry.actor} fallback="Système" onOpen={onUser} />
       </Item>
       <Item label="Cible">
         {entry.targetUser ? (
-          <UserLink user={entry.targetUser} fallback="—" usersPath={usersPath} />
+          <UserLink user={entry.targetUser} fallback="—" onOpen={onUser} />
         ) : (
           <span className="text-muted-foreground">{entry.targetId ? `${entry.targetType} ${entry.targetId}` : "—"}</span>
         )}
@@ -285,18 +304,19 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** A user of the entry, opening their panel while the account exists. */
-function UserLink({ user, fallback, usersPath }: { user: AuditUser | null; fallback: string; usersPath: string }) {
+/** A user of the entry, opening their detail in the side panel while the account exists. */
+function UserLink({ user, fallback, onOpen }: { user: AuditUser | null; fallback: string; onOpen: (user: { id: string; username: string }) => void }) {
   if (!user) return <span className="text-muted-foreground">{fallback}</span>;
-  if (!user.username) return <span className="text-muted-foreground italic">Compte supprimé</span>;
+  const { username } = user;
+  if (!username) return <span className="text-muted-foreground italic">Compte supprimé</span>;
   return (
-    <PanelLink
-      href={`${usersPath}/${user.id}`}
-      panelPrefix={`${usersPath}/`}
+    <button
+      type="button"
+      onClick={() => onOpen({ id: user.id, username })}
       className="inline-flex items-center gap-1.5 font-medium text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
     >
-      <UserAvatar user={{ ...user, username: user.username }} className="size-5" fallbackClassName="text-[9px]" />
-      {user.displayName ?? `@${user.username}`}
-    </PanelLink>
+      <UserAvatar user={{ ...user, username }} className="size-5" fallbackClassName="text-[9px]" />
+      {user.displayName ?? `@${username}`}
+    </button>
   );
 }

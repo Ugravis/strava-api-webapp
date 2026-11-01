@@ -18,16 +18,34 @@ The content of a detail of the back office: what the split panel (`docs/split-pa
 | `DetailMedia` | The `media` of a header told by an icon: a large disc in the look of the first column of its table, `background` filling it or `color` tinting the icon. |
 | `DetailSection` | A part under a small uppercase `title`, `pill` right after it (`{ icon, label, tone }`, the tones of the table pills, e.g. « Modération » in amber), `aside` on its right; a line between sections. `tone`: `danger` (e.g. a suspension). |
 | `DetailColumnFields` | The fields of a row as its table draws them: `row`, the `columns` of its `DataTableConfig`, the `ids` to show in order. Name, icon, cell and copy button of each column. |
-| `DetailColumnField` | One of them, `id`: in a `DetailFields` among free fields, so that a section keeps a single list. |
-| `DetailFields` + `DetailField` | Free fields: `label`, `icon`, the value as children, « — » when empty. On hover, buttons float at the right of the value: `tools` (any `DetailFieldButton`), copy (a text or a number shown is copied as is; `copy` gives the text of any other value, `null` none), edit (`edit`). `edit: { value, onSave, multiline, placeholder }` edits in place: a click on the value or the pencil opens a field; Enter (⌘ Enter on several lines), ✓ or leaving the field saves, Esc or ✕ gives up (the panel stays open); `onSave(value) => Promise<ActionResult \| void>`, `{ ok: false }` keeping the field open, its message in a toast. Without children the value shows `edit.value`. Nothing is ever left unsaved, so nothing guards the closing of the panel. `stacked`: the value under its label, across the whole width, wrapping (a long text), its buttons at the top right of the panel; in `DetailColumnFields`, `{ id, stacked: true }`. |
-| `DetailItems` + `DetailItem` | Several values of one field, one per line: `icon` in a grey square on the left, as in the icon cells of the tables, the text, `actions` (icon buttons, `size="icon-xs"`) on the right. As the value of a `DetailField` (beside its label, or under it across the whole width with `stacked`), or alone in a section. |
-| `DetailItemButton` | An icon button of the `actions` of a `DetailItem`, named in a bubble. |
+| `DetailColumnField` | One of them, `id`: in a `DetailFields` among free fields, so that a section keeps a single list. `edit` edits it in place as a `DetailField` (`{ id, edit }` in `DetailColumnFields`), the value still drawn by its column, e.g. a collection picked in a list, categories in a list of several. |
+| `DetailFields` + `DetailField` | Free fields: `label`, `icon`, the value as children, « — » when empty. On hover, buttons float at the right of the value: `tools` (any `DetailFieldButton`), copy (a text or a number shown is copied as is; `copy` gives the text of any other value, `null` none), edit (`edit`). `edit` edits in place, after its `kind` (below): a click on the value or the pencil opens a field or a popover; Enter (⌘ Enter on several lines), ✓, leaving the field or closing the popover saves, Esc or ✕ gives up (the panel stays open); `onSave(value) => Promise<ActionResult \| void>`, `{ ok: false }` keeping the field open, its message in a toast. Without children the value is drawn after its kind. Nothing is ever left unsaved, so nothing guards the closing of the panel. `stacked`: the value under its label, across the whole width, wrapping (a long text), its buttons at the top right of the panel; in `DetailColumnFields`, `{ id, stacked: true }`. |
+| `DetailItems` + `DetailItem` | Several values of one field, one per line: `icon` in a grey square on the left, as in the icon cells of the tables, the text, `actions` (`DetailItemButton`s, always in sight) on the right. As the value of a `DetailField` (beside its label, or under it across the whole width with `stacked`), or alone in a section. |
+| `DetailItemButton` | An icon button of the `actions` of a `DetailItem`, in the look of the floating buttons of the fields (border, background), named in a bubble. |
 | `DetailActions` + `DetailAction` | A row of buttons on a single line, a line above it: under the header, or between sections. The buttons share the whole width; when their names no longer fit, they show their icon only, named in a bubble after 400 ms. `sticky`: at the bottom of the panel, staying in sight as the detail scrolls (last child of the detail). `DetailAction`: `label`, `icon`, `variant` (`outline`, `default`, `destructive`), `onClick` or `href` (a new tab); outside `DetailActions` (e.g. the `actions` of `DetailHeader`), its icon alone with its bubble. |
+| `LucideIconByName` | A Lucide icon by its name (`rocket`, `grid-3x3`), all of them loaded in a chunk of their own the first time one is drawn: e.g. the `icon` of a `DetailMedia` whose icon is edited. |
 | `DetailFieldButton` | A button floating at the right of a field on hover, in the look of the copy button of the tables, named in a bubble: the `tools` of a `DetailField`, before copy and edit. |
 | `DetailTimeline` + `DetailTimelineItem` | Dated events along a line, the latest first: `icon`, `tone` (`default`, `green`, `red`, `amber`, `blue`), `title`, `date` (ISO, relative, exact on hover), details as children. |
 | `DetailLoader` | Loads the row of `id` with `load(id)`, then draws `children(row)`: `DetailSkeleton` meanwhile (or `skeleton`), « Introuvable » when `load` answers null, « Réessayer » when it fails. Another id goes back to the skeleton; a new `refreshKey` loads again in the background, the detail shown meanwhile. |
 | `DetailSkeleton` | While the detail loads, in the geometry of its blocks: `cover`, `media`, `actions` (buttons of a `DetailActions` under the header), `sections` (fields of each; `fields` for one). Mirror the detail, so that nothing jumps once loaded. |
 | `DetailEmpty` | Nothing to show: the row is gone, or the call failed; `action` e.g. a retry button. |
+
+## In-place edits
+
+`edit` of `DetailField` / `DetailColumnField`, by its `kind` (`DetailFieldEdit`, `text` when none). `DetailField` is generic on it: the value given to `onSave` is typed.
+
+| `kind` | Value | Edited in | Options |
+| --- | --- | --- | --- |
+| `text` (none) | `string \| null` | A field; saved by Enter, ✓ or leaving it | `multiline` (⌘ Enter saves), `placeholder` |
+| `number` | `number \| null` | A field; refused out of bounds, in a toast | `min`, `max`, `step`, `unit` (after the value) |
+| `date` | `YYYY-MM-DD`; with `time`, an ISO instant | The date field of the browser (its time zone) | `time`, `min`, `max` |
+| `select` | `string \| null` | A popover: the options, a search beyond 8; a click saves | `options`, `noneLabel` (the choice of none) |
+| `multiselect` | `string[]`, in the order of the options | A popover of checks; « Valider » or closing it saves | `options` |
+| `color` | `#rrggbb \| null` | A popover: swatches save at once; any hue (pipette, code) saved by « Valider » or closing it | `presets`, `noneLabel` |
+| `icon` | A Lucide name, e.g. `rocket` | A popover: every Lucide icon, searched by name, 96 shown at once; a click saves | `noneLabel` |
+| `switch` | `boolean` | The switch itself, saved as soon as switched; no pencil | |
+
+Options: `{ value, label, icon?, tone? }`, a `tone` drawing it as a pill of the tables. A value cleared that the API refuses answers `{ ok: false }`, the field staying open.
 
 ## Rules
 

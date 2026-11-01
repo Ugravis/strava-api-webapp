@@ -1,14 +1,12 @@
 "use client";
 
-import { CheckIcon, LoaderCircleIcon, PencilIcon, XIcon } from "lucide-react";
-import { type KeyboardEvent, type ReactNode, useState } from "react";
-import { toast } from "sonner";
-import type { ActionResult } from "@/components/admin/action-state";
-import { CopyButton, EmptyValue, FLOATING_BUTTON } from "@/components/admin/data-table";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PencilIcon } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { CopyButton, EmptyValue } from "@/components/admin/data-table";
 import { cn } from "@/lib/utils";
+import { DetailFieldButton, FieldButtons } from "./field-buttons";
+import { type DetailEditKind, type DetailFieldEdit, EditValue, editCopy, editEmpty, InlineEditor, isInline } from "./field-edit";
+import { PickerField } from "./field-picker";
 
 /*
  * The content of a detail: in the split panel, a dialog or a page alike.
@@ -21,44 +19,6 @@ export function DetailFields({ children }: { children: ReactNode }) {
   return <dl className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-4 text-sm">{children}</dl>;
 }
 
-/** What a field edits in place; see `DetailField`. */
-export interface DetailFieldEdit {
-  value: string | null;
-  /** Resolves once saved; `{ ok: false }` keeps the field open, its message in a toast. */
-  onSave: (value: string | null) => Promise<ActionResult | void>;
-  /** On several lines: ⌘ Enter saves. */
-  multiline?: boolean;
-  placeholder?: string;
-}
-
-/**
- * A button floating at the right of a field on hover, beside copy and edit,
- * named in a bubble: the `tools` of a `DetailField`.
- */
-export function DetailFieldButton({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        delay={400}
-        render={
-          <button
-            type="button"
-            aria-label={label}
-            disabled={disabled}
-            // Pressed before a field being edited loses its focus, which would save.
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={onClick}
-            className={FLOATING_BUTTON}
-          >
-            {children}
-          </button>
-        }
-      />
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 /**
  * A label and its value, « — » when it has none. On hover, buttons float at
  * the right of the value, in the look of the copy button of the tables:
@@ -68,19 +28,20 @@ export function DetailFieldButton({ label, disabled, onClick, children }: { labe
  * buttons then at the top right of the panel. The value may be `DetailItems`,
  * one line per value.
  *
- * `edit` edits it in place: a click on the value, or the pencil, opens a
- * field; Enter (⌘ Enter on several lines), ✓ or leaving the field saves; Esc
- * or ✕ gives up, the panel staying open. Nothing is ever left unsaved, so
- * nothing guards the closing of the panel. Without children, the value shows
- * `edit.value`.
+ * `edit` edits it in place, after its `kind` (`DetailFieldEdit`): a click on
+ * the value, or the pencil, opens a field (text, number, date) or a popover
+ * (list, colour, icon); a switch saves as soon as switched. Enter, ✓,
+ * leaving the field or closing the popover saves; Esc or ✕ gives up, the
+ * panel staying open. Nothing is ever left unsaved, so nothing guards the
+ * closing of the panel. Without children, the value is drawn after its kind.
  */
-export function DetailField({
+export function DetailField<K extends DetailEditKind = "text">({
   label,
   icon,
   copy,
   stacked,
   tools,
-  edit,
+  edit: typed,
   children,
 }: {
   label: string;
@@ -88,76 +49,41 @@ export function DetailField({
   copy?: string | null;
   stacked?: boolean;
   tools?: ReactNode;
-  edit?: DetailFieldEdit;
+  // Generic on its kind, so that the value given to `onSave` is typed, `text` without a kind.
+  edit?: DetailFieldEdit<K> & { kind?: K };
   children?: ReactNode;
 }) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const editing = !!edit && draft !== null;
-  const multiline = !!edit?.multiline;
-  const value = children ?? (edit ? edit.value : undefined);
-  const empty = value === null || value === undefined || value === "" || value === false;
-  const copied = copy !== undefined ? copy : typeof value === "string" || typeof value === "number" ? String(value) : null;
-  const start = () => edit && setDraft(edit.value ?? "");
+  const edit: DetailFieldEdit | undefined = typed;
+  const [editing, setEditing] = useState(false);
+  const inline = !!edit && isInline(edit);
+  const multiline = inline && (!edit.kind || edit.kind === "text") && !!edit.multiline;
+  // Without children, the value of `edit` drawn after its kind.
+  const drawn = children === undefined || children === null ? undefined : children;
+  const empty = drawn === undefined ? !edit || editEmpty(edit) : drawn === "" || drawn === false;
+  const copied = copy !== undefined ? copy : drawn === undefined ? (edit ? editCopy(edit) : null) : typeof drawn === "string" || typeof drawn === "number" ? String(drawn) : null;
+  // A switch is its own button: no pencil.
+  const editable = !!edit && edit.kind !== "switch";
+  const start = () => editable && setEditing(true);
 
-  const save = async () => {
-    if (!edit || draft === null || saving) return;
-    const next = draft.trim() || null;
-    if (next === edit.value) return setDraft(null);
-    setSaving(true);
-    try {
-      const outcome = await edit.onSave(next);
-      if (outcome && !outcome.ok) toast.error(outcome.message);
-      else setDraft(null);
-    } catch {
-      toast.error("La modification n'a pas pu être enregistrée.");
-    } finally {
-      setSaving(false);
-    }
-  };
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (event.key === "Escape") {
-      // Left to the field: the panel stays open.
-      event.preventDefault();
-      setDraft(null);
-    } else if (event.key === "Enter" && (!multiline || event.metaKey || event.ctrlKey)) {
-      event.preventDefault();
-      void save();
-    }
-  };
-
-  const buttons = editing ? (
-    <>
-      <DetailFieldButton label="Enregistrer" disabled={saving} onClick={() => void save()}>
-        {saving ? <LoaderCircleIcon className="animate-spin" /> : <CheckIcon />}
-      </DetailFieldButton>
-      <DetailFieldButton label="Annuler" disabled={saving} onClick={() => setDraft(null)}>
-        <XIcon />
-      </DetailFieldButton>
-    </>
-  ) : (
-    (tools || copied || edit) && (
-      <>
-        {tools}
-        {copied && <CopyButton value={copied} inline />}
-        {edit && (
-          <DetailFieldButton label={`Modifier : ${label}`} onClick={start}>
-            <PencilIcon />
-          </DetailFieldButton>
-        )}
-      </>
-    )
+  const value =
+    drawn === undefined && edit ? <EditValue edit={edit} /> : empty ? <EmptyValue /> : drawn;
+  // As wide as the panel: the widths of the table columns let go.
+  const valueClass = cn(
+    "min-w-0 flex-1 wrap-break-word **:[[class*='max-w-']]:max-w-full",
+    inline && "cursor-text",
+    inline && drawn === undefined && (multiline ? "whitespace-pre-line" : "truncate"),
   );
-  const field = {
-    autoFocus: true,
-    value: draft ?? "",
-    disabled: saving,
-    placeholder: edit?.placeholder,
-    "aria-label": label,
-    onChange: (event: { target: { value: string } }) => setDraft(event.target.value),
-    onKeyDown,
-    onBlur: () => void save(),
-  };
+  const buttons = (tools || copied || editable) && (
+    <>
+      {tools}
+      {copied && <CopyButton value={copied} inline />}
+      {editable && (
+        <DetailFieldButton label={`Modifier : ${label}`} onClick={start}>
+          <PencilIcon />
+        </DetailFieldButton>
+      )}
+    </>
+  );
 
   return (
     <div className="contents">
@@ -172,36 +98,21 @@ export function DetailField({
           stacked && "col-span-2 mb-2 [&_.truncate]:whitespace-normal",
         )}
       >
-        {editing ? (
-          multiline ? (
-            <Textarea {...field} className="min-h-20 pr-16 text-sm" />
-          ) : (
-            <Input {...field} className="h-7 pr-16 text-sm" />
-          )
+        {edit && editing && isInline(edit) ? (
+          <InlineEditor edit={edit} label={label} onClose={() => setEditing(false)} />
         ) : (
-          // As wide as the panel: the widths of the table columns let go.
-          <div
-            onClick={edit && start}
-            className={cn(
-              "min-w-0 flex-1 wrap-break-word **:[[class*='max-w-']]:max-w-full",
-              edit && "cursor-text",
-              edit && !children && (multiline ? "whitespace-pre-line" : "truncate"),
+          <>
+            {edit && !isInline(edit) && edit.kind !== "switch" ? (
+              <PickerField edit={edit} label={label} editing={editing} onEditing={setEditing} className={valueClass}>
+                {value}
+              </PickerField>
+            ) : (
+              <div onClick={inline ? start : undefined} className={valueClass}>
+                {value}
+              </div>
             )}
-          >
-            {empty ? <EmptyValue /> : value}
-          </div>
-        )}
-        {buttons && (
-          <span
-            className={cn(
-              "absolute right-1.5 z-10 flex items-center gap-1",
-              // At the top of a long text or a field of several lines, else centred.
-              stacked || editing && multiline ? "top-1" : "top-1/2 -translate-y-1/2",
-              !editing && "opacity-0 transition-opacity group-hover/cell:opacity-100 has-focus-visible:opacity-100",
-            )}
-          >
-            {buttons}
-          </span>
+            {buttons && <FieldButtons top={stacked}>{buttons}</FieldButtons>}
+          </>
         )}
       </dd>
     </div>

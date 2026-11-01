@@ -4,8 +4,11 @@
  */
 export { DetailAction, DetailActions } from "./actions";
 export { DetailColumnField, DetailColumnFields } from "./column-fields";
-export { DetailField, DetailFieldButton, type DetailFieldEdit, DetailFields } from "./field";
+export { DetailFields, DetailField } from "./field";
+export { DetailFieldButton } from "./field-buttons";
+export { type DetailEditKind, type DetailEditOption, type DetailFieldEdit } from "./field-edit";
 export { DetailCover, DetailHeader, DetailMedia } from "./header";
+export { LucideIconByName } from "./icon-picker";
 export { DetailItem, DetailItemButton, DetailItems } from "./items";
 export { DetailEmpty, DetailLoader, DetailSkeleton } from "./loader";
 export { DetailSection, type DetailSectionPill } from "./section";

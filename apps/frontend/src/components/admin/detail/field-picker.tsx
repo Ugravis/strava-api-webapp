@@ -1,0 +1,250 @@
+"use client";
+
+import { CheckIcon, LoaderCircleIcon, PipetteIcon, SearchIcon } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { type DetailEditOption, OptionLabel, type PickerEdit, useCommit } from "./field-edit";
+import { IconGrid } from "./icon-picker";
+
+/*
+ * The values of a field picked in a popover under it: a list, a colour, an
+ * icon. A pick of one value saves it at once; several, or a hue tuned, are
+ * saved as the popover closes. Esc gives up, the panel staying open.
+ */
+
+/** The hues offered first, those of the marks of the site. */
+const PRESETS = [
+  "#dc2626", "#ea580c", "#d97706", "#ca8a04", "#65a30d", "#16a34a", "#059669", "#0d9488", "#0891b2",
+  "#0284c7", "#2563eb", "#4f46e5", "#7c3aed", "#9333ea", "#c026d3", "#db2777", "#e11d48", "#64748b",
+];
+const HEX = /^#[0-9a-f]{6}$/i;
+/** Beyond this many options, a search bar. */
+const SEARCHED = 8;
+
+type Draft = string | string[] | null;
+
+/**
+ * The value of a field as the trigger of its popover. `editing` opens it,
+ * e.g. from the pencil; `onEditing` follows it.
+ */
+export function PickerField({
+  edit,
+  label,
+  editing,
+  onEditing,
+  className,
+  children,
+}: {
+  edit: PickerEdit;
+  label: string;
+  editing: boolean;
+  onEditing: (editing: boolean) => void;
+  className?: string;
+  children: ReactNode;
+}) {
+  const [draft, setDraft] = useState<Draft>(edit.value);
+  const [opened, setOpened] = useState(false);
+  // Each opening starts again from the saved value.
+  if (editing !== opened) {
+    setOpened(editing);
+    if (editing) setDraft(edit.value);
+  }
+  const { saving, commit } = useCommit(edit, () => onEditing(false));
+  const pick = (value: Draft) => {
+    setDraft(value);
+    void commit(value);
+  };
+
+  return (
+    <Popover
+      open={editing}
+      onOpenChange={(open, details) => {
+        if (open) return onEditing(true);
+        if (saving) return;
+        if (details.reason === "escape-key") {
+          // Kept from the split panel, which would close on it.
+          details.event.preventDefault();
+          onEditing(false);
+        } else void commit(draft);
+      }}
+    >
+      <PopoverTrigger nativeButton={false} render={<div className={cn("cursor-pointer", className)} />}>
+        {children}
+      </PopoverTrigger>
+      <PopoverContent align="start" className={cn("gap-2 p-2", edit.kind === "icon" ? "w-80" : "w-64")} aria-label={label}>
+        <div className="flex h-5 items-center justify-between px-1 text-xs font-medium text-muted-foreground">
+          {label}
+          {saving && <LoaderCircleIcon className="size-3.5 animate-spin" aria-label="Enregistrement" />}
+        </div>
+        {edit.kind === "select" && (
+          <OptionList options={edit.options} noneLabel={edit.noneLabel} selected={draft ? [draft as string] : []} disabled={saving} onToggle={(value) => pick(value)} />
+        )}
+        {edit.kind === "multiselect" && (
+          <>
+            <OptionList
+              options={edit.options}
+              selected={draft as string[]}
+              multiple
+              disabled={saving}
+              // Kept in the order of the options.
+              onToggle={(value) =>
+                setDraft(edit.options.map((option) => option.value).filter((each) => (each === value) !== (draft as string[]).includes(each)))
+              }
+            />
+            <Button size="sm" disabled={saving} onClick={() => void commit(draft)}>
+              Valider
+            </Button>
+          </>
+        )}
+        {edit.kind === "color" && (
+          <ColorPicker presets={edit.presets ?? PRESETS} noneLabel={edit.noneLabel} value={draft as string | null} disabled={saving} onChange={setDraft} onPick={pick} onDone={() => void commit(draft)} />
+        )}
+        {edit.kind === "icon" && (
+          <>
+            <IconGrid value={draft as string | null} disabled={saving} onPick={pick} />
+            {edit.noneLabel && (
+              <Button size="sm" variant="ghost" disabled={saving || draft === null} onClick={() => pick(null)}>
+                {edit.noneLabel}
+              </Button>
+            )}
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** The options of a list, a check on those picked; searched when many. */
+function OptionList({
+  options,
+  noneLabel,
+  selected,
+  multiple,
+  disabled,
+  onToggle,
+}: {
+  options: DetailEditOption[];
+  noneLabel?: string;
+  selected: string[];
+  multiple?: boolean;
+  disabled?: boolean;
+  onToggle: (value: string | null) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const words = query.trim().toLowerCase();
+  const shown = words ? options.filter((option) => option.label.toLowerCase().includes(words)) : options;
+  const row = (key: string, on: boolean, onClick: () => void, content: ReactNode) => (
+    <button
+      key={key}
+      type="button"
+      role={multiple ? "menuitemcheckbox" : "menuitemradio"}
+      aria-checked={on}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-muted focus-visible:bg-muted disabled:opacity-50"
+    >
+      <span className="min-w-0 flex-1">{content}</span>
+      <CheckIcon className={cn("size-3.5 shrink-0 text-primary", !on && "invisible")} aria-hidden />
+    </button>
+  );
+
+  return (
+    <>
+      {options.length > SEARCHED && (
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher" aria-label="Rechercher" className="h-8 pl-8 text-sm" />
+        </div>
+      )}
+      <div role="menu" className="flex max-h-64 flex-col overflow-y-auto">
+        {noneLabel && !words && row("~", selected.length === 0, () => onToggle(null), <span className="text-muted-foreground">{noneLabel}</span>)}
+        {shown.map((option) => row(option.value, selected.includes(option.value), () => onToggle(option.value), <OptionLabel option={option} />))}
+        {shown.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Aucun résultat</p>}
+      </div>
+    </>
+  );
+}
+
+/** Swatches saving at once, any other hue by the pipette or its code, saved by « Valider » or as the popover closes. */
+function ColorPicker({
+  presets,
+  noneLabel,
+  value,
+  disabled,
+  onChange,
+  onPick,
+  onDone,
+}: {
+  presets: string[];
+  noneLabel?: string;
+  value: string | null;
+  disabled?: boolean;
+  onChange: (color: string) => void;
+  onPick: (color: string | null) => void;
+  onDone: () => void;
+}) {
+  const [code, setCode] = useState(value ?? "");
+  const current = value?.toLowerCase() ?? null;
+  const set = (color: string) => {
+    setCode(color);
+    onChange(color.toLowerCase());
+  };
+
+  return (
+    <>
+      <div role="radiogroup" aria-label="Couleurs proposées" className="grid grid-cols-9 gap-1.5 p-1">
+        {presets.map((color) => (
+          <button
+            key={color}
+            type="button"
+            role="radio"
+            aria-checked={current === color}
+            aria-label={color}
+            title={color}
+            disabled={disabled}
+            onClick={() => onPick(color)}
+            className={cn(
+              "aspect-square rounded-full ring-offset-2 ring-offset-popover outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+              current === color && "ring-2 ring-foreground",
+            )}
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <label
+          title="Autre couleur"
+          className="relative grid size-8 shrink-0 cursor-pointer place-items-center rounded-md bg-[conic-gradient(#f43f5e,#f59e0b,#22c55e,#14b8a6,#3b82f6,#8b5cf6,#f43f5e)] ring-1 ring-foreground/10 has-focus-visible:ring-2 has-focus-visible:ring-ring"
+          style={current && !presets.includes(current) ? { background: current } : undefined}
+        >
+          <PipetteIcon className="size-3.5 text-white drop-shadow" aria-hidden />
+          <input type="color" value={current ?? "#000000"} disabled={disabled} onChange={(event) => set(event.target.value)} aria-label="Autre couleur" className="absolute inset-0 size-full cursor-pointer opacity-0" />
+        </label>
+        <Input
+          value={code}
+          disabled={disabled}
+          onChange={(event) => {
+            setCode(event.target.value);
+            if (HEX.test(event.target.value)) onChange(event.target.value.toLowerCase());
+          }}
+          onKeyDown={(event) => event.key === "Enter" && HEX.test(code) && onDone()}
+          placeholder="#rrggbb"
+          aria-label="Code de la couleur"
+          aria-invalid={code !== "" && !HEX.test(code)}
+          className="h-8 font-mono text-sm"
+        />
+        <Button size="sm" disabled={disabled} onClick={onDone}>
+          Valider
+        </Button>
+      </div>
+      {noneLabel && (
+        <Button size="sm" variant="ghost" disabled={disabled || value === null} onClick={() => onPick(null)}>
+          {noneLabel}
+        </Button>
+      )}
+    </>
+  );
+}

@@ -32,8 +32,7 @@ const ACTIVE_FILL =
   "bg-blue-500/10 text-blue-700 hover:bg-blue-500/15 hover:text-blue-800 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/25 dark:hover:text-blue-200 aria-expanded:bg-blue-500/15 aria-expanded:text-blue-700 dark:aria-expanded:text-blue-300";
 
 /** Active filters, in blue. */
-const ACTIVE =
-  "border-solid border-blue-500/40 bg-blue-500/10 text-blue-700 hover:bg-blue-500/15 hover:text-blue-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/25 dark:hover:text-blue-200 aria-expanded:bg-blue-500/15 aria-expanded:text-blue-700 dark:aria-expanded:text-blue-300";
+const ACTIVE = `border-solid border-blue-500/40 dark:border-blue-400/40 ${ACTIVE_FILL}`;
 
 /** A button inside the group of tools: edge to edge, no border of its own. */
 export const IN_GROUP = "h-full rounded-none border-0";

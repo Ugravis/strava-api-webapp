@@ -1,10 +1,11 @@
 "use client";
 
-import { CrownIcon, KeyRoundIcon, LockIcon, ShieldCheckIcon, ShieldIcon } from "lucide-react";
-import { createContext, type ReactNode, use, useMemo, useState, useTransition } from "react";
+import { CrownIcon, KeyRoundIcon, KeySquareIcon, LockIcon, ShapesIcon, ShieldCheckIcon, ShieldIcon, TextIcon } from "lucide-react";
+import { createContext, type ReactNode, use, useLayoutEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
 import { customColumn, type DataTableConfig, DataTable, localTableSource, TableCheckbox } from "@/components/admin/data-table";
+import { DetailField, DetailFields, DetailHeader, DetailLoader, DetailMedia, DetailSection, DetailSkeleton, useRowPanel } from "@/components/admin/detail";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -45,13 +46,27 @@ interface Row extends MatrixPermission {
   rank: number;
 }
 
-/** The grants being edited, read by the cells: the config stays the same while they change. */
-const Grants = createContext<{
+interface GrantsState {
   grants: MatrixGrants;
   toggle: (role: EditableRole, key: string, checked: boolean) => void;
   disabled: boolean;
   labels: MatrixLabels;
-} | null>(null);
+}
+
+/** The grants being edited, read by the cells: the config stays the same while they change. */
+const Grants = createContext<GrantsState | null>(null);
+
+/*
+ * The same grants for the detail of a permission: drawn in the side panel,
+ * outside the tree of the matrix and its context. One matrix per page.
+ */
+let shared: GrantsState | null = null;
+const listeners = new Set<() => void>();
+const subscribe = (onChange: () => void) => {
+  listeners.add(onChange);
+  return () => listeners.delete(onChange);
+};
+const useSharedGrants = () => useSyncExternalStore(subscribe, () => shared, () => null);
 
 function GrantBox({ row, role }: { row: Row; role: EditableRole | "super-admin" }) {
   const state = use(Grants)!;
@@ -106,9 +121,17 @@ export function PermissionsMatrix({
     });
   }
 
+  const state = useMemo<GrantsState>(() => ({ grants, toggle, disabled: !canEdit || saving, labels }), [grants, canEdit, saving, labels]);
+  useLayoutEffect(() => {
+    shared = state;
+    listeners.forEach((listener) => listener());
+  }, [state]);
+
+  const ranked = useMemo(
+    () => categories.flatMap((category) => category.permissions.map((permission) => ({ ...permission, category: category.key }))).map((row, rank) => ({ ...row, rank })),
+    [categories],
+  );
   const config = useMemo<DataTableConfig<Row>>(() => {
-    const rows = categories.flatMap((category) => category.permissions.map((permission) => ({ ...permission, category: category.key })));
-    const ranked = rows.map((row, rank) => ({ ...row, rank }));
     const grantColumn = (role: EditableRole | "super-admin") =>
       customColumn<Row>({
         id: role,
@@ -179,12 +202,24 @@ export function PermissionsMatrix({
         },
       ],
     };
-  }, [categories, labels]);
+  }, [categories, labels, ranked]);
+  // Read on the page: a key not among them belongs to another table.
+  const load = useMemo(() => async (key: string) => ranked.find((row) => row.key === key) ?? null, [ranked]);
+  const panel = useRowPanel<Row>({
+    config,
+    title: (row) => row.label,
+    load,
+    detail: (key) => (
+      <DetailLoader id={key} load={load} skeleton={<DetailSkeleton media sections={[4, 3]} />}>
+        {(row) => <PermissionDetail row={row} category={categories.find((category) => category.key === row.category)} />}
+      </DetailLoader>
+    ),
+  });
 
   return (
     <div className="flex flex-col gap-3">
-      <Grants value={{ grants, toggle, disabled: !canEdit || saving, labels }}>
-        <DataTable config={config} />
+      <Grants value={state}>
+        <DataTable {...panel.table} />
       </Grants>
 
       {canEdit && dirty && (
@@ -201,6 +236,56 @@ export function PermissionsMatrix({
         </div>
       )}
     </div>
+  );
+}
+
+/** A permission and the roles granted it: the switches change the grants being edited, saved with the matrix. */
+function PermissionDetail({ row, category }: { row: Row; category?: MatrixCategory }) {
+  const state = useSharedGrants();
+  if (!state) return null;
+  const { grants, toggle, disabled, labels } = state;
+  const lock = row.locked ? labels.locked : disabled ? "Réservé aux membres qui gèrent les permissions" : null;
+  return (
+    <>
+      <DetailHeader media={<DetailMedia icon={category?.icon ?? <ShieldCheckIcon />} />} title={row.label} subtitle={category?.label} />
+      <DetailSection title="Permission">
+        <DetailFields>
+          <DetailField label={labels.permission} icon={<ShieldCheckIcon />}>
+            {row.label}
+          </DetailField>
+          <DetailField label="Description" icon={<TextIcon />} stacked>
+            {row.description}
+          </DetailField>
+          <DetailField label="Catégorie" icon={<ShapesIcon />} copy={category?.label ?? row.category}>
+            <span className="inline-flex items-center gap-1.5 [&_svg]:size-3.5">
+              {category?.icon}
+              {category?.label ?? row.category}
+            </span>
+          </DetailField>
+          <DetailField label="Clé" icon={<KeySquareIcon />}>
+            <code className="font-mono text-xs">{row.key}</code>
+          </DetailField>
+        </DetailFields>
+      </DetailSection>
+      <DetailSection title="Rôles">
+        <DetailFields>
+          {ROLES.map((role) => (
+            <DetailField
+              key={role}
+              label={labels.roles[role]}
+              icon={ROLE_ICONS[role]}
+              edit={{ kind: "switch", value: grants[role].includes(row.key), locked: lock, onSave: async (checked) => toggle(role, row.key, checked) }}
+            />
+          ))}
+          <DetailField
+            label={labels.roles["super-admin"]}
+            icon={ROLE_ICONS["super-admin"]}
+            edit={{ kind: "switch", value: true, locked: "Les super-admins ont toutes les permissions", onSave: async () => {} }}
+          />
+        </DetailFields>
+        <p className="text-xs text-muted-foreground">Les changements attendent « {labels.save} » sous le tableau.</p>
+      </DetailSection>
+    </>
   );
 }
 

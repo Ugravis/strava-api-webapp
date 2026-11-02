@@ -9,12 +9,13 @@ import type { DetailFieldEdit } from "./field-edit";
  * the column `id`. In a `DetailFields`, among free fields, so that they share
  * one list. `edit` edits it in place, as a `DetailField`, the value still
  * drawn by its column, whole: every item of a list shown, none counted.
+ * Without it, the `edit` of the column, as in the table.
  */
 export function DetailColumnField<T>({ row, columns, id, stacked, edit, editHint }: { row: T; columns: DataTableColumn<T>[]; id: string; stacked?: boolean; edit?: DetailFieldEdit; editHint?: boolean }) {
   const column = columns.find((each) => each.id === id);
   if (!column) return null;
   return (
-    <DetailField label={column.header} icon={column.icon} copy={column.copy?.(row) ?? null} stacked={stacked} edit={edit} editHint={editHint}>
+    <DetailField label={column.header} icon={column.icon} copy={column.copy?.(row) ?? null} stacked={stacked} edit={edit ?? column.edit?.(row)} editHint={editHint}>
       <WholeCells value>{drawCell(column, row)}</WholeCells>
     </DetailField>
   );

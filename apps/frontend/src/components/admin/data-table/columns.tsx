@@ -18,7 +18,7 @@ import type { DataTableColumn } from "./types";
  * For anything else, a `DataTableColumn` by hand, or `customColumn`.
  */
 
-type Base<T> = Pick<DataTableColumn<T>, "id" | "header" | "icon" | "sortable" | "locked" | "className" | "href">;
+type Base<T> = Pick<DataTableColumn<T>, "id" | "header" | "icon" | "sortable" | "locked" | "className" | "href" | "edit">;
 
 /** The names of the items of a cell, all of them, those counted included; none when empty. */
 const labelsOf = (items: { label: string }[]) => (items.length > 0 ? items.map((item) => item.label).join(", ") : null);

@@ -8,7 +8,7 @@ import { TableCheckbox } from "./cells/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { CopyButton, drawCell } from "./cells/base";
+import { CellValue, keepsItsClick } from "./cells/value";
 import { MovableRow } from "./reorder";
 import type { DataTableColumn, DataTableConfig } from "./types";
 
@@ -49,8 +49,7 @@ export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, col
       data-active={active || undefined}
       aria-current={active || undefined}
       onClick={(event) => {
-        // Buttons, links and checkboxes of the row keep their own click.
-        if ((event.target as HTMLElement).closest("button, a, [role=checkbox], [role=menuitem]")) return;
+        if (keepsItsClick(event)) return;
         onOpen?.(row);
       }}
       className={cn("group/row", onOpen && "cursor-pointer", ACTIVE, config.muted?.(row) && "text-muted-foreground")}
@@ -62,8 +61,7 @@ export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, col
       )}
       {columns.map((column, index) => (
         <TableCell key={column.id} className={cn("group/cell relative", index === 0 && pinFirst, column.className)}>
-          {drawCell(column, row)}
-          {column.copy && <CopyButton value={column.copy(row)} />}
+          <CellValue column={column} row={row} />
         </TableCell>
       ))}
       {config.actions && <TableCell className="w-px text-center">{config.actions(row)}</TableCell>}

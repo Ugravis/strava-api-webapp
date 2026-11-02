@@ -34,8 +34,10 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * Enter, ✓, leaving the field or closing the popover saves (a colour or an
  * image by « Valider » only); Esc or ✕ gives up, the panel staying open.
  * Nothing is ever left unsaved, so nothing guards the closing of the panel.
- * Without children, the value is drawn after its kind. A small pencil
- * beside the label tells the field editable, unless `editHint={false}`.
+ * The pencil of a popover stays shown while it is open, and closes it again,
+ * giving up. Without children, the value is drawn after its kind. A small
+ * dark pencil at the top right of the label tells the field editable, unless
+ * `editHint={false}`.
  */
 export function DetailField<K extends DetailEditKind = "text">({
   label,
@@ -67,7 +69,8 @@ export function DetailField<K extends DetailEditKind = "text">({
   const copied = copy !== undefined ? copy : drawn === undefined ? (edit ? editCopy(edit) : null) : typeof drawn === "string" || typeof drawn === "number" ? String(drawn) : null;
   // A switch is its own button: no pencil.
   const editable = !!edit && edit.kind !== "switch";
-  const start = () => editable && setEditing(true);
+  // A popover open, the pencil closes it again, giving up.
+  const toggle = () => editable && setEditing((open) => !open);
 
   const value =
     drawn === undefined && edit ? <EditValue edit={edit} /> : empty ? <EmptyValue /> : drawn;
@@ -81,7 +84,7 @@ export function DetailField<K extends DetailEditKind = "text">({
       {tools}
       {copied && <CopyButton value={copied} inline />}
       {editable && (
-        <DetailFieldButton label={`Modifier : ${label}`} onClick={start}>
+        <DetailFieldButton label={editing ? `Annuler : ${label}` : `Modifier : ${label}`} pressed={editing} onClick={toggle}>
           <PencilIcon />
         </DetailFieldButton>
       )}
@@ -94,7 +97,7 @@ export function DetailField<K extends DetailEditKind = "text">({
         {icon && <span className="inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">{icon}</span>}
         {label}
         {edit && editHint && (
-          <span title="Modifiable" className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-2.5">
+          <span title="Modifiable" className="-ml-1 inline-flex size-3 shrink-0 -translate-y-1.5 items-center justify-center rounded-full bg-foreground/80 text-background [&_svg]:size-2">
             <PencilIcon aria-hidden />
             <span className="sr-only">Modifiable</span>
           </span>
@@ -120,7 +123,11 @@ export function DetailField<K extends DetailEditKind = "text">({
                 {value}
               </div>
             )}
-            {buttons && <FieldButtons top={stacked}>{buttons}</FieldButtons>}
+            {buttons && (
+              <FieldButtons top={stacked} shown={editing}>
+                {buttons}
+              </FieldButtons>
+            )}
           </>
         )}
       </dd>

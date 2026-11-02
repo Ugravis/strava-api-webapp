@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, ImageUpIcon, LoaderCircleIcon, PipetteIcon, SearchIcon } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type PointerEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ const PRESETS = [
   "#0284c7", "#2563eb", "#4f46e5", "#7c3aed", "#9333ea", "#c026d3", "#db2777", "#e11d48", "#64748b",
 ];
 const HEX = /^#[0-9a-f]{6}$/i;
+/** The widths of the popover of an image: at first, and between which its bottom left corner resizes it. */
+const IMAGE_WIDTH = { initial: 352, min: 288, max: 640 };
 /** Beyond this many options, a search bar. */
 const SEARCHED = 8;
 
@@ -69,6 +71,8 @@ export function PickerField({
       open={editing}
       onOpenChange={(open, details) => {
         if (open || saving) return;
+        // A press on the field itself (its pencil, toggling it) is left to it.
+        if (details.reason === "outside-press" && details.event.target instanceof Node && anchor?.parentElement?.contains(details.event.target)) return;
         // Kept from the split panel, which would close on it.
         if (details.reason === "escape-key") details.event.preventDefault();
         if (details.reason === "escape-key" || VALIDATED.has(edit.kind)) onEditing(false);
@@ -78,9 +82,20 @@ export function PickerField({
       <div ref={setAnchor} className={className}>
         {children}
       </div>
-      <PopoverContent anchor={anchor} align="start" className={cn("gap-2 p-2", edit.kind === "icon" ? "w-80" : "w-64")} aria-label={label}>
+      <PopoverContent
+        anchor={anchor}
+        // An image grows from its bottom left corner, its right edge kept.
+        align={edit.kind === "image" ? "end" : "start"}
+        className={cn("relative gap-2 p-2", edit.kind === "icon" ? "w-80" : edit.kind === "image" ? "w-auto" : "w-64")}
+        aria-label={label}
+      >
         <div className="flex h-5 items-center justify-between px-1 text-xs font-medium text-muted-foreground">
-          {label}
+          <span>
+            {label}
+            {(edit.kind === "select" || edit.kind === "multiselect") && (
+              <span className="font-normal text-muted-foreground/70"> ({edit.kind === "select" ? "sélection unique" : "sélection multiple"})</span>
+            )}
+          </span>
           {saving && <LoaderCircleIcon className="size-3.5 animate-spin" aria-label="Enregistrement" />}
         </div>
         {edit.kind === "select" && (
@@ -115,6 +130,7 @@ export function PickerField({
             value={draft as string | File | null}
             disabled={saving}
             onChange={setDraft}
+            onCancel={() => onEditing(false)}
             onDone={() => void commit(draft)}
           />
         )}
@@ -263,7 +279,10 @@ function ColorPicker({
   );
 }
 
-/** The image shown, replaced by a file picked or dropped, or removed: saved by « Valider » only. */
+/**
+ * The image shown, replaced by a file picked or dropped, or removed: saved
+ * by « Valider » only, « Annuler » giving up. Its bottom left corner resizes it.
+ */
 function ImagePicker({
   current,
   accept,
@@ -272,6 +291,7 @@ function ImagePicker({
   value,
   disabled,
   onChange,
+  onCancel,
   onDone,
 }: {
   current: string | null;
@@ -281,9 +301,24 @@ function ImagePicker({
   value: string | File | null;
   disabled?: boolean;
   onChange: (file: File | null) => void;
+  onCancel: () => void;
   onDone: () => void;
 }) {
   const preview = usePreview(value);
+  const [width, setWidth] = useState(IMAGE_WIDTH.initial);
+  const resize = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    const [x, from] = [event.clientX, width];
+    const move = (each: globalThis.PointerEvent) => setWidth(Math.min(IMAGE_WIDTH.max, Math.max(IMAGE_WIDTH.min, from + x - each.clientX)));
+    const end = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", end);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", end);
+  };
   const take = (file: File | undefined) => {
     if (!file) return;
     const types = accept.split(",").map((each) => each.trim());
@@ -293,7 +328,7 @@ function ImagePicker({
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-2" style={{ width: width - 16 }}>
       <label
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
@@ -319,11 +354,20 @@ function ImagePicker({
             {noneLabel}
           </Button>
         )}
-        <Button size="sm" className="ml-auto" disabled={disabled || value === current} onClick={onDone}>
+        <Button size="sm" variant="outline" className="ml-auto" disabled={disabled} onClick={onCancel}>
+          Annuler
+        </Button>
+        <Button size="sm" disabled={disabled || value === current} onClick={onDone}>
           Valider
         </Button>
       </div>
-    </>
+      <div
+        role="separator"
+        aria-label="Redimensionner"
+        onPointerDown={resize}
+        className="absolute bottom-0 left-0 size-4 cursor-nesw-resize touch-none rounded-bl-lg bg-[linear-gradient(45deg,transparent_45%,var(--color-border)_45%,var(--color-border)_55%,transparent_55%)]"
+      />
+    </div>
   );
 }
 

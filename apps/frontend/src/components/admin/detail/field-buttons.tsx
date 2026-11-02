@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * A button floating at the right of a field on hover, beside copy and edit,
  * named in a bubble: the `tools` of a `DetailField`.
  */
-export function DetailFieldButton({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+export function DetailFieldButton({ label, disabled, pressed, onClick, children }: { label: string; disabled?: boolean; pressed?: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <Tooltip>
       <TooltipTrigger
@@ -19,10 +19,11 @@ export function DetailFieldButton({ label, disabled, onClick, children }: { labe
             type="button"
             aria-label={label}
             disabled={disabled}
+            aria-pressed={pressed}
             // Pressed before a field being edited loses its focus, which would save.
             onMouseDown={(event) => event.preventDefault()}
             onClick={onClick}
-            className={FLOATING_BUTTON}
+            className={cn(FLOATING_BUTTON, pressed && "bg-muted text-foreground")}
           >
             {children}
           </button>

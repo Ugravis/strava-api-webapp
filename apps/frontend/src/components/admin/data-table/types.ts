@@ -1,7 +1,7 @@
 import type { TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
 import type { ReactNode } from "react";
 import type { ActionResult } from "../action-state";
-import type { DetailFieldEdit } from "../detail/field-edit";
+import type { DetailFieldEdit } from "../detail/edit-types";
 
 export type { TableEntry, TableGroup, TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
 

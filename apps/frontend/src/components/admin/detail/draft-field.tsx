@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { type DetailFieldEdit, type DraftBinding, draftOf, EditValue, editEmpty, type InlineEdit, isInline, isMultiline, parse, type PickerEdit } from "./field-edit";
+import { type DetailFieldEdit, type DraftBinding, type InlineEdit, isInline, isMultiline, type PickerEdit } from "./edit-types";
+import { EditValue } from "./edit-value";
+import { draftOf, editEmpty, parse } from "./field-edit";
 import { Markdown } from "./markdown";
 import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
-import { PickerField, usePreview } from "./field-picker";
+import { PickerField } from "./field-picker";
+import { usePreview } from "./use-preview";
 
 /*
  * A field of a draft (`draft.tsx`): always open, no pencil, its value held

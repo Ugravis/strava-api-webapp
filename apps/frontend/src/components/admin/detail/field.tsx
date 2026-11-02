@@ -4,7 +4,7 @@ import { type ReactNode, useState } from "react";
 import { cn } from "@/lib/utils";
 import { EditableMark, EditableValue } from "./editable";
 import { FieldModifiable } from "./field-buttons";
-import type { DetailEditKind, DetailFieldEdit } from "./field-edit";
+import type { DetailEditKind, DetailFieldEdit } from "./edit-types";
 
 /*
  * The content of a detail: in the split panel, a dialog or a page alike.

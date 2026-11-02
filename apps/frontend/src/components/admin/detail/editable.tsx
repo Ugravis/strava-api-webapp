@@ -9,7 +9,10 @@ import { useNoHover } from "@/hooks/use-no-hover";
 import { cn } from "@/lib/utils";
 import { DetailFieldButton, FieldButtons, FieldMenuClose, FieldMenuItem } from "./field-buttons";
 import { DraftValue } from "./draft-field";
-import { type DetailFieldEdit, type DraftBinding, EditValue, editCopy, editEmpty, type InlineEdit, InlineEditor, isInline, isMultiline } from "./field-edit";
+import { type DetailFieldEdit, type DraftBinding, type InlineEdit, isInline, isMultiline } from "./edit-types";
+import { EditValue } from "./edit-value";
+import { editCopy, editEmpty } from "./field-edit";
+import { InlineEditor } from "./inline-editor";
 import { PickerField } from "./field-picker";
 
 /*

@@ -6,7 +6,8 @@ import { PILL_TONES } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { type DetailEditOption, OptionLabel } from "./field-edit";
+import type { DetailEditOption } from "./edit-types";
+import { OptionLabel } from "./edit-value";
 
 /*
  * The insides of the popovers of free values (`tags`) and of another row

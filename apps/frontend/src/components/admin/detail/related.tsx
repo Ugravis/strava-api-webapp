@@ -2,6 +2,7 @@
 
 import { ChevronRightIcon, LoaderCircleIcon, RotateCcwIcon } from "lucide-react";
 import { type ReactNode, useEffect, useEffectEvent, useState } from "react";
+import { formatNumber } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -124,14 +125,11 @@ export function DetailRelated({
       </ul>
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-muted-foreground">
         <span className="tabular-nums">
-          {data.items.length < data.total ? `${data.items.length} sur ${data.total.toLocaleString("fr-FR")}` : `${data.total.toLocaleString("fr-FR")} au total`}
+          {data.items.length < data.total ? `${data.items.length} sur ${formatNumber(data.total)}` : `${formatNumber(data.total)} au total`}
         </span>
         <span className="flex items-center gap-1">
           {data.items.length < data.total && (
-            <Button size="xs" variant="ghost" disabled={loadingMore} onClick={loadMore}>
-              {loadingMore && <LoaderCircleIcon className="animate-spin" aria-hidden />}
-              {failedMore ? "Échec, réessayer" : `Voir plus (${(data.total - data.items.length).toLocaleString("fr-FR")})`}
-            </Button>
+            <LoadMoreButton size="xs" left={data.total - data.items.length} loading={loadingMore} failed={failedMore} onClick={loadMore} />
           )}
           {all && data.items.length < data.total && (
             <Button size="xs" variant="ghost" onClick={all.onClick}>
@@ -155,5 +153,15 @@ export function Failed({ onRetry }: { onRetry: () => void }) {
         Réessayer
       </Button>
     </div>
+  );
+}
+
+/** « Voir plus », with how many are left when known; « Échec, réessayer » once it failed. */
+export function LoadMoreButton({ left, loading, failed, size, className, onClick }: { left?: number | null; loading: boolean; failed: boolean; size: "xs" | "sm"; className?: string; onClick: () => void }) {
+  return (
+    <Button size={size} variant="ghost" className={className} disabled={loading} onClick={onClick}>
+      {loading && <LoaderCircleIcon className="animate-spin" aria-hidden />}
+      {failed ? "Échec, réessayer" : left ? `Voir plus (${formatNumber(left)})` : "Voir plus"}
+    </Button>
   );
 }

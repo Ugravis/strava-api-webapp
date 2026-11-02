@@ -43,5 +43,5 @@ export function formatBytes(bytes: number): string {
     value /= 1024;
     unit += 1;
   }
-  return `${size.format(value)} ${BYTE_UNITS[unit]}`;
+  return `${size.format(value)}\u00a0${BYTE_UNITS[unit]}`;
 }

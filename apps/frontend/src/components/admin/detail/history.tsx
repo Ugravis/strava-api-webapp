@@ -1,10 +1,8 @@
 "use client";
 
-import { LoaderCircleIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Failed, useDetailLoad } from "./related";
+import { Failed, LoadMoreButton, useDetailLoad } from "./related";
 import { DetailTimeline, DetailTimelineItem } from "./timeline";
 
 /** An event of the history of a row, e.g. an entry of the audit log. */
@@ -62,10 +60,7 @@ export function DetailHistory({ load, refreshKey, now, empty = "Aucun événemen
         ))}
       </DetailTimeline>
       {next && (
-        <Button size="sm" variant="ghost" className="self-start" disabled={loadingMore} onClick={loadMore}>
-          {loadingMore && <LoaderCircleIcon className="animate-spin" aria-hidden />}
-          {failedMore ? "Échec, réessayer" : left ? `Voir plus (${left.toLocaleString("fr-FR")})` : "Voir plus"}
-        </Button>
+        <LoadMoreButton size="sm" className="self-start" left={left} loading={loadingMore} failed={failedMore} onClick={loadMore} />
       )}
     </div>
   );

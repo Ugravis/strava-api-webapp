@@ -23,7 +23,7 @@ A detail panel on the right of the pages of a section, e.g. the row of a table o
 - **Fresh contents.** Each content opened starts afresh, even of the same component: a draft opened again is blank.
 - **URL.** `open(content, { id })` writes `?row=<id>&panel=<mode>` through the history (no server round trip); `close()` removes both. A link with `?row=` is shared: the page opens that row on arrival, in the mode of `?panel=`.
 - **Header.** Icon buttons, each named in a bubble after 400 ms.
-- **Content.** Pages hand only the content, scrolled with the thin scrollbar of the tables; the panel draws the header (back, forward, title, fold, full screen, mode, close) and scrolls its body, a column at least as tall as the panel (so that a sticky row of buttons sits at the bottom).
+- **Content.** Pages hand only the content, scrolled with the thin scrollbar of the tables; the panel draws the header (back, forward, title, fold, full screen, mode, close) and scrolls its body (the wheel over the panel scrolls the panel only, never the page: at its edges or with nothing to scroll, the page stays), a column at least as tall as the panel (so that a sticky row of buttons sits at the bottom).
 
 ## API
 
@@ -35,6 +35,7 @@ open(<Detail row={row} />, { id: row.id, title: "@username" });
 | Key | Use |
 | --- | --- |
 | `open(content, options?)` | Shows `content`, replacing what the panel showed. `options.id` goes in `?row=`; `options.title` in the header (« Détail » otherwise). |
+| `setTitle(id, title)` | Titles the contents of `id`, e.g. once its row is loaded from a shared link. |
 | `replace(content, options?)` | Shows `content` in place of the content shown, without a new step of back and forward and without asking: e.g. the row once created from its draft. |
 | `close()` | Closes, removes `?row=`. |
 | `useSplitPanelGuard(dirty)` | In a content: asks before leaving it while `dirty`. |

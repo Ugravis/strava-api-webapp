@@ -1,8 +1,10 @@
 "use client";
 
-import { FootprintsIcon, StickyNoteIcon, TypeIcon } from "lucide-react";
+import { checkField } from "@kilotrace/shared/rules";
+import { FootprintsIcon, KeyRoundIcon, StickyNoteIcon, TypeIcon } from "lucide-react";
 import { DetailColumnFields, DetailCover, DetailField, DetailFields, DetailForm, DetailHeader, DetailMedia, DetailSection, LucideIconByName } from "@/components/admin/detail";
 import { BADGES_TABLE, COLLECTION_OPTIONS, COLLECTIONS, type PocCollection, SPORTS } from "./poc-order";
+import { BADGE_RULES } from "./poc-rules";
 import { createPocBadge } from "./poc-store";
 
 /** A badge being typed: every field may still be empty. */
@@ -19,6 +21,7 @@ export interface PocBadgeDraft {
   endsAt: string | null;
   description: string | null;
   sports: string[];
+  keywords: string[];
 }
 
 const BLANK: PocBadgeDraft = {
@@ -33,6 +36,7 @@ const BLANK: PocBadgeDraft = {
   endsAt: null,
   description: null,
   sports: [],
+  keywords: [],
 };
 
 /** Beyond, a badge of the collection could never be won. */
@@ -44,12 +48,14 @@ const MAX_THRESHOLD: Record<PocCollection, number> = { distance: 40_075, tiles: 
  * every kind of field, and fields bound to each other: the icon following
  * the collection until picked, the unit and the bounds of the threshold
  * after the collection, the sports of a distance only, required there, an
- * end after the start.
+ * end after the start. Required fields, bounds and formats come from
+ * `BADGE_RULES`, the rules the fake server judges by too.
  */
 export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Partial<PocBadgeDraft>; onCancel: () => void; onCreated: (id: string) => void }) {
   return (
     <DetailForm
       initial={{ ...BLANK, ...initial }}
+      rules={BADGE_RULES}
       onSubmit={createPocBadge}
       onCancel={onCancel}
       onCreated={(created) => onCreated(created.id!)}
@@ -72,7 +78,7 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                 <DetailField
                   label="Nom"
                   icon={<TypeIcon />}
-                  edit={form.bind("name", { kind: "text", required: true, placeholder: "Marathon", validate: (name) => (name && name.length > 40 ? "40 caractères au plus." : null) })}
+                  edit={form.bind("name", { kind: "text", placeholder: "Marathon" })}
                 />
               </DetailFields>
               {/* The fields of the columns of the table: their names and icons, typed in the draft. */}
@@ -84,7 +90,6 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                     edit: form.bind("collection", {
                       kind: "select",
                       options: COLLECTION_OPTIONS,
-                      required: true,
                       // The icon of the collection, until one is picked.
                       onChange: (next) => !form.touched("icon") && form.set("icon", next ? COLLECTIONS[next as PocCollection].icon : null),
                     }),
@@ -98,7 +103,7 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                 columns={BADGES_TABLE.columns}
                 ids={[
                   { id: "color", edit: form.bind("color", { kind: "color", noneLabel: "Aucune" }) },
-                  { id: "icon", edit: form.bind("icon", { kind: "icon", required: true }) },
+                  { id: "icon", edit: form.bind("icon", { kind: "icon" }) },
                 ]}
               />
             </DetailSection>
@@ -111,8 +116,6 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                     // Its unit and its bounds after the collection.
                     edit: form.bind("threshold", {
                       kind: "number",
-                      required: true,
-                      min: 1,
                       max: values.collection ? MAX_THRESHOLD[values.collection] : undefined,
                       unit: collection?.unit,
                       // Typed within the bounds of a collection, then another one picked.
@@ -121,7 +124,8 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                           ? "Choisir d'abord une collection."
                           : threshold !== null && threshold > MAX_THRESHOLD[values.collection]
                             ? `Le seuil doit être d'au plus ${MAX_THRESHOLD[values.collection].toLocaleString("fr-FR")}\u00a0${collection!.unit}.`
-                            : null,
+                            : // Then the shared rule: a whole number from 1.
+                              checkField(BADGE_RULES.threshold!, threshold),
                     }),
                   },
                   { id: "active", edit: form.bind("active", { kind: "switch" }) },
@@ -145,7 +149,6 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                       kind: "date",
                       time: true,
                       min: values.availableFrom ?? undefined,
-                      validate: (endsAt, { availableFrom }) => (endsAt && availableFrom && endsAt.slice(0, 10) < availableFrom ? "La fin doit suivre « Disponible dès »." : null),
                     }),
                   },
                 ]}
@@ -157,7 +160,13 @@ export function PocBadgeCreate({ initial, onCancel, onCreated }: { initial?: Par
                   label="Description"
                   icon={<StickyNoteIcon />}
                   stacked
-                  edit={form.bind("description", { kind: "text", multiline: true, placeholder: "Ce que l'athlète lit sous le badge" })}
+                  edit={form.bind("description", { kind: "markdown", placeholder: "Ce que l'athlète lit sous le badge" })}
+                />
+                {/* Free values, suggestions offered. */}
+                <DetailField
+                  label="Mots-clés"
+                  icon={<KeyRoundIcon />}
+                  edit={form.bind("keywords", { kind: "tags", suggestions: ["course", "vélo", "endurance", "montagne", "ville", "défi"] })}
                 />
               </DetailFields>
             </DetailSection>

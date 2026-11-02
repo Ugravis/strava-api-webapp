@@ -39,6 +39,16 @@
         "types": "./dist/table/index.d.cts",
         "default": "./dist/table/index.cjs"
       }
+    },
+    "./rules": {
+      "import": {
+        "types": "./dist/rules/index.d.ts",
+        "default": "./dist/rules/index.js"
+      },
+      "require": {
+        "types": "./dist/rules/index.d.cts",
+        "default": "./dist/rules/index.cjs"
+      }
     }
   },
   "scripts": {

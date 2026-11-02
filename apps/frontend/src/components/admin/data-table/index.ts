@@ -31,4 +31,6 @@ export { TableCheckbox } from "./cells/checkbox";
 export { formatBytes, formatDate, formatDateTime, formatNumber, formatRelative } from "./format";
 export { type LocalTableSpec, localTableSource } from "./local-source";
 export { OrderCell } from "./reorder";
+export { type ConfirmedRun, type ConfirmOptions, SelectionAction, useConfirmedAction } from "./confirm";
+export { useSelectionIconsOnly } from "./parts";
 export { Tip } from "./tip";

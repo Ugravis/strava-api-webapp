@@ -1,9 +1,10 @@
 "use client";
 
-import { CheckIcon, LoaderCircleIcon, XIcon } from "lucide-react";
+import { checkField, type FieldRule } from "@kilotrace/shared/rules";
+import { CheckIcon, EyeIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useState } from "react";
 import type { ActionResult } from "@/components/admin/action-state";
-import { DateCell, EmptyValue, formatDate, formatDateTime, NumberCell, PILL_TONES, type Tone } from "@/components/admin/data-table";
+import { DateCell, EmptyValue, formatDate, formatDateTime, NumberCell, PILL_TONES, Tip, type Tone } from "@/components/admin/data-table";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { ErrorBubble } from "./error-bubble";
 import { DetailFieldButton, FieldButtons } from "./field-buttons";
 import { LucideIconByName } from "./icon-picker";
+import { Markdown } from "./markdown";
+import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
 
 /*
  * The kinds of values a `DetailField` edits in place: typed in its field
@@ -26,6 +29,8 @@ export interface DetailEditOption {
   label: string;
   icon?: ReactNode;
   tone?: Tone;
+  /** Under its label in a list, e.g. the @username of an account. */
+  description?: string;
 }
 
 /**
@@ -53,7 +58,17 @@ export interface DraftBinding {
  * the field, e.g. a date before another field of the row. `required` refuses
  * it cleared, « Champ obligatoire. ».
  */
-type Saved<T> = { onSave: Save<T>; validate?: (value: T) => string | null; required?: boolean; draft?: DraftBinding };
+type Saved<T> = {
+  onSave: Save<T>;
+  validate?: (value: T) => string | null;
+  required?: boolean;
+  /**
+   * Not editable by this user, and why, e.g. « Réservé aux super-admins »: a
+   * lock instead of its pencil, its reason in a bubble; no blue dot.
+   */
+  locked?: string | null;
+  draft?: DraftBinding;
+};
 
 /** The kinds of in-place edits, by their `kind`; `text` when none. */
 export interface DetailEditKinds {
@@ -79,6 +94,23 @@ export interface DetailEditKinds {
   image: { kind: "image"; value: string | null; accept?: string; maxSize?: number; noneLabel?: string } & Saved<File | null>;
   /** Yes or no, saved as soon as switched. */
   switch: { kind: "switch"; value: boolean } & Saved<boolean>;
+  /** An e-mail address, refused malformed; shown as a link. */
+  email: { kind: "email"; value: string | null; placeholder?: string } & Saved<string | null>;
+  /** An `http` or `https` link, refused malformed; shown as a link. */
+  url: { kind: "url"; value: string | null; placeholder?: string } & Saved<string | null>;
+  /** A text in Markdown, typed on several lines (an eye shows it drawn), shown drawn. */
+  markdown: { kind: "markdown"; value: string | null; placeholder?: string } & Saved<string | null>;
+  /**
+   * Free values, typed one by one (Enter or a comma adds one), `suggestions`
+   * offered as they are typed; saved as the popover closes.
+   */
+  tags: { kind: "tags"; value: string[]; suggestions?: string[]; max?: number; maxLength?: number; placeholder?: string } & Saved<string[]>;
+  /**
+   * Another row, e.g. an account: searched on the server by `search(query)`
+   * (an empty query for the first ones), picked in a popover; a click saves.
+   * The value is the option, so that its label shows without loading it.
+   */
+  relation: { kind: "relation"; value: DetailEditOption | null; search: (query: string) => Promise<DetailEditOption[]>; noneLabel?: string; placeholder?: string } & Saved<DetailEditOption | null>;
 }
 export type DetailEditKind = keyof DetailEditKinds;
 
@@ -89,11 +121,28 @@ export type DetailEditKind = keyof DetailEditKinds;
 export type DetailFieldEdit<K extends DetailEditKind = DetailEditKind> = DetailEditKinds[K];
 
 /** Kinds typed in the field itself. */
-export type InlineEdit = Extract<DetailFieldEdit, { kind?: "text" | "number" | "date" }>;
+export type InlineEdit = Extract<DetailFieldEdit, { kind?: "text" | "number" | "date" | "email" | "url" | "markdown" }>;
 /** Kinds picked in a popover. */
-export type PickerEdit = Extract<DetailFieldEdit, { kind: "select" | "multiselect" | "color" | "icon" | "image" }>;
+export type PickerEdit = Extract<DetailFieldEdit, { kind: "select" | "multiselect" | "color" | "icon" | "image" | "tags" | "relation" }>;
 
-export const isInline = (edit: DetailFieldEdit): edit is InlineEdit => !edit.kind || edit.kind === "text" || edit.kind === "number" || edit.kind === "date";
+const INLINE = new Set([undefined, "text", "number", "date", "email", "url", "markdown"]);
+export const isInline = (edit: DetailFieldEdit): edit is InlineEdit => INLINE.has(edit.kind);
+/** Typed on several lines: ⌘ Enter saves. */
+export const isMultiline = (edit: DetailFieldEdit) => edit.kind === "markdown" || ((!edit.kind || edit.kind === "text") && !!edit.multiline);
+
+/**
+ * The options of an edit following a shared rule (`@kilotrace/shared/rules`):
+ * `required`, the bounds of a number, `validate`. Spread in an `edit`, its
+ * own keys after; `row` the values a rule hangs on.
+ */
+export function fromRule(rule: FieldRule | undefined, row?: object): { required?: boolean; min?: number; max?: number; validate?: (value: unknown) => string | null } {
+  if (!rule) return {};
+  return {
+    required: "required" in rule ? rule.required : undefined,
+    ...(rule.type === "number" ? { min: rule.min, max: rule.max } : {}),
+    validate: (value: unknown) => checkField(rule, value && typeof value === "object" && "value" in value ? (value as DetailEditOption).value : value, row as Record<string, unknown>),
+  };
+}
 
 /**
  * Saves a value, unless unchanged, then calls `close`. Refused by `validate`
@@ -104,7 +153,7 @@ export function useCommit(edit: DetailFieldEdit, close: () => void) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const commit = async (next: unknown) => {
-    if (saving) return;
+    if (saving || edit.locked) return;
     // A file is always new.
     if (!(next instanceof File) && JSON.stringify(next) === JSON.stringify(edit.value)) return close();
     // A draft judges its fields as a whole, on submitting.
@@ -148,13 +197,17 @@ export function editCopy(edit: DetailFieldEdit): string | null {
       return null;
     case "image":
       return edit.value;
+    case "tags":
+      return edit.value.length > 0 ? edit.value.join(", ") : null;
+    case "relation":
+      return edit.value?.label ?? null;
     default:
       return edit.value || null;
   }
 }
 
 /** Is there anything to show: « — » otherwise. */
-export const editEmpty = (edit: DetailFieldEdit) => (edit.kind === "multiselect" ? edit.value.length === 0 : edit.kind !== "switch" && (edit.value === null || edit.value === ""));
+export const editEmpty = (edit: DetailFieldEdit) => (edit.kind === "multiselect" || edit.kind === "tags" ? edit.value.length === 0 : edit.kind !== "switch" && (edit.value === null || edit.value === ""));
 
 /** An option as a list shows it: a pill of its tone, or its icon and label. */
 export function OptionLabel({ option }: { option: DetailEditOption }) {
@@ -163,6 +216,7 @@ export function OptionLabel({ option }: { option: DetailEditOption }) {
     <span className="flex min-w-0 items-center gap-1.5">
       {option.icon && <span className="inline-flex shrink-0 text-muted-foreground [&_svg]:size-3.5">{option.icon}</span>}
       <span className="truncate">{option.label}</span>
+      {option.description && <span className="truncate text-xs text-muted-foreground">{option.description}</span>}
     </span>
   );
 }
@@ -202,6 +256,34 @@ export function EditValue({ edit }: { edit: DetailFieldEdit }) {
       );
     case "color":
       return <ColorValue color={edit.value!} />;
+    case "email":
+    case "url":
+      return (
+        <a
+          href={edit.kind === "email" ? `mailto:${edit.value}` : edit.value!}
+          target="_blank"
+          rel="noreferrer"
+          // Kept from the row of a table.
+          onClick={(event) => event.stopPropagation()}
+          className="truncate underline-offset-2 hover:underline"
+        >
+          {edit.value}
+        </a>
+      );
+    case "markdown":
+      return <Markdown source={edit.value!} />;
+    case "tags":
+      return (
+        <span className="flex flex-wrap items-center gap-1 py-1">
+          {edit.value.map((tag) => (
+            <span key={tag} className={cn("inline-flex h-5 items-center rounded-full px-2 text-xs font-medium", PILL_TONES.gray)}>
+              {tag}
+            </span>
+          ))}
+        </span>
+      );
+    case "relation":
+      return <OptionLabel option={edit.value!} />;
     case "image":
       return (
         // eslint-disable-next-line @next/next/no-img-element -- any URL, an object URL included
@@ -228,7 +310,15 @@ function SwitchValue({ edit }: { edit: Extract<DetailFieldEdit, { kind: "switch"
   return (
     <span ref={setAnchor} className="flex items-center gap-2">
       <ErrorBubble anchor={anchor} message={error} />
-      <Switch checked={edit.value} disabled={saving} onCheckedChange={(next) => void commit(next)} aria-label={edit.value ? "Oui" : "Non"} />
+      {edit.locked ? (
+        <Tip label={edit.locked}>
+          <span tabIndex={0} className="inline-flex cursor-not-allowed">
+            <Switch checked={edit.value} disabled aria-label={edit.locked} />
+          </span>
+        </Tip>
+      ) : (
+        <Switch checked={edit.value} disabled={saving} onCheckedChange={(next) => void commit(next)} aria-label={edit.value ? "Oui" : "Non"} />
+      )}
       <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span>
       {saving && <LoaderCircleIcon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />}
     </span>
@@ -265,6 +355,11 @@ export function parse(edit: InlineEdit, draft: string): { value: string | number
     if ((edit.min !== undefined && number < edit.min) || (edit.max !== undefined && number > edit.max)) return { error: `Le nombre doit être ${bounds}.` };
     return { value: number };
   }
+  if (edit.kind === "email" || edit.kind === "url") {
+    const refused = checkField({ type: edit.kind }, text);
+    return refused ? { error: refused } : { value: text };
+  }
+  if (edit.kind === "markdown") return { value: draft.trim() ? draft : null };
   if (edit.kind === "date") {
     // The browser lets years of six digits through.
     const date = new Date(text);
@@ -285,7 +380,9 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
   const [draft, setDraft] = useState(() => draftOf(edit));
   const { saving, commit, error, setError } = useCommit(edit, onClose);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const multiline = edit.kind !== "number" && edit.kind !== "date" && !!edit.multiline;
+  const multiline = isMultiline(edit);
+  // Markdown drawn as it will show, the field hidden meanwhile.
+  const [preview, setPreview] = useState(false);
 
   const save = () => {
     if (saving) return;
@@ -293,7 +390,12 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
     if ("error" in parsed) setError(parsed.error);
     else void commit(parsed.value);
   };
+  const type = (text: string) => {
+    setDraft(text);
+    setError(null);
+  };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (edit.kind === "markdown" && markdownShortcut(event as KeyboardEvent<HTMLTextAreaElement>, type)) return;
     if (event.key === "Escape") {
       // Left to the field: the panel stays open.
       event.preventDefault();
@@ -323,16 +425,37 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
   return (
     <div className={cn("relative w-full", multiline ? "min-w-0" : edit.kind === "date" ? "min-w-44" : "min-w-32")}>
       <ErrorBubble anchor={anchor} message={error} />
-      {multiline ? (
-        <Textarea {...field} placeholder={edit.placeholder} className="min-h-20 pr-16 text-sm" />
+      {edit.kind === "markdown" ? (
+        // Its shaping buttons above it, beside the ✓ and ✕ of the field.
+        <div className="flex flex-col gap-1">
+          <MarkdownToolbar field={preview ? null : (anchor as HTMLTextAreaElement | null)} onChange={type} disabled={saving || preview} className="mt-1 mr-22" />
+          {preview ? (
+            <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{draft.trim() ? <Markdown source={draft} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
+          ) : (
+            <Textarea {...field} placeholder={edit.placeholder} className="min-h-24 text-sm" />
+          )}
+        </div>
+      ) : multiline ? (
+        <Textarea {...field} placeholder={"placeholder" in edit ? edit.placeholder : undefined} className="min-h-20 pr-16 text-sm" />
       ) : edit.kind === "number" ? (
         <Input {...field} type="number" inputMode="decimal" min={edit.min} max={edit.max} step={edit.step ?? "any"} className="h-7 w-0 min-w-full [appearance:textfield] pr-15 text-sm [&::-webkit-inner-spin-button]:appearance-none" />
       ) : edit.kind === "date" ? (
         <Input {...field} type={edit.time ? "datetime-local" : "date"} min={edit.min} max={edit.max} className="h-7 w-0 min-w-full pr-15 text-sm" />
       ) : (
-        <Input {...field} placeholder={edit.placeholder} className="h-7 w-0 min-w-full pr-15 text-sm" />
+        <Input
+          {...field}
+          type={edit.kind === "email" || edit.kind === "url" ? edit.kind : "text"}
+          inputMode={edit.kind === "email" || edit.kind === "url" ? edit.kind : undefined}
+          placeholder={edit.placeholder}
+          className="h-7 w-0 min-w-full pr-15 text-sm"
+        />
       )}
       <FieldButtons top={multiline} shown>
+        {edit.kind === "markdown" && (
+          <DetailFieldButton label={preview ? "Modifier le texte" : "Aperçu"} pressed={preview} disabled={saving} onClick={() => setPreview((shown) => !shown)}>
+            <EyeIcon />
+          </DetailFieldButton>
+        )}
         <DetailFieldButton label="Enregistrer" primary disabled={saving} onClick={save}>
           {saving ? <LoaderCircleIcon className="animate-spin" /> : <CheckIcon />}
         </DetailFieldButton>

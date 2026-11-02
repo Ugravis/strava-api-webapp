@@ -131,7 +131,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |
 | `pageSize` | Else the default of the layout: 30 for a table, 24 for cards, 60 for a list. At most 100. A view's own `pageSize` wins. |
 | `maxHeight` | Most height of the box, in every layout, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"none"` grows without a scroll of its own. |
-| `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons. |
+| `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons: `(ids, clear) => …`. `SelectionAction` (`label`, `icon`, `destructive`, `confirm`, `onClick`) asks first and spins as the detail buttons do; `BulkEditAction` of the detail kit changes a field on every row (`docs/admin-detail.md`). Esc clears the selection, before a panel closes (left to a field, a menu, a dialog or the panel itself). One selection per page: rows checked in a table clear those of the others. The bar stays inside the screen: when its buttons no longer fit, they show their icon only (named in a bubble for `SelectionAction` and `BulkEditAction`; a plain `Button` keeps its name for screen readers only), the count without its word. |
 | `actions` | The `RowActions` menu at the end of the row. |
 | `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. The `onRowClick` prop of `DataTable` wins over it. |
 | `muted` | Greyed rows. |
@@ -198,6 +198,10 @@ Other bits:
 - **Order.** With an `orderColumn` and `reorder`, rows move by their handle, in every layout (up and down in a table, any way in cards and list), with the mouse, a finger or the keyboard (Space, arrows, Space), within their group and their page. Hiding the order column hides the handles. Only once sorted by that column (either way), without search or filters, and not while a move saves: the handle is greyed otherwise, its bubble telling why. The new order shows at once; the page is then fetched again without skeleton, a failure told by a toast. `TableMove` gives the new neighbours on the page in ascending order: the server places the row right before `before`, else right after `after`, and numbers its order again.
 - **Sort.** « Trier » shows only with a sortable column, e.g. not on the commits, which GitHub serves in its own order.
 - **Columns.** The « Colonnes » menu lists the columns of every view: those of the current view can be hidden (`hide`), those of the others shown (`show`). « Trier » lists every sortable column. The column of the current grouping (same id, not locked), `defaultGroupBy` included, is hidden by the system: its group titles already tell its value. Ticking it again shows it (`show`), whatever the grouping.
+
+## With a panel
+
+`useRowPanel` of the detail kit opens the rows in the split panel: spread its `table` on the `DataTable` (`config`, `onRowClick`, `activeRowId`, `onRows`, the rows shown for the next one after a removal). See `docs/admin-detail.md`.
 
 ## Not in the kit
 

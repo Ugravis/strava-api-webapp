@@ -69,7 +69,8 @@ export function DetailField<K extends DetailEditKind = "text">({
   const [count] = useState(() => (on: boolean) => setModifiers((n) => n + (on ? 1 : -1)));
   // A draft open: every field is typed, none marked; those required told by a star.
   const drafting = !!edit?.draft?.active;
-  const marked = !drafting && (editHint ?? (!!edit || modifiers > 0));
+  // A lock is no promise: not marked.
+  const marked = !drafting && (editHint ?? ((!!edit && !edit.locked) || modifiers > 0));
   const required = drafting && !!edit?.required;
   return (
     <div className="contents">

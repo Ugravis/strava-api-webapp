@@ -24,6 +24,9 @@ const ARROW_REST = 150;
 const SHADOW =
   "group-data-scrolled/table:after:pointer-events-none group-data-scrolled/table:after:absolute group-data-scrolled/table:after:inset-y-0 group-data-scrolled/table:after:right-0 group-data-scrolled/table:after:w-px group-data-scrolled/table:after:bg-border";
 
+/** The tables of the page: one selection at a time, a table picking rows clears the others. */
+const selecting = new Set<(owner: string) => void>();
+
 /**
  * The table of the back office: a header of search, filters and tools, the
  * rows the server serves page by page, and the pagination. Everything the
@@ -31,18 +34,23 @@ const SHADOW =
  * or memoized. `onRowClick` (stable too) opens a row, e.g. in a detail panel;
  * `activeRowId` highlights the one opened, which the arrows then move, from
  * page to page. A new `refreshKey` fetches the page again without skeleton,
- * e.g. once a row changed in its detail.
+ * e.g. once a row changed in its detail. `onRows` follows the rows shown, in
+ * their order (`useRowPanel` opens the next one after a removal). Esc
+ * clears the selection, before closing a panel; rows checked in another
+ * table of the page clear it too, the bar of a selection being one.
  */
 export function DataTable<T>({
   config: base,
   onRowClick,
   activeRowId = null,
   refreshKey,
+  onRows,
 }: {
   config: DataTableConfig<T>;
   onRowClick?: (row: T) => void;
   activeRowId?: string | null;
   refreshKey?: unknown;
+  onRows?: (rows: T[]) => void;
 }) {
   const state = useDataTable(base);
   const refresh = useEffectEvent(() => state.refresh());
@@ -73,6 +81,40 @@ export function DataTable<T>({
   const someShown = shownIds.some((id) => selected.has(id));
   const selectable = !!config.bulkActions;
   const span = columns.length + (selectable ? 1 : 0) + (config.actions ? 1 : 0);
+  const shownRows = useEffectEvent(() => onRows?.(entries.flatMap((entry) => ("row" in entry ? [entry.row] : []))));
+  useEffect(() => {
+    if (result) shownRows();
+  }, [result]);
+
+  // One selection on the page: told as it starts, the others cleared.
+  const instance = useId();
+  const clearOthers = useEffectEvent((owner: string) => owner !== instance && selected.size > 0 && state.clearSelection());
+  useEffect(() => {
+    const listener = (owner: string) => clearOthers(owner);
+    selecting.add(listener);
+    return () => void selecting.delete(listener);
+  }, []);
+  const picking = selected.size > 0;
+  useEffect(() => {
+    if (picking) selecting.forEach((listener) => listener(instance));
+  }, [picking, instance]);
+
+  // Esc clears the selection first, before a panel closes: left to a field, a menu, a dialog or the panel itself.
+  const clearSelection = state.clearSelection;
+  useEffect(() => {
+    if (selected.size === 0) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=true], [role=menu], [role=listbox], [role=dialog], [role=alertdialog], aside")) return;
+      if (document.querySelector("[role=dialog], [role=alertdialog], [role=menu]")) return;
+      event.preventDefault();
+      clearSelection();
+    };
+    // Captured, ahead of the panel, which listens on the document too.
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [selected, clearSelection]);
   // As many as the last page: the box, as tall as its rows, keeps its height.
   const skeletons = last?.entries.length || 10;
 

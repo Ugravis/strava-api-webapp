@@ -19,12 +19,14 @@ import {
   HashIcon,
   HistoryIcon,
   ImageIcon,
+  KeyRoundIcon,
   LinkIcon,
   MailIcon,
   PanelRightOpenIcon,
   ShapesIcon,
   StickyNoteIcon,
   TagIcon,
+  Trash2Icon,
   TypeIcon,
   ZapIcon,
 } from "lucide-react";
@@ -45,6 +47,7 @@ import {
   numberColumn,
   pillsColumn,
   RowActions,
+  SelectionAction,
   statusColumn,
   textColumn,
   Truncate,
@@ -54,10 +57,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { type PocActionKind, POC_NOW, POC_USERS, type PocUser } from "./poc-data";
-import { savePocUser } from "./poc-store";
+import { BulkEditAction, fromRule } from "@/components/admin/detail";
+import { USER_RULES } from "./poc-rules";
+import { bulkEditPocUsers, removePocUsers, savePocUser, suspendPocUsers } from "./poc-store";
 import { CATEGORY_OPTIONS, CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";
 
 const open = (user: PocUser) => toast(`Ouvrirait le panneau de @${user.username}`);
+
+/** Offered as the keywords of an account are typed. */
+const USER_KEYWORDS = ["signalé", "à suivre", "VIP", "partenaire", "bêta"];
 
 /** The demo rows, served like the API would, after a network-like pause. */
 export const fetchPocUsers = localTableSource(POC_USERS, {
@@ -133,8 +141,8 @@ export const USERS: DataTableConfig<PocUser> = {
       value: (user) => user.email,
       muted: true,
       width: "max-w-52",
-      // Refused by the server without « @ »: its message in the bubble.
-      edit: (user) => ({ kind: "text", value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }),
+      // An address checked as it is typed (its kind, its shared rule), before any call: the server judges again.
+      edit: (user) => ({ kind: "email", ...fromRule(USER_RULES.email), value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }),
     }),
     dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
     dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true, now: POC_NOW }),
@@ -183,6 +191,14 @@ export const USERS: DataTableConfig<PocUser> = {
       // Several picked in a list, in the cell as in the detail.
       edit: (user) => ({ kind: "multiselect", value: user.categories, options: CATEGORY_OPTIONS, onSave: (categories) => savePocUser(user.id, { categories: categories as PocUser["categories"] }) }),
     }),
+    pillsColumn({
+      id: "keywords",
+      header: "Mots-clés",
+      icon: <KeyRoundIcon />,
+      value: (user) => user.keywords.map((label) => ({ label, tone: "gray" as const })),
+      // Free values, suggestions offered, in the cell as in the detail.
+      edit: (user) => ({ kind: "tags", max: 8, maxLength: 24, value: user.keywords, suggestions: USER_KEYWORDS, onSave: (keywords) => savePocUser(user.id, { keywords }) }),
+    }),
     textColumn({
       id: "note",
       header: "Note",
@@ -209,16 +225,52 @@ export const USERS: DataTableConfig<PocUser> = {
     { id: "status", label: "Statut", title: (key) => STATUSES[key as PocUser["status"]].label },
     { id: "role", label: "Rôle", title: (key) => (key === "~" ? "Sans rôle" : ROLES[key]!.label) },
   ],
-  bulkActions: () => (
+  // Fields changed on every account picked, then actions asking first.
+  bulkActions: (ids, clear) => (
     <>
+      <BulkEditAction
+        count={ids.length}
+        noun={(count) => (count > 1 ? "comptes" : "compte")}
+        columns={USERS.columns}
+        rules={USER_RULES as never}
+        fields={[
+          { id: "categories", edit: { kind: "multiselect", options: CATEGORY_OPTIONS } },
+          { id: "keywords", edit: { kind: "tags", suggestions: USER_KEYWORDS } },
+          { id: "note", edit: { kind: "text", multiline: true, placeholder: "Une note pour l'équipe" } },
+        ]}
+        onSave={(change) => bulkEditPocUsers(ids, change)}
+      />
       <Button size="sm" variant="ghost" onClick={() => toast("Exporterait la sélection")}>
         <DownloadIcon data-icon="inline-start" />
         Exporter
       </Button>
-      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => toast("Suspendrait la sélection")}>
-        <BanIcon data-icon="inline-start" />
-        Suspendre
-      </Button>
+      <SelectionAction
+        label="Suspendre"
+        icon={<BanIcon data-icon="inline-start" />}
+        destructive
+        confirm={{
+          title: `Suspendre ${ids.length > 1 ? `${ids.length} comptes` : "ce compte"} ?`,
+          description: "Ils ne peuvent plus se connecter et n'apparaissent plus sur le site. Les membres de l'équipe sont refusés.",
+          confirmLabel: "Suspendre",
+          reason: { label: "Motif", placeholder: "Gardé dans l'historique de chaque compte", required: true },
+        }}
+        onClick={async (reason) => {
+          const outcome = await suspendPocUsers(ids, reason);
+          if (outcome.ok) clear();
+          return outcome;
+        }}
+      />
+      <SelectionAction
+        label="Supprimer"
+        icon={<Trash2Icon data-icon="inline-start" />}
+        destructive
+        confirm={{ title: `Supprimer ${ids.length > 1 ? `${ids.length} comptes` : "ce compte"} ?`, description: "Réservé aux super-admins : refusé par le serveur pour un modérateur. Cette suppression est définitive.", confirmLabel: "Supprimer" }}
+        onClick={async () => {
+          const outcome = await removePocUsers(ids);
+          if (outcome.ok) clear();
+          return outcome;
+        }}
+      />
     </>
   ),
   actions: (user) => (

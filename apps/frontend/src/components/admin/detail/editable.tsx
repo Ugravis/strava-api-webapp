@@ -1,15 +1,15 @@
 "use client";
 
-import { CopyCheckIcon, CopyIcon, ExternalLinkIcon, PanelRightOpenIcon, PencilIcon } from "lucide-react";
+import { CopyCheckIcon, CopyIcon, ExternalLinkIcon, LockIcon, PanelRightOpenIcon, PencilIcon } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
-import { CopyButton, EmptyValue } from "@/components/admin/data-table/cells/base";
+import { CopyButton, EmptyValue, FLOATING_BUTTON } from "@/components/admin/data-table/cells/base";
 import { Tip } from "@/components/admin/data-table/tip";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { useNoHover } from "@/hooks/use-no-hover";
 import { cn } from "@/lib/utils";
 import { DetailFieldButton, FieldButtons, FieldMenuClose, FieldMenuItem } from "./field-buttons";
 import { DraftValue } from "./draft-field";
-import { type DetailFieldEdit, type DraftBinding, EditValue, editCopy, editEmpty, type InlineEdit, InlineEditor, isInline } from "./field-edit";
+import { type DetailFieldEdit, type DraftBinding, EditValue, editCopy, editEmpty, type InlineEdit, InlineEditor, isInline, isMultiline } from "./field-edit";
 import { PickerField } from "./field-picker";
 
 /*
@@ -59,31 +59,36 @@ export function EditableValue({
   const [editing, setEditing] = useState(false);
   if (edit?.draft?.active) return <DraftValue edit={edit as DetailFieldEdit & { draft: DraftBinding }} label={label} />;
   const inline = !!edit && isInline(edit);
-  const multiline = inline && (!edit.kind || edit.kind === "text") && !!edit.multiline;
+  const multiline = inline && isMultiline(edit);
+  // Not for this user: a lock telling why, in place of the pencil.
+  const locked = edit?.locked || null;
+  // An address or a link edited: opened from the bubble of a phone.
+  const link = href ?? (edit && (edit.kind === "email" || edit.kind === "url") && edit.value ? (edit.kind === "email" ? `mailto:${edit.value}` : edit.value) : undefined);
   // Without children, the value of `edit` drawn after its kind.
   const drawn = children === undefined || children === null ? undefined : children;
   const empty = drawn === undefined ? !edit || editEmpty(edit) : drawn === "" || drawn === false;
   const copied = copy !== undefined ? copy : drawn === undefined ? (edit ? editCopy(edit) : null) : typeof drawn === "string" || typeof drawn === "number" ? String(drawn) : null;
   // A switch is its own button: no pencil.
   // Bound to a draft at rest: edited with the others of its section.
-  const editable = !!edit && edit.kind !== "switch" && !edit.draft;
+  const editable = !!edit && edit.kind !== "switch" && !edit.draft && !locked;
   // A popover open, the pencil closes it again, giving up.
   const toggle = () => editable && setEditing((open) => !open);
 
   const drawnValue = drawn === undefined && edit ? <EditValue edit={edit} /> : empty ? <EmptyValue /> : drawn;
   const value =
-    noHover && (tools || copied || editable) ? (
-      <ActionsBubble label={label} copied={copied} tools={tools} onEdit={editable ? () => setEditing(true) : undefined} onOpen={onOpen} href={href}>
+    noHover && (tools || copied || editable || locked) ? (
+      <ActionsBubble label={label} copied={copied} tools={tools} onEdit={editable ? () => setEditing(true) : undefined} locked={locked} onOpen={onOpen} href={link}>
         {drawnValue}
       </ActionsBubble>
     ) : (
       drawnValue
     );
   const valueClass = cn("min-w-0 flex-1", valueClassName, inline && drawn === undefined && (multiline ? "whitespace-pre-line" : "truncate"));
-  const buttons = !noHover && (tools || copied || editable) && (
+  const buttons = !noHover && (tools || copied || editable || locked) && (
     <>
       {tools}
       {copied && <CopyButton value={copied} inline />}
+      {locked && <LockedButton reason={locked} />}
       {editable && (
         <DetailFieldButton label={editing ? `Annuler : ${label}` : `Modifier : ${label}`} pressed={editing} onClick={toggle}>
           <PencilIcon />
@@ -123,6 +128,7 @@ function ActionsBubble({
   copied,
   tools,
   onEdit,
+  locked,
   onOpen,
   href,
   children,
@@ -132,6 +138,7 @@ function ActionsBubble({
   copied: string | null;
   tools?: ReactNode;
   onEdit?: () => void;
+  locked?: string | null;
   onOpen?: () => void;
   children: ReactNode;
 }) {
@@ -196,6 +203,11 @@ function ActionsBubble({
                 {done ? <CopyCheckIcon /> : <CopyIcon />}
               </FieldMenuItem>
             )}
+            {locked && (
+              <FieldMenuItem label={locked} disabled onClick={() => {}}>
+                <LockIcon />
+              </FieldMenuItem>
+            )}
             {onEdit && (
               <FieldMenuItem label="Modifier" onClick={() => {
                   close();
@@ -253,6 +265,17 @@ function FloatingEditor({ edit, label, className, onClose, children }: { edit: I
         </PopoverContent>
       </Popover>
     </>
+  );
+}
+
+/** In place of the pencil of a field this user may not edit: a lock, `reason` in its bubble. */
+function LockedButton({ reason }: { reason: string }) {
+  return (
+    <Tip label={reason}>
+      <span role="img" tabIndex={0} aria-label={reason} className={cn(FLOATING_BUTTON, "cursor-not-allowed text-muted-foreground/70")}>
+        <LockIcon />
+      </span>
+    </Tip>
   );
 }
 

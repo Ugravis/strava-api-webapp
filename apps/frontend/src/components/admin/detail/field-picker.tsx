@@ -10,6 +10,7 @@ import { useNoHover } from "@/hooks/use-no-hover";
 import { ErrorBubble } from "./error-bubble";
 import { SAVE_BUTTON } from "./field-buttons";
 import { type DetailEditOption, OptionLabel, type PickerEdit, useCommit } from "./field-edit";
+import { RelationList, TagsInput } from "./field-lookup";
 import { IconGrid } from "./icon-picker";
 
 /*
@@ -44,7 +45,7 @@ function imageRules(accept: string, maxSize?: number) {
 /** Beyond this many options, a search bar. */
 const SEARCHED = 8;
 
-type Draft = string | string[] | File | null;
+type Draft = string | string[] | File | DetailEditOption | null;
 /** Kinds saved by « Valider » only: closing the popover gives them up. */
 const VALIDATED = new Set(["color", "image"]);
 
@@ -110,16 +111,24 @@ export function PickerField({
         anchor={anchor}
         // Centred under the value, in a cell as in a detail.
         align="center"
-        className={cn("relative gap-2 p-2", edit.kind === "icon" ? "w-80" : edit.kind === "image" ? "w-auto" : "w-64")}
+        className={cn("relative gap-2 p-2", edit.kind === "icon" ? "w-80" : edit.kind === "image" ? "w-auto" : edit.kind === "tags" || edit.kind === "relation" ? "w-72" : "w-64")}
         aria-label={label}
       >
         <div className="flex h-5 items-center justify-between px-1 text-xs font-medium text-muted-foreground">
           <span>
             {label}
-            {(edit.kind === "select" || edit.kind === "multiselect" || edit.kind === "image") && (
+            {(edit.kind === "select" || edit.kind === "multiselect" || edit.kind === "image" || edit.kind === "tags") && (
               <span className="font-normal text-muted-foreground/70">
                 {" "}
-                ({edit.kind === "select" ? "sélection unique" : edit.kind === "multiselect" ? "sélection multiple" : imageRules(edit.accept ?? IMAGE_TYPES, edit.maxSize)})
+                (
+                {edit.kind === "select"
+                  ? "sélection unique"
+                  : edit.kind === "multiselect"
+                    ? "sélection multiple"
+                    : edit.kind === "tags"
+                      ? `valeurs libres${edit.max !== undefined ? `, ${edit.max} max` : ""}`
+                      : imageRules(edit.accept ?? IMAGE_TYPES, edit.maxSize)}
+                )
               </span>
             )}
           </span>
@@ -144,6 +153,25 @@ export function PickerField({
               Valider
             </Button>
           </>
+        )}
+        {edit.kind === "tags" && (
+          <>
+            <TagsInput
+              value={draft as string[]}
+              suggestions={edit.suggestions}
+              max={edit.max}
+              maxLength={edit.maxLength}
+              placeholder={edit.placeholder}
+              disabled={saving}
+              onChange={change}
+            />
+            <Button size="sm" className={SAVE_BUTTON} disabled={saving} onClick={() => void commit(draft)}>
+              Valider
+            </Button>
+          </>
+        )}
+        {edit.kind === "relation" && (
+          <RelationList search={edit.search} selected={draft as DetailEditOption | null} noneLabel={edit.noneLabel} placeholder={edit.placeholder} disabled={saving} onPick={pick} />
         )}
         {edit.kind === "color" && (
           <ColorPicker presets={edit.presets ?? PRESETS} noneLabel={edit.noneLabel} value={draft as string | null} disabled={saving} onChange={change} onDone={() => void commit(draft)} />

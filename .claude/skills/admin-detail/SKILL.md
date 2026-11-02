@@ -9,7 +9,9 @@ description: Build or change the detail of a back-office row with the detail kit
 2. Read `apps/frontend/src/app/(admin)/admin/development/admin-table/poc-detail.tsx` and `poc-badge-detail.tsx`: complete details using every block and every kind of in-place edit; `poc-badge-create.tsx`: a new row as a draft, fields bound to each other.
 3. Shown in the side panel: read the skill `split-panel` too. The panel draws its own header; the detail brings no chrome (no close button, no title bar, no outer padding).
 4. Build it:
-   - a `RowPanel` component handed to `open`, wrapping the detail in `DetailLoader` with a `load(id)` Server Action and a `refreshKey` shared with the `DataTable`;
+   - the table wired by `useRowPanel` (`detail`, `load`, `create`, `afterRemove`), its `table` spread on the `DataTable`; the detail a `RowPanel` component wrapping it in `DetailLoader` with a `load(id)` Server Action and a `refreshKey` shared with the `DataTable`;
+   - the rules of the row in `@kilotrace/shared/rules`, followed by the drafts (`rules`), the in-place edits (`fromRule`) and the API (`assertRules`); a field or a button not for every role `locked` with its reason;
+   - a removal or a suspension through `DetailAction` `confirm` (a reason if needed), then `panel.removed(id)`; tabs (`DetailTabs`) only when the user asks for them (one scrolling column by default), related rows in `DetailRelated`, the audit log in `DetailHistory`; a field changed on a selection with `BulkEditAction` in `bulkActions`;
    - `DetailCover` (if any), then `DetailHeader`, then `DetailSection`s;
    - every value shown in the table through `DetailColumnFields` and the columns of its config, never formatted again by hand;
    - free fields with `DetailFields` + `DetailField`; in-place edits with `edit: { kind, value, onSave }` (text, number, date, select, multiselect, color, icon, image, switch: table in the doc), `onSave` a Server Action answering an `ActionResult`; a value of the table edited in place through `{ id, edit }` in `DetailColumnFields`;

@@ -14,7 +14,7 @@ export function ErrorBubble({ anchor, message }: { anchor: Element | null; messa
     <TooltipPrimitive.Root open={!!message && !!anchor}>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Positioner anchor={anchor} side="top" align="center" sideOffset={6} className="isolate z-50">
-          <TooltipPrimitive.Popup role="alert" className={`max-w-xs rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md ${TONE}`}>
+          <TooltipPrimitive.Popup role="alert" className={`max-w-xs rounded-md px-2.5 py-1.5 text-center text-xs font-medium shadow-md ${TONE}`}>
             {message}
             <TooltipPrimitive.Arrow className={`top-full size-2 -translate-y-1 rotate-45 border-t-0 border-l-0 ${TONE}`} />
           </TooltipPrimitive.Popup>

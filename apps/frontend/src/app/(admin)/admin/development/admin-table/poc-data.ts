@@ -31,6 +31,14 @@ export interface PocUser {
   stravaId: number | null;
   /** Cover picture of the profile. */
   cover: { src: string; alt: string } | null;
+  /** Their site, `http(s)`. */
+  website: string | null;
+  /** Shown on their profile, in Markdown. */
+  bio: string | null;
+  /** Free words of the team about the account. */
+  keywords: string[];
+  /** The account that brought them, picked among the others. */
+  referrer: { value: string; label: string; description: string } | null;
 }
 
 /** Fixed, so that relative dates do not drift between renders. */
@@ -127,5 +135,18 @@ export const POC_USERS: PocUser[] = Array.from({ length: 57 }, (_, index) => {
     stravaId: index % 4 === 2 ? null : 1_000_000 + index * 48_271,
     cover: index % 5 === 1 ? null : { src: landscape(Math.floor(next() * 360), Math.floor(next() * 120)), alt: `Couverture de @${username}` },
     avatarKey: index % 3 === 2 ? null : `avatars/${index.toString(16).padStart(8, "0")}-5c1d-4f2a-9e8b/${1_729_000_000 + index * 4_513}.webp`,
+    website: index % 3 === 0 ? `https://${username.replace(/[._]/g, "-")}.exemple.fr` : null,
+    bio:
+      index % 4 === 0
+        ? `## Coureur du dimanche\n\nJe cours **surtout le week-end**, parfois *en montagne*.\n\n- Marathon de Paris 2025\n- Trail des Vosges\n\nMes traces : [Strava](https://www.strava.com)`
+        : null,
+    keywords: index % 3 === 1 ? ["signalé", "à suivre"].slice(0, 1 + (index % 2)) : [],
+    referrer: null,
   };
+});
+
+// Brought by the account before them, one in four: picked among the rows themselves.
+POC_USERS.forEach((user, index) => {
+  const by = POC_USERS[index - 1];
+  if (by && index % 4 === 1) user.referrer = { value: by.id, label: by.displayName ?? `@${by.username}`, description: `@${by.username}` };
 });

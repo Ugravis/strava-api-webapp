@@ -2,7 +2,7 @@
 
 import { LoaderCircleIcon } from "lucide-react";
 import { createContext, type ReactNode, useContext, useLayoutEffect, useRef, useState } from "react";
-import { Tip } from "@/components/admin/data-table";
+import { type ConfirmedRun, type ConfirmOptions, Tip, useConfirmedAction } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SAVE_BUTTON } from "./field-buttons";
@@ -59,7 +59,11 @@ export function DetailActions({ sticky, children }: { sticky?: boolean; children
  * (e.g. the `actions` of `DetailHeader`) its icon alone. Its name is then in a
  * bubble. `href` makes it a link, opened in a new tab. `save`: the blue of
  * the buttons that save (« Créer », « Valider »); `type="submit"` submits the
- * draft around; `pending` swaps its icon for a spinner, disabling it.
+ * draft around; `pending` swaps its icon for a spinner, disabling it, as
+ * while the promise `onClick` answers runs. `confirm` asks first (a
+ * removal), in a dialog that runs `onClick` (given the reason typed) and
+ * stays open on `{ ok: false }`. `locked`: not for this user, and why, in
+ * its bubble, the button greyed.
  */
 export function DetailAction({
   label,
@@ -70,17 +74,23 @@ export function DetailAction({
   type = "button",
   disabled,
   pending,
+  confirm,
+  locked,
 }: {
   label: string;
   icon: ReactNode;
   variant?: "default" | "outline" | "destructive" | "save";
   href?: string;
-  onClick?: () => void;
+  onClick?: ConfirmedRun;
   type?: "button" | "submit";
   disabled?: boolean;
   pending?: boolean;
+  confirm?: ConfirmOptions;
+  locked?: string | null;
 }) {
   const inRow = useContext(IconsOnly);
+  const action = useConfirmedAction(onClick, confirm);
+  const busy = pending || action.pending;
   const iconOnly = inRow !== false;
   const link = href ? { nativeButton: false, render: <a href={href} target="_blank" rel="noopener" /> } : {};
   const button = (
@@ -89,14 +99,21 @@ export function DetailAction({
       size={inRow === null ? "icon-sm" : "sm"}
       aria-label={iconOnly ? label : undefined}
       type={href ? undefined : type}
-      disabled={disabled || pending}
-      onClick={onClick}
-      className={cn(inRow !== null && (iconOnly ? "min-w-0 flex-1" : "flex-[1_0_auto]"), variant === "save" && SAVE_BUTTON)}
-      {...link}
+      disabled={disabled || busy}
+      // Greyed, not disabled: its bubble still tells why.
+      aria-disabled={locked ? true : undefined}
+      onClick={locked ? (event) => event.preventDefault() : onClick && action.trigger}
+      className={cn(inRow !== null && (iconOnly ? "min-w-0 flex-1" : "flex-[1_0_auto]"), variant === "save" && SAVE_BUTTON, locked && "cursor-not-allowed opacity-50")}
+      {...(locked ? {} : link)}
     >
-      {pending ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : icon}
+      {busy ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : icon}
       {!iconOnly && label}
     </Button>
   );
-  return iconOnly ? <Tip label={label}>{button}</Tip> : button;
+  return (
+    <>
+      {iconOnly || locked ? <Tip label={locked ? `${label} · ${locked}` : label}>{button}</Tip> : button}
+      {action.dialog}
+    </>
+  );
 }

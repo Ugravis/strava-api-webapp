@@ -1,7 +1,6 @@
 "use client";
 
-import { CalendarClockIcon, CalendarIcon, CalendarPlusIcon, GaugeIcon, ImageIcon, LayersIcon, MedalIcon, PaletteIcon, ShapesIcon, ToggleRightIcon, UsersIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo } from "react";
+import { CalendarClockIcon, CalendarIcon, CalendarPlusIcon, FootprintsIcon, GaugeIcon, ImageIcon, KeyRoundIcon, LayersIcon, MedalIcon, PaletteIcon, ShapesIcon, ToggleRightIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import {
   type CellImage,
   DataTable,
@@ -13,15 +12,17 @@ import {
   numberColumn,
   orderColumn,
   pillsColumn,
+  SelectionAction,
   type TableMove,
   textColumn,
   type Tone,
 } from "@/components/admin/data-table";
-import { useSplitPanel } from "@/components/split-panel";
+import { BulkEditAction, useRowPanel } from "@/components/admin/detail";
 import { landscape } from "./poc-data";
-import { PocBadgeCreate, type PocBadgeDraft } from "./poc-badge-create";
+import { PocBadgeCreate } from "./poc-badge-create";
 import { PocBadgePanel } from "./poc-badge-detail";
-import { savePocBadge, usePocVersion } from "./poc-store";
+import { BADGE_RULES } from "./poc-rules";
+import { bulkEditPocBadges, loadPocBadge, pocLock, removePocBadges, savePocBadge, usePocSettings, usePocVersion } from "./poc-store";
 
 /*
  * Fake badges kept in one order of the database, whatever their collection:
@@ -56,6 +57,8 @@ export interface PocBadge {
   description: string | null;
   /** The sports counted, of `SPORTS`: a distance only, at least one. */
   sports: string[];
+  /** Free words, for the search of the athletes. */
+  keywords: string[];
 }
 
 /** The sports a badge of distance counts. */
@@ -103,6 +106,7 @@ export const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMa
     endsAt: index === 4 ? new Date(Date.UTC(2027, 0, 1, 23)).toISOString() : null,
     description: index === 0 ? `Le premier badge de la collection ${COLLECTIONS[collection].label.toLowerCase()}.` : null,
     sports: collection === "distance" ? ["run", "ride", "walk"].slice(0, 1 + (index % 3)) : [],
+    keywords: index === 1 ? ["course", "endurance"] : [],
   })),
 );
 BADGES.forEach((badge, index) => (badge.position = index + 1));
@@ -117,6 +121,9 @@ async function moveBadge({ id, after, before }: TableMove) {
   await new Promise((resolve) => setTimeout(resolve, 300));
   return { ok: true, message: "Ordre enregistré" };
 }
+
+/** Offered as the keywords of a badge are typed. */
+export const KEYWORDS = ["course", "vélo", "endurance", "montagne", "ville", "défi"];
 
 export const BADGES_TABLE: DataTableConfig<PocBadge> = {
   id: "badges",
@@ -164,6 +171,8 @@ export const BADGES_TABLE: DataTableConfig<PocBadge> = {
       // Picked in a list, in the cell as in the detail.
       edit: (badge) => ({
         kind: "select",
+        // A super-admin only: a lock for the others, in the cell as in the detail.
+        locked: pocLock(),
         value: badge.collection,
         options: COLLECTION_OPTIONS,
         onSave: (collection) => savePocBadge(badge.id, { collection: collection as PocBadge["collection"] | null }),
@@ -177,7 +186,7 @@ export const BADGES_TABLE: DataTableConfig<PocBadge> = {
       header: "Seuil",
       icon: <GaugeIcon />,
       value: (badge) => badge.threshold,
-      edit: (badge) => ({ kind: "number", value: badge.threshold, min: 1, unit: COLLECTIONS[badge.collection].unit, onSave: (threshold) => savePocBadge(badge.id, { threshold }) }),
+      edit: (badge) => ({ kind: "number", locked: pocLock(), value: badge.threshold, min: 1, unit: COLLECTIONS[badge.collection].unit, onSave: (threshold) => savePocBadge(badge.id, { threshold }) }),
     }),
     editColumn({ id: "active", header: "Actif", icon: <ToggleRightIcon />, edit: (badge) => ({ kind: "switch", value: badge.active, onSave: (active) => savePocBadge(badge.id, { active }) }) }),
     dateColumn({
@@ -202,57 +211,95 @@ export const BADGES_TABLE: DataTableConfig<PocBadge> = {
         onSave: (endsAt) => savePocBadge(badge.id, { endsAt }),
       }),
     }),
+    pillsColumn({
+      id: "sports",
+      header: "Sports",
+      icon: <FootprintsIcon />,
+      value: (badge) => badge.sports.map((sport) => ({ label: SPORTS.find((each) => each.value === sport)?.label ?? sport, tone: "gray" as const })),
+    }),
+    pillsColumn({
+      id: "keywords",
+      header: "Mots-clés",
+      icon: <KeyRoundIcon />,
+      value: (badge) => badge.keywords.map((label) => ({ label, tone: "gray" as const })),
+      edit: (badge) => ({ kind: "tags", value: badge.keywords, suggestions: KEYWORDS, onSave: (keywords) => savePocBadge(badge.id, { keywords }) }),
+    }),
     numberColumn({ id: "holders", header: "Détenteurs", icon: <UsersIcon />, sortable: true, value: (badge) => badge.holders }),
     dateColumn({ id: "createdAt", header: "Création", icon: <CalendarPlusIcon />, sortable: true, value: (badge) => badge.createdAt }),
   ],
   groupings: [{ id: "collection", label: "Collection", title: (key) => COLLECTIONS[key as PocCollection].label }],
+  // Fields changed on every badge picked, then a removal asking first.
+  bulkActions: (ids, clear) => (
+    <>
+      <BulkEditAction
+        count={ids.length}
+        noun={(count) => (count > 1 ? "badges" : "badge")}
+        columns={BADGES_TABLE.columns}
+        rules={BADGE_RULES as never}
+        fields={[
+          { id: "collection", edit: { kind: "select", options: COLLECTION_OPTIONS, locked: pocLock() } },
+          { id: "color", edit: { kind: "color", noneLabel: "Aucune" } },
+          { id: "icon", edit: { kind: "icon" } },
+          { id: "threshold", edit: { kind: "number", locked: pocLock() } },
+          { id: "active", edit: { kind: "switch" } },
+          { id: "sports", edit: { kind: "multiselect", options: SPORTS } },
+          { id: "keywords", edit: { kind: "tags", suggestions: KEYWORDS } },
+        ]}
+        onSave={(change) => bulkEditPocBadges(ids, change)}
+      />
+      <SelectionAction
+        label="Supprimer"
+        icon={<Trash2Icon data-icon="inline-start" />}
+        destructive
+        confirm={{
+          title: `Supprimer ${ids.length > 1 ? `${ids.length} badges` : "ce badge"} ?`,
+          description: "Les athlètes le perdent aussitôt. Cette suppression est définitive.",
+          confirmLabel: "Supprimer",
+        }}
+        onClick={async () => {
+          const outcome = await removePocBadges(ids);
+          if (outcome.ok) clear();
+          return outcome;
+        }}
+      />
+    </>
+  ),
 };
 
-/** Rows kept in order: moved by the handle of the « Ordre » column. A click on a row opens its detail. */
+/**
+ * Rows kept in order: moved by the handle of the « Ordre » column. Opened in
+ * the panel by `useRowPanel`: a click, the arrows, `?row=`, « Nouveau badge »
+ * (`?row=new:badge`), a badge created then shown, a badge removed.
+ */
 export function PocOrderTable() {
-  const { open, isOpen, activeId } = useSplitPanel();
   const version = usePocVersion();
-  // Opened at once on its skeleton, the badge loaded by the panel.
-  const openBadge = useCallback((badge: PocBadge) => open(<PocBadgePanel id={badge.id} />, { id: badge.id, title: badge.name }), [open]);
-  const create = useCreateBadge();
-  // A shared link: the badge of `?row=`, or a new one, once on arrival. Its ids never meet those of the accounts.
-  useEffect(() => {
-    const row = new URLSearchParams(window.location.search).get("row");
-    const badge = BADGES.find((each) => each.id === row);
-    if (badge) openBadge(badge);
-    else if (row === NEW_BADGE) create();
-  }, [openBadge, create]);
-  const config = useMemo(() => ({ ...BADGES_TABLE, create: { label: "Nouveau badge", onClick: () => create() } }), [create]);
+  const { afterRemove, role } = usePocSettings();
+  const panel = useRowPanel<PocBadge>({
+    config: BADGES_TABLE,
+    title: (badge) => badge.name,
+    load: loadPocBadge,
+    detail: (id, controls) => <PocBadgePanel id={id} panel={controls} />,
+    create: {
+      id: "new:badge",
+      label: "Nouveau badge",
+      title: "Nouveau badge",
+      copyTitle: "Copie de badge",
+      form: ({ initial, close, created }) => <PocBadgeCreate initial={initial} onCancel={close} onCreated={created} />,
+    },
+    afterRemove,
+  });
   return (
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="font-medium">Ordre</h2>
         <p className="text-sm text-muted-foreground">Glisser une ligne par sa poignée, triée par « Ordre », sans recherche ni filtre.</p>
         <p className="text-sm text-muted-foreground">
-          « Nouveau badge » ou « Dupliquer » : un panneau vierge. Un nom déjà pris est refusé sous son champ, un nom contenant « 500 » échoue côté serveur.
+          « Nouveau badge » ou « Dupliquer » : un panneau vierge. Un nom déjà pris est refusé sous son champ, un nom contenant « 500 » échoue côté serveur. Cocher des lignes : modifier
+          un champ sur toutes, ou les supprimer ; Échap désélectionne.
         </p>
       </div>
-      <DataTable config={config} onRowClick={openBadge} activeRowId={isOpen ? activeId : null} refreshKey={version} />
+      {/* Drawn again as the simulated role changes: its rows are memoized, and a real role never changes in a session. */}
+      <DataTable key={role} {...panel.table} refreshKey={version} />
     </section>
-  );
-}
-
-/** The `?row=` of a badge being created: shared, the link opens a blank one. */
-export const NEW_BADGE = "new:badge";
-
-/** Opens a blank badge in the panel, or one filled from `initial` (a copy); once created, the panel shows it. */
-export function useCreateBadge() {
-  const { open, replace, close } = useSplitPanel();
-  return useCallback(
-    (initial?: Partial<PocBadgeDraft>) =>
-      open(
-        <PocBadgeCreate
-          initial={initial}
-          onCancel={close}
-          onCreated={(id) => replace(<PocBadgePanel id={id} />, { id, title: BADGES.find((each) => each.id === id)?.name })}
-        />,
-        { id: NEW_BADGE, title: initial ? "Copie de badge" : "Nouveau badge" },
-      ),
-    [open, replace, close],
   );
 }

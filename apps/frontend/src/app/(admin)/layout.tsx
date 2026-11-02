@@ -1,5 +1,5 @@
 import { AdminRole } from "@kilotrace/shared/admin";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { AdminNavigation, ToAppLink } from "@/components/admin/admin-sidebar";
 import { AppShell } from "@/components/app-shell/app-shell";
@@ -12,6 +12,13 @@ import { adminRoutes } from "@/lib/admin/navigation";
 
 // Never indexed; the section is also left out of robots.txt and the sitemap,
 // which would disclose it.
+/**
+ * Its fields in the size of its text, 14 px, also on a phone, where Safari
+ * would zoom on any field under 16 px as it is focused: kept from it. A
+ * pinch still zooms on iOS.
+ */
+export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1 };
+
 export const metadata: Metadata = {
   title: getAdminTranslations("layout")("title"),
   robots: { index: false, follow: false },

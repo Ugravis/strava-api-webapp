@@ -1,34 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable, type TablePage } from "@/components/admin/data-table";
-import { useSplitPanel } from "@/components/split-panel";
+import { useRowPanel } from "@/components/admin/detail";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { fetchPocUsers, USERS } from "./poc-columns";
-import { POC_USERS, type PocUser } from "./poc-data";
+import type { PocUser } from "./poc-data";
 import { PocUserPanel } from "./poc-detail";
-import { usePocVersion } from "./poc-store";
+import { loadPocUser, usePocSettings, usePocVersion } from "./poc-store";
 
 type PocState = "data" | "loading" | "empty" | "error";
 const STATES: Record<PocState, string> = { data: "Données", loading: "Chargement", empty: "Vide", error: "Erreur" };
 
 const EMPTY: TablePage<PocUser> = { entries: [], total: 0, visible: 0, page: 1, pages: 1, before: 0, counts: {} };
 
-/** The table, and above it how the fake server answers. A click on a row opens its detail. */
+/** The table, and above it how the fake server answers. A click on a row opens its detail, through `useRowPanel`. */
 export function PocView() {
   const [state, setState] = useState<PocState>("data");
-  const { open, isOpen, activeId } = useSplitPanel();
   const version = usePocVersion();
-  const openUser = useCallback(
-    // Opened at once on its skeleton, the account loaded by the panel.
-    (user: PocUser) => open(<PocUserPanel id={user.id} />, { id: user.id, title: `@${user.username}` }),
-    [open],
-  );
-  // A shared link: the row of `?row=`, once on arrival.
-  useEffect(() => {
-    const user = POC_USERS.find((each) => each.id === new URLSearchParams(window.location.search).get("row"));
-    if (user) openUser(user);
-  }, [openUser]);
+  const { afterRemove } = usePocSettings();
   const config = useMemo(
     () => ({
       ...USERS,
@@ -41,6 +31,14 @@ export function PocView() {
     }),
     [state],
   );
+  // Opened at once on its skeleton, the account loaded by the panel; a shared link loads it for its title.
+  const panel = useRowPanel<PocUser>({
+    config,
+    title: (user) => `@${user.username}`,
+    load: loadPocUser,
+    detail: (id, controls) => <PocUserPanel id={id} panel={controls} />,
+    afterRemove,
+  });
   return (
     <>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -53,7 +51,7 @@ export function PocView() {
           ))}
         </ToggleGroup>
       </div>
-      <DataTable config={config} onRowClick={openUser} activeRowId={isOpen ? activeId : null} refreshKey={version} />
+      <DataTable {...panel.table} refreshKey={version} />
     </>
   );
 }

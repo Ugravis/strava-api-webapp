@@ -5,6 +5,7 @@ import { requireAdminMember } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { PocOrderTable } from "./poc-order";
+import { PocSettingsBar } from "./poc-settings";
 import { PocView } from "./poc-view";
 
 /** Showcase of the data table kit on fake rows (#133): every feature, on the kit as it is now. */
@@ -18,6 +19,7 @@ export default async function AdminTablePocPage() {
         {t("title")}
       </Link>
       <PageHeader title={t("prototypes.adminTable.title")} description={t("prototypes.adminTable.liveHint")} />
+      <PocSettingsBar />
       <PocView />
       <PocOrderTable />
     </>

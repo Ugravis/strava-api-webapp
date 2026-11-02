@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, EyeIcon, LockIcon, PencilIcon } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { type DetailFieldEdit, type DraftBinding, draftOf, EditValue, editEmpty, type InlineEdit, isInline, parse, type PickerEdit } from "./field-edit";
+import { type DetailFieldEdit, type DraftBinding, draftOf, EditValue, editEmpty, type InlineEdit, isInline, isMultiline, parse, type PickerEdit } from "./field-edit";
+import { Markdown } from "./markdown";
 import { PickerField, usePreview } from "./field-picker";
 
 /*
@@ -22,6 +23,17 @@ type Bound<E extends DetailFieldEdit> = E & { draft: DraftBinding };
 /** The field of `edit`, its error under it. */
 export function DraftValue({ edit, label }: { edit: Bound<DetailFieldEdit>; label: string }) {
   const { error } = edit.draft;
+  // Not for this user: its value, and why.
+  if (edit.locked)
+    return (
+      <div className="flex w-full min-w-0 flex-col gap-0.5 py-1">
+        <span className="flex min-h-8 min-w-0 items-center gap-2 text-muted-foreground">
+          <LockIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 truncate">{editEmpty(edit) ? "—" : <EditValue edit={{ ...edit, draft: undefined } as DetailFieldEdit} />}</span>
+        </span>
+        <span className="text-xs text-muted-foreground">{edit.locked}</span>
+      </div>
+    );
   return (
     // Counted by the draft on submitting.
     <div data-draft-invalid={edit.draft.invalid || undefined} className="flex w-full min-w-0 flex-col gap-1 py-1">
@@ -58,7 +70,8 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
     const typed = parse(edit, text);
     if (!("value" in typed) || typed.value !== edit.value) setText(draftOf(edit));
   }
-  const multiline = edit.kind !== "number" && edit.kind !== "date" && !!edit.multiline;
+  const multiline = isMultiline(edit);
+  const [preview, setPreview] = useState(false);
   const field = {
     value: text,
     disabled: edit.draft.disabled,
@@ -82,7 +95,22 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
     }
   };
 
-  if (multiline) return <Textarea {...field} onKeyDown={onKeyDown} placeholder={edit.placeholder} className="min-h-20 text-base md:text-sm" />;
+  if (edit.kind === "markdown")
+    return (
+      <div className="flex flex-col gap-1">
+        {preview ? (
+          <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{text.trim() ? <Markdown source={text} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
+        ) : (
+          <Textarea {...field} onKeyDown={onKeyDown} placeholder={edit.placeholder} className="min-h-28 text-base md:text-sm" />
+        )}
+        {/* Markdown drawn as it will show. */}
+        <button type="button" onClick={() => setPreview((shown) => !shown)} className="inline-flex items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground [&_svg]:size-3">
+          {preview ? <PencilIcon aria-hidden /> : <EyeIcon aria-hidden />}
+          {preview ? "Modifier le texte" : "Aperçu · Markdown"}
+        </button>
+      </div>
+    );
+  if (multiline) return <Textarea {...field} onKeyDown={onKeyDown} placeholder={"placeholder" in edit ? edit.placeholder : undefined} className="min-h-20 text-base md:text-sm" />;
   if (edit.kind === "number")
     return (
       <div className="relative">
@@ -91,6 +119,7 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
       </div>
     );
   if (edit.kind === "date") return <Input {...field} type={edit.time ? "datetime-local" : "date"} min={edit.min} max={edit.max} className={FIELD} />;
+  if (edit.kind === "email" || edit.kind === "url") return <Input {...field} type={edit.kind} inputMode={edit.kind} autoComplete="off" placeholder={edit.placeholder} className={FIELD} />;
   return <Input {...field} placeholder={edit.placeholder} className={FIELD} />;
 }
 

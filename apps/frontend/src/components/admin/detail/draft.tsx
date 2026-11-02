@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, LoaderCircleIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
+import { checkField, type FieldRules } from "@kilotrace/shared/rules";
+import { CheckIcon, LoaderCircleIcon, LockIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
 import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
@@ -10,6 +11,7 @@ import { useNoHover } from "@/hooks/use-no-hover";
 import { cn } from "@/lib/utils";
 import { DetailAction, DetailActions } from "./actions";
 import { SAVE_BUTTON } from "./field-buttons";
+import { Tip } from "@/components/admin/data-table";
 import { type DetailEditKind, type DetailEditKinds, type DetailFieldEdit, isEmptyValue, REQUIRED } from "./field-edit";
 import { DetailSection, type DetailSectionPill } from "./section";
 
@@ -63,7 +65,7 @@ const differ = <T extends object>(a: T, b: T) => Object.keys({ ...a, ...b }).som
  * every field bound (required, typed, `validate`), shows the errors and
  * focuses the first one, else hands the values to `onSubmit`.
  */
-export function useDetailDraft<T extends object>(initial: T, { active = true }: { active?: boolean } = {}) {
+export function useDetailDraft<T extends object>(initial: T, { active = true, rules }: { active?: boolean; rules?: FieldRules<T> } = {}) {
   const [values, setValues] = useState(initial);
   const [base, setBase] = useState(initial);
   const [seen, setSeen] = useState(() => JSON.stringify(initial));
@@ -106,10 +108,16 @@ export function useDetailDraft<T extends object>(initial: T, { active = true }: 
     touched: (name) => touched.has(name as string),
     dirty: differ(values, base),
     saving,
-    bind: (name, { kind, required = false, validate, onChange, ...options }) => {
+    bind: (name, { kind, required: asked, validate, onChange, ...options }) => {
       const value = values[name as keyof T] as never;
-      const own = typed[name] ?? server[name] ?? (required && isEmptyValue(value) ? REQUIRED : (validate?.(value, values) ?? null));
+      // The shared rule of the field, unless the spec says otherwise.
+      const rule = rules?.[name as keyof T];
+      const required = asked ?? (!!rule && "required" in rule && !!rule.required);
+      const bounds = rule?.type === "number" ? { min: rule.min, max: rule.max } : {};
+      const ruled = (held: unknown) => (rule ? checkField(rule, held && typeof held === "object" && "value" in held ? (held as { value: unknown }).value : held, values as Record<string, unknown>) : null);
+      const own = typed[name] ?? server[name] ?? (required && isEmptyValue(value) ? REQUIRED : ((validate ? validate(value, values) : ruled(value)) ?? null));
       return {
+        ...bounds,
         ...options,
         kind,
         // An image shows the file picked: `draft.raw`.
@@ -229,7 +237,8 @@ function DraftFormElement({ formRef, onSubmit, onKeyDown, className, children }:
 }
 
 /**
- * A new row: the detail drawn by `children(form)`, every field bound by
+ * A new row: the detail drawn by `children(form)`, the fields following
+ * `rules` (`@kilotrace/shared/rules`) when given, every field bound by
  * `form.bind` typed at once, nothing saved before « Créer ». The first field
  * focused (not on a phone, where it would open the keyboard). Its buttons
  * stay at the bottom of the panel: « Annuler » (`onCancel`, e.g. closing the
@@ -240,6 +249,7 @@ function DraftFormElement({ formRef, onSubmit, onKeyDown, className, children }:
  */
 export function DetailForm<T extends object>({
   initial,
+  rules,
   onSubmit,
   onCancel,
   onCreated,
@@ -247,13 +257,14 @@ export function DetailForm<T extends object>({
   children,
 }: {
   initial: T;
+  rules?: FieldRules<T>;
   onSubmit: (values: T) => Promise<DetailDraftResult>;
   onCancel: () => void;
   onCreated: (result: DetailDraftResult) => void;
   submitLabel?: string;
   children: (form: DetailDraft<T>) => ReactNode;
 }) {
-  const { form, ref, submit, generation, formError } = useDetailDraft(initial);
+  const { form, ref, submit, generation, formError } = useDetailDraft(initial, { rules });
   const noHover = useNoHover();
   useSplitPanelGuard(form.dirty);
   useEffect(() => {
@@ -303,21 +314,26 @@ export function DetailSectionForm<T extends object>({
   pill,
   tone,
   initial,
+  rules,
   onSubmit,
   editLabel,
+  locked,
   children,
 }: {
   title: string;
   pill?: DetailSectionPill;
   tone?: "default" | "danger";
   initial: T;
+  rules?: FieldRules<T>;
   onSubmit: (values: T) => Promise<ActionResult | void>;
   /** The name of its pencil, « Modifier : <title> » by default. */
   editLabel?: string;
+  /** Not for this user, and why: a lock in place of its pencil. */
+  locked?: string | null;
   children: (form: DetailDraft<T>) => ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
-  const { form, ref, reset, submit, generation, formError } = useDetailDraft(initial, { active: editing });
+  const { form, ref, reset, submit, generation, formError } = useDetailDraft(initial, { active: editing, rules });
   useSplitPanelGuard(editing && form.dirty);
   const cancel = () => {
     reset();
@@ -330,7 +346,17 @@ export function DetailSectionForm<T extends object>({
       pill={pill}
       tone={tone}
       className={cn(editing && "bg-muted/40")}
-      aside={!editing && <DetailAction label={editLabel ?? `Modifier : ${title}`} icon={<PencilIcon aria-hidden />} onClick={() => setEditing(true)} />}
+      aside={
+        locked ? (
+          <Tip label={locked}>
+            <span role="img" tabIndex={0} aria-label={locked} className="inline-flex size-7 cursor-not-allowed items-center justify-center text-muted-foreground/70 [&_svg]:size-3.5">
+              <LockIcon />
+            </span>
+          </Tip>
+        ) : (
+          !editing && <DetailAction label={editLabel ?? `Modifier : ${title}`} icon={<PencilIcon aria-hidden />} onClick={() => setEditing(true)} />
+        )
+      }
     >
       <DraftFormElement
         formRef={ref}

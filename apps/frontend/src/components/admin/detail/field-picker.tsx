@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useNoHover } from "@/hooks/use-no-hover";
 import { ErrorBubble } from "./error-bubble";
 import { type DetailEditOption, OptionLabel, type PickerEdit, useCommit } from "./field-edit";
 import { IconGrid } from "./icon-picker";
@@ -68,6 +69,8 @@ export function PickerField({
   const [draft, setDraft] = useState<Draft>(edit.value);
   const [opened, setOpened] = useState(false);
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
+  // On a phone, a tap outside only closes it, reaching nothing beneath.
+  const noHover = useNoHover();
   const { saving, commit, error, setError } = useCommit(edit, () => onEditing(false));
   // Each opening starts again from the saved value, without the refusal of the last one.
   if (editing !== opened) {
@@ -86,6 +89,7 @@ export function PickerField({
 
   return (
     <Popover
+      modal={noHover}
       open={editing}
       onOpenChange={(open, details) => {
         if (open || saving) return;

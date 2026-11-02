@@ -15,7 +15,7 @@ export function DetailColumnField<T>({ row, columns, id, stacked, edit, editHint
   const column = columns.find((each) => each.id === id);
   if (!column) return null;
   return (
-    <DetailField label={column.header} icon={column.icon} copy={column.copy?.(row) ?? null} stacked={stacked} edit={edit ?? column.edit?.(row)} editHint={editHint}>
+    <DetailField label={column.header} icon={column.icon} copy={column.copy?.(row) ?? null} href={column.href?.(row)} stacked={stacked} edit={edit ?? column.edit?.(row)} editHint={editHint}>
       <WholeCells value>{drawCell(column, row)}</WholeCells>
     </DetailField>
   );

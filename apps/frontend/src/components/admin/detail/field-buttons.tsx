@@ -1,9 +1,22 @@
 "use client";
 
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, useContext, useLayoutEffect } from "react";
 import { FLOATING_BUTTON } from "@/components/admin/data-table/cells/base";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+/** Inside a field: told by a button that changes its value, the field then marked modifiable. */
+export const FieldModifiable = createContext<((on: boolean) => void) | null>(null);
+
+/** Marks the field around modifiable while mounted, when `modifies`. */
+export function useModifies(modifies: boolean | undefined) {
+  const mark = useContext(FieldModifiable);
+  useLayoutEffect(() => {
+    if (!modifies || !mark) return;
+    mark(true);
+    return () => mark(false);
+  }, [modifies, mark]);
+}
 
 /** Inside the bubble of actions of a screen without hover: closes it. */
 export const FieldMenuClose = createContext<(() => void) | null>(null);
@@ -36,6 +49,7 @@ export function DetailFieldButton({
   disabled,
   pressed,
   primary,
+  modifies,
   onClick,
   children,
 }: {
@@ -44,10 +58,13 @@ export function DetailFieldButton({
   pressed?: boolean;
   /** The button that saves: dark, as the main button of a form. */
   primary?: boolean;
+  /** It changes the value (a tool, e.g. reset): the field is marked modifiable. */
+  modifies?: boolean;
   onClick: () => void;
   children: ReactNode;
 }) {
   const close = useContext(FieldMenuClose);
+  useModifies(modifies);
   if (close)
     return (
       <FieldMenuItem

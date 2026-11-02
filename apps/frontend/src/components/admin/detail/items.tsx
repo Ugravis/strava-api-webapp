@@ -17,7 +17,11 @@ export function DetailItem({ icon, actions, children }: { icon?: ReactNode; acti
   );
 }
 
-/** An icon button of the `actions` of a `DetailItem`, always in sight, in the look of the floating buttons of the fields, named in a bubble. */
-export function DetailItemButton(props: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
-  return <DetailFieldButton {...props} />;
+/**
+ * An icon button of the `actions` of a `DetailItem`, always in sight, in the
+ * look of the floating buttons of the fields, named in a bubble. It changes
+ * the field (unlink, remove), which is marked modifiable, unless `modifies={false}`.
+ */
+export function DetailItemButton({ modifies = true, ...props }: { label: string; disabled?: boolean; modifies?: boolean; onClick: () => void; children: ReactNode }) {
+  return <DetailFieldButton {...props} modifies={modifies} />;
 }

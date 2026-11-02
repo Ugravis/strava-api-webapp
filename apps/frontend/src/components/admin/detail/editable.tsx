@@ -1,7 +1,7 @@
 "use client";
 
-import { CopyCheckIcon, CopyIcon, PanelRightOpenIcon, PencilIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { CopyCheckIcon, CopyIcon, ExternalLinkIcon, PanelRightOpenIcon, PencilIcon } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 import { CopyButton, EmptyValue } from "@/components/admin/data-table/cells/base";
 import { Tip } from "@/components/admin/data-table/tip";
 import { Popover, PopoverContent } from "@/components/ui/popover";
@@ -25,8 +25,9 @@ import { PickerField } from "./field-picker";
  *
  * With hover, the buttons float at the right of the value. Without (a
  * phone), none is shown: a tap on the value opens a bubble of its actions,
- * each with its icon and its name, `onOpen` first (the row of a table), a
- * second tap closing it. `cell`: in a cell of a table, typed on a phone in a
+ * each with its icon and its name: the outside page of `href` (its link no
+ * longer followed at once), `onOpen` (the row of a table), the tools, copy
+ * and edit. Any tap outside its buttons closes it, and only closes it. `cell`: in a cell of a table, typed on a phone in a
  * bubble under it, which the screen holds, rather than in the narrow cell.
  */
 export function EditableValue({
@@ -36,6 +37,7 @@ export function EditableValue({
   edit,
   stacked,
   onOpen,
+  href,
   cell,
   valueClassName,
   children,
@@ -46,6 +48,7 @@ export function EditableValue({
   edit?: DetailFieldEdit;
   stacked?: boolean;
   onOpen?: () => void;
+  href?: string | null;
   cell?: boolean;
   valueClassName?: string;
   children?: ReactNode;
@@ -66,7 +69,7 @@ export function EditableValue({
   const drawnValue = drawn === undefined && edit ? <EditValue edit={edit} /> : empty ? <EmptyValue /> : drawn;
   const value =
     noHover && (tools || copied || editable) ? (
-      <ActionsBubble label={label} copied={copied} tools={tools} onEdit={editable ? () => setEditing(true) : undefined} onOpen={onOpen}>
+      <ActionsBubble label={label} copied={copied} tools={tools} onEdit={editable ? () => setEditing(true) : undefined} onOpen={onOpen} href={href}>
         {drawnValue}
       </ActionsBubble>
     ) : (
@@ -117,9 +120,11 @@ function ActionsBubble({
   tools,
   onEdit,
   onOpen,
+  href,
   children,
 }: {
   label: string;
+  href?: string | null;
   copied: string | null;
   tools?: ReactNode;
   onEdit?: () => void;
@@ -130,8 +135,6 @@ function ActionsBubble({
   const [done, setDone] = useState(false);
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
   const close = () => setOpen(false);
-  // A tap on the value again closes the bubble: left to its own click.
-  const fromValue = (target: EventTarget | null) => target instanceof Node && !!anchor?.contains(target);
 
   return (
     <>
@@ -142,8 +145,9 @@ function ActionsBubble({
         aria-haspopup="menu"
         aria-label={`Actions : ${label}`}
         onClick={(event) => {
-          // Kept from the row of a table, opened from the bubble instead.
+          // Kept from the row of a table and from a link of the value, opened from the bubble instead.
           event.stopPropagation();
+          event.preventDefault();
           setDone(false);
           setOpen((shown) => !shown);
         }}
@@ -151,9 +155,21 @@ function ActionsBubble({
       >
         {children}
       </div>
-      <Popover open={open} onOpenChange={(next, details) => !next && !(details.reason === "outside-press" && fromValue(details.event.target)) && close()}>
+      {/* Modal: a tap outside its buttons only closes it, reaching nothing beneath. */}
+      <Popover modal open={open} onOpenChange={(next) => !next && close()}>
         <PopoverContent anchor={anchor} side="top" align="center" className="w-auto min-w-44 gap-0.5 p-1" aria-label={label}>
           <FieldMenuClose value={close}>
+            {href && (
+              <FieldMenuItem
+                label="Ouvrir le lien"
+                onClick={() => {
+                  close();
+                  window.open(href, "_blank", "noreferrer");
+                }}
+              >
+                <ExternalLinkIcon />
+              </FieldMenuItem>
+            )}
             {onOpen && (
               <FieldMenuItem label="Ouvrir" onClick={() => {
                   close();
@@ -192,23 +208,39 @@ function ActionsBubble({
 }
 
 /**
- * On a phone, the field typing the value of a cell, in a bubble centred under
- * it that the screen holds. Leaving the field saves; Esc gives up.
+ * On a phone, the field typing the value of a cell, in a bubble under it,
+ * centred on the screen. A tap outside leaves the field, which saves, and
+ * reaches nothing beneath; Esc gives up.
  */
 function FloatingEditor({ edit, label, className, onClose, children }: { edit: InlineEdit; label: string; className?: string; onClose: () => void; children: ReactNode }) {
-  const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
+  const [cellBox, setCellBox] = useState<HTMLDivElement | null>(null);
+  // The height of the cell, the width of the screen: under the cell, centred on the screen.
+  const anchor = useMemo(
+    () =>
+      cellBox && {
+        getBoundingClientRect: () => {
+          const box = cellBox.getBoundingClientRect();
+          return new DOMRect(0, box.top, document.documentElement.clientWidth, box.height);
+        },
+      },
+    [cellBox],
+  );
   return (
     <>
-      <div ref={setAnchor} className={className}>
+      <div ref={setCellBox} className={className}>
         {children}
       </div>
       <Popover
         open
+        modal
         onOpenChange={(open, details) => {
-          // A tap outside leaves the field, which saves; Esc gives up.
-          if (!open && details.reason === "escape-key") {
+          if (open) return;
+          if (details.reason === "escape-key") {
             details.event.preventDefault();
             onClose();
+          } else if (details.reason === "outside-press") {
+            // Leaving the field saves: the field closes once saved.
+            (document.activeElement as HTMLElement | null)?.blur();
           }
         }}
       >

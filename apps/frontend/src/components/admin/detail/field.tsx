@@ -1,8 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { cn } from "@/lib/utils";
 import { EditableMark, EditableValue } from "./editable";
+import { FieldModifiable } from "./field-buttons";
 import type { DetailEditKind, DetailFieldEdit } from "./field-edit";
 
 /*
@@ -33,8 +34,9 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * Nothing is ever left unsaved, so nothing guards the closing of the panel.
  * The pencil of a popover stays shown while it is open, and closes it again,
  * giving up. Without children, the value is drawn after its kind. A small
- * blue dot at the top right of its icon tells the field editable, unless
- * `editHint={false}`. On a screen without hover (a phone), no button is
+ * blue dot at the top right of its icon tells the field modifiable: an
+ * `edit`, or a button inside that changes it (a `DetailItemButton`, a tool
+ * `modifies`); `editHint` forces it (`true`) or hides it (`false`). On a screen without hover (a phone), no button is
  * shown: a tap on the value opens a bubble of its actions.
  */
 export function DetailField<K extends DetailEditKind = "text">({
@@ -43,8 +45,9 @@ export function DetailField<K extends DetailEditKind = "text">({
   copy,
   stacked,
   tools,
+  href,
   edit,
-  editHint = true,
+  editHint,
   children,
 }: {
   label: string;
@@ -52,11 +55,18 @@ export function DetailField<K extends DetailEditKind = "text">({
   copy?: string | null;
   stacked?: boolean;
   tools?: ReactNode;
+  /** The outside page the value opens: on a phone, offered in the bubble of its actions. */
+  href?: string | null;
   // Generic on its kind, so that the value given to `onSave` is typed, `text` without a kind.
   edit?: DetailFieldEdit<K> & { kind?: K };
   editHint?: boolean;
   children?: ReactNode;
 }) {
+  // Told by the buttons inside that change the value, e.g. « Retirer » of a tag.
+  // Counted, several buttons coming and going.
+  const [modifiers, setModifiers] = useState(0);
+  const [count] = useState(() => (on: boolean) => setModifiers((n) => n + (on ? 1 : -1)));
+  const marked = editHint ?? (!!edit || modifiers > 0);
   return (
     <div className="contents">
       <dt className={cn("flex min-h-8 items-center gap-1.5 self-start text-muted-foreground", stacked && "col-span-2")}>
@@ -64,11 +74,11 @@ export function DetailField<K extends DetailEditKind = "text">({
         {icon && (
           <span className="relative inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">
             {icon}
-            {edit && editHint && <EditableMark className="absolute -top-0.5 -right-0.5" />}
+            {marked && <EditableMark className="absolute -top-0.5 -right-0.5" />}
           </span>
         )}
         {label}
-        {edit && editHint && !icon && <EditableMark className="-ml-0.5 -translate-y-1.5" />}
+        {marked && !icon && <EditableMark className="-ml-0.5 -translate-y-1.5" />}
       </dt>
       <dd
         className={cn(
@@ -77,10 +87,12 @@ export function DetailField<K extends DetailEditKind = "text">({
           stacked && "col-span-2 mb-2 [&_.truncate]:whitespace-normal",
         )}
       >
+        <FieldModifiable value={count}>
         <EditableValue
           label={label}
           copy={copy}
           tools={tools}
+          href={href}
           edit={edit as DetailFieldEdit | undefined}
           stacked={stacked}
           // As wide as the panel: the widths of the table columns let go.
@@ -88,6 +100,7 @@ export function DetailField<K extends DetailEditKind = "text">({
         >
           {children}
         </EditableValue>
+        </FieldModifiable>
       </dd>
     </div>
   );

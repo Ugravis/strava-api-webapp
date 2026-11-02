@@ -61,7 +61,7 @@ export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, col
       )}
       {columns.map((column, index) => (
         <TableCell key={column.id} className={cn("group/cell relative", index === 0 && pinFirst, column.className)}>
-          <CellValue column={column} row={row} />
+          <CellValue column={column} row={row} onOpen={onOpen && (() => onOpen(row))} />
         </TableCell>
       ))}
       {config.actions && <TableCell className="w-px text-center">{config.actions(row)}</TableCell>}

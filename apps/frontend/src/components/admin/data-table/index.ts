@@ -10,6 +10,7 @@ export {
   bytesColumn,
   codeColumn,
   customColumn,
+  editColumn,
   dateColumn,
   iconsColumn,
   imageColumn,

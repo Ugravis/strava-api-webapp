@@ -178,7 +178,7 @@ const Item = memo(function Item<T>({ config, row, id, columns, order, cover, lay
       >
         {columns.map((column, at) => (
           <Value key={column.id} column={column} layout={layout} first={at === 0}>
-            <CellValue column={column} row={row} />
+            <CellValue column={column} row={row} onOpen={open && (() => open(row))} />
           </Value>
         ))}
       </ItemFrame>

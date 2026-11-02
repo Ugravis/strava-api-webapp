@@ -8,6 +8,7 @@ import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCel
 import { type CellUser, IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { type CellImage, ImageCell, ImageCover } from "./cells/image";
 import { formatBytes, formatDate, formatDateTime } from "./format";
+import { type DetailFieldEdit, EditValue, editCopy } from "../detail/field-edit";
 import { OrderCell } from "./reorder";
 import type { DataTableColumn } from "./types";
 
@@ -189,6 +190,14 @@ export function orderColumn<T>({ value, icon = <GripVerticalIcon />, ...base }: 
     cell: (row) => <OrderCell value={value(row)} />,
     skeleton: <Skeleton className="inline-block h-4 w-6" />,
   };
+}
+
+/**
+ * A value drawn as its edit draws it, and edited in place: a colour, an icon,
+ * a switch, kinds without a cell of their own. Copied as the edit copies it.
+ */
+export function editColumn<T>({ edit, ...base }: Omit<Base<T>, "edit"> & { edit: (row: T) => DetailFieldEdit }): DataTableColumn<T> {
+  return { ...base, edit, cell: (row) => <EditValue edit={edit(row)} />, copy: (row) => editCopy(edit(row)), skeleton: <Skeleton className="h-5 w-16" /> };
 }
 
 /** Anything else: its own cell, still with the copy and skeleton of the kit when given. */

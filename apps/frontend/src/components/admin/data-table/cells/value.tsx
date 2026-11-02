@@ -3,20 +3,20 @@
 import type { MouseEvent, KeyboardEvent } from "react";
 import { EditableValue } from "../../detail/editable";
 import type { DataTableColumn } from "../types";
-import { CopyButton, drawCell } from "./base";
+import { drawCell } from "./base";
 
-/** The value of a cell, its copy and edit buttons floating at its right on hover. */
-export function CellValue<T>({ column, row }: { column: DataTableColumn<T>; row: T }) {
+/**
+ * The value of a cell, its copy and edit buttons floating at its right on
+ * hover; on a screen without hover, a tap on it opens a bubble of its
+ * actions, `onOpen` (the row) among them.
+ */
+export function CellValue<T>({ column, row, onOpen }: { column: DataTableColumn<T>; row: T; onOpen?: () => void }) {
   const edit = column.edit?.(row);
-  if (!edit)
-    return (
-      <>
-        {drawCell(column, row)}
-        {column.copy && <CopyButton value={column.copy(row)} />}
-      </>
-    );
+  // Nothing to copy nor edit: the cell alone.
+  if (!edit && !column.copy)
+    return drawCell(column, row);
   return (
-    <EditableValue label={column.header} edit={edit} copy={column.copy?.(row) ?? null}>
+    <EditableValue label={column.header} edit={edit} copy={column.copy?.(row) ?? null} onOpen={onOpen}>
       {drawCell(column, row)}
     </EditableValue>
   );
@@ -28,4 +28,4 @@ export function CellValue<T>({ column, row }: { column: DataTableColumn<T>; row:
  */
 export const keepsItsClick = (event: MouseEvent | KeyboardEvent) =>
   !(event.currentTarget as Node).contains(event.target as Node) ||
-  !!(event.target as HTMLElement).closest("button, a, input, textarea, label, [role=checkbox], [role=menuitem]");
+  !!(event.target as HTMLElement).closest("button, a, input, textarea, label, [role=checkbox], [role=switch], [role=menuitem]");

@@ -19,13 +19,15 @@ export interface DetailHistoryEvent {
   details?: ReactNode;
 }
 
-type Page = { events: DetailHistoryEvent[]; next: string | null };
+/** `total`, when the server counts them: « Voir plus (n) » tells those left. */
+type Page = { events: DetailHistoryEvent[]; next: string | null; total?: number };
 
 /**
  * The history of the row shown, loaded by the block itself, the latest first:
  * `load(null)` its first events, `load(next)` the following ones, behind
- * « Voir plus ». Skeleton meanwhile, `empty` without any, a retry after a
- * failure; a new `refreshKey` (a save) loads it again from the start.
+ * « Voir plus (n) », `n` those left when the page tells its `total`.
+ * Skeleton meanwhile, `empty` without any, a retry after a failure; a new
+ * `refreshKey` (a save) loads it again from the start.
  */
 export function DetailHistory({ load, refreshKey, now, empty = "Aucun événement." }: { load: (cursor: string | null) => Promise<Page>; refreshKey?: unknown; now?: number; empty?: string }) {
   const first = useDetailLoad(() => load(null), refreshKey);
@@ -37,6 +39,8 @@ export function DetailHistory({ load, refreshKey, now, empty = "Aucun événemen
   const pages = more?.after === first.data ? more.pages : [];
   const events = [first.data, ...pages].flatMap((page) => page.events);
   const next = (pages.at(-1) ?? first.data).next;
+  const total = (pages.at(-1) ?? first.data).total;
+  const left = total === undefined ? null : total - events.length;
   const loadMore = () => {
     if (!next || loadingMore) return;
     const after = first.data!;
@@ -60,7 +64,7 @@ export function DetailHistory({ load, refreshKey, now, empty = "Aucun événemen
       {next && (
         <Button size="sm" variant="ghost" className="self-start" disabled={loadingMore} onClick={loadMore}>
           {loadingMore && <LoaderCircleIcon className="animate-spin" aria-hidden />}
-          {failedMore ? "Échec, réessayer" : "Voir plus"}
+          {failedMore ? "Échec, réessayer" : left ? `Voir plus (${left.toLocaleString("fr-FR")})` : "Voir plus"}
         </Button>
       )}
     </div>

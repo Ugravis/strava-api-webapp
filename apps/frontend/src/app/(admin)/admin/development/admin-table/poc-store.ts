@@ -217,13 +217,13 @@ function record(userId: string, kind: PocEvent["kind"], title: string, details?:
 }
 
 /** Five events at a time, the latest first; `cursor` the index of the next one. */
-export async function loadPocUserHistory(id: string, cursor: string | null): Promise<{ events: PocEvent[]; next: string | null }> {
+export async function loadPocUserHistory(id: string, cursor: string | null): Promise<{ events: PocEvent[]; next: string | null; total: number }> {
   await pause(300, 400);
   const user = POC_USERS.find((each) => each.id === id);
-  if (!user) return { events: [], next: null };
+  if (!user) return { events: [], next: null, total: 0 };
   const all = historyOf(user);
   const from = cursor ? Number(cursor) : 0;
-  return { events: all.slice(from, from + 5), next: from + 5 < all.length ? String(from + 5) : null };
+  return { events: all.slice(from, from + 5), next: from + 5 < all.length ? String(from + 5) : null, total: all.length };
 }
 
 /* Badges. */

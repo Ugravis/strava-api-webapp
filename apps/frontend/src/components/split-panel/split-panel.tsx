@@ -90,7 +90,11 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
             >
               <Header title={last?.title} />
               {/* The thin scrollbar of the tables. */}
-              <div className="flex-1 overflow-y-auto overscroll-contain [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
+              {/*
+               * At its top or its bottom, the wheel goes on to the page: from the footer, the page comes up again.
+               * Held on a phone, where the panel is the page and the browser would pull to refresh.
+               */}
+              <div className="flex-1 overflow-y-auto overscroll-contain md:overscroll-auto [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
                 {/* Read as a page once expanded: a column of text, not a line across the screen. */}
                 <div key={last?.key} className={cn("flex min-h-full flex-col", full && "mx-auto w-full max-w-3xl")}>{last?.content}</div>
               </div>

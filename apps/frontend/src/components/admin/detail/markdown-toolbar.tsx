@@ -77,7 +77,7 @@ export function markdownShortcut(event: KeyboardEvent<HTMLTextAreaElement>, onCh
  */
 export function MarkdownToolbar({ field, onChange, disabled, aside, className }: { field: HTMLTextAreaElement | null; onChange: (text: string) => void; disabled?: boolean; aside?: ReactNode; className?: string }) {
   return (
-    <div role="toolbar" aria-label="Mise en forme" className={cn("flex flex-wrap items-center gap-0.5", className)}>
+    <div role="toolbar" aria-label="Mise en forme" className={cn("flex flex-wrap items-center gap-0.5 rounded-lg border bg-muted/40 p-0.5", className)}>
       {ACTIONS.map((action) => (
         <Tip key={action.id} label={action.keys ? `${action.label} (⌘ ${action.keys.toUpperCase()})` : action.label}>
           <button

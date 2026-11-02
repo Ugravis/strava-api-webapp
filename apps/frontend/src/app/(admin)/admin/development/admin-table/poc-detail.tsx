@@ -263,8 +263,9 @@ export function PocUserDetail({ user, panel, version }: { user: PocUser; panel?:
                 {/* Five at a time, « Voir plus » beyond; every save of this detail adds one. */}
                 <DetailHistory
                   load={(cursor) =>
-                    loadPocUserHistory(user.id, cursor).then(({ events, next }) => ({
+                    loadPocUserHistory(user.id, cursor).then(({ events, next, total }) => ({
                       next,
+                      total,
                       events: events.map((event) => ({ ...EVENT_LOOKS[event.kind], ...event, tone: event.failed ? "red" : EVENT_LOOKS[event.kind].tone })),
                     }))
                   }

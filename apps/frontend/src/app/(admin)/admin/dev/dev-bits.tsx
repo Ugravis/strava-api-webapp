@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { MigrationsTable } from "./migrations-table";
+import { VersionsTable } from "./versions-table";
 
 /** Libraries of the frontend, read where it runs rather than asked to the backend. */
 const FRONTEND_DEPENDENCIES: AdminDependencyVersion[] = [
@@ -56,40 +57,17 @@ export function DeploymentCard({ dev }: { dev: AdminDevResponse }) {
   );
 }
 
-/** Versions of the runtimes, libraries and database servers. */
-export function VersionsCard({ dependencies }: { dependencies: AdminDependencyVersion[] }) {
+/** Versions of the runtimes, libraries and database servers, of both sides. */
+export function VersionsSection({ dependencies }: { dependencies: AdminDependencyVersion[] }) {
   const t = getAdminTranslations("dev.versions");
   return (
-    <Card size="sm">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <VersionList label={t("backend")} dependencies={dependencies} />
-        <VersionList label={t("frontend")} dependencies={FRONTEND_DEPENDENCIES} />
-      </CardContent>
-    </Card>
-  );
-}
-
-function VersionList({ label, dependencies }: { label: string; dependencies: AdminDependencyVersion[] }) {
-  const t = getAdminTranslations("dev.versions");
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="text-xs font-medium text-muted-foreground uppercase">{label}</p>
-      <dl className="text-sm">
-        {dependencies.map((dependency) => (
-          <Row key={dependency.name} label={dependency.name}>
-            {dependency.version ? (
-              <span className="font-mono text-xs">{dependency.version}</span>
-            ) : (
-              <span className="font-normal text-muted-foreground">{t("unknown")}</span>
-            )}
-          </Row>
-        ))}
-      </dl>
-    </div>
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-base font-semibold">{t("title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
+      </div>
+      <VersionsTable backend={dependencies} frontend={FRONTEND_DEPENDENCIES} />
+    </section>
   );
 }
 
@@ -122,10 +100,8 @@ export function DevSkeleton() {
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-56 w-full rounded-xl" />
-        <Skeleton className="h-56 w-full rounded-xl" />
-      </div>
+      <Skeleton className="h-56 w-full rounded-xl" />
+      <Skeleton className="h-72 w-full rounded-xl" />
       <Skeleton className="h-72 w-full rounded-xl" />
     </div>
   );

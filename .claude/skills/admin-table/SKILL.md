@@ -26,3 +26,5 @@ description: Build or change a back-office list with the data table kit (DataTab
    - typecheck both apps;
    - `jest src/admin/common` in the backend;
    - then the page with agent-browser, signed in as the admin test account, including the URL state after a reload.
+
+Rows opened in the split panel: `useRowPanel` of the detail kit (`docs/admin-detail.md`). Bulk buttons: `SelectionAction` (confirm) and `BulkEditAction`.

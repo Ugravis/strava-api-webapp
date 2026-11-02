@@ -35,6 +35,7 @@ open(<Detail row={row} />, { id: row.id, title: "@username" });
 | Key | Use |
 | --- | --- |
 | `open(content, options?)` | Shows `content`, replacing what the panel showed. `options.id` goes in `?row=`; `options.title` in the header (« Détail » otherwise). |
+| `setTitle(id, title)` | Titles the contents of `id`, e.g. once its row is loaded from a shared link. |
 | `replace(content, options?)` | Shows `content` in place of the content shown, without a new step of back and forward and without asking: e.g. the row once created from its draft. |
 | `close()` | Closes, removes `?row=`. |
 | `useSplitPanelGuard(dirty)` | In a content: asks before leaving it while `dirty`. |

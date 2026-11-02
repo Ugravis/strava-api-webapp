@@ -1,6 +1,6 @@
 # Admin detail content
 
-The content of a detail of the back office: what the split panel (`docs/split-panel.md`) shows of a row, and the same blocks in a dialog or a page. The panel draws its own header (back, forward, title, fold, mode, close); these blocks are what goes inside. Showcase: `/admin/development/admin-table`, a click on a row of either table (`poc-detail.tsx`, `poc-badge-detail.tsx`); « Nouveau badge » or « Dupliquer » for a draft (`poc-badge-create.tsx`), the pencil of « Période » for a section edited as a whole.
+The content of a detail of the back office: what the split panel (`docs/split-panel.md`) shows of a row, and the same blocks in a dialog or a page. The panel draws its own header (back, forward, title, fold, mode, close); these blocks are what goes inside. Showcase: `/admin/development/admin-table`, a click on a row of either table (`poc-detail.tsx`, `poc-badge-detail.tsx`); « Nouveau badge » or « Dupliquer » for a draft (`poc-badge-create.tsx`), the pencil of « Période » for a section edited as a whole; rows checked for the bulk edit; the bar above the tables simulates a moderator (locks) and what follows a removal.
 
 ## Where things are
 
@@ -22,7 +22,7 @@ The content of a detail of the back office: what the split panel (`docs/split-pa
 | `DetailFields` + `DetailField` | Free fields: `label`, `icon`, the value as children, « — » when empty. On hover, buttons float at the right of the value: `tools` (any `DetailFieldButton`), copy (a text or a number shown is copied as is; `copy` gives the text of any other value, `null` none), edit (`edit`). `edit` edits in place, after its `kind` (below): the pencil only, never a click on the value, opens a field or a popover; Enter (⌘ Enter on several lines), ✓, leaving the field or closing the popover saves (a colour or an image by « Valider » only), Esc or ✕ gives up (the panel stays open); `onSave(value) => Promise<ActionResult \| void>`, `{ ok: false }` keeping the field open, its message in a bubble centred above the field, in the red of the error toasts (no toast, nothing moves). Without children the value is drawn after its kind. Nothing is ever left unsaved, so nothing guards the closing of the panel (a draft does, below). While a popover is open its pencil stays shown, pressed, and closes it again, giving up. On a screen without hover (a phone), no button floats: a tap on the value opens a bubble of its actions, each with its icon and its name (« Ouvrir le lien » for a value with an `href`, its link no longer followed at once; « Ouvrir » the row in a table; the tools; « Copier »; « Modifier »). Bubbles are modal there: any tap outside their buttons only closes them, reaching nothing beneath. A text, a number or a date is then typed in a bubble under its value, centred on the screen, in a table as in a detail; a tap outside saves. Popovers of edits open centred under the value. Buttons that save an edit (✓, « Valider ») are blue (`SAVE_BUTTON`). A modifiable field shows a small blue dot at the top right of its icon (after its label without one): one with an `edit`, or holding a button that changes it (`DetailItemButton`, e.g. unlink or remove; a tool with `modifies`). `editHint` forces it (`true`) or hides it (`false`), named « Champ modifiable » in a bubble (`{ id, editHint }` in `DetailColumnFields`). `stacked`: the value under its label, across the whole width, wrapping (a long text), its buttons at the top right of the panel; in `DetailColumnFields`, `{ id, stacked: true }`. |
 | `DetailItems` + `DetailItem` | Several values of one field, one per line: `icon` in a grey square on the left, as in the icon cells of the tables, the text, `actions` (`DetailItemButton`s, always in sight) on the right. As the value of a `DetailField` (beside its label, or under it across the whole width with `stacked`), or alone in a section. |
 | `DetailItemButton` | An icon button of the `actions` of a `DetailItem`, in the look of the floating buttons of the fields (border, background), named in a bubble. |
-| `DetailActions` + `DetailAction` | A row of buttons on a single line, a line above it: under the header, or between sections. The buttons share the whole width; when their names no longer fit, they show their icon only, named in a bubble after 400 ms. `sticky`: at the bottom of the panel, staying in sight as the detail scrolls (last child of the detail). `DetailAction`: `label`, `icon`, `variant` (`outline`, `default`, `destructive`, `save`: the blue of the buttons that save), `onClick` or `href` (a new tab), `type="submit"` (submits the draft around), `disabled`, `pending` (a spinner for its icon, disabled); outside `DetailActions` (e.g. the `actions` of `DetailHeader`), its icon alone with its bubble. |
+| `DetailActions` + `DetailAction` | A row of buttons on a single line, a line above it: under the header, or between sections. The buttons share the whole width; when their names no longer fit, they show their icon only, named in a bubble after 400 ms. `sticky`: at the bottom of the panel, staying in sight as the detail scrolls (last child of the detail). `DetailAction`: `label`, `icon`, `variant` (`outline`, `default`, `destructive`, `save`: the blue of the buttons that save), `onClick` or `href` (a new tab), `type="submit"` (submits the draft around), `disabled`, `pending` (a spinner for its icon, disabled; also while the promise `onClick` answers runs, its `{ ok: false }` in a toast). `confirm` asks first, in a dialog (`{ title, description, confirmLabel, destructive?, reason? }`, `reason` a text typed, required or not, handed to `onClick(reason)`): its button runs `onClick` with a spinner, `{ ok: false }` keeps it open with the message. `locked`: not for this user, and why, greyed with the reason in its bubble. Outside `DetailActions` (e.g. the `actions` of `DetailHeader`), its icon alone with its bubble. |
 | `DetailForm` | A new row, as a draft (below): `initial` (blank, or a row copied), `children(form)` the detail of the row, `onSubmit(values)`, `onCancel`, `onCreated(result)`, `submitLabel`. « Annuler » and « Créer » kept at the bottom of the panel. |
 | `DetailSectionForm` | A `DetailSection` whose fields are edited together, as a draft (below): `title`, `pill`, `tone`, `initial`, `children(form)`, `onSubmit(values)`, `editLabel` (its pencil, « Modifier : <title> » by default). |
 | `LucideIconByName` | A Lucide icon by its name (`rocket`, `grid-3x3`), all of them loaded in a chunk of their own the first time one is drawn: e.g. the `icon` of a `DetailMedia` whose icon is edited. |
@@ -31,6 +31,11 @@ The content of a detail of the back office: what the split panel (`docs/split-pa
 | `DetailLoader` | Loads the row of `id` with `load(id)`, then draws `children(row)`: `DetailSkeleton` meanwhile (or `skeleton`), « Introuvable » when `load` answers null, « Réessayer » when it fails. Another id goes back to the skeleton; a new `refreshKey` loads again in the background, the detail shown meanwhile. |
 | `DetailSkeleton` | While the detail loads, in the geometry of its blocks: `cover`, `media`, `actions` (buttons of a `DetailActions` under the header), `sections` (fields of each; `fields` for one). Mirror the detail, so that nothing jumps once loaded. |
 | `DetailEmpty` | Nothing to show: the row is gone, or the call failed; `action` e.g. a retry button. |
+| `DetailTabs` | The parts of a long detail, one shown at a time: `tabs` (`{ id, label, icon?, count?, content }`), `defaultTab`. Under the header and its buttons; a line of tabs scrolled sideways on a phone; only the tab shown is drawn, so that its blocks load once opened. |
+| `DetailRelated` | Rows related to the one shown (the holders of a badge), loaded by the block: `load()` answers `{ items, total }`, items `{ id, media?, title, subtitle?, aside?, onOpen? }`; « 5 sur 91 », `more` (« Voir tout ») beyond; skeleton, `empty`, a retry after a failure; a new `refreshKey` loads them again. An item opened in the panel takes its own `?row=`: the ids of both tables must never meet. |
+| `DetailHistory` | The history of the row (its entries of the audit log), the latest first: `load(cursor)` answers `{ events, next }`, « Voir plus » while `next`; events `{ id, icon, tone?, title, date, details? }`; skeleton, `empty`, retry; a new `refreshKey` (a save) loads it again from the start. |
+| `BulkEditAction` | « Modifier » in the bar of a selection (`bulkActions`): picks one of `fields` (`{ id: column id, edit: spec }`, a locked one greyed with its reason), types its value as in a draft (`rules` followed), « Appliquer à N … » sends `onSave({ field, value, mode })`. A list (`multiselect`, `tags`) is replaced, or values added to or removed from each row (`mode`); adding or removing nothing is refused. The selection stays, so that another field may follow; the message in a toast, `{ ok: false }` kept in the dialog. |
+| `useRowPanel` | The wiring of a table and its panel, once (below). |
 
 ## In-place edits
 
@@ -47,10 +52,45 @@ The content of a detail of the back office: what the split panel (`docs/split-pa
 | `icon` | A Lucide name, e.g. `rocket` | A popover: every Lucide icon, searched by name, 96 shown at once; a click saves | `noneLabel` |
 | `image` | The URL shown, `string \| null`; `onSave` given a `File`, or `null` once removed | A popover: the image, replaced by a file picked or dropped, refused beyond `maxSize` in the bubble, formats and weight told in its title; saved by « Valider » only, « Annuler » or closing it gives up; widened from its bottom left corner (320 to 480 px). The Server Action uploads it and answers the row with its new URL | `accept` (PNG, JPEG, WebP by default), `maxSize` (bytes), `noneLabel` (removes it) |
 | `switch` | `boolean` | The switch itself, saved as soon as switched; no pencil | |
+| `email` | `string \| null` | A field; refused malformed (« Adresse e-mail invalide… »); shown as a `mailto:` link, offered in the bubble of a phone | `placeholder` |
+| `url` | `string \| null` | A field; `http` / `https` only; shown as a link, a new tab | `placeholder` |
+| `markdown` | `string \| null` | A field of several lines (⌘ Enter saves), an eye showing it drawn; shown drawn: titles, lists, quotes, bold, italics, code, links (`http`, `https`, `mailto`), never HTML | `placeholder` |
+| `tags` | `string[]` | A popover: free values, Enter or a comma adds one, Backspace or ✕ removes, `suggestions` offered as typed; twice the same, too long or too many refused under the field; « Valider » or closing it saves | `suggestions`, `max`, `maxLength`, `placeholder` |
+| `relation` | `DetailEditOption \| null`, the option itself (its label shown without loading the row) | A popover: `search(query)` on the server, an empty query for the first ones, a pause of 250 ms while typing, skeleton, « Aucun résultat », « Recherche impossible » and a retry; a click saves | `search`, `noneLabel`, `placeholder` |
 
-Options: `{ value, label, icon?, tone? }`, a `tone` drawing it as a pill of the tables. A value cleared that the API refuses answers `{ ok: false }`, the field staying open.
+Options: `{ value, label, icon?, tone?, description? }`, a `tone` drawing it as a pill of the tables, `description` after the label (a @username). A value cleared that the API refuses answers `{ ok: false }`, the field staying open.
 
 Every kind takes `required` (a value cleared refused before the call, « Champ obligatoire. ») and `validate?: (value) => string | null`: the value refused before `onSave`, its reason in the bubble, e.g. a field hanging on another one of the row (`validate: (end) => end < row.start ? "…" : null`). A value typed wrong shows there too, telling what is expected: « Le nombre doit être entre 1 et 100 km. », « Image trop lourde (3,4 Mo) : 2 Mo maximum. ». The server stays the judge: `validate` only answers sooner.
+
+Every kind takes `locked`: not editable by this user, and why (« Réservé aux super-admins »). A lock in place of its pencil, the reason in its bubble (a disabled line of the bubble of a phone), no blue dot; a switch greyed; in a draft, its value and the reason under it; in a table cell the same. `DetailSectionForm` takes `locked` too (a lock in place of its pencil), `BulkEditAction` greys a locked field. The server refuses it anyway.
+
+## Shared rules
+
+The rules of the fields of a row (required, lengths, bounds, formats, a date after another) are written once in `@kilotrace/shared/rules` (`FieldRules<T>`), with their French messages, and followed on both sides:
+
+- **Back office.** `rules` of `DetailForm`, `DetailSectionForm` and `BulkEditAction`: every field bound follows its rule (`required`, the bounds of a number, `validate`), unless its spec says otherwise; an in-place edit spreads `fromRule(rule, row?)` in its `edit` (`{ ...fromRule(RULES.name), value, onSave }`).
+- **API.** `assertRules(rules, body, { partial, row })` (`apps/backend/src/common/field-rules.ts`) refuses with a 400 `INVALID_FIELD` naming the field and its message: the Server Action answers it as `{ ok: false, field, message }`, under that field.
+- A rule that the data of the page decides (a bound after the collection) stays a `validate` of the spec, calling `checkField` of the shared rule after its own check.
+- A new rule kind goes in `packages/shared/src/rules`, built with the package (the dev containers need `docker compose up -d --build frontend backend`).
+
+## Table and panel: `useRowPanel`
+
+```tsx
+const panel = useRowPanel<Badge>({
+  config: BADGES,                            // stable
+  title: (badge) => badge.name,
+  load: loadBadge,                           // a shared link, a row created: its title
+  detail: (id, panel) => <BadgePanel id={id} panel={panel} />,
+  create: { id: "new:badge", label: "Nouveau badge", title: "Nouveau badge", copyTitle: "Copie de badge", form: ({ initial, close, created }) => <BadgeCreate initial={initial} onCancel={close} onCreated={created} /> },
+  afterRemove: "close",                      // or "next"
+});
+return <DataTable {...panel.table} refreshKey={version} />;
+```
+
+- `panel.table` gives the `DataTable` its `config` (its « Nouveau » button added), `onRowClick`, `activeRowId`, `onRows`.
+- The detail gets the controls: `open(id)`, `create(initial?)` (« Dupliquer »), `created(id)` (the draft replaced by the row, no step of back and forward toward it), `removed(id)`, `close()`.
+- **After a removal**, by default the panel closes: the list, refreshed, shows the row gone, and a next row opened at once would invite a second removal by mistake. `afterRemove: "next"` opens the next row of the table (the previous one after the last) in its place, for a list moderated row after row.
+- **Arrival.** `?row=` opens its row (loaded for its title, the panel open at once on its skeleton), `?row=<create.id>` a blank draft.
 
 ## Drafts: creating a row, editing fields together
 

@@ -38,7 +38,7 @@ import {
 import { UserAvatar } from "@/components/user/user-avatar";
 import { USERS } from "./poc-columns";
 import { POC_NOW, type PocUser } from "./poc-data";
-import { CATEGORY_OPTIONS, CONNECTIONS, connectionsOf, tagItems, UserMarks } from "./poc-marks";
+import { CONNECTIONS, connectionsOf, tagItems, UserMarks } from "./poc-marks";
 import { loadPocUser, savePocUser, usePocVersion } from "./poc-store";
 
 /** Every action of the demo only says what it would do. */
@@ -131,17 +131,8 @@ export function PocUserDetail({ user }: { user: PocUser }) {
           columns={USERS.columns}
           ids={[
             "status",
-            // A file of 2 MB at most, saved by « Valider »; removed by « Retirer ».
-            {
-              id: "cover",
-              edit: {
-                kind: "image",
-                value: user.cover?.src ?? null,
-                maxSize: 2 * 1024 * 1024,
-                noneLabel: "Retirer",
-                onSave: (file) => savePocUser(user.id, { cover: file && { src: URL.createObjectURL(file), alt: `Couverture de @${user.username}` } }),
-              },
-            },
+            // Edited as in the table: the `edit` of its column.
+            "cover",
             "createdAt",
             "lastSeenAt",
           ]}
@@ -205,10 +196,7 @@ export function PocUserDetail({ user }: { user: PocUser }) {
           ids={[
             "activities",
             "storage",
-            {
-              id: "categories",
-              edit: { kind: "multiselect", value: user.categories, options: CATEGORY_OPTIONS, onSave: (categories) => savePocUser(user.id, { categories: categories as PocUser["categories"] }) },
-            },
+            "categories",
           ]}
         />
       </DetailSection>

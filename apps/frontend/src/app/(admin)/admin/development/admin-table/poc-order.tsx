@@ -19,7 +19,7 @@ import {
 import { useSplitPanel } from "@/components/split-panel";
 import { landscape } from "./poc-data";
 import { PocBadgePanel } from "./poc-badge-detail";
-import { usePocVersion } from "./poc-store";
+import { savePocBadge, usePocVersion } from "./poc-store";
 
 /*
  * Fake badges kept in one order of the database, whatever their collection:
@@ -129,7 +129,19 @@ export const BADGES_TABLE: DataTableConfig<PocBadge> = {
     orderColumn({ id: "position", header: "Ordre", value: (badge) => badge.position }),
     textColumn({ id: "name", header: "Badge", icon: <MedalIcon />, sortable: true, locked: true, value: (badge) => badge.name, width: "max-w-56" }),
     imageColumn({ id: "picture", header: "Image", icon: <ImageIcon />, value: (badge) => badge.picture }),
-    pillsColumn({ id: "collection", header: "Collection", icon: <LayersIcon />, value: (badge) => [COLLECTIONS[badge.collection]] }),
+    pillsColumn({
+      id: "collection",
+      header: "Collection",
+      icon: <LayersIcon />,
+      value: (badge) => [COLLECTIONS[badge.collection]],
+      // Picked in a list, in the cell as in the detail.
+      edit: (badge) => ({
+        kind: "select",
+        value: badge.collection,
+        options: COLLECTION_OPTIONS,
+        onSave: (collection) => savePocBadge(badge.id, { collection: collection as PocBadge["collection"] | null }),
+      }),
+    }),
     numberColumn({ id: "holders", header: "Détenteurs", icon: <UsersIcon />, sortable: true, value: (badge) => badge.holders }),
     dateColumn({ id: "createdAt", header: "Création", icon: <CalendarPlusIcon />, sortable: true, value: (badge) => badge.createdAt }),
   ],

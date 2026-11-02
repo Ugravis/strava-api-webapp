@@ -54,7 +54,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { type PocActionKind, POC_NOW, POC_USERS, type PocUser } from "./poc-data";
-import { CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";
+import { savePocUser } from "./poc-store";
+import { CATEGORY_OPTIONS, CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";
 
 const open = (user: PocUser) => toast(`Ouvrirait le panneau de @${user.username}`);
 
@@ -101,7 +102,20 @@ export const USERS: DataTableConfig<PocUser> = {
   ],
   columns: [
     userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user, marks: (user) => <UserMarks user={user} /> }),
-    imageColumn({ id: "cover", header: "Couverture", icon: <ImageIcon />, value: (user) => user.cover }),
+    imageColumn({
+      id: "cover",
+      header: "Couverture",
+      icon: <ImageIcon />,
+      value: (user) => user.cover,
+      // A file of 2 MB at most, saved by « Valider »; removed by « Retirer ».
+      edit: (user) => ({
+        kind: "image",
+        value: user.cover?.src ?? null,
+        maxSize: 2 * 1024 * 1024,
+        noneLabel: "Retirer",
+        onSave: (file) => savePocUser(user.id, { cover: file && { src: URL.createObjectURL(file), alt: `Couverture de @${user.username}` } }),
+      }),
+    }),
     textColumn({ id: "displayName", header: "Nom affiché", icon: <TypeIcon />, sortable: true, value: (user) => user.displayName, width: "max-w-44" }),
     statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, sortable: true, value: (user) => user.status, statuses: STATUSES }),
     textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, value: (user) => user.email, muted: true, width: "max-w-52" }),
@@ -144,7 +158,14 @@ export const USERS: DataTableConfig<PocUser> = {
         </CellButtons>
       ),
     }),
-    pillsColumn({ id: "categories", header: "Catégorie", icon: <ShapesIcon />, value: categoryPills }),
+    pillsColumn({
+      id: "categories",
+      header: "Catégorie",
+      icon: <ShapesIcon />,
+      value: categoryPills,
+      // Several picked in a list, in the cell as in the detail.
+      edit: (user) => ({ kind: "multiselect", value: user.categories, options: CATEGORY_OPTIONS, onSave: (categories) => savePocUser(user.id, { categories: categories as PocUser["categories"] }) }),
+    }),
     textColumn({ id: "note", header: "Note", icon: <StickyNoteIcon />, value: (user) => user.note }),
     codeColumn({
       id: "stravaId",

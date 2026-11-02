@@ -16,7 +16,7 @@ import {
   DetailSection,
   LucideIconByName,
 } from "@/components/admin/detail";
-import { BADGES_TABLE, COLLECTION_OPTIONS, COLLECTIONS, type PocBadge } from "./poc-order";
+import { BADGES_TABLE, COLLECTIONS, type PocBadge } from "./poc-order";
 import { loadPocBadge, savePocBadge, usePocVersion } from "./poc-store";
 
 const RULES: Record<PocBadge["collection"], string> = {
@@ -63,7 +63,7 @@ export function PocBadgeDetail({ badge }: { badge: PocBadge }) {
           columns={BADGES_TABLE.columns}
           ids={[
             "picture",
-            { id: "collection", edit: { kind: "select", value: badge.collection, options: COLLECTION_OPTIONS, onSave: (collection) => save({ collection: collection as PocBadge["collection"] | null }) } },
+            "collection",
             "holders",
             "createdAt",
           ]}
@@ -88,7 +88,15 @@ export function PocBadgeDetail({ badge }: { badge: PocBadge }) {
           {/* Saved as soon as switched. */}
           <DetailField label="Actif" icon={<ToggleRightIcon />} edit={{ kind: "switch", value: badge.active, onSave: (active) => save({ active }) }} />
           <DetailField label="Disponible dès" icon={<CalendarIcon />} edit={{ kind: "date", value: badge.availableFrom, onSave: (availableFrom) => save({ availableFrom }) }} />
-          <DetailField label="Fin" icon={<CalendarClockIcon />} edit={{ kind: "date", time: true, value: badge.endsAt, onSave: (endsAt) => save({ endsAt }) }} />
+          <DetailField label="Fin" icon={<CalendarClockIcon />} edit={{
+              kind: "date",
+              time: true,
+              value: badge.endsAt,
+              // Hangs on another field: refused before the call, in a bubble.
+              validate: (endsAt) => (endsAt && badge.availableFrom && endsAt.slice(0, 10) < badge.availableFrom ? "La fin doit suivre « Disponible dès »." : null),
+              onSave: (endsAt) => save({ endsAt }),
+            }}
+          />
           <DetailField label="Condition" icon={<TextIcon />} copy={RULES[badge.collection]} stacked>
             {RULES[badge.collection]}
           </DetailField>

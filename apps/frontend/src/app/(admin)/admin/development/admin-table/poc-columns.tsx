@@ -57,7 +57,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { type PocActionKind, POC_NOW, POC_USERS, type PocUser } from "./poc-data";
-import { BulkEditAction } from "@/components/admin/detail";
+import { BulkEditAction, fromRule } from "@/components/admin/detail";
 import { USER_RULES } from "./poc-rules";
 import { bulkEditPocUsers, removePocUsers, savePocUser, suspendPocUsers } from "./poc-store";
 import { CATEGORY_OPTIONS, CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";
@@ -141,8 +141,8 @@ export const USERS: DataTableConfig<PocUser> = {
       value: (user) => user.email,
       muted: true,
       width: "max-w-52",
-      // Refused by the server without « @ »: its message in the bubble.
-      edit: (user) => ({ kind: "text", value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }),
+      // An address checked as it is typed (its kind, its shared rule), before any call: the server judges again.
+      edit: (user) => ({ kind: "email", ...fromRule(USER_RULES.email), value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }),
     }),
     dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
     dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true, now: POC_NOW }),

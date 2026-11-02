@@ -325,11 +325,15 @@ export async function bulkEditPocBadges(ids: string[], change: BulkEditChange): 
   return { ok: true, message: `${BADGE_FIELDS[key] ?? key} : ${ids.length} badge${ids.length > 1 ? "s" : ""} modifié${ids.length > 1 ? "s" : ""}` };
 }
 
-/** The first holders of a badge, as the API would page them; « Voir tout » beyond. */
-export async function loadPocBadgeHolders(id: string): Promise<{ items: PocUser[]; total: number }> {
+/**
+ * The holders of a badge from `offset`, five at a time, as the API would page
+ * them; as many as the fake accounts allow, the total told as is.
+ */
+export async function loadPocBadgeHolders(id: string, offset: number): Promise<{ items: PocUser[]; total: number }> {
   await pause(300, 500);
   const badge = BADGES.find((each) => each.id === id);
   if (!badge || badge.holders === 0) return { items: [], total: 0 };
   const seed = badge.id.length + badge.position;
-  return { items: POC_USERS.filter((_, at) => (at + seed) % 4 === 0).slice(0, Math.min(5, badge.holders)), total: badge.holders };
+  const holders = POC_USERS.filter((_, at) => (at + seed) % 2 === 0).slice(0, badge.holders);
+  return { items: holders.slice(offset, offset + 5), total: Math.min(badge.holders, holders.length) };
 }

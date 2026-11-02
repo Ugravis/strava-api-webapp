@@ -144,8 +144,8 @@ export function PocBadgeDetail({ badge, panel, version }: { badge: PocBadge; pan
       <DetailSection title="Détenteurs">
         {/* Loaded by the block, each opened in the panel. */}
         <DetailRelated
-          load={() =>
-            loadPocBadgeHolders(badge.id).then(({ items, total }) => ({
+          load={(offset) =>
+            loadPocBadgeHolders(badge.id, offset).then(({ items, total }) => ({
               total,
               items: items.map((user) => ({
                 id: user.id,
@@ -158,7 +158,7 @@ export function PocBadgeDetail({ badge, panel, version }: { badge: PocBadge; pan
           }
           refreshKey={version}
           empty="Personne ne détient ce badge."
-          more={{ label: "Voir tout", onClick: () => toast(`Ouvrirait la liste des comptes, filtrée sur « ${badge.name} »`) }}
+          all={{ label: "Voir tout", onClick: () => toast(`Ouvrirait la liste des comptes, filtrée sur « ${badge.name} »`) }}
         />
       </DetailSection>
       {/* Kept at the bottom of the panel as the detail scrolls. */}

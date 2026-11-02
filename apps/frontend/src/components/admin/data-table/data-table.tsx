@@ -3,7 +3,7 @@
 import { closestCenter, DndContext, type DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { MousePointerClickIcon } from "lucide-react";
-import { type ComponentProps, type ReactNode, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useEffectEvent, useId, useMemo, useRef } from "react";
 import { TableCheckbox } from "./cells/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,17 +15,14 @@ import { verticalOnly } from "./reorder";
 import { Tip } from "./tip";
 import { DataTableToolbar } from "./toolbar";
 import type { DataTableConfig } from "./types";
+import { useColumnWidths } from "./use-column-widths";
 import { useDataTable } from "./use-data-table";
-
-/** Rest of the arrows, pressed in a row or held down, after which the row reached opens. */
-const ARROW_REST = 150;
+import { useRowArrows } from "./use-row-arrows";
+import { useSelectionScope } from "./use-selection-scope";
 
 /** A line beside the pinned column once rows slide under it, set on the box without a render. */
 const SHADOW =
   "group-data-scrolled/table:after:pointer-events-none group-data-scrolled/table:after:absolute group-data-scrolled/table:after:inset-y-0 group-data-scrolled/table:after:right-0 group-data-scrolled/table:after:w-px group-data-scrolled/table:after:bg-border";
-
-/** The tables of the page: one selection at a time, a table picking rows clears the others. */
-const selecting = new Set<(owner: string) => void>();
 
 /**
  * The table of the back office: a header of search, filters and tools, the
@@ -86,135 +83,13 @@ export function DataTable<T>({
     if (result) shownRows();
   }, [result]);
 
-  // One selection on the page: told as it starts, the others cleared.
-  const instance = useId();
-  const clearOthers = useEffectEvent((owner: string) => owner !== instance && selected.size > 0 && state.clearSelection());
-  useEffect(() => {
-    const listener = (owner: string) => clearOthers(owner);
-    selecting.add(listener);
-    return () => void selecting.delete(listener);
-  }, []);
-  const picking = selected.size > 0;
-  useEffect(() => {
-    if (picking) selecting.forEach((listener) => listener(instance));
-  }, [picking, instance]);
+  useSelectionScope(state);
 
-  // Esc clears the selection first, before a panel closes: left to a field, a menu, a dialog or the panel itself.
-  const clearSelection = state.clearSelection;
-  useEffect(() => {
-    if (selected.size === 0) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      const target = event.target;
-      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=true], [role=menu], [role=listbox], [role=dialog], [role=alertdialog], aside")) return;
-      if (document.querySelector("[role=dialog], [role=alertdialog], [role=menu]")) return;
-      event.preventDefault();
-      clearSelection();
-    };
-    // Captured, ahead of the panel, which listens on the document too.
-    document.addEventListener("keydown", onKey, true);
-    return () => document.removeEventListener("keydown", onKey, true);
-  }, [selected, clearSelection]);
   // As many as the last page: the box, as tall as its rows, keeps its height.
   const skeletons = last?.entries.length || 10;
+  const head = useColumnWidths(loading, columns, result);
 
-  // The skeleton keeps the widths of the columns as they were, set on the cells
-  // before paint: rebuilt on the bars alone, the table would shrink and jump.
-  const head = useRef<HTMLTableRowElement>(null);
-  const widths = useRef(new Map<string, number>());
-  useLayoutEffect(() => {
-    const cells = head.current?.querySelectorAll<HTMLElement>("th[data-column]") ?? [];
-    for (const cell of cells) {
-      const width = loading ? widths.current.get(cell.dataset.column!) : undefined;
-      cell.style.minWidth = width ? `${width}px` : "";
-    }
-    if (!loading) {
-      for (const cell of cells) widths.current.set(cell.dataset.column!, cell.getBoundingClientRect().width);
-    }
-  }, [loading, columns, result]);
-
-  /*
-   * Pressed in a row, quickly or held down, the arrows only move the
-   * highlight, cheap on memoized rows: the row opens once they rest, so that
-   * neither the content of the panel nor the URL, which renders the table
-   * again, follow each step. A lone press opens at once.
-   */
-  const [cursor, setCursor] = useState<string | null>(null);
-  if (cursor !== null && cursor === activeRowId) setCursor(null);
-  const active = cursor ?? activeRowId;
-  const pending = useRef<{ row: T; timer: ReturnType<typeof setTimeout> } | null>(null);
-  const lastPress = useRef(0);
-  const cancel = () => {
-    if (pending.current) clearTimeout(pending.current.timer);
-    pending.current = null;
-  };
-  const flush = useEffectEvent(() => {
-    const row = pending.current?.row;
-    cancel();
-    if (row) onOpen?.(row);
-  });
-  // A click wins over a row still waiting.
-  const openRow = useMemo(
-    () =>
-      onOpen &&
-      ((row: T) => {
-        cancel();
-        setCursor(null);
-        onOpen(row);
-      }),
-    [onOpen],
-  );
-  useEffect(() => cancel, []);
-
-  // Past the last row of the page, the next one, opened on its first row; before the first, the previous one, on its last.
-  const edge = useRef<"first" | "last" | null>(null);
-  useEffect(() => {
-    if (loading || !edge.current || !openRow) return;
-    const rows = entries.flatMap((entry) => ("row" in entry ? [entry.row] : []));
-    const row = edge.current === "first" ? rows[0] : rows.at(-1);
-    edge.current = null;
-    if (row) openRow(row);
-  }, [loading, entries, openRow]);
-
-  // Up and down from the active row, to the next one shown: left to a field or a menu that handles them.
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (active === null || !openRow || loading) return;
-    const rows = entries.flatMap((entry) => ("row" in entry ? [entry.row] : []));
-    const at = rows.findIndex((row) => config.rowId(row) === active);
-    if (at === -1) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-      const target = event.target;
-      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=true], [role=menu], [role=listbox], [role=dialog]")) return;
-      const down = event.key === "ArrowDown";
-      const next = rows[at + (down ? 1 : -1)];
-      if (!next) {
-        const page = result?.page ?? 1;
-        if (!result || (down ? page >= result.pages : page <= 1)) return;
-        event.preventDefault();
-        cancel();
-        edge.current = down ? "first" : "last";
-        state.setPage(page + (down ? 1 : -1));
-        return;
-      }
-      event.preventDefault();
-      const lone = event.timeStamp - lastPress.current > ARROW_REST;
-      lastPress.current = event.timeStamp;
-      if (lone && !pending.current) return openRow(next);
-      cancel();
-      pending.current = { row: next, timer: setTimeout(flush, ARROW_REST) };
-      setCursor(config.rowId(next));
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [active, openRow, loading, entries, config, result, state]);
-  // The active row kept in sight as the arrows move it.
-  useEffect(() => {
-    if (active === null) return;
-    box.current?.querySelector(`[data-row-id="${CSS.escape(active)}"]`)?.scrollIntoView({ block: "nearest" });
-  }, [active, result]);
+  const { active, openRow, box } = useRowArrows({ config, state, entries, activeRowId, onOpen });
 
   /** Classes of the cells pinned on the left: the box, then the first column. */
   const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && selectable && "left-10", first && SHADOW) : "");

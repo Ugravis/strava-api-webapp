@@ -43,6 +43,8 @@ export enum ApiErrorCode {
   SignupsDisabled = 'SIGNUPS_DISABLED',
   InvalidPermissions = 'INVALID_PERMISSIONS',
   SystemUserTag = 'SYSTEM_USER_TAG',
+  /** A field breaking its shared rule: `field` tells which, `message` why. */
+  InvalidField = 'INVALID_FIELD',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });

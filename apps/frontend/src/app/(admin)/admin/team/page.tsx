@@ -65,9 +65,6 @@ export default async function AdminTeamPage() {
                 "super-admin": getAdminTranslations("roles")("super-admin"),
               },
               locked: t("permissions.locked"),
-              unsaved: t("permissions.unsaved"),
-              save: t("permissions.save"),
-              reset: t("permissions.reset"),
             }}
             save={savePermissions}
           />

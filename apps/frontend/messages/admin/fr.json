@@ -334,9 +334,6 @@
       "description": "Ce que chaque rôle peut faire. Tous les membres de l'équipe voient toutes les pages ; seules les actions demandent une permission. Personne n'agit sur un compte de rang égal ou supérieur au sien.",
       "column": "Permission",
       "locked": "Réservé aux super-admins",
-      "unsaved": "Modifications non enregistrées.",
-      "save": "Enregistrer",
-      "reset": "Annuler",
       "error": "Les permissions n'ont pas pu être chargées.",
       "invalid": "Une permission est réservée aux super-admins.",
       "categories": {

@@ -33,9 +33,9 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * Nothing is ever left unsaved, so nothing guards the closing of the panel.
  * The pencil of a popover stays shown while it is open, and closes it again,
  * giving up. Without children, the value is drawn after its kind. A small
- * pencil at the top right of the label tells the field editable, unless
- * `editHint={false}`. On a screen without hover (a phone), the buttons sit
- * after the value, always shown.
+ * blue dot at the top right of the label tells the field editable, unless
+ * `editHint={false}`. On a screen without hover (a phone), no button is
+ * shown: a tap on the value opens a bubble of its actions.
  */
 export function DetailField<K extends DetailEditKind = "text">({
   label,
@@ -77,7 +77,6 @@ export function DetailField<K extends DetailEditKind = "text">({
           tools={tools}
           edit={edit as DetailFieldEdit | undefined}
           stacked={stacked}
-          docked
           // As wide as the panel: the widths of the table columns let go.
           valueClassName="wrap-break-word **:[[class*='max-w-']]:max-w-full"
         >

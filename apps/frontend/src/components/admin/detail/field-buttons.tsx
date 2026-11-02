@@ -1,15 +1,51 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 import { FLOATING_BUTTON } from "@/components/admin/data-table/cells/base";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+/** Inside the bubble of actions of a screen without hover: closes it. */
+export const FieldMenuClose = createContext<(() => void) | null>(null);
+
+/** A line of the bubble of actions of a screen without hover: its icon and its name. */
+export function FieldMenuItem({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      className="flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-sm outline-none hover:bg-muted focus-visible:bg-muted disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground"
+    >
+      {children}
+      {label}
+    </button>
+  );
+}
+
 /**
  * A button floating at the right of a field on hover, beside copy and edit,
- * named in a bubble: the `tools` of a `DetailField`.
+ * named in a bubble: the `tools` of a `DetailField`. On a screen without
+ * hover, a line of the bubble of actions of the field.
  */
 export function DetailFieldButton({ label, disabled, pressed, onClick, children }: { label: string; disabled?: boolean; pressed?: boolean; onClick: () => void; children: ReactNode }) {
+  const close = useContext(FieldMenuClose);
+  if (close)
+    return (
+      <FieldMenuItem
+        label={label}
+        disabled={disabled}
+        onClick={() => {
+          close();
+          onClick();
+        }}
+      >
+        {children}
+      </FieldMenuItem>
+    );
   return (
     <Tooltip>
       <TooltipTrigger
@@ -38,19 +74,14 @@ export function DetailFieldButton({ label, disabled, pressed, onClick, children 
   );
 }
 
-/**
- * The buttons floating at the right of a value: at its top with `top` (a long
- * text, several lines), else centred; on hover only unless `shown`. `docked`:
- * on a screen without hover, after the value in its line, always shown.
- */
-export function FieldButtons({ top, shown, docked, children }: { top?: boolean; shown?: boolean; docked?: boolean; children: ReactNode }) {
+/** The buttons floating at the right of a value: at its top with `top` (a long text, several lines), else centred; on hover only unless `shown`. */
+export function FieldButtons({ top, shown, children }: { top?: boolean; shown?: boolean; children: ReactNode }) {
   return (
     <span
       className={cn(
         "absolute right-1.5 z-10 flex items-center gap-1",
         top ? "top-1" : "top-1/2 -translate-y-1/2",
         !shown && "opacity-0 transition-opacity group-hover/cell:opacity-100 has-focus-visible:opacity-100",
-        docked && "[@media(hover:none)]:static [@media(hover:none)]:ml-2 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:self-start [@media(hover:none)]:pt-1 [@media(hover:none)]:opacity-100",
       )}
     >
       {children}

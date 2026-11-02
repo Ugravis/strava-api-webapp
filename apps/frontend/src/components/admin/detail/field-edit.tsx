@@ -276,6 +276,8 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
     },
     onKeyDown,
     onBlur: save,
+    // As wide as its box, not as its text: a cell of a table keeps its width.
+    size: 1,
   };
 
   return (
@@ -284,11 +286,11 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
       {multiline ? (
         <Textarea {...field} placeholder={edit.placeholder} className="min-h-20 pr-16 text-sm" />
       ) : edit.kind === "number" ? (
-        <Input {...field} type="number" inputMode="decimal" min={edit.min} max={edit.max} step={edit.step ?? "any"} className="h-7 [appearance:textfield] pr-16 text-sm [&::-webkit-inner-spin-button]:appearance-none" />
+        <Input {...field} type="number" inputMode="decimal" min={edit.min} max={edit.max} step={edit.step ?? "any"} className="h-7 min-w-32 [appearance:textfield] pr-16 text-sm [&::-webkit-inner-spin-button]:appearance-none" />
       ) : edit.kind === "date" ? (
-        <Input {...field} type={edit.time ? "datetime-local" : "date"} min={edit.min} max={edit.max} className="h-7 pr-16 text-sm" />
+        <Input {...field} type={edit.time ? "datetime-local" : "date"} min={edit.min} max={edit.max} className="h-7 min-w-44 pr-16 text-sm" />
       ) : (
-        <Input {...field} placeholder={edit.placeholder} className="h-7 pr-16 text-sm" />
+        <Input {...field} placeholder={edit.placeholder} className="h-7 min-w-32 pr-16 text-sm" />
       )}
       <FieldButtons top={multiline} shown>
         <DetailFieldButton label="Enregistrer" disabled={saving} onClick={save}>

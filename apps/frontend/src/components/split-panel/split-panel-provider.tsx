@@ -1,19 +1,10 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { store, useStored, writeParams } from "./storage";
+import { useUnsavedGuard } from "./unsaved-guard";
 
 export type SplitPanelMode = "overlay" | "split";
 
@@ -108,26 +99,8 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
     modeRef.current = expanded ? "full" : mode;
   }, [mode, expanded]);
 
-  // Contents holding work not saved: leaving them asks first, in a dialog.
-  // One token per content counting, so that a guard dropped by « Abandonner » and then let go counts nothing.
-  const dirty = useRef(new Set<object>());
-  const [pending, setPending] = useState<(() => void) | null>(null);
-  const pendingRef = useRef(pending);
-  const isOpenRef = useRef(false);
-  useEffect(() => {
-    pendingRef.current = pending;
-  }, [pending]);
-  /** Does `action` at once, or once the loss of the work not saved is accepted. */
-  const attempt = useCallback((action: () => void) => {
-    if (isOpenRef.current && dirty.current.size > 0) setPending(() => action);
-    else action();
-  }, []);
-  const guard = useCallback((on: boolean) => {
-    if (!on) return () => {};
-    const token = {};
-    dirty.current.add(token);
-    return () => void dirty.current.delete(token);
-  }, []);
+  const isOpen = history !== null;
+  const { attempt, guard, asking, dialog } = useUnsavedGuard(isOpen);
 
   const show = useCallback((content: ReactNode, options: SplitPanelOptions, replacing: boolean) => {
     setHistory((last) => {
@@ -164,47 +137,17 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   // Left to a menu or a dialog that handled it first.
-  const isOpen = history !== null;
-  useEffect(() => {
-    isOpenRef.current = isOpen;
-  }, [isOpen]);
   useEffect(() => {
     if (!isOpen) return;
     // Out of the whole page first, then closed.
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented || pendingRef.current) return;
+      if (event.key !== "Escape" || event.defaultPrevented || asking.current) return;
       if (new URLSearchParams(window.location.search).get(MODE_PARAM) === "full") writeParams({ [MODE_PARAM]: localStorage.getItem(MODE_KEY) ?? "overlay" });
       else close();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isOpen, close]);
-
-  // Work not saved: leaving the page by one of its links asks first, closing the tab or reloading it as the browser does.
-  const router = useRouter();
-  useEffect(() => {
-    if (!isOpen) return;
-    const onClick = (event: MouseEvent) => {
-      if (dirty.current.size === 0 || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (!(link instanceof HTMLAnchorElement) || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
-      const url = new URL(link.href);
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
-      // Before the link of Next handles it.
-      event.preventDefault();
-      event.stopPropagation();
-      setPending(() => () => router.push(url.pathname + url.search + url.hash));
-    };
-    const onUnload = (event: BeforeUnloadEvent) => {
-      if (dirty.current.size > 0) event.preventDefault();
-    };
-    document.addEventListener("click", onClick, true);
-    window.addEventListener("beforeunload", onUnload);
-    return () => {
-      document.removeEventListener("click", onClick, true);
-      window.removeEventListener("beforeunload", onUnload);
-    };
-  }, [isOpen, router]);
+  }, [isOpen, close, asking]);
 
   const value = useMemo(() => ({ open, replace, close, setTitle, guard, isOpen, activeId }), [open, replace, close, setTitle, guard, isOpen, activeId]);
 
@@ -243,29 +186,7 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
   return (
     <SplitPanelContext value={value}>
       <SplitPanelStateContext value={state}>{children}</SplitPanelStateContext>
-      <AlertDialog open={pending !== null} onOpenChange={(next) => !next && setPending(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Abandonner la saisie ?</AlertDialogTitle>
-            <AlertDialogDescription>Les champs saisis et non enregistrés seront perdus.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Continuer la saisie</AlertDialogCancel>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                const action = pending;
-                setPending(null);
-                // Dropped by the dialog first: the guards of the content leaving no longer count.
-                dirty.current.clear();
-                action?.();
-              }}
-            >
-              Abandonner
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {dialog}
     </SplitPanelContext>
   );
 }

@@ -55,6 +55,12 @@ export class AdminTeamController {
     return this.team.candidates(query.q);
   }
 
+  @Get(':id')
+  @AnyMember()
+  member(@Param('id', ParseUUIDPipe) id: string): Promise<AdminTeamMember> {
+    return this.team.member(id);
+  }
+
   @Put(':id')
   @Permission('team.manage')
   @Audited({ action: 'roles.grant', target: TARGET, details: ['role'] })

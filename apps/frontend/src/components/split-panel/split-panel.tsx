@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeftIcon, ArrowRightIcon, ChevronLeftIcon, ChevronsRightIcon, Columns2Icon, Maximize2Icon, Minimize2Icon, PanelRightIcon, XIcon } from "lucide-react";
-import { type PointerEvent, type ReactNode, useRef, useState } from "react";
+import { type PointerEvent, type ReactNode, useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
   const shown = !!entry && (!folded || full);
   // A page of its own, without gutter nor card: expanded, or on a phone.
   const page = full || mobile;
+  const held = useWheelHeld();
   // The last content stays while the panel slides out.
   const [last, setLast] = useState(entry);
   if (entry && entry !== last) setLast(entry);
@@ -90,11 +91,8 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
             >
               <Header title={last?.title} />
               {/* The thin scrollbar of the tables. */}
-              {/*
-               * At its top or its bottom, the wheel goes on to the page: from the footer, the page comes up again.
-               * Held on a phone, where the panel is the page and the browser would pull to refresh.
-               */}
-              <div className="flex-1 overflow-y-auto overscroll-contain md:overscroll-auto [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
+              {/* The wheel scrolls the panel only, never the page beneath (`useWheelHeld`). */}
+              <div ref={held} className="flex-1 overflow-y-auto overscroll-contain [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
                 {/* Read as a page once expanded: a column of text, not a line across the screen. */}
                 <div key={last?.key} className={cn("flex min-h-full flex-col", full && "mx-auto w-full max-w-3xl")}>{last?.content}</div>
               </div>
@@ -189,4 +187,33 @@ function IconButton({ label, children, ...props }: { label: string; children: Re
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+/**
+ * The wheel over the box scrolls it only, never the page beneath: at its top
+ * or its bottom, or with nothing to scroll, the page stays (which
+ * `overscroll-behavior` alone allows once nothing scrolls). A box inside
+ * that still scrolls that way (a long text) is left to scroll.
+ */
+function useWheelHeld() {
+  const cleanup = useRef<(() => void) | null>(null);
+  return useCallback((box: HTMLDivElement | null) => {
+    cleanup.current?.();
+    cleanup.current = null;
+    if (!box) return;
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
+      const down = event.deltaY > 0;
+      for (let node = event.target instanceof Element ? event.target : null; node && node !== box.parentElement; node = node.parentElement) {
+        const { overflowY } = getComputedStyle(node);
+        const scrolls = (node === box || overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight;
+        if (scrolls && (down ? node.scrollTop + node.clientHeight < node.scrollHeight - 1 : node.scrollTop > 0)) return;
+        if (node === box) break;
+      }
+      event.preventDefault();
+    };
+    // Not passive, so as to hold the page.
+    box.addEventListener("wheel", onWheel, { passive: false });
+    cleanup.current = () => box.removeEventListener("wheel", onWheel);
+  }, []);
 }

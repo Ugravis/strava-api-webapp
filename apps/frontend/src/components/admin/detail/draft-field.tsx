@@ -106,7 +106,7 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
           onChange={(next) => field.onChange({ target: { value: next } })}
           disabled={edit.draft.disabled || preview}
           aside={
-            <button type="button" onClick={() => setPreview((shown) => !shown)} className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground [&_svg]:size-3">
+            <button type="button" onClick={() => setPreview((shown) => !shown)} className="inline-flex h-6 items-center gap-1 rounded-md border bg-background px-1.5 text-xs text-muted-foreground shadow-xs hover:text-foreground [&_svg]:size-3.5">
               {preview ? <PencilIcon aria-hidden /> : <EyeIcon aria-hidden />}
               {preview ? "Modifier" : "Aperçu"}
             </button>

@@ -428,7 +428,7 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
       {edit.kind === "markdown" ? (
         // Its shaping buttons above it, beside the ✓ and ✕ of the field.
         <div className="flex flex-col gap-1">
-          <MarkdownToolbar field={preview ? null : (anchor as HTMLTextAreaElement | null)} onChange={type} disabled={saving || preview} className="mr-22" />
+          <MarkdownToolbar field={preview ? null : (anchor as HTMLTextAreaElement | null)} onChange={type} disabled={saving || preview} className="mt-1 mr-22" />
           {preview ? (
             <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{draft.trim() ? <Markdown source={draft} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
           ) : (

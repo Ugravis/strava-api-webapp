@@ -77,22 +77,25 @@ export function markdownShortcut(event: KeyboardEvent<HTMLTextAreaElement>, onCh
  */
 export function MarkdownToolbar({ field, onChange, disabled, aside, className }: { field: HTMLTextAreaElement | null; onChange: (text: string) => void; disabled?: boolean; aside?: ReactNode; className?: string }) {
   return (
-    <div role="toolbar" aria-label="Mise en forme" className={cn("flex flex-wrap items-center gap-0.5 rounded-lg border bg-muted/40 p-0.5", className)}>
-      {ACTIONS.map((action) => (
-        <Tip key={action.id} label={action.keys ? `${action.label} (⌘ ${action.keys.toUpperCase()})` : action.label}>
-          <button
-            type="button"
-            aria-label={action.label}
-            disabled={disabled || !field}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => field && run(field, action.apply, onChange)}
-            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 [&_svg]:size-3.5"
-          >
-            {action.icon}
-          </button>
-        </Tip>
-      ))}
-      {aside && <span className="ml-auto flex items-center">{aside}</span>}
+    <div className={cn("flex items-center gap-2", className)}>
+      {/* In the scale of the buttons floating beside it (✓, ✕, copy): as tall, its icons as large. */}
+      <div role="toolbar" aria-label="Mise en forme" className="flex h-6 min-w-0 items-center overflow-x-auto rounded-md border bg-background shadow-xs [scrollbar-width:none]">
+        {ACTIONS.map((action) => (
+          <Tip key={action.id} label={action.keys ? `${action.label} (⌘ ${action.keys.toUpperCase()})` : action.label}>
+            <button
+              type="button"
+              aria-label={action.label}
+              disabled={disabled || !field}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => field && run(field, action.apply, onChange)}
+              className="inline-flex h-full w-6 shrink-0 items-center justify-center text-muted-foreground outline-none first:rounded-l-[5px] last:rounded-r-[5px] hover:bg-muted hover:text-foreground focus-visible:bg-muted disabled:opacity-50 [&_svg]:size-3.5"
+            >
+              {action.icon}
+            </button>
+          </Tip>
+        ))}
+      </div>
+      {aside && <span className="ml-auto flex shrink-0 items-center">{aside}</span>}
     </div>
   );
 }

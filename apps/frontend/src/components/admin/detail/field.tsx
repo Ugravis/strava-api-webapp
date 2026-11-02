@@ -1,12 +1,9 @@
 "use client";
 
-import { PencilIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
-import { CopyButton, EmptyValue } from "@/components/admin/data-table";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { DetailFieldButton, FieldButtons } from "./field-buttons";
-import { type DetailEditKind, type DetailFieldEdit, EditValue, editCopy, editEmpty, InlineEditor, isInline } from "./field-edit";
-import { PickerField } from "./field-picker";
+import { EditableMark, EditableValue } from "./editable";
+import type { DetailEditKind, DetailFieldEdit } from "./field-edit";
 
 /*
  * The content of a detail: in the split panel, a dialog or a page alike.
@@ -36,8 +33,9 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * Nothing is ever left unsaved, so nothing guards the closing of the panel.
  * The pencil of a popover stays shown while it is open, and closes it again,
  * giving up. Without children, the value is drawn after its kind. A small
- * dark pencil at the top right of the label tells the field editable, unless
- * `editHint={false}`.
+ * pencil at the top right of the label tells the field editable, unless
+ * `editHint={false}`. On a screen without hover (a phone), the buttons sit
+ * after the value, always shown.
  */
 export function DetailField<K extends DetailEditKind = "text">({
   label,
@@ -45,7 +43,7 @@ export function DetailField<K extends DetailEditKind = "text">({
   copy,
   stacked,
   tools,
-  edit: typed,
+  edit,
   editHint = true,
   children,
 }: {
@@ -59,49 +57,12 @@ export function DetailField<K extends DetailEditKind = "text">({
   editHint?: boolean;
   children?: ReactNode;
 }) {
-  const edit: DetailFieldEdit | undefined = typed;
-  const [editing, setEditing] = useState(false);
-  const inline = !!edit && isInline(edit);
-  const multiline = inline && (!edit.kind || edit.kind === "text") && !!edit.multiline;
-  // Without children, the value of `edit` drawn after its kind.
-  const drawn = children === undefined || children === null ? undefined : children;
-  const empty = drawn === undefined ? !edit || editEmpty(edit) : drawn === "" || drawn === false;
-  const copied = copy !== undefined ? copy : drawn === undefined ? (edit ? editCopy(edit) : null) : typeof drawn === "string" || typeof drawn === "number" ? String(drawn) : null;
-  // A switch is its own button: no pencil.
-  const editable = !!edit && edit.kind !== "switch";
-  // A popover open, the pencil closes it again, giving up.
-  const toggle = () => editable && setEditing((open) => !open);
-
-  const value =
-    drawn === undefined && edit ? <EditValue edit={edit} /> : empty ? <EmptyValue /> : drawn;
-  // As wide as the panel: the widths of the table columns let go.
-  const valueClass = cn(
-    "min-w-0 flex-1 wrap-break-word **:[[class*='max-w-']]:max-w-full",
-    inline && drawn === undefined && (multiline ? "whitespace-pre-line" : "truncate"),
-  );
-  const buttons = (tools || copied || editable) && (
-    <>
-      {tools}
-      {copied && <CopyButton value={copied} inline />}
-      {editable && (
-        <DetailFieldButton label={editing ? `Annuler : ${label}` : `Modifier : ${label}`} pressed={editing} onClick={toggle}>
-          <PencilIcon />
-        </DetailFieldButton>
-      )}
-    </>
-  );
-
   return (
     <div className="contents">
       <dt className={cn("flex min-h-8 items-center gap-1.5 self-start text-muted-foreground", stacked && "col-span-2")}>
         {icon && <span className="inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">{icon}</span>}
         {label}
-        {edit && editHint && (
-          <span title="Modifiable" className="-ml-1 inline-flex size-3 shrink-0 -translate-y-1.5 items-center justify-center rounded-full bg-foreground/80 text-background [&_svg]:size-2">
-            <PencilIcon aria-hidden />
-            <span className="sr-only">Modifiable</span>
-          </span>
-        )}
+        {edit && editHint && <EditableMark />}
       </dt>
       <dd
         className={cn(
@@ -110,26 +71,18 @@ export function DetailField<K extends DetailEditKind = "text">({
           stacked && "col-span-2 mb-2 [&_.truncate]:whitespace-normal",
         )}
       >
-        {edit && editing && isInline(edit) ? (
-          <InlineEditor edit={edit} label={label} onClose={() => setEditing(false)} />
-        ) : (
-          <>
-            {edit && !isInline(edit) && edit.kind !== "switch" ? (
-              <PickerField edit={edit} label={label} editing={editing} onEditing={setEditing} className={valueClass}>
-                {value}
-              </PickerField>
-            ) : (
-              <div className={valueClass}>
-                {value}
-              </div>
-            )}
-            {buttons && (
-              <FieldButtons top={stacked} shown={editing}>
-                {buttons}
-              </FieldButtons>
-            )}
-          </>
-        )}
+        <EditableValue
+          label={label}
+          copy={copy}
+          tools={tools}
+          edit={edit as DetailFieldEdit | undefined}
+          stacked={stacked}
+          docked
+          // As wide as the panel: the widths of the table columns let go.
+          valueClassName="wrap-break-word **:[[class*='max-w-']]:max-w-full"
+        >
+          {children}
+        </EditableValue>
       </dd>
     </div>
   );

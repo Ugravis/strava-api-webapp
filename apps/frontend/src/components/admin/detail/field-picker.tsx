@@ -1,12 +1,12 @@
 "use client";
 
 import { CheckIcon, ImageUpIcon, LoaderCircleIcon, PipetteIcon, SearchIcon } from "lucide-react";
-import { type PointerEvent, type ReactNode, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { type PointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ErrorBubble } from "./error-bubble";
 import { type DetailEditOption, OptionLabel, type PickerEdit, useCommit } from "./field-edit";
 import { IconGrid } from "./icon-picker";
 
@@ -25,7 +25,20 @@ const PRESETS = [
 ];
 const HEX = /^#[0-9a-f]{6}$/i;
 /** The widths of the popover of an image: at first, and between which its bottom left corner resizes it. */
-const IMAGE_WIDTH = { initial: 352, min: 288, max: 640 };
+const IMAGE_WIDTH = { initial: 320, min: 272, max: 480 };
+const IMAGE_TYPES = "image/png,image/jpeg,image/webp";
+
+const megabytes = (bytes: number) => `${Math.round((bytes / 1024 / 1024) * 10) / 10} Mo`;
+
+/** The formats and the weight an image may have, e.g. « PNG, JPEG, WebP · 2 Mo max ». */
+function imageRules(accept: string, maxSize?: number) {
+  const formats = accept.split(",").map((type) => {
+    const name = type.trim().split("/")[1] ?? type;
+    return name === "*" ? "images" : name === "webp" ? "WebP" : name === "svg+xml" ? "SVG" : name.toUpperCase();
+  });
+  const weight = maxSize === undefined ? null : `${megabytes(maxSize)} max`;
+  return [formats.join(", "), weight].filter(Boolean).join(" · ");
+}
 /** Beyond this many options, a search bar. */
 const SEARCHED = 8;
 
@@ -55,14 +68,19 @@ export function PickerField({
   const [draft, setDraft] = useState<Draft>(edit.value);
   const [opened, setOpened] = useState(false);
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
-  // Each opening starts again from the saved value.
+  const { saving, commit, error, setError } = useCommit(edit, () => onEditing(false));
+  // Each opening starts again from the saved value, without the refusal of the last one.
   if (editing !== opened) {
     setOpened(editing);
     if (editing) setDraft(edit.value);
+    if (error) setError(null);
   }
-  const { saving, commit } = useCommit(edit, () => onEditing(false));
-  const pick = (value: Draft) => {
+  const change = (value: Draft) => {
     setDraft(value);
+    setError(null);
+  };
+  const pick = (value: Draft) => {
+    change(value);
     void commit(value);
   };
 
@@ -79,6 +97,7 @@ export function PickerField({
         else void commit(draft);
       }}
     >
+      <ErrorBubble anchor={anchor} message={editing ? error : null} />
       <div ref={setAnchor} className={className}>
         {children}
       </div>
@@ -92,8 +111,11 @@ export function PickerField({
         <div className="flex h-5 items-center justify-between px-1 text-xs font-medium text-muted-foreground">
           <span>
             {label}
-            {(edit.kind === "select" || edit.kind === "multiselect") && (
-              <span className="font-normal text-muted-foreground/70"> ({edit.kind === "select" ? "sélection unique" : "sélection multiple"})</span>
+            {(edit.kind === "select" || edit.kind === "multiselect" || edit.kind === "image") && (
+              <span className="font-normal text-muted-foreground/70">
+                {" "}
+                ({edit.kind === "select" ? "sélection unique" : edit.kind === "multiselect" ? "sélection multiple" : imageRules(edit.accept ?? IMAGE_TYPES, edit.maxSize)})
+              </span>
             )}
           </span>
           {saving && <LoaderCircleIcon className="size-3.5 animate-spin" aria-label="Enregistrement" />}
@@ -110,7 +132,7 @@ export function PickerField({
               disabled={saving}
               // Kept in the order of the options.
               onToggle={(value) =>
-                setDraft(edit.options.map((option) => option.value).filter((each) => (each === value) !== (draft as string[]).includes(each)))
+                change(edit.options.map((option) => option.value).filter((each) => (each === value) !== (draft as string[]).includes(each)))
               }
             />
             <Button size="sm" disabled={saving} onClick={() => void commit(draft)}>
@@ -119,17 +141,18 @@ export function PickerField({
           </>
         )}
         {edit.kind === "color" && (
-          <ColorPicker presets={edit.presets ?? PRESETS} noneLabel={edit.noneLabel} value={draft as string | null} disabled={saving} onChange={setDraft} onDone={() => void commit(draft)} />
+          <ColorPicker presets={edit.presets ?? PRESETS} noneLabel={edit.noneLabel} value={draft as string | null} disabled={saving} onChange={change} onDone={() => void commit(draft)} />
         )}
         {edit.kind === "image" && (
           <ImagePicker
             current={edit.value}
-            accept={edit.accept ?? "image/png,image/jpeg,image/webp"}
+            accept={edit.accept ?? IMAGE_TYPES}
             maxSize={edit.maxSize}
             noneLabel={edit.noneLabel}
             value={draft as string | File | null}
             disabled={saving}
-            onChange={setDraft}
+            onChange={change}
+            onError={setError}
             onCancel={() => onEditing(false)}
             onDone={() => void commit(draft)}
           />
@@ -291,6 +314,7 @@ function ImagePicker({
   value,
   disabled,
   onChange,
+  onError,
   onCancel,
   onDone,
 }: {
@@ -301,17 +325,25 @@ function ImagePicker({
   value: string | File | null;
   disabled?: boolean;
   onChange: (file: File | null) => void;
+  onError: (message: string) => void;
   onCancel: () => void;
   onDone: () => void;
 }) {
   const preview = usePreview(value);
-  const [width, setWidth] = useState(IMAGE_WIDTH.initial);
+  const box = useRef<HTMLDivElement>(null);
+  // Written to the box at each frame, React left out of the drag.
   const resize = (event: PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
-    const [x, from] = [event.clientX, width];
-    const move = (each: globalThis.PointerEvent) => setWidth(Math.min(IMAGE_WIDTH.max, Math.max(IMAGE_WIDTH.min, from + x - each.clientX)));
+    const [x, from] = [event.clientX, box.current!.offsetWidth];
+    let frame = 0;
+    const move = (each: globalThis.PointerEvent) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        box.current!.style.width = `${Math.min(IMAGE_WIDTH.max, Math.max(IMAGE_WIDTH.min, from + x - each.clientX)) - 16}px`;
+      });
+    };
     const end = () => {
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", end);
@@ -322,13 +354,13 @@ function ImagePicker({
   const take = (file: File | undefined) => {
     if (!file) return;
     const types = accept.split(",").map((each) => each.trim());
-    if (!types.some((type) => (type.endsWith("/*") ? file.type.startsWith(type.slice(0, -1)) : file.type === type))) return toast.error("Ce format d'image n'est pas accepté.");
-    if (maxSize !== undefined && file.size > maxSize) return toast.error(`Image trop lourde : ${Math.round(maxSize / 1024 / 1024 * 10) / 10} Mo au plus.`);
+    if (!types.some((type) => (type.endsWith("/*") ? file.type.startsWith(type.slice(0, -1)) : file.type === type))) return onError(`Format refusé : ${imageRules(accept)} seulement.`);
+    if (maxSize !== undefined && file.size > maxSize) return onError(`Image trop lourde : ${megabytes(maxSize)} au plus.`);
     onChange(file);
   };
 
   return (
-    <div className="flex flex-col gap-2" style={{ width: width - 16 }}>
+    <div ref={box} className="flex flex-col gap-2" style={{ width: IMAGE_WIDTH.initial - 16 }}>
       <label
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {

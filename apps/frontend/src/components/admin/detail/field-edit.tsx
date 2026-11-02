@@ -2,13 +2,13 @@
 
 import { CheckIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useState } from "react";
-import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
 import { DateCell, EmptyValue, formatDate, formatDateTime, NumberCell, PILL_TONES, type Tone } from "@/components/admin/data-table";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ErrorBubble } from "./error-bubble";
 import { DetailFieldButton, FieldButtons } from "./field-buttons";
 import { LucideIconByName } from "./icon-picker";
 
@@ -28,36 +28,42 @@ export interface DetailEditOption {
   tone?: Tone;
 }
 
+/**
+ * Saves a value; `validate` refuses it first, its reason in a bubble above
+ * the field, e.g. a date before another field of the row.
+ */
+type Saved<T> = { onSave: Save<T>; validate?: (value: T) => string | null };
+
 /** The kinds of in-place edits, by their `kind`; `text` when none. */
 export interface DetailEditKinds {
   /** A text; on several lines with `multiline`, ⌘ Enter then saving. */
-  text: { kind?: "text"; value: string | null; onSave: Save<string | null>; multiline?: boolean; placeholder?: string };
+  text: { kind?: "text"; value: string | null; multiline?: boolean; placeholder?: string } & Saved<string | null>;
   /** A number between `min` and `max`, `unit` after it. */
-  number: { kind: "number"; value: number | null; onSave: Save<number | null>; min?: number; max?: number; step?: number; unit?: string };
+  number: { kind: "number"; value: number | null; min?: number; max?: number; step?: number; unit?: string } & Saved<number | null>;
   /** A day, `YYYY-MM-DD`; with `time`, an ISO instant, typed in the time zone of the browser. */
-  date: { kind: "date"; value: string | null; onSave: Save<string | null>; time?: boolean; min?: string; max?: string };
+  date: { kind: "date"; value: string | null; time?: boolean; min?: string; max?: string } & Saved<string | null>;
   /** One option of a list; `noneLabel` names the choice of none. */
-  select: { kind: "select"; value: string | null; onSave: Save<string | null>; options: DetailEditOption[]; noneLabel?: string };
+  select: { kind: "select"; value: string | null; options: DetailEditOption[]; noneLabel?: string } & Saved<string | null>;
   /** Several options of a list, in their order, saved as the popover closes. */
-  multiselect: { kind: "multiselect"; value: string[]; onSave: Save<string[]>; options: DetailEditOption[] };
+  multiselect: { kind: "multiselect"; value: string[]; options: DetailEditOption[] } & Saved<string[]>;
   /** A colour `#rrggbb`: one of `presets`, or any hue, saved by « Valider ». */
-  color: { kind: "color"; value: string | null; onSave: Save<string | null>; presets?: string[]; noneLabel?: string };
+  color: { kind: "color"; value: string | null; presets?: string[]; noneLabel?: string } & Saved<string | null>;
   /** The name of a Lucide icon, e.g. `rocket`, among all of them. */
-  icon: { kind: "icon"; value: string | null; onSave: Save<string | null>; noneLabel?: string };
+  icon: { kind: "icon"; value: string | null; noneLabel?: string } & Saved<string | null>;
   /**
    * An image, shown by its URL `value`, replaced by a file of `accept` up to
-   * `maxSize` bytes (refused beyond, in a toast), saved by « Valider »;
-   * `noneLabel` removes it, `onSave` then given `null`.
+   * `maxSize` bytes (both told in the title of the popover), saved by
+   * « Valider »; `noneLabel` removes it, `onSave` then given `null`.
    */
-  image: { kind: "image"; value: string | null; onSave: Save<File | null>; accept?: string; maxSize?: number; noneLabel?: string };
+  image: { kind: "image"; value: string | null; accept?: string; maxSize?: number; noneLabel?: string } & Saved<File | null>;
   /** Yes or no, saved as soon as switched. */
-  switch: { kind: "switch"; value: boolean; onSave: Save<boolean> };
+  switch: { kind: "switch"; value: boolean } & Saved<boolean>;
 }
 export type DetailEditKind = keyof DetailEditKinds;
 
 /**
  * What a field edits in place; see `DetailField`. `onSave` resolves once
- * saved; `{ ok: false }` keeps the field open, its message in a toast.
+ * saved; `{ ok: false }` keeps the field open, its message in a bubble above it.
  */
 export type DetailFieldEdit<K extends DetailEditKind = DetailEditKind> = DetailEditKinds[K];
 
@@ -68,25 +74,33 @@ export type PickerEdit = Extract<DetailFieldEdit, { kind: "select" | "multiselec
 
 export const isInline = (edit: DetailFieldEdit): edit is InlineEdit => !edit.kind || edit.kind === "text" || edit.kind === "number" || edit.kind === "date";
 
-/** Saves a value, unless unchanged, then calls `close`; a refusal keeps it open, its message in a toast. */
+/**
+ * Saves a value, unless unchanged, then calls `close`. Refused by `validate`
+ * or by the server, it stays open, the reason in `error` (a bubble above the
+ * field), until `setError(null)` as the value changes.
+ */
 export function useCommit(edit: DetailFieldEdit, close: () => void) {
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const commit = async (next: unknown) => {
     if (saving) return;
     // A file is always new.
     if (!(next instanceof File) && JSON.stringify(next) === JSON.stringify(edit.value)) return close();
+    const refused = (edit.validate as ((value: unknown) => string | null) | undefined)?.(next);
+    if (refused) return setError(refused);
     setSaving(true);
+    setError(null);
     try {
       const outcome = await (edit.onSave as Save<unknown>)(next);
-      if (outcome && !outcome.ok) toast.error(outcome.message);
+      if (outcome && !outcome.ok) setError(outcome.message);
       else close();
     } catch {
-      toast.error("La modification n'a pas pu être enregistrée.");
+      setError("La modification n'a pas pu être enregistrée.");
     } finally {
       setSaving(false);
     }
   };
-  return { saving, commit };
+  return { saving, commit, error, setError };
 }
 
 const labelsOf = (options: DetailEditOption[], values: string[]) =>
@@ -181,9 +195,11 @@ export function EditValue({ edit }: { edit: DetailFieldEdit }) {
 
 /** A switch saving as soon as switched, « Oui » or « Non » beside it. */
 function SwitchValue({ edit }: { edit: Extract<DetailFieldEdit, { kind: "switch" }> }) {
-  const { saving, commit } = useCommit(edit, () => {});
+  const { saving, commit, error } = useCommit(edit, () => {});
+  const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
   return (
-    <span className="flex items-center gap-2">
+    <span ref={setAnchor} className="flex items-center gap-2">
+      <ErrorBubble anchor={anchor} message={error} />
       <Switch checked={edit.value} disabled={saving} onCheckedChange={(next) => void commit(next)} aria-label={edit.value ? "Oui" : "Non"} />
       <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span>
       {saving && <LoaderCircleIcon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />}
@@ -227,13 +243,14 @@ function parse(edit: InlineEdit, draft: string): { value: string | number | null
  */
 export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label: string; onClose: () => void }) {
   const [draft, setDraft] = useState(() => draftOf(edit));
-  const { saving, commit } = useCommit(edit, onClose);
+  const { saving, commit, error, setError } = useCommit(edit, onClose);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const multiline = edit.kind !== "number" && edit.kind !== "date" && !!edit.multiline;
 
   const save = () => {
     if (saving) return;
     const parsed = parse(edit, draft);
-    if ("error" in parsed) toast.error(parsed.error);
+    if ("error" in parsed) setError(parsed.error);
     else void commit(parsed.value);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -247,17 +264,23 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
     }
   };
   const field = {
+    ref: setAnchor,
     autoFocus: true,
     value: draft,
     disabled: saving,
     "aria-label": label,
-    onChange: (event: { target: { value: string } }) => setDraft(event.target.value),
+    "aria-invalid": !!error || undefined,
+    onChange: (event: { target: { value: string } }) => {
+      setDraft(event.target.value);
+      setError(null);
+    },
     onKeyDown,
     onBlur: save,
   };
 
   return (
     <>
+      <ErrorBubble anchor={anchor} message={error} />
       {multiline ? (
         <Textarea {...field} placeholder={edit.placeholder} className="min-h-20 pr-16 text-sm" />
       ) : edit.kind === "number" ? (

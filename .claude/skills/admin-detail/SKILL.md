@@ -12,7 +12,7 @@ description: Build or change the detail of a back-office row with the detail kit
    - a `RowPanel` component handed to `open`, wrapping the detail in `DetailLoader` with a `load(id)` Server Action and a `refreshKey` shared with the `DataTable`;
    - `DetailCover` (if any), then `DetailHeader`, then `DetailSection`s;
    - every value shown in the table through `DetailColumnFields` and the columns of its config, never formatted again by hand;
-   - free fields with `DetailFields` + `DetailField`; in-place edits with `edit: { kind, value, onSave }` (text, number, date, select, multiselect, color, icon, switch: table in the doc), `onSave` a Server Action answering an `ActionResult`; a value of the table edited in place through `{ id, edit }` in `DetailColumnFields`;
+   - free fields with `DetailFields` + `DetailField`; in-place edits with `edit: { kind, value, onSave }` (text, number, date, select, multiselect, color, icon, image, switch: table in the doc), `onSave` a Server Action answering an `ActionResult`; a value of the table edited in place through `{ id, edit }` in `DetailColumnFields`;
    - buttons as `DetailAction`s in `DetailActions`, `sticky` as the last child when the detail scrolls; an icon button of the header is a `DetailAction` too.
 5. A kind of block that comes back across details deserves a new block in the kit (`apps/frontend/src/components/admin/detail/`, one file per block, exported from `index.ts`), rather than markup repeated.
 6. Check:

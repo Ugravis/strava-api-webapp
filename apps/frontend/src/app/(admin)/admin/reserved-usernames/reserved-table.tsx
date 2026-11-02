@@ -1,20 +1,16 @@
 "use client";
 
 import type { AdminReservedUsername, ReservedUsernameCategory } from "@kilotrace/shared/admin";
-import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "@kilotrace/shared";
 import type { TableQuery } from "@kilotrace/shared/table";
-import { CopyIcon, PanelRightOpenIcon, PencilIcon, Trash2Icon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { CopyIcon, CopyPlusIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { ActionDialog } from "@/components/admin/action-dialog";
-import { FormDialog } from "@/components/admin/form-dialog";
-import { type DataTableConfig, DataTable, RowActions } from "@/components/admin/data-table";
-import { useSplitPanel } from "@/components/split-panel";
-import { Button } from "@/components/ui/button";
+import { type DataTableConfig, DataTable, RowActions, SelectionAction, useConfirmDialog } from "@/components/admin/data-table";
+import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { fetchReservedTable, loadReservedUsername, releaseUsernames, reserveUsername } from "./actions";
-import { bumpReserved, CATEGORIES, categoryField, noteField, RESERVED_COLUMNS, useReservedDialogs, useReservedVersion } from "./reserved-bits";
-import { ReservedRowPanel } from "./reserved-detail";
+import { fetchReservedTable, loadReservedUsername, releaseUsernames } from "./actions";
+import { bumpReserved, CATEGORIES, releaseOf, reservedColumns, useReservedVersion } from "./reserved-bits";
+import { ReservedCreate, ReservedRowPanel } from "./reserved-detail";
 
 const ID = "reserved";
 
@@ -28,22 +24,17 @@ function copy(text: string, done: string) {
 
 /** Usernames nobody can take. Every member reads, `canEdit` adds, edits and deletes. */
 export function ReservedTable({ canEdit }: { canEdit: boolean }) {
-  const [adding, setAdding] = useState(false);
-  const [bulk, setBulk] = useState({ open: false, usernames: [] as string[], clear: () => {} });
   const version = useReservedVersion();
-  const { openEdit, openRelease, dialogs } = useReservedDialogs();
-  const { open, close, isOpen, activeId } = useSplitPanel();
-  const openEntry = useCallback(
-    // Opened at once on its skeleton, the username loaded by the panel.
-    (entry: { username: string }) => open(<ReservedRowPanel username={entry.username} canEdit={canEdit} />, { id: entry.username, title: `@${entry.username}` }),
-    [open, canEdit],
-  );
-  // A shared link: the username of `?row=`, once on arrival, fetched by id.
-  useEffect(() => {
-    const username = new URLSearchParams(window.location.search).get("row");
-    if (username) loadReservedUsername(username).then((entry) => entry && openEntry(entry), () => {});
-  }, [openEntry]);
-
+  const { ask, dialog } = useConfirmDialog();
+  // The panel, read by the menus of the rows and the bar of the selection: the config stays the same as it changes.
+  const panelRef = useRef<{ controls: RowPanelControls | null; active: string | null }>({ controls: null, active: null });
+  /** After a removal: the panel shows the next row, or closes, when it showed one of `usernames`. */
+  const removed = (usernames: string[]) => {
+    const { controls, active } = panelRef.current;
+    if (active && usernames.includes(active)) controls?.removed(active);
+  };
+  /** After a rename: the panel follows the username, when it showed it. */
+  const renamed = (from: string, to: string) => panelRef.current.controls?.renamed(from, to);
   const config = useMemo<DataTableConfig<AdminReservedUsername>>(
     () => ({
       id: ID,
@@ -58,7 +49,9 @@ export function ReservedTable({ canEdit }: { canEdit: boolean }) {
         { id: "list", label: "Liste", layout: "list", columns: ["username"], noSelection: true },
         { id: "table", label: "Table", columns: ["username", "category", "createdBy", "createdAt", "note"] },
       ],
-      columns: RESERVED_COLUMNS,
+      // `renamed` reads the ref once a username is saved, never during the render.
+      // eslint-disable-next-line react-hooks/refs
+      columns: reservedColumns(canEdit, renamed),
       facets: [{ id: "category", label: "Catégorie", options: Object.entries(CATEGORIES).map(([value, { label }]) => ({ value, label })) }],
       groupings: [
         { id: "category", label: "Catégorie", title: (key) => CATEGORIES[key as ReservedUsernameCategory]?.label ?? key },
@@ -69,18 +62,32 @@ export function ReservedTable({ canEdit }: { canEdit: boolean }) {
         },
       ],
       ...(canEdit && {
-        create: { label: "Nouveau", onClick: () => setAdding(true) },
         bulkActions: (usernames: string[], clear: () => void) => (
-          <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBulk({ open: true, usernames, clear })}>
-            <Trash2Icon data-icon="inline-start" />
-            Supprimer
-          </Button>
+          <SelectionAction
+            label="Supprimer"
+            icon={<Trash2Icon data-icon="inline-start" />}
+            destructive
+            confirm={{
+              title: usernames.length > 1 ? `Supprimer ${usernames.length} pseudos ?` : `Supprimer @${usernames[0]} ?`,
+              description: "Ils redeviendront disponibles pour tout le monde.",
+              confirmLabel: "Supprimer",
+            }}
+            onClick={async () => {
+              const result = await releaseUsernames(usernames);
+              if (result.ok) {
+                clear();
+                removed(usernames);
+              }
+              bumpReserved();
+              return result;
+            }}
+          />
         ),
       }),
       actions: (entry) => (
         <RowActions label={`Actions de @${entry.username}`}>
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => openEntry(entry)}>
+            <DropdownMenuItem onClick={() => panelRef.current.controls?.open(entry.username)}>
               <PanelRightOpenIcon />
               Ouvrir la fiche
             </DropdownMenuItem>
@@ -89,72 +96,57 @@ export function ReservedTable({ canEdit }: { canEdit: boolean }) {
               Copier le pseudo
             </DropdownMenuItem>
           </DropdownMenuGroup>
+          {/* The buttons of the detail. */}
           {canEdit && (
             <>
-              <DropdownMenuItem onClick={() => openEdit(entry)}>
-                <PencilIcon />
-                Modifier
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => openRelease(entry.username)}>
-                <Trash2Icon />
-                Supprimer
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => panelRef.current.controls?.create({ category: entry.category, note: entry.note })}>
+                  <CopyPlusIcon />
+                  Dupliquer
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => {
+                    const release = releaseOf(entry, () => removed([entry.username]));
+                    ask(release.confirm, release.run);
+                  }}
+                >
+                  <Trash2Icon />
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </>
           )}
         </RowActions>
       ),
     }),
-    [canEdit, openEntry, openEdit, openRelease],
+    // `removed` and `renamed` read only the ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canEdit, ask],
   );
-
+  const panel = useRowPanel<AdminReservedUsername>({
+    config,
+    title: (entry) => `@${entry.username}`,
+    load: loadReservedUsername,
+    detail: (username, controls) => <ReservedRowPanel username={username} canEdit={canEdit} panel={controls} />,
+    ...(canEdit && {
+      create: {
+        id: "new:username",
+        label: "Nouveau",
+        title: "Nouveau pseudo",
+        copyTitle: "Copie de pseudo",
+        form: ({ initial, close, created }) => <ReservedCreate initial={initial} onCancel={close} onCreated={created} />,
+      },
+    }),
+  });
+  useLayoutEffect(() => {
+    panelRef.current = { controls: panel, active: panel.table.activeRowId };
+  });
   return (
     <>
-      <DataTable config={config} onRowClick={openEntry} activeRowId={isOpen ? activeId : null} refreshKey={version} />
-      {canEdit && (
-        <>
-          <FormDialog
-            open={adding}
-            onOpenChange={setAdding}
-            onSuccess={bumpReserved}
-            action={reserveUsername}
-            title="Réserver un pseudo"
-            description="Personne ne pourra plus le prendre. Un pseudo déjà porté par un compte ne peut pas être réservé : modérez d'abord le profil."
-            submitLabel="Réserver"
-            cancelLabel="Annuler"
-            fields={[
-              {
-                kind: "text",
-                name: "username",
-                label: "Pseudo",
-                hint: `${USERNAME_MIN_LENGTH} à ${USERNAME_MAX_LENGTH} caractères : lettres, chiffres et _. Mis en minuscules.`,
-                required: true,
-                maxLength: USERNAME_MAX_LENGTH,
-                pattern: `[a-zA-Z0-9_]{${USERNAME_MIN_LENGTH},${USERNAME_MAX_LENGTH}}`,
-              },
-              categoryField("other"),
-              noteField(),
-            ]}
-          />
-          {dialogs}
-          <ActionDialog
-            open={bulk.open}
-            onOpenChange={(value) => setBulk({ ...bulk, open: value })}
-            onSuccess={() => {
-              bulk.clear();
-              // A released username open in the panel closes it.
-              if (activeId && bulk.usernames.includes(activeId)) close();
-              bumpReserved();
-            }}
-            action={releaseUsernames.bind(null, bulk.usernames)}
-            title={bulk.usernames.length > 1 ? `Supprimer ${bulk.usernames.length} pseudos ?` : `Supprimer @${bulk.usernames[0]} ?`}
-            description="Ils redeviendront disponibles pour tout le monde."
-            submitLabel="Supprimer"
-            cancelLabel="Annuler"
-            destructive
-          />
-        </>
-      )}
+      <DataTable {...panel.table} refreshKey={version} />
+      {dialog}
     </>
   );
 }

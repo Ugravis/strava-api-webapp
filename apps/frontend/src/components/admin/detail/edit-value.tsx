@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircleIcon } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { DateCell, EmptyValue, NumberCell, PILL_TONES, Tip } from "@/components/admin/data-table";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +21,16 @@ export function OptionLabel({ option }: { option: DetailEditOption }) {
       <span className="truncate">{option.label}</span>
       {option.description && <span className="truncate text-xs text-muted-foreground">{option.description}</span>}
     </span>
+  );
+}
+
+/** An option picked, as a value shows it: a link to its `href` outside a draft, the row around never opened by its click. */
+function PickedOption({ option, linked }: { option: DetailEditOption; linked: boolean }) {
+  if (!linked || !option.href) return <OptionLabel option={option} />;
+  return (
+    <Link href={option.href} onClick={(event) => event.stopPropagation()} className="min-w-0 rounded-sm underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
+      <OptionLabel option={option} />
+    </Link>
   );
 }
 
@@ -45,14 +56,14 @@ export function EditValue({ edit }: { edit: DetailFieldEdit }) {
       return <DateCell iso={edit.value} time={edit.time} />;
     case "select": {
       const option = edit.options.find((each) => each.value === edit.value);
-      return option ? <OptionLabel option={option} /> : edit.value;
+      return option ? <PickedOption option={option} linked={!edit.draft} /> : edit.value;
     }
     case "multiselect":
       return (
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
           {edit.value.map((value) => {
             const option = edit.options.find((each) => each.value === value);
-            return option ? <OptionLabel key={value} option={option} /> : <span key={value}>{value}</span>;
+            return option ? <PickedOption key={value} option={option} linked={!edit.draft} /> : <span key={value}>{value}</span>;
           })}
         </span>
       );

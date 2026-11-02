@@ -6,6 +6,7 @@ import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import type { UserTagRights } from "./user-tag-bits";
+import { adminRoutes } from "@/lib/admin/navigation";
 import { UserTagsTable } from "./user-tags-table";
 
 const number = new Intl.NumberFormat("fr-FR");
@@ -49,7 +50,7 @@ export default async function AdminUserTagsPage() {
           />
         </div>
       )}
-      <UserTagsTable rights={rights} />
+      <UserTagsTable rights={rights} usersPath={adminRoutes.users} />
     </>
   );
 }

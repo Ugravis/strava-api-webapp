@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 
 const API_URL = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 
-export type AdminApiResult<T> = { ok: true; data: T } | { ok: false; status: number; code?: string };
+/** A failure: `code` the API error code; `field` and `message` those of a field refused by the shared rules (`INVALID_FIELD`). */
+export type AdminApiResult<T> = { ok: true; data: T } | { ok: false; status: number; code?: string; field?: string; message?: string };
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -24,8 +25,13 @@ export async function adminApi<T = void>(path: string, method: Method = "GET", j
     cache: "no-store",
   });
   if (!response.ok) {
-    const error = (await response.json().catch(() => null)) as { code?: unknown } | null;
-    return { ok: false, status: response.status, ...(typeof error?.code === "string" && { code: error.code }) };
+    const error = (await response.json().catch(() => null)) as { code?: unknown; field?: unknown; message?: unknown } | null;
+    return {
+      ok: false,
+      status: response.status,
+      ...(typeof error?.code === "string" && { code: error.code }),
+      ...(typeof error?.field === "string" && typeof error.message === "string" && { field: error.field, message: error.message }),
+    };
   }
   if (response.status === 204) {
     return { ok: true, data: undefined as T };

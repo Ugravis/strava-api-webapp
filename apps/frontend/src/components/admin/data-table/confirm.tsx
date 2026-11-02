@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircleIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useEffectEvent, useState } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
 import {
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -28,8 +29,14 @@ export interface ConfirmOptions {
   confirmLabel: string;
   /** Red, by default: what asks first is mostly what cannot be undone. */
   destructive?: boolean;
-  /** A reason typed in the dialog, handed to the action, e.g. of a suspension. */
-  reason?: { label: string; placeholder?: string; required?: boolean };
+  /**
+   * A reason typed in the dialog, handed to the action, e.g. of a suspension:
+   * `minLength` / `maxLength` its bounds (the button waits for them), `presets`
+   * reasons picked in one click.
+   */
+  reason?: { label: string; placeholder?: string; required?: boolean; minLength?: number; maxLength?: number; presets?: string[] };
+  /** A word typed again before the button acts, e.g. the id of a row removed for good. */
+  typed?: { label: string; expected: string };
 }
 
 /** An action, given the reason typed: an `ActionResult` answered `{ ok: false }` keeps the dialog open, its message in it; any other answer closes it. */
@@ -47,6 +54,7 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [reason, setReason] = useState("");
+  const [typed, setTyped] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const tell = (message: string) => (confirm ? setError(message) : toast.error(message));
@@ -68,10 +76,16 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
   const trigger = () => {
     if (!confirm) return void go();
     setReason("");
+    setTyped("");
     setError(null);
     setOpen(true);
   };
-  const missing = !!confirm?.reason?.required && !reason.trim();
+  const asked = confirm?.reason;
+  const length = reason.trim().length;
+  const missing =
+    (!!asked?.required && length === 0) ||
+    (length > 0 && length < (asked?.minLength ?? 0)) ||
+    (!!confirm?.typed && typed.trim() !== confirm.typed.expected);
 
   const dialog = confirm && (
     <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
@@ -80,21 +94,42 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
           <AlertDialogTitle>{confirm.title}</AlertDialogTitle>
           {confirm.description && <AlertDialogDescription>{confirm.description}</AlertDialogDescription>}
         </AlertDialogHeader>
-        {confirm.reason && (
+        {asked && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="confirm-reason">
-              {confirm.reason.label}
-              {confirm.reason.required && <span className="text-destructive">*</span>}
+              {asked.label}
+              {asked.required && <span className="text-destructive">*</span>}
             </Label>
+            {asked.presets && asked.presets.length > 0 && (
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Raisons fréquentes">
+                {asked.presets.map((preset) => (
+                  <Button key={preset} type="button" size="xs" variant={reason === preset ? "secondary" : "outline"} disabled={pending} onClick={() => setReason(preset)}>
+                    {preset}
+                  </Button>
+                ))}
+              </div>
+            )}
             <Textarea
               id="confirm-reason"
               autoFocus
               value={reason}
               disabled={pending}
+              maxLength={asked.maxLength}
               onChange={(event) => setReason(event.target.value)}
-              placeholder={confirm.reason.placeholder}
+              placeholder={asked.placeholder}
               className="min-h-20 text-sm"
             />
+            {asked.minLength !== undefined && asked.maxLength !== undefined && (
+              <p className="text-xs text-muted-foreground">
+                Entre {asked.minLength} et {asked.maxLength} caractères.
+              </p>
+            )}
+          </div>
+        )}
+        {confirm.typed && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="confirm-typed">{confirm.typed.label}</Label>
+            <Input id="confirm-typed" value={typed} disabled={pending} autoComplete="off" spellCheck={false} onChange={(event) => setTyped(event.target.value)} className="text-sm" />
           </div>
         )}
         {error && (
@@ -104,7 +139,7 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
         )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Annuler</AlertDialogCancel>
-          <Button variant={confirm.destructive === false ? "default" : "destructive"} disabled={pending || missing} onClick={() => void go(confirm.reason ? reason.trim() : undefined)}>
+          <Button variant={confirm.destructive === false ? "default" : "destructive"} disabled={pending || missing} onClick={() => void go(asked ? reason.trim() : undefined)}>
             {pending && <LoaderCircleIcon className="animate-spin" aria-hidden />}
             {confirm.confirmLabel}
           </Button>
@@ -114,6 +149,23 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
   );
 
   return { trigger, pending, dialog };
+}
+
+/**
+ * Asks first from anywhere, e.g. an item of the menu of a row, which is gone
+ * once the menu closes: `ask(confirm, run)` opens the dialog of
+ * `useConfirmedAction`, `dialog` drawn once by the page. `ask` is stable.
+ */
+export function useConfirmDialog() {
+  const [request, setRequest] = useState<{ confirm: ConfirmOptions; run: ConfirmedRun } | null>(null);
+  const { trigger, dialog } = useConfirmedAction(request?.run, request?.confirm);
+  const opened = useEffectEvent(() => trigger());
+  // Kept once closed, so that the texts stay while the dialog fades out.
+  useEffect(() => {
+    if (request) opened();
+  }, [request]);
+  const ask = useCallback((confirm: ConfirmOptions, run: ConfirmedRun) => setRequest({ confirm, run }), []);
+  return { ask, dialog };
 }
 
 /**

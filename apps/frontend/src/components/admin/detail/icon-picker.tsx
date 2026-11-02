@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchIcon } from "lucide-react";
+import { type LucideProps, SearchIcon } from "lucide-react";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -35,12 +35,12 @@ function useLucide() {
 }
 
 /** A Lucide icon by its name, e.g. `rocket` or `grid-3x3`; an empty square while it loads or when unknown. */
-export function LucideIconByName({ name, className }: { name: string; className?: string }) {
+export function LucideIconByName({ name, className, ...props }: LucideProps & { name: string }) {
   const lucide = useLucide();
   const Icon = lucide?.LUCIDE.byKey.get(lucide.iconKey(name));
   if (!Icon) return <span className={cn("size-3.5 rounded-sm bg-muted-foreground/15", className)} aria-hidden />;
   // A component of the registry, not one made during the render.
-  return createElement(Icon, { className, "aria-hidden": true });
+  return createElement(Icon, { ...props, className, "aria-hidden": true });
 }
 
 /** A search bar and the grid of the icons whose name holds every word typed; a click picks one. */

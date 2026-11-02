@@ -1,3 +1,5 @@
+import type { FieldRules } from "../rules";
+import { USERNAME_CHARACTERS_PATTERN, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "../users/username";
 import type { AuditUser } from "./audit";
 
 /** Why a username is kept out of the sign-ups. */
@@ -25,11 +27,26 @@ export interface AdminReservedUsername {
 export interface ReserveUsernameRequest {
   username: string;
   category: ReservedUsernameCategory;
-  note?: string;
+  note?: string | null;
 }
 
-/** `PATCH /api/admin/reserved-usernames/:username`: its username stays. */
+/** `PATCH /api/admin/reserved-usernames/:username`: `username` renames it, refused when an account holds the new one. */
 export interface UpdateReservedUsernameRequest {
+  username?: string;
   category: ReservedUsernameCategory;
   note: string | null;
 }
+
+/** The rules of a reserved username, followed by the back office as typed and by the API. */
+export const RESERVED_USERNAME_RULES: FieldRules<ReserveUsernameRequest> = {
+  username: {
+    type: "text",
+    required: true,
+    minLength: USERNAME_MIN_LENGTH,
+    maxLength: USERNAME_MAX_LENGTH,
+    pattern: USERNAME_CHARACTERS_PATTERN,
+    patternMessage: "Minuscules, chiffres et _ uniquement.",
+  },
+  category: { type: "choice", required: true, values: RESERVED_USERNAME_CATEGORIES },
+  note: { type: "text", maxLength: RESERVED_USERNAME_NOTE_MAX_LENGTH },
+};

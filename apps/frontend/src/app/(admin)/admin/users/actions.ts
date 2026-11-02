@@ -31,7 +31,6 @@ export async function fetchUsersTable(query: TableQuery): Promise<TablePage<Admi
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const HISTORY_SIZE = 5;
 
 /** Everything the detail of an account shows, and what the current member may do on it. */
 export interface UserDetailData {
@@ -41,18 +40,16 @@ export interface UserDetailData {
   refusal: ActRefusal | null;
   /** Every tag, in the order of the catalog. */
   catalog: AdminUserTagLook[];
-  history: { entries: AuditRow[]; total: number; href: string };
+  /** The whole history of the account, in the audit log. */
+  historyHref: string;
+  /** The table of the tags, a tag opened by `?row=`. */
+  tagsPath: string;
 }
 
 /** The detail of an account, null when it is gone. */
 export async function loadUserDetail(id: string): Promise<UserDetailData | null> {
   if (!UUID.test(id)) return null;
-  const [me, result, catalog, history] = await Promise.all([
-    getAdminMe(),
-    adminApi<AdminUserDetail>(`/users/${id}`),
-    adminApi<AdminUserTag[]>("/user-tags"),
-    adminApi<AdminPage<AuditLogEntry>>(`/audit-log?target=${id}`),
-  ]);
+  const [me, result, catalog] = await Promise.all([getAdminMe(), adminApi<AdminUserDetail>(`/users/${id}`), adminApi<AdminUserTag[]>("/user-tags")]);
   if (!result.ok) {
     if (result.status === 404) return null;
     throw new Error(`User ${result.status}`);
@@ -64,12 +61,18 @@ export async function loadUserDetail(id: string): Promise<UserDetailData | null>
     permissions: me.permissions,
     refusal: actRefusal(me, user),
     catalog: catalog.ok ? catalog.data : user.userTags,
-    history: {
-      entries: history.ok ? withTexts(history.data.items.slice(0, HISTORY_SIZE)) : [],
-      total: history.ok ? history.data.total : 0,
-      href: `${adminRoutes.auditLog}?target=${id}`,
-    },
+    historyHref: `${adminRoutes.auditLog}?target=${id}`,
+    tagsPath: adminRoutes.userTags,
   };
+}
+
+/** A page of the history of an account, the latest first: `cursor` the page, null for the first. */
+export async function loadUserHistory(id: string, cursor: string | null): Promise<{ entries: AuditRow[]; next: string | null; total: number }> {
+  const page = Number(cursor ?? 1);
+  const result = await adminApi<AdminPage<AuditLogEntry>>(`/audit-log?target=${checkedId(id)}&page=${Number.isInteger(page) && page > 0 ? page : 1}`);
+  if (!result.ok) throw new Error(`Audit log ${result.status}`);
+  const { items, total, pageSize } = result.data;
+  return { entries: withTexts(items), next: page * pageSize < total ? String(page + 1) : null, total };
 }
 
 /*
@@ -120,4 +123,15 @@ export async function setUserTag(
     throw new Error("Invalid userTag");
   }
   return runAdminAction(`/users/${checkedId(id)}/user-tags/${kind}`, granted ? "PUT" : "DELETE");
+}
+
+/** The tags of an account set to `next`: those added granted, those left out withdrawn, one by one, stopping at the first failure. */
+export async function setUserTags(id: string, held: string[], next: string[]): Promise<ActionResult> {
+  const changes = [...next.filter((tag) => !held.includes(tag)).map((tag) => [tag, true] as const), ...held.filter((tag) => !next.includes(tag)).map((tag) => [tag, false] as const)];
+  let result: ActionResult = { ok: true, message: "Tags enregistrés" };
+  for (const [tag, granted] of changes) {
+    result = await setUserTag(id, tag, granted);
+    if (!result.ok) break;
+  }
+  return result;
 }

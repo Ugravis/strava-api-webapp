@@ -23,7 +23,6 @@ import {
   LighthouseIcon,
   MapIcon,
   MedalIcon,
-  MilestoneIcon,
   MoonIcon,
   MoonStarIcon,
   MountainIcon,
@@ -56,6 +55,7 @@ import {
   type LucideProps,
 } from "lucide-react";
 import { createElement } from "react";
+import { LucideIconByName } from "@/components/admin/detail/icon-picker";
 
 /** Icons by the key the catalog of badges gives. */
 const BADGE_ICONS: Record<string, LucideIcon> = {
@@ -116,7 +116,8 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
 /** Keys of the icons a badge can take, in alphabetical order. */
 export const BADGE_ICON_KEYS = Object.keys(BADGE_ICONS);
 
-/** Icon of a badge; keys unknown to this version of the app get a generic one. */
+/** Icon of a badge: those of the catalog in the bundle, any other Lucide icon loaded by its name. */
 export function BadgeIcon({ icon, ...props }: LucideProps & { icon: string }) {
-  return createElement(BADGE_ICONS[icon] ?? MilestoneIcon, props);
+  const known = BADGE_ICONS[icon];
+  return known ? createElement(known, props) : <LucideIconByName name={icon} {...props} />;
 }

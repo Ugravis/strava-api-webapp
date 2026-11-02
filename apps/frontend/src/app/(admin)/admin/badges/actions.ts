@@ -1,12 +1,8 @@
 "use server";
 
 import {
-  ADMIN_BADGE_FAMILIES,
-  ADMIN_BADGE_METRICS,
   ADMIN_BADGE_SLUG,
   type AdminBadge,
-  type AdminBadgeFamily,
-  type AdminBadgeMetric,
   type AdminBadgeThemeRow,
   type CreateBadgeRequest,
   type CreateBadgeThemeRequest,
@@ -17,9 +13,8 @@ import {
 import { TABLE_MAX_PAGE_SIZE, type TablePage, type TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
 import type { TableMove } from "@/components/admin/data-table";
-import { reasonOf, runAdminAction } from "@/lib/admin/actions";
+import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
-import { scaleOf } from "./units";
 
 /** A page of the table of the badges. */
 export async function fetchBadgesTable(query: TableQuery): Promise<TablePage<AdminBadge>> {
@@ -60,17 +55,15 @@ export async function loadTheme(id: string): Promise<{ theme: AdminBadgeThemeRow
  * checks the role and the fields, and records every call.
  */
 
-export async function createBadge(_: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const body: CreateBadgeRequest = { id: text(formData, "id"), ...badgeOf(formData) };
-  return runAdminAction("/badges", "POST", body);
+/** A badge created from its draft, its amounts already stored: its id once created, a refusal under its field. */
+export async function createBadge(body: CreateBadgeRequest): Promise<AdminActionResult & { id?: string }> {
+  const result = await runAdminAction("/badges", "POST", { ...body, id: body.id.trim(), name: body.name.trim(), description: body.description.trim() }, {
+    ID_TAKEN: { field: "id", message: "Un badge porte déjà cet identifiant." },
+  });
+  return result.ok ? { ...result, id: body.id.trim(), message: `Badge ${body.name.trim()} créé` } : result;
 }
 
-export async function updateBadge(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const body: UpdateBadgeRequest = badgeOf(formData);
-  return runAdminAction(`/badges/${checkedSlug(id)}`, "PATCH", body);
-}
-
-/** The same, edited in place from the detail: every field sent, as the backend replaces them all. */
+/** A change edited in place: every field sent, as the backend replaces them all. */
 export async function saveBadge(id: string, body: UpdateBadgeRequest): Promise<ActionResult> {
   return runAdminAction(`/badges/${checkedSlug(id)}`, "PATCH", { ...body, name: body.name.trim(), description: body.description.trim() });
 }
@@ -80,8 +73,9 @@ export async function setBadgeActive(id: string, active: boolean): Promise<Actio
   return runAdminAction(`/badges/${checkedSlug(id)}/active`, "PUT", body);
 }
 
-export async function deleteBadge(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  return runAdminAction(`/badges/${checkedSlug(id)}`, "DELETE", { reason: reasonOf(formData) ?? "" });
+/** Deletes a badge for good, `reason` kept in the log. */
+export async function deleteBadge(id: string, reason: string | undefined): Promise<ActionResult> {
+  return runAdminAction(`/badges/${checkedSlug(id)}`, "DELETE", { reason: reason ?? "" });
 }
 
 /** Activates or deactivates the selection one by one, stopping at the first failure. */
@@ -98,14 +92,13 @@ export async function moveBadge(move: TableMove): Promise<ActionResult> {
   return runAdminAction("/badges/move", "PUT", movedOf(move));
 }
 
-export async function createTheme(_: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const body: CreateBadgeThemeRequest = { id: text(formData, "id"), name: text(formData, "name") };
-  return runAdminAction("/badge-themes", "POST", body);
-}
-
-export async function updateTheme(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const body: UpdateBadgeThemeRequest = { name: text(formData, "name") };
-  return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "PATCH", body);
+/** A collection created from its draft: its id once created, a refusal under its field. */
+export async function createTheme(body: CreateBadgeThemeRequest): Promise<AdminActionResult & { id?: string }> {
+  const created: CreateBadgeThemeRequest = { id: body.id.trim(), name: body.name.trim() };
+  const result = await runAdminAction("/badge-themes", "POST", created, {
+    ID_TAKEN: { field: "id", message: "Une collection porte déjà cet identifiant." },
+  });
+  return result.ok ? { ...result, id: created.id, message: `Collection ${created.name} créée` } : result;
 }
 
 /** Renamed in place from the detail. */
@@ -114,8 +107,9 @@ export async function saveTheme(id: string, name: string): Promise<ActionResult>
   return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "PATCH", body);
 }
 
-export async function deleteTheme(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "DELETE", { reason: reasonOf(formData) ?? "" });
+/** Deletes a collection, its badges kept without one; `reason` kept in the log. */
+export async function deleteTheme(id: string, reason: string | undefined): Promise<ActionResult> {
+  return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "DELETE", { reason: reason ?? "" });
 }
 
 export async function moveTheme(move: TableMove): Promise<ActionResult> {
@@ -133,39 +127,4 @@ function checkedSlug(id: string): string {
     throw new Error("Invalid id");
   }
   return id;
-}
-
-function text(formData: FormData, name: string): string {
-  const value = formData.get(name);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-/** The fields of the form, amounts converted from the units shown to the stored ones. */
-function badgeOf(formData: FormData): UpdateBadgeRequest {
-  const metric = text(formData, "metric") as AdminBadgeMetric;
-  const family = text(formData, "family") as AdminBadgeFamily;
-  const scale = ADMIN_BADGE_METRICS.includes(metric) ? scaleOf(metric) : 1;
-  const tiers = text(formData, "tiers")
-    .split(/[\s;]+/)
-    .filter(Boolean)
-    .map((value) => amountOf(value, scale));
-  const themeId = text(formData, "themeId");
-  const color = text(formData, "backgroundColor");
-  return {
-    metric,
-    family: ADMIN_BADGE_FAMILIES.includes(family) ? family : "all",
-    target: amountOf(text(formData, "target"), scale),
-    tiers: tiers.length > 0 ? tiers : null,
-    name: text(formData, "name"),
-    description: text(formData, "description"),
-    themeId: themeId || null,
-    icon: text(formData, "icon"),
-    backgroundColor: color || null,
-  };
-}
-
-/** An amount typed in the unit shown, a comma or a dot for decimals; NaN is refused by the backend. */
-function amountOf(value: string, scale: number): number {
-  const amount = Number(value.replace(",", ".")) * scale;
-  return Math.round(amount * 1000) / 1000;
 }

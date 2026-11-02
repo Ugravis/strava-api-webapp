@@ -1,4 +1,5 @@
-import type { AdminUserTag } from '@kilotrace/shared/admin';
+import { type AdminUserTag, USER_TAG_RULES } from '@kilotrace/shared/admin';
+import { assertRules } from '../../common/field-rules';
 import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
@@ -45,6 +46,7 @@ export class AdminUserTagsController {
   @Audited({ action: 'userTags.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateUserTagDto): Promise<void> {
+    assertRules(USER_TAG_RULES, dto);
     return this.userTags.create(dto);
   }
 
@@ -69,6 +71,7 @@ export class AdminUserTagsController {
     @Param('id') id: string,
     @Body() dto: UpdateUserTagDto,
   ): Promise<void> {
+    assertRules(USER_TAG_RULES, dto, { partial: true });
     return this.userTags.update(id, dto);
   }
 

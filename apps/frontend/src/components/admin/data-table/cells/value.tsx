@@ -6,17 +6,18 @@ import type { DataTableColumn } from "../types";
 import { drawCell } from "./base";
 
 /**
- * The value of a cell, its copy and edit buttons floating at its right on
+ * The value of a cell, its tools, copy and edit buttons floating at its right on
  * hover; on a screen without hover, a tap on it opens a bubble of its
  * actions, `onOpen` (the row) among them.
  */
 export function CellValue<T>({ column, row, onOpen }: { column: DataTableColumn<T>; row: T; onOpen?: () => void }) {
   const edit = column.edit?.(row);
-  // Nothing to copy nor edit: the cell alone.
-  if (!edit && !column.copy)
+  const tools = column.tools?.(row);
+  // Nothing to copy, edit nor run: the cell alone.
+  if (!edit && !column.copy && !tools)
     return drawCell(column, row);
   return (
-    <EditableValue label={column.header} edit={edit} copy={column.copy?.(row) ?? null} onOpen={onOpen} href={column.href?.(row)}>
+    <EditableValue label={column.header} edit={edit} copy={column.copy?.(row) ?? null} tools={tools} onOpen={onOpen} href={column.href?.(row)}>
       {drawCell(column, row)}
     </EditableValue>
   );

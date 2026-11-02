@@ -4,16 +4,16 @@ import type { AdminMeResponse, AdminUserSummary, AdminUserTagLook } from "@kilot
 import type { TableQuery } from "@kilotrace/shared/table";
 import { CopyIcon, ExternalLinkIcon, ListClockIcon, PanelRightOpenIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { type DataTableConfig, DataTable, RowActions } from "@/components/admin/data-table";
-import { useSplitPanel } from "@/components/split-panel";
+import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { userProfileHref } from "@/config/routes";
 import { actRefusal } from "@/lib/admin/permissions";
 import { fetchUsersTable, loadUserDetail } from "./actions";
-import { CONNECTIONS, ROLES, type Status, STATUSES, USER_COLUMNS, UserTagIcon } from "./user-columns";
-import { useUserActionDialog, userActionsOf } from "./user-actions";
+import { CONNECTIONS, ROLES, type Status, STATUSES, tagsEdit, userColumns, UserTagIcon } from "./user-columns";
+import { moderateTool, NOT_GRANTED, useUserActionDialog, userActionsOf } from "./user-actions";
 import { UserRowPanel } from "./user-detail";
 import { useUsersVersion } from "./users-store";
 
@@ -24,24 +24,19 @@ function copy(text: string, done: string) {
   navigator.clipboard.writeText(text).then(() => toast.success(done), () => toast.error("Copie impossible"));
 }
 
-/** The accounts; a click opens one in the side panel. `tags` is the catalog, in its order. */
-export function UsersTable({ me, auditLogPath, tags }: { me: AdminMeResponse; auditLogPath: string; tags: AdminUserTagLook[] }) {
+/** The accounts; a click opens one in the side panel. `tags` is the catalog, in its order, `tagsPath` its table. */
+export function UsersTable({ me, auditLogPath, tags, tagsPath }: { me: AdminMeResponse; auditLogPath: string; tags: AdminUserTagLook[]; tagsPath: string }) {
   const router = useRouter();
-  const { open, isOpen, activeId } = useSplitPanel();
   const version = useUsersVersion();
-  const { openAction, dialog } = useUserActionDialog();
-  const openUser = useCallback(
-    // Opened at once on its skeleton, the account loaded by the panel.
-    (user: { id: string; username: string }) => open(<UserRowPanel id={user.id} />, { id: user.id, title: `@${user.username}` }),
-    [open],
-  );
-  // A shared link: the account of `?row=`, once on arrival, fetched by id.
-  useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("row");
-    if (id) loadUserDetail(id).then((data) => data && openUser(data.user), () => {});
-  }, [openUser]);
+  // The panel, read by the menus of the rows: the config stays the same as it changes.
+  const panelRef = useRef<{ controls: RowPanelControls | null; active: string | null }>({ controls: null, active: null });
+  const { openAction, dialog } = useUserActionDialog((id) => {
+    const { controls, active } = panelRef.current;
+    if (active === id) controls?.removed(id);
+  });
 
   const config = useMemo<DataTableConfig<AdminUserSummary>>(() => {
+    const granted = (user: AdminUserSummary) => userActionsOf(user, me.permissions, actRefusal(me, user)).filter((action) => !action.locked);
     return {
       id: "users",
       fetch: (query: TableQuery) => fetchUsersTable(query),
@@ -60,7 +55,10 @@ export function UsersTable({ me, auditLogPath, tags }: { me: AdminMeResponse; au
           columns: ["user", "displayName", "status", "email", "createdAt", "lastSeenAt", "connections", "userTags", "activities", "id"],
         },
       ],
-      columns: USER_COLUMNS,
+      columns: userColumns({
+        moderate: (user, field) => moderateTool(user, field, me.permissions, actRefusal(me, user), openAction),
+        tags: (user) => tagsEdit(user, tags, tagsPath, me.permissions.includes("users.userTags") ? null : NOT_GRANTED),
+      }),
       facets: [
         { id: "connections", label: "Connexion", options: Object.entries(CONNECTIONS).map(([value, { label, icon }]) => ({ value, label, icon })) },
         {
@@ -92,7 +90,7 @@ export function UsersTable({ me, auditLogPath, tags }: { me: AdminMeResponse; au
       actions: (user) => (
         <RowActions label={`Actions de @${user.username}`}>
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => openUser(user)}>
+            <DropdownMenuItem onClick={() => panelRef.current.controls?.open(user.id)}>
               <PanelRightOpenIcon />
               Ouvrir la fiche
             </DropdownMenuItem>
@@ -106,11 +104,11 @@ export function UsersTable({ me, auditLogPath, tags }: { me: AdminMeResponse; au
             </DropdownMenuItem>
           </DropdownMenuGroup>
           {/* The buttons of the detail, unless the member may not act on this account. */}
-          {!actRefusal(me, user) && userActionsOf(user, me.permissions).length > 0 && (
+          {granted(user).length > 0 && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {userActionsOf(user, me.permissions).map((action) => (
+                {granted(user).map((action) => (
                   <DropdownMenuItem key={action.key} variant={action.destructive ? "destructive" : "default"} onClick={() => openAction(user, action.key)}>
                     {action.icon}
                     {action.label}
@@ -129,11 +127,20 @@ export function UsersTable({ me, auditLogPath, tags }: { me: AdminMeResponse; au
         </RowActions>
       ),
     };
-  }, [router, auditLogPath, tags, me, openUser, openAction]);
+  }, [router, auditLogPath, tags, tagsPath, me, openAction]);
 
+  const panel = useRowPanel<AdminUserSummary>({
+    config,
+    title: (user) => `@${user.username}`,
+    load: (id) => loadUserDetail(id).then((data) => data?.user ?? null),
+    detail: (id, controls) => <UserRowPanel id={id} panel={controls} />,
+  });
+  useLayoutEffect(() => {
+    panelRef.current = { controls: panel, active: panel.table.activeRowId };
+  });
   return (
     <>
-      <DataTable config={config} onRowClick={openUser} activeRowId={isOpen ? activeId : null} refreshKey={version} />
+      <DataTable {...panel.table} refreshKey={version} />
       {dialog}
     </>
   );

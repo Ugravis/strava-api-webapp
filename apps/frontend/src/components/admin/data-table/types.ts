@@ -30,6 +30,11 @@ export interface DataTableColumn<T> {
    * the cell as in the detail (`edit` of the detail kit); none when undefined.
    */
   edit?: (row: T) => DetailFieldEdit | undefined;
+  /**
+   * Buttons floating beside copy and edit on hover (any `DetailFieldButton`,
+   * e.g. moderate), in the cell as in the detail; none when null.
+   */
+  tools?: (row: T) => ReactNode;
   /** An outside page its value opens in a new tab, underlined on hover; none when null. */
   href?: (row: T) => string | null;
   /** In cards, drawn as the cover at the top of the card instead of a value: the image of `imageColumn`. */

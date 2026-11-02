@@ -8,10 +8,11 @@ import {
   MODERATABLE_FIELDS,
   type ModeratableField,
 } from "@kilotrace/shared/admin";
-import { BanIcon, EraserIcon, LogOutIcon, ShieldCheckIcon, Trash2Icon, UnlinkIcon } from "lucide-react";
+import { BanIcon, GavelIcon, LogOutIcon, ShieldCheckIcon, Trash2Icon, UnlinkIcon } from "lucide-react";
 import { type ReactNode, useCallback, useState } from "react";
 import { ActionDialog, type ActionDialogProps } from "@/components/admin/action-dialog";
-import { useSplitPanel } from "@/components/split-panel";
+import { DetailFieldButton } from "@/components/admin/detail";
+import type { ActRefusal } from "@/lib/admin/permissions";
 import { deleteUser, liftSuspension, moderateUser, revokeSessions, suspendUser, unlinkStrava } from "./actions";
 import { bumpUsers } from "./users-store";
 
@@ -23,30 +24,62 @@ export interface UserAction {
   label: string;
   icon: ReactNode;
   destructive?: boolean;
+  /** Not for this member, and why: greyed in the detail, left out of the menu. */
+  locked: string | null;
 }
 
-/** The actions on an account the permissions grant, in the order of the buttons: the red ones last. */
-export function userActionsOf(user: AdminUserSummary, permissions: readonly AdminPermission[]): UserAction[] {
-  const can = (permission: AdminPermission) => permissions.includes(permission);
-  return [
-    can("users.moderate") && { key: "moderate" as const, label: "Modérer", icon: <EraserIcon /> },
-    can("users.sessions") && { key: "sessions" as const, label: "Déconnecter", icon: <LogOutIcon /> },
-    can("users.suspend") &&
-      (user.suspension
-        ? { key: "lift" as const, label: "Lever la suspension", icon: <ShieldCheckIcon /> }
-        : { key: "suspend" as const, label: "Suspendre", icon: <BanIcon />, destructive: true }),
-    can("users.strava") && user.stravaConnected && { key: "strava" as const, label: "Délier Strava", icon: <UnlinkIcon />, destructive: true },
-    can("users.delete") && { key: "delete" as const, label: "Supprimer", icon: <Trash2Icon />, destructive: true },
-  ].filter((action) => action !== false);
+/** Why a member may not act on an account at all. */
+export const REFUSALS: Record<ActRefusal, string> = {
+  self: "C'est votre compte : les actions sont désactivées.",
+  protected: "Membre de l'équipe de rang égal ou supérieur : les actions sont désactivées.",
+  readOnly: "Lecture seule : votre rôle n'a la permission d'aucune action sur les comptes.",
+};
+
+export const NOT_GRANTED = "Votre rôle n'a pas cette permission.";
+
+/** The actions on an account, in the order of the buttons (the red ones last), each locked when the member may not run it. */
+export function userActionsOf(user: AdminUserSummary, permissions: readonly AdminPermission[], refusal: ActRefusal | null): UserAction[] {
+  const lock = (permission: AdminPermission) => (refusal ? REFUSALS[refusal] : permissions.includes(permission) ? null : NOT_GRANTED);
+  const actions: (UserAction | false)[] = [
+    { key: "moderate", label: "Modérer", icon: <GavelIcon />, locked: lock("users.moderate") },
+    { key: "sessions", label: "Déconnecter", icon: <LogOutIcon />, locked: lock("users.sessions") },
+    user.suspension
+      ? { key: "lift", label: "Lever la suspension", icon: <ShieldCheckIcon />, locked: lock("users.suspend") }
+      : { key: "suspend", label: "Suspendre", icon: <BanIcon />, destructive: true, locked: lock("users.suspend") },
+    user.stravaConnected && { key: "strava", label: "Délier Strava", icon: <UnlinkIcon />, destructive: true, locked: lock("users.strava") },
+    { key: "delete", label: "Supprimer", icon: <Trash2Icon />, destructive: true, locked: lock("users.delete") },
+  ];
+  return actions.filter((action) => action !== false);
 }
 
-const FIELDS: Record<ModeratableField, string> = {
+/** The fields a moderation resets, by their name in the dialog. */
+export const MODERATED_FIELDS: Record<ModeratableField, string> = {
   username: "Pseudo",
   displayName: "Nom affiché",
   bio: "Bio",
   city: "Ville et pays",
   avatar: "Photo",
 };
+
+/**
+ * The gavel floating on a moderable field, in the table as in the detail:
+ * opens the moderation with `field` checked. None when the member may not
+ * moderate `user`.
+ */
+export function moderateTool(
+  user: AdminUserSummary,
+  field: ModeratableField,
+  permissions: readonly AdminPermission[],
+  refusal: ActRefusal | null,
+  openAction: (user: AdminUserSummary, action: UserActionKey, fields?: ModeratableField[]) => void,
+) {
+  if (refusal || !permissions.includes("users.moderate")) return null;
+  return (
+    <DetailFieldButton label={`Modérer : ${MODERATED_FIELDS[field]}`} onClick={() => openAction(user, "moderate", [field])}>
+      <GavelIcon aria-hidden />
+    </DetailFieldButton>
+  );
+}
 
 const DURATIONS = [
   { value: "7", label: "7 jours" },
@@ -69,7 +102,8 @@ const reason = (presets: string[], required = true): ActionDialogProps["reason"]
 
 type DialogTexts = Omit<ActionDialogProps, "action" | "open" | "onOpenChange" | "onSuccess" | "cancelLabel">;
 
-function dialogOf(key: UserActionKey, user: AdminUserSummary): DialogTexts & { action: ActionDialogProps["action"] } {
+/** The dialog of `key`; `fields` checked on opening a moderation. */
+function dialogOf(key: UserActionKey, user: AdminUserSummary, fields?: ModeratableField[]): DialogTexts & { action: ActionDialogProps["action"] } {
   switch (key) {
     case "moderate":
       return {
@@ -77,7 +111,12 @@ function dialogOf(key: UserActionKey, user: AdminUserSummary): DialogTexts & { a
         title: "Réinitialiser des champs du profil",
         description: "Les champs choisis sont effacés ; le pseudo est remplacé par un pseudo généré. L'utilisateur est notifié avec la raison.",
         submitLabel: "Réinitialiser",
-        choices: { name: "fields", legend: "Champs à réinitialiser", options: MODERATABLE_FIELDS.map((field) => ({ value: field, label: FIELDS[field] })) },
+        choices: {
+          name: "fields",
+          legend: "Champs à réinitialiser",
+          options: MODERATABLE_FIELDS.map((field) => ({ value: field, label: MODERATED_FIELDS[field] })),
+          checked: fields,
+        },
         reason: reason(["Contenu offensant ou haineux", "Usurpation d'identité", "Publicité ou spam", "Informations personnelles d'un tiers"]),
       };
     case "lift":
@@ -130,46 +169,49 @@ function dialogOf(key: UserActionKey, user: AdminUserSummary): DialogTexts & { a
 
 /**
  * The confirmation of an action on an account, opened by a button or a menu
- * item. `onDone` once it went through, the account deleted or not.
+ * item; `fields` checked in a moderation opened from a field. `onDone` once
+ * it went through, the account deleted or not.
  */
 export function UserActionDialog({
   user,
   action,
+  fields,
   open,
   onOpenChange,
   onDone,
 }: {
   user: AdminUserSummary;
   action: UserActionKey;
+  fields?: ModeratableField[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone: (action: UserActionKey) => void;
 }) {
-  return <ActionDialog {...dialogOf(action, user)} cancelLabel="Annuler" open={open} onOpenChange={onOpenChange} onSuccess={() => onDone(action)} />;
+  return <ActionDialog {...dialogOf(action, user, fields)} cancelLabel="Annuler" open={open} onOpenChange={onOpenChange} onSuccess={() => onDone(action)} />;
 }
 
 /**
  * Opens the confirmation of an action on an account; `dialog` goes anywhere
- * in the page. Once done, the list and the detail fetch again; a deleted
- * account open in the panel closes it.
+ * in the page. Once done, the list and the detail fetch again; `onDeleted`
+ * once an account is deleted, e.g. to close its panel.
  */
-export function useUserActionDialog() {
-  const { close, activeId } = useSplitPanel();
+export function useUserActionDialog(onDeleted: (id: string) => void) {
   // Kept once closed, so that the texts stay while the dialog fades out.
-  const [state, setState] = useState<{ user: AdminUserSummary; action: UserActionKey; open: boolean } | null>(null);
+  const [state, setState] = useState<{ user: AdminUserSummary; action: UserActionKey; fields?: ModeratableField[]; open: boolean } | null>(null);
   const dialog = state && (
     <UserActionDialog
       user={state.user}
       action={state.action}
+      fields={state.fields}
       open={state.open}
       onOpenChange={(open) => setState({ ...state, open })}
       onDone={(action) => {
-        if (action === "delete" && activeId === state.user.id) close();
         bumpUsers();
+        if (action === "delete") onDeleted(state.user.id);
       }}
     />
   );
   // Stable: the config of a table depends on it, and a new one would fetch the page again.
-  const openAction = useCallback((user: AdminUserSummary, action: UserActionKey) => setState({ user, action, open: true }), []);
+  const openAction = useCallback((user: AdminUserSummary, action: UserActionKey, fields?: ModeratableField[]) => setState({ user, action, fields, open: true }), []);
   return { openAction, dialog };
 }

@@ -53,8 +53,8 @@ export interface ActionDialogProps {
     min: number;
     max: number;
   };
-  /** Several values among the options, posted under `name`; one at least. */
-  choices?: { name: string; legend: string; options: Option[] };
+  /** Several values among the options, posted under `name`; one at least, `checked` on opening. */
+  choices?: { name: string; legend: string; options: Option[]; checked?: string[] };
   /**
    * End of the action, posted as `until` (ISO 8601) unless indefinite: a
    * number of days, `indefinite`, or `custom` for a date picked by hand.
@@ -115,7 +115,7 @@ function ActionDialogForm({
   const id = useId();
   const [result, formAction] = useActionState(action, null);
   const [reasonText, setReasonText] = useState("");
-  const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
+  const [chosen, setChosen] = useState<ReadonlySet<string>>(() => new Set(choices?.checked));
   const [period, setPeriod] = useState(duration?.options[0]?.value ?? "");
   const [customUntil, setCustomUntil] = useState("");
   const [typed, setTyped] = useState("");

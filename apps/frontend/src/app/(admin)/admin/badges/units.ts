@@ -10,3 +10,8 @@ export function scaleOf(metric: AdminBadgeMetric): number {
 export function shownAmount(metric: AdminBadgeMetric, amount: number): number {
   return Math.round((amount / scaleOf(metric)) * 1000) / 1000;
 }
+
+/** An amount typed in the unit shown, as stored. */
+export function storedAmount(metric: AdminBadgeMetric, shown: number): number {
+  return Math.round(shown * scaleOf(metric) * 1000) / 1000;
+}

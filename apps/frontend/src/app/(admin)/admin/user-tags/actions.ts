@@ -2,6 +2,7 @@
 
 import {
   ADMIN_BADGE_SLUG,
+  type AdminUserSummary,
   type AdminUserTag,
   type CreateUserTagRequest,
   type UpdateUserTagRequest,
@@ -9,9 +10,12 @@ import {
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
 import type { TableMove } from "@/components/admin/data-table";
-import { reasonOf, runAdminAction } from "@/lib/admin/actions";
+import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
+
+/** The accounts of a tag loaded at once in its detail. */
+const HOLDERS_PAGE = 10;
 
 /** A page of the table of the user tags. */
 export async function fetchUserTagsTable(query: TableQuery): Promise<TablePage<AdminUserTag>> {
@@ -29,19 +33,31 @@ export async function loadUserTag(id: string): Promise<AdminUserTag | null> {
  * backend checks the permission and the fields, and records every call.
  */
 
-export async function createUserTag(_: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const body: CreateUserTagRequest = { id: text(formData, "id"), ...userTagOf(formData) };
-  return runAdminAction("/user-tags", "POST", body, {
-    ID_TAKEN: getAdminTranslations("userTags.errors")("idTaken"),
+/** A user tag being typed: every field may still be empty. */
+export interface UserTagDraft {
+  id: string | null;
+  name: string | null;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+}
+
+/** A user tag created from its draft: its id once created, a refusal under its field. */
+export async function createUserTag(draft: UserTagDraft): Promise<AdminActionResult & { id?: string }> {
+  const body: CreateUserTagRequest = {
+    id: (draft.id ?? "").trim(),
+    name: (draft.name ?? "").trim(),
+    description: draft.description?.trim() || null,
+    icon: draft.icon ?? "",
+    color: draft.color || null,
+  };
+  const result = await runAdminAction("/user-tags", "POST", body, {
+    ID_TAKEN: { field: "id", message: getAdminTranslations("userTags.errors")("idTaken") },
   });
+  return result.ok ? { ...result, id: body.id, message: `Tag ${body.name} créé` } : result;
 }
 
-export async function updateUserTag(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const body: UpdateUserTagRequest = userTagOf(formData);
-  return runAdminAction(`/user-tags/${checkedSlug(id)}`, "PATCH", body);
-}
-
-/** The same, edited in place from the detail: every field sent, as the backend replaces them all. */
+/** A change edited in place: every field sent, as the backend replaces them all. */
 export async function saveUserTag(id: string, body: UpdateUserTagRequest): Promise<ActionResult> {
   const update: UpdateUserTagRequest = {
     name: body.name.trim(),
@@ -52,13 +68,23 @@ export async function saveUserTag(id: string, body: UpdateUserTagRequest): Promi
   return runAdminAction(`/user-tags/${checkedSlug(id)}`, "PATCH", update);
 }
 
-export async function deleteUserTag(id: string, _: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  return runAdminAction(
-    `/user-tags/${checkedSlug(id)}`,
-    "DELETE",
-    { reason: reasonOf(formData) ?? "" },
-    { SYSTEM_USER_TAG: getAdminTranslations("userTags.errors")("system") },
-  );
+/** Deletes a user tag for good, `reason` kept in the log. */
+export async function deleteUserTag(id: string, reason: string | undefined): Promise<ActionResult> {
+  return runAdminAction(`/user-tags/${checkedSlug(id)}`, "DELETE", { reason: reason ?? "" }, { SYSTEM_USER_TAG: getAdminTranslations("userTags.errors")("system") });
+}
+
+/** The accounts holding a user tag, the latest first, from `offset`: its related rows. */
+export async function loadUserTagHolders(id: string, offset: number): Promise<{ users: AdminUserSummary[]; total: number }> {
+  const page = await fetchAdminTable<AdminUserSummary>("/users/table", {
+    q: "",
+    filters: { userTags: [checkedSlug(id)] },
+    sort: { id: "createdAt", desc: true },
+    groupBy: null,
+    folded: [],
+    page: Math.floor(offset / HOLDERS_PAGE) + 1,
+    pageSize: HOLDERS_PAGE,
+  });
+  return { users: page.entries.flatMap((entry) => ("row" in entry ? [entry.row] : [])), total: page.total };
 }
 
 export async function moveUserTag({ id, after, before }: TableMove): Promise<ActionResult> {
@@ -72,18 +98,4 @@ function checkedSlug(id: string): string {
     throw new Error("Invalid id");
   }
   return id;
-}
-
-function text(formData: FormData, name: string): string {
-  const value = formData.get(name);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function userTagOf(formData: FormData): UpdateUserTagRequest {
-  return {
-    name: text(formData, "name"),
-    description: text(formData, "description") || null,
-    icon: text(formData, "icon"),
-    color: text(formData, "color") || null,
-  };
 }

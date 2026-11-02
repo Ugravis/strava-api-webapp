@@ -4,7 +4,6 @@ import { CheckIcon, Loader2Icon, SearchIcon } from "lucide-react";
 import { useActionState, useEffect, useEffectEvent, useId, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -32,25 +31,12 @@ interface BaseField {
   name: string;
   label: string;
   hint?: string;
-  /** Half the width of the form, beside another half field, from `sm`. */
-  half?: boolean;
 }
 
 export type FormField = BaseField &
   (
-    | { kind: "text"; defaultValue?: string; required?: boolean; maxLength?: number; pattern?: string; readOnly?: boolean }
     | { kind: "textarea"; defaultValue?: string; required?: boolean; maxLength?: number }
-    | {
-        kind: "number";
-        defaultValue?: string;
-        required?: boolean;
-        /** Unit shown after the value, by the value of a select of the form. */
-        unit?: { field: string; byValue: Record<string, string> };
-      }
     | { kind: "select"; defaultValue: string; options: Option[] }
-    /** `#rrggbb`, or nothing at all when the default is kept. */
-    | { kind: "color"; defaultValue: string | null; noneLabel: string }
-    | { kind: "icons"; defaultValue: string; options: (Option & { icon: ReactNode })[] }
     /** One user among the results of a search, posted by id. */
     | {
         kind: "user";
@@ -130,7 +116,7 @@ function FormDialogForm({
   onDone,
 }: FormDialogProps & { onDone: () => void }) {
   const [result, formAction] = useActionState(action, null);
-  // Values of the selects, read by the units of the number fields.
+  // Values of the selects.
   const [selected, setSelected] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.flatMap((field) => (field.kind === "select" ? [[field.name, field.defaultValue]] : []))),
   );
@@ -155,9 +141,9 @@ function FormDialogForm({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4">
         {fields.map((field) => (
-          <div key={field.name} className={cn("grid content-start gap-1.5", !field.half && "sm:col-span-2")}>
+          <div key={field.name} className="grid content-start gap-1.5">
             <FieldInput
               field={field}
               selected={selected}
@@ -191,23 +177,6 @@ function FieldInput({
   const id = useId();
   const label = <Label htmlFor={id}>{field.label}</Label>;
   switch (field.kind) {
-    case "text":
-      return (
-        <>
-          {label}
-          <Input
-            id={id}
-            name={field.name}
-            defaultValue={field.defaultValue}
-            required={field.required}
-            maxLength={field.maxLength}
-            pattern={field.pattern}
-            readOnly={field.readOnly}
-            className={cn(field.readOnly && "text-muted-foreground")}
-            autoComplete="off"
-          />
-        </>
-      );
     case "textarea":
       return (
         <>
@@ -222,25 +191,6 @@ function FieldInput({
           />
         </>
       );
-    case "number": {
-      const unit = field.unit && field.unit.byValue[selected[field.unit.field] ?? ""];
-      return (
-        <>
-          {label}
-          <div className="flex items-center gap-2">
-            <Input
-              id={id}
-              name={field.name}
-              defaultValue={field.defaultValue}
-              required={field.required}
-              inputMode="decimal"
-              autoComplete="off"
-            />
-            {unit && <span className="shrink-0 text-sm text-muted-foreground">{unit}</span>}
-          </div>
-        </>
-      );
-    }
     case "select":
       return (
         <>
@@ -260,70 +210,9 @@ function FieldInput({
           </select>
         </>
       );
-    case "color":
-      return <ColorInput id={id} field={field} />;
-    case "icons":
-      return <IconPicker field={field} />;
     case "user":
       return <UserPicker id={id} field={field} />;
   }
-}
-
-function ColorInput({ id, field }: { id: string; field: Extract<FormField, { kind: "color" }> }) {
-  const [none, setNone] = useState(field.defaultValue === null);
-  const [color, setColor] = useState(field.defaultValue ?? "#3B82F6");
-  return (
-    <>
-      <Label htmlFor={id}>{field.label}</Label>
-      <div className="flex items-center gap-3">
-        <input
-          id={id}
-          type="color"
-          value={color}
-          disabled={none}
-          onChange={(event) => setColor(event.target.value)}
-          className="h-8 w-12 cursor-pointer rounded-md border bg-transparent p-0.5 disabled:cursor-not-allowed disabled:opacity-40"
-        />
-        <Label className="flex items-center gap-2 font-normal">
-          <Checkbox checked={none} onCheckedChange={(checked) => setNone(checked === true)} />
-          {field.noneLabel}
-        </Label>
-      </div>
-      {!none && <input type="hidden" name={field.name} value={color} />}
-    </>
-  );
-}
-
-function IconPicker({ field }: { field: Extract<FormField, { kind: "icons" }> }) {
-  const [value, setValue] = useState(field.defaultValue);
-  return (
-    <fieldset className="grid gap-1.5">
-      <legend className="mb-1.5 text-sm font-medium">{field.label}</legend>
-      <div className="grid max-h-40 grid-cols-[repeat(auto-fill,minmax(2.25rem,1fr))] gap-1 overflow-y-auto rounded-lg border p-1.5">
-        {field.options.map((option) => (
-          <label
-            key={option.value}
-            title={option.label}
-            className={cn(
-              "flex aspect-square cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted has-focus-visible:ring-3 has-focus-visible:ring-ring/50 [&_svg]:size-4",
-              value === option.value && "bg-primary text-primary-foreground hover:bg-primary",
-            )}
-          >
-            <input
-              type="radio"
-              name={field.name}
-              value={option.value}
-              checked={value === option.value}
-              onChange={() => setValue(option.value)}
-              className="sr-only"
-              aria-label={option.label}
-            />
-            {option.icon}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
 }
 
 const SEARCH_DELAY_MS = 250;

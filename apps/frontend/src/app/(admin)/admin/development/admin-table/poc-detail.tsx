@@ -7,7 +7,6 @@ import {
   LinkIcon,
   LogInIcon,
   MailIcon,
-  PencilIcon,
   RotateCcwIcon,
   StickyNoteIcon,
   TagIcon,
@@ -91,7 +90,6 @@ export function PocUserDetail({ user }: { user: PocUser }) {
         title={user.displayName ?? `@${user.username}`}
         subtitle={`@${user.username}`}
         marks={<UserMarks user={user} />}
-        actions={<DetailAction label="Modifier" icon={<PencilIcon aria-hidden />} onClick={would(`la modification de @${user.username}`)} />}
       />
       {/* A row of buttons right under the header. */}
       <DetailActions>

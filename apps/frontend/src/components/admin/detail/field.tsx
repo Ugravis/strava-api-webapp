@@ -28,12 +28,14 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * buttons then at the top right of the panel. The value may be `DetailItems`,
  * one line per value.
  *
- * `edit` edits it in place, after its `kind` (`DetailFieldEdit`): a click on
- * the value, or the pencil, opens a field (text, number, date) or a popover
- * (list, colour, icon); a switch saves as soon as switched. Enter, ✓,
- * leaving the field or closing the popover saves; Esc or ✕ gives up, the
- * panel staying open. Nothing is ever left unsaved, so nothing guards the
- * closing of the panel. Without children, the value is drawn after its kind.
+ * `edit` edits it in place, after its `kind` (`DetailFieldEdit`): the pencil
+ * only, never a click on the value, opens a field (text, number, date) or a
+ * popover (list, colour, icon, image); a switch saves as soon as switched.
+ * Enter, ✓, leaving the field or closing the popover saves (a colour or an
+ * image by « Valider » only); Esc or ✕ gives up, the panel staying open.
+ * Nothing is ever left unsaved, so nothing guards the closing of the panel.
+ * Without children, the value is drawn after its kind. A small pencil
+ * beside the label tells the field editable, unless `editHint={false}`.
  */
 export function DetailField<K extends DetailEditKind = "text">({
   label,
@@ -42,6 +44,7 @@ export function DetailField<K extends DetailEditKind = "text">({
   stacked,
   tools,
   edit: typed,
+  editHint = true,
   children,
 }: {
   label: string;
@@ -51,6 +54,7 @@ export function DetailField<K extends DetailEditKind = "text">({
   tools?: ReactNode;
   // Generic on its kind, so that the value given to `onSave` is typed, `text` without a kind.
   edit?: DetailFieldEdit<K> & { kind?: K };
+  editHint?: boolean;
   children?: ReactNode;
 }) {
   const edit: DetailFieldEdit | undefined = typed;
@@ -70,7 +74,6 @@ export function DetailField<K extends DetailEditKind = "text">({
   // As wide as the panel: the widths of the table columns let go.
   const valueClass = cn(
     "min-w-0 flex-1 wrap-break-word **:[[class*='max-w-']]:max-w-full",
-    inline && "cursor-text",
     inline && drawn === undefined && (multiline ? "whitespace-pre-line" : "truncate"),
   );
   const buttons = (tools || copied || editable) && (
@@ -90,6 +93,12 @@ export function DetailField<K extends DetailEditKind = "text">({
       <dt className={cn("flex min-h-8 items-center gap-1.5 self-start text-muted-foreground", stacked && "col-span-2")}>
         {icon && <span className="inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">{icon}</span>}
         {label}
+        {edit && editHint && (
+          <span title="Modifiable" className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-2.5">
+            <PencilIcon aria-hidden />
+            <span className="sr-only">Modifiable</span>
+          </span>
+        )}
       </dt>
       <dd
         className={cn(
@@ -107,7 +116,7 @@ export function DetailField<K extends DetailEditKind = "text">({
                 {value}
               </PickerField>
             ) : (
-              <div onClick={inline ? start : undefined} className={valueClass}>
+              <div className={valueClass}>
                 {value}
               </div>
             )}

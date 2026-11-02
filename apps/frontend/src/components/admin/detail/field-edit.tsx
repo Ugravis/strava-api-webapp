@@ -14,7 +14,7 @@ import { LucideIconByName } from "./icon-picker";
 
 /*
  * The kinds of values a `DetailField` edits in place: typed in its field
- * (text, number, date), picked in a popover (list, colour, icon), or
+ * (text, number, date), picked in a popover (list, colour, icon, image), or
  * switched at once.
  */
 
@@ -40,10 +40,16 @@ export interface DetailEditKinds {
   select: { kind: "select"; value: string | null; onSave: Save<string | null>; options: DetailEditOption[]; noneLabel?: string };
   /** Several options of a list, in their order, saved as the popover closes. */
   multiselect: { kind: "multiselect"; value: string[]; onSave: Save<string[]>; options: DetailEditOption[] };
-  /** A colour `#rrggbb`: one of `presets`, or any hue. */
+  /** A colour `#rrggbb`: one of `presets`, or any hue, saved by « Valider ». */
   color: { kind: "color"; value: string | null; onSave: Save<string | null>; presets?: string[]; noneLabel?: string };
   /** The name of a Lucide icon, e.g. `rocket`, among all of them. */
   icon: { kind: "icon"; value: string | null; onSave: Save<string | null>; noneLabel?: string };
+  /**
+   * An image, shown by its URL `value`, replaced by a file of `accept` up to
+   * `maxSize` bytes (refused beyond, in a toast), saved by « Valider »;
+   * `noneLabel` removes it, `onSave` then given `null`.
+   */
+  image: { kind: "image"; value: string | null; onSave: Save<File | null>; accept?: string; maxSize?: number; noneLabel?: string };
   /** Yes or no, saved as soon as switched. */
   switch: { kind: "switch"; value: boolean; onSave: Save<boolean> };
 }
@@ -58,7 +64,7 @@ export type DetailFieldEdit<K extends DetailEditKind = DetailEditKind> = DetailE
 /** Kinds typed in the field itself. */
 export type InlineEdit = Extract<DetailFieldEdit, { kind?: "text" | "number" | "date" }>;
 /** Kinds picked in a popover. */
-export type PickerEdit = Extract<DetailFieldEdit, { kind: "select" | "multiselect" | "color" | "icon" }>;
+export type PickerEdit = Extract<DetailFieldEdit, { kind: "select" | "multiselect" | "color" | "icon" | "image" }>;
 
 export const isInline = (edit: DetailFieldEdit): edit is InlineEdit => !edit.kind || edit.kind === "text" || edit.kind === "number" || edit.kind === "date";
 
@@ -67,7 +73,8 @@ export function useCommit(edit: DetailFieldEdit, close: () => void) {
   const [saving, setSaving] = useState(false);
   const commit = async (next: unknown) => {
     if (saving) return;
-    if (JSON.stringify(next) === JSON.stringify(edit.value)) return close();
+    // A file is always new.
+    if (!(next instanceof File) && JSON.stringify(next) === JSON.stringify(edit.value)) return close();
     setSaving(true);
     try {
       const outcome = await (edit.onSave as Save<unknown>)(next);
@@ -98,6 +105,8 @@ export function editCopy(edit: DetailFieldEdit): string | null {
       return edit.value.length > 0 ? labelsOf(edit.options, edit.value).join(", ") : null;
     case "switch":
       return null;
+    case "image":
+      return edit.value;
     default:
       return edit.value || null;
   }
@@ -151,6 +160,11 @@ export function EditValue({ edit }: { edit: DetailFieldEdit }) {
       );
     case "color":
       return <ColorValue color={edit.value!} />;
+    case "image":
+      return (
+        // eslint-disable-next-line @next/next/no-img-element -- any URL, an object URL included
+        <img src={edit.value!} alt="" className="my-1 h-10 max-w-24 rounded-sm object-cover ring-1 ring-foreground/10" />
+      );
     case "icon":
       return (
         <span className="flex items-center gap-2">

@@ -1,18 +1,21 @@
 "use client";
 
-import { CheckIcon, LoaderCircleIcon, PipetteIcon, SearchIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { CheckIcon, ImageUpIcon, LoaderCircleIcon, PipetteIcon, SearchIcon } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { type DetailEditOption, OptionLabel, type PickerEdit, useCommit } from "./field-edit";
 import { IconGrid } from "./icon-picker";
 
 /*
  * The values of a field picked in a popover under it: a list, a colour, an
- * icon. A pick of one value saves it at once; several, or a hue tuned, are
- * saved as the popover closes. Esc gives up, the panel staying open.
+ * icon, an image. A pick of one option or icon saves it at once; several are
+ * saved by « Valider » or as the popover closes; a colour or an image by
+ * « Valider » only, closing the popover giving it up. Esc gives up, the
+ * panel staying open.
  */
 
 /** The hues offered first, those of the marks of the site. */
@@ -24,11 +27,13 @@ const HEX = /^#[0-9a-f]{6}$/i;
 /** Beyond this many options, a search bar. */
 const SEARCHED = 8;
 
-type Draft = string | string[] | null;
+type Draft = string | string[] | File | null;
+/** Kinds saved by « Valider » only: closing the popover gives them up. */
+const VALIDATED = new Set(["color", "image"]);
 
 /**
- * The value of a field as the trigger of its popover. `editing` opens it,
- * e.g. from the pencil; `onEditing` follows it.
+ * The value of a field, the popover anchored under it. Only `editing` opens
+ * it, from the pencil; `onEditing` follows it.
  */
 export function PickerField({
   edit,
@@ -47,6 +52,7 @@ export function PickerField({
 }) {
   const [draft, setDraft] = useState<Draft>(edit.value);
   const [opened, setOpened] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
   // Each opening starts again from the saved value.
   if (editing !== opened) {
     setOpened(editing);
@@ -62,19 +68,17 @@ export function PickerField({
     <Popover
       open={editing}
       onOpenChange={(open, details) => {
-        if (open) return onEditing(true);
-        if (saving) return;
-        if (details.reason === "escape-key") {
-          // Kept from the split panel, which would close on it.
-          details.event.preventDefault();
-          onEditing(false);
-        } else void commit(draft);
+        if (open || saving) return;
+        // Kept from the split panel, which would close on it.
+        if (details.reason === "escape-key") details.event.preventDefault();
+        if (details.reason === "escape-key" || VALIDATED.has(edit.kind)) onEditing(false);
+        else void commit(draft);
       }}
     >
-      <PopoverTrigger nativeButton={false} render={<div className={cn("cursor-pointer", className)} />}>
+      <div ref={setAnchor} className={className}>
         {children}
-      </PopoverTrigger>
-      <PopoverContent align="start" className={cn("gap-2 p-2", edit.kind === "icon" ? "w-80" : "w-64")} aria-label={label}>
+      </div>
+      <PopoverContent anchor={anchor} align="start" className={cn("gap-2 p-2", edit.kind === "icon" ? "w-80" : "w-64")} aria-label={label}>
         <div className="flex h-5 items-center justify-between px-1 text-xs font-medium text-muted-foreground">
           {label}
           {saving && <LoaderCircleIcon className="size-3.5 animate-spin" aria-label="Enregistrement" />}
@@ -100,7 +104,19 @@ export function PickerField({
           </>
         )}
         {edit.kind === "color" && (
-          <ColorPicker presets={edit.presets ?? PRESETS} noneLabel={edit.noneLabel} value={draft as string | null} disabled={saving} onChange={setDraft} onPick={pick} onDone={() => void commit(draft)} />
+          <ColorPicker presets={edit.presets ?? PRESETS} noneLabel={edit.noneLabel} value={draft as string | null} disabled={saving} onChange={setDraft} onDone={() => void commit(draft)} />
+        )}
+        {edit.kind === "image" && (
+          <ImagePicker
+            current={edit.value}
+            accept={edit.accept ?? "image/png,image/jpeg,image/webp"}
+            maxSize={edit.maxSize}
+            noneLabel={edit.noneLabel}
+            value={draft as string | File | null}
+            disabled={saving}
+            onChange={setDraft}
+            onDone={() => void commit(draft)}
+          />
         )}
         {edit.kind === "icon" && (
           <>
@@ -168,29 +184,27 @@ function OptionList({
   );
 }
 
-/** Swatches saving at once, any other hue by the pipette or its code, saved by « Valider » or as the popover closes. */
+/** Swatches, any other hue by the pipette or its code: saved by « Valider » only. */
 function ColorPicker({
   presets,
   noneLabel,
   value,
   disabled,
   onChange,
-  onPick,
   onDone,
 }: {
   presets: string[];
   noneLabel?: string;
   value: string | null;
   disabled?: boolean;
-  onChange: (color: string) => void;
-  onPick: (color: string | null) => void;
+  onChange: (color: string | null) => void;
   onDone: () => void;
 }) {
   const [code, setCode] = useState(value ?? "");
   const current = value?.toLowerCase() ?? null;
-  const set = (color: string) => {
-    setCode(color);
-    onChange(color.toLowerCase());
+  const set = (color: string | null) => {
+    setCode(color ?? "");
+    onChange(color && color.toLowerCase());
   };
 
   return (
@@ -205,7 +219,7 @@ function ColorPicker({
             aria-label={color}
             title={color}
             disabled={disabled}
-            onClick={() => onPick(color)}
+            onClick={() => set(color)}
             className={cn(
               "aspect-square rounded-full ring-offset-2 ring-offset-popover outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
               current === color && "ring-2 ring-foreground",
@@ -241,10 +255,81 @@ function ColorPicker({
         </Button>
       </div>
       {noneLabel && (
-        <Button size="sm" variant="ghost" disabled={disabled || value === null} onClick={() => onPick(null)}>
+        <Button size="sm" variant="ghost" disabled={disabled || value === null} onClick={() => set(null)}>
           {noneLabel}
         </Button>
       )}
     </>
   );
+}
+
+/** The image shown, replaced by a file picked or dropped, or removed: saved by « Valider » only. */
+function ImagePicker({
+  current,
+  accept,
+  maxSize,
+  noneLabel,
+  value,
+  disabled,
+  onChange,
+  onDone,
+}: {
+  current: string | null;
+  accept: string;
+  maxSize?: number;
+  noneLabel?: string;
+  value: string | File | null;
+  disabled?: boolean;
+  onChange: (file: File | null) => void;
+  onDone: () => void;
+}) {
+  const preview = usePreview(value);
+  const take = (file: File | undefined) => {
+    if (!file) return;
+    const types = accept.split(",").map((each) => each.trim());
+    if (!types.some((type) => (type.endsWith("/*") ? file.type.startsWith(type.slice(0, -1)) : file.type === type))) return toast.error("Ce format d'image n'est pas accepté.");
+    if (maxSize !== undefined && file.size > maxSize) return toast.error(`Image trop lourde : ${Math.round(maxSize / 1024 / 1024 * 10) / 10} Mo au plus.`);
+    onChange(file);
+  };
+
+  return (
+    <>
+      <label
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          if (!disabled) take(event.dataTransfer.files[0]);
+        }}
+        className="relative grid aspect-video cursor-pointer place-items-center overflow-hidden rounded-md bg-muted ring-1 ring-foreground/10 has-focus-visible:ring-2 has-focus-visible:ring-ring"
+      >
+        {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element -- any URL, an object URL included
+          <img src={preview} alt="" className="size-full object-cover" />
+        ) : (
+          <span className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
+            <ImageUpIcon className="size-5" aria-hidden />
+            Choisir ou déposer une image
+          </span>
+        )}
+        <input type="file" accept={accept} disabled={disabled} onChange={(event) => take(event.target.files?.[0])} aria-label="Choisir une image" className="absolute inset-0 size-full cursor-pointer opacity-0" />
+      </label>
+      <div className="flex items-center gap-2">
+        {noneLabel && (
+          <Button size="sm" variant="ghost" disabled={disabled || value === null} onClick={() => onChange(null)}>
+            {noneLabel}
+          </Button>
+        )}
+        <Button size="sm" className="ml-auto" disabled={disabled || value === current} onClick={onDone}>
+          Valider
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/** The URL showing an image: its own, or that of a file picked, freed once replaced. */
+function usePreview(value: string | File | null) {
+  const url = useMemo(() => (value instanceof File ? URL.createObjectURL(value) : null), [value]);
+  useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
+  return url ?? (value as string | null);
 }

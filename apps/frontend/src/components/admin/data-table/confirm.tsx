@@ -16,6 +16,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { useSelectionIconsOnly } from "./parts";
+import { Tip } from "./tip";
 
 /** What a button asks before it acts, e.g. a removal. */
 export interface ConfirmOptions {
@@ -90,7 +93,7 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
               disabled={pending}
               onChange={(event) => setReason(event.target.value)}
               placeholder={confirm.reason.placeholder}
-              className="min-h-20 text-base md:text-sm"
+              className="min-h-20 text-sm"
             />
           </div>
         )}
@@ -114,8 +117,8 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
 }
 
 /**
- * A button of the bar of a selection (`bulkActions`): its icon and name,
- * red when `destructive`, asking first with `confirm` (e.g. « Supprimer 12
+ * A button of the bar of a selection (`bulkActions`): its icon and name (its
+ * icon alone, named in a bubble, when the bar is too narrow), red when `destructive`, asking first with `confirm` (e.g. « Supprimer 12
  * badges ? »), a spinner while `onClick` runs.
  */
 export function SelectionAction({
@@ -132,12 +135,23 @@ export function SelectionAction({
   onClick: ConfirmedRun;
 }) {
   const { trigger, pending, dialog } = useConfirmedAction(onClick, confirm);
+  const iconOnly = useSelectionIconsOnly();
+  const button = (
+    <Button
+      size={iconOnly ? "icon-sm" : "sm"}
+      variant="ghost"
+      disabled={pending}
+      onClick={trigger}
+      aria-label={iconOnly ? label : undefined}
+      className={cn("shrink-0", destructive && "text-destructive hover:text-destructive")}
+    >
+      {pending ? <LoaderCircleIcon className="animate-spin" data-icon="inline-start" /> : icon}
+      {!iconOnly && label}
+    </Button>
+  );
   return (
     <>
-      <Button size="sm" variant="ghost" disabled={pending} onClick={trigger} className={destructive ? "text-destructive hover:text-destructive" : undefined}>
-        {pending ? <LoaderCircleIcon className="animate-spin" data-icon="inline-start" /> : icon}
-        {label}
-      </Button>
+      {iconOnly ? <Tip label={label}>{button}</Tip> : button}
       {dialog}
     </>
   );

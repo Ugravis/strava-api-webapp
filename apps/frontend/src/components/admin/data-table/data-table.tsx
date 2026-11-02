@@ -24,6 +24,9 @@ const ARROW_REST = 150;
 const SHADOW =
   "group-data-scrolled/table:after:pointer-events-none group-data-scrolled/table:after:absolute group-data-scrolled/table:after:inset-y-0 group-data-scrolled/table:after:right-0 group-data-scrolled/table:after:w-px group-data-scrolled/table:after:bg-border";
 
+/** The tables of the page: one selection at a time, a table picking rows clears the others. */
+const selecting = new Set<(owner: string) => void>();
+
 /**
  * The table of the back office: a header of search, filters and tools, the
  * rows the server serves page by page, and the pagination. Everything the
@@ -33,7 +36,8 @@ const SHADOW =
  * page to page. A new `refreshKey` fetches the page again without skeleton,
  * e.g. once a row changed in its detail. `onRows` follows the rows shown, in
  * their order (`useRowPanel` opens the next one after a removal). Esc
- * clears the selection, before closing a panel.
+ * clears the selection, before closing a panel; rows checked in another
+ * table of the page clear it too, the bar of a selection being one.
  */
 export function DataTable<T>({
   config: base,
@@ -81,6 +85,19 @@ export function DataTable<T>({
   useEffect(() => {
     if (result) shownRows();
   }, [result]);
+
+  // One selection on the page: told as it starts, the others cleared.
+  const instance = useId();
+  const clearOthers = useEffectEvent((owner: string) => owner !== instance && selected.size > 0 && state.clearSelection());
+  useEffect(() => {
+    const listener = (owner: string) => clearOthers(owner);
+    selecting.add(listener);
+    return () => void selecting.delete(listener);
+  }, []);
+  const picking = selected.size > 0;
+  useEffect(() => {
+    if (picking) selecting.forEach((listener) => listener(instance));
+  }, [picking, instance]);
 
   // Esc clears the selection first, before a panel closes: left to a field, a menu, a dialog or the panel itself.
   const clearSelection = state.clearSelection;

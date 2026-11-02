@@ -2,7 +2,7 @@
 
 import type { TablePage } from "@kilotrace/shared/table";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon, InboxIcon, SearchXIcon, TriangleAlertIcon, XIcon } from "lucide-react";
-import { memo, type ReactNode, useState } from "react";
+import { createContext, memo, type ReactNode, useContext, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TableCheckbox } from "./cells/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -157,17 +157,58 @@ function PageInput({ page, pages, disabled, onPage }: { page: number; disabled: 
 }
 
 /** Floats at the bottom of the screen while rows are selected, with the bulk actions. */
+/** Inside the bar of a selection: whether its buttons show their icon only, the bar being too narrow for their names. */
+const SelectionIconsOnly = createContext(false);
+export const useSelectionIconsOnly = () => useContext(SelectionIconsOnly);
+
+/**
+ * The bar of a selection, at the bottom of the screen, never wider than it:
+ * when its buttons no longer fit with their names, they show their icon only
+ * (`SelectionAction` and `BulkEditAction` named in a bubble then, any other
+ * button by its hidden name), the count without its word.
+ */
 export function SelectionBar({ count, onClear, children }: { count: number; onClear: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [iconsOnly, setIconsOnly] = useState(false);
+  // The width the names asked for when they stopped fitting.
+  const needed = useRef(0);
+  useLayoutEffect(() => {
+    const bar = ref.current;
+    if (!bar) return;
+    const fit = () => {
+      if (!iconsOnly && bar.scrollWidth > bar.clientWidth) {
+        needed.current = bar.scrollWidth;
+        setIconsOnly(true);
+      } else if (iconsOnly && bar.parentElement!.clientWidth - 32 >= needed.current) {
+        setIconsOnly(false);
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(bar.parentElement!);
+    return () => observer.disconnect();
+  }, [iconsOnly, children, count]);
   if (count === 0) return null;
   return (
     <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-      <div role="toolbar" aria-label="Sélection" className="flex items-center gap-1 rounded-xl border bg-popover p-1.5 pl-3 text-sm shadow-lg">
-        <span className="font-medium tabular-nums">
-          {count} sélectionné{count > 1 ? "s" : ""}
+      <div
+        ref={ref}
+        role="toolbar"
+        aria-label="Sélection"
+        data-iconic={iconsOnly || undefined}
+        className={cn(
+          "flex max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-xl border bg-popover p-1.5 pl-3 text-sm shadow-lg",
+          // Any other button of the page: its name kept for screen readers, out of sight.
+          "data-iconic:[&_[data-slot=button]]:gap-0 data-iconic:[&_[data-slot=button]]:px-2 data-iconic:[&_[data-slot=button]]:text-[0px]",
+        )}
+      >
+        <span className="shrink-0 font-medium whitespace-nowrap tabular-nums">
+          {count}
+          {!iconsOnly && ` sélectionné${count > 1 ? "s" : ""}`}
         </span>
         <Separator orientation="vertical" className="mx-1.5 h-5" />
-        {children}
-        <Button size="icon-sm" variant="ghost" onClick={onClear} aria-label="Tout désélectionner">
+        <SelectionIconsOnly.Provider value={iconsOnly}>{children}</SelectionIconsOnly.Provider>
+        <Button size="icon-sm" variant="ghost" onClick={onClear} aria-label="Tout désélectionner" className="shrink-0">
           <XIcon />
         </Button>
       </div>

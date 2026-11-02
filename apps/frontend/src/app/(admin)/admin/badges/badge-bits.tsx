@@ -1,26 +1,28 @@
 "use client";
 
 import {
-  ADMIN_BADGE_DESCRIPTION_MAX_LENGTH,
   ADMIN_BADGE_FAMILIES,
-  ADMIN_BADGE_ID_MAX_LENGTH,
   ADMIN_BADGE_METRICS,
-  ADMIN_BADGE_NAME_MAX_LENGTH,
-  ADMIN_BADGE_THEME_ID_MAX_LENGTH,
-  ADMIN_BADGE_THEME_NAME_MAX_LENGTH,
   ADMIN_REASON_MAX_LENGTH,
   ADMIN_REASON_MIN_LENGTH,
   type AdminBadge,
   type AdminBadgeFamily,
   type AdminBadgeMetric,
   type AdminBadgeTheme,
+  type UpdateBadgeRequest,
 } from "@kilotrace/shared/admin";
-import { ActionDialog, type ActionDialogProps } from "@/components/admin/action-dialog";
-import { FormDialog, type FormField } from "@/components/admin/form-dialog";
-import type { Tone } from "@/components/admin/data-table";
-import { BADGE_ICON_KEYS, BadgeIcon } from "@/components/distances/badge-icon";
-import { createBadge, createTheme, deleteBadge, deleteTheme, updateBadge, updateTheme } from "./actions";
+import { toast } from "sonner";
+import type { ConfirmOptions, Tone } from "@/components/admin/data-table";
+import type { DetailEditOption } from "@/components/admin/detail";
+import { createVersion } from "@/lib/admin/version";
+import { deleteBadge, deleteTheme, saveBadge, setBadgeActive, setBadgesActive } from "./actions";
 import { shownAmount } from "./units";
+
+/** The version of the catalog: the `refreshKey` of both tables and of the details. */
+export const { useVersion: useCatalogVersion, bump: bumpCatalog } = createVersion();
+
+/** `?row=` of a collection: apart from the ids of the badges, which never hold a colon. */
+export const THEME_ROW = "collection:";
 
 /** What the permissions of the current member allow on the catalog. */
 export interface BadgeRights {
@@ -48,8 +50,6 @@ export const FAMILIES: Record<AdminBadgeFamily, { label: string; tone: Tone }> =
   swim: { label: "Natation", tone: "cyan" },
 };
 
-/** Pattern of the slugs, for the browser; the backend checks it again. */
-const SLUG_PATTERN = "[a-z0-9]+(_[a-z0-9]+)*";
 const amount = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 });
 
 /** What a badge asks, in the unit shown: `42,195 km`, or its tiers. */
@@ -59,168 +59,86 @@ export function goalOf(badge: AdminBadge): string {
   return badge.tiers ? `Paliers : ${badge.tiers.map(shown).join(" · ")} ${unit}` : `${shown(badge.target)} ${unit}`;
 }
 
-function reasonFor(presets: string[]): ActionDialogProps["reason"] {
+/** The options of the lists of a badge. */
+export const METRIC_OPTIONS: DetailEditOption[] = ADMIN_BADGE_METRICS.map((value) => ({ value, label: METRICS[value].label, tone: METRICS[value].tone }));
+export const FAMILY_OPTIONS: DetailEditOption[] = ADMIN_BADGE_FAMILIES.map((value) => ({ value, label: FAMILIES[value].label, tone: FAMILIES[value].tone }));
+export const themeOptions = (themes: AdminBadgeTheme[]): DetailEditOption[] => themes.map((theme) => ({ value: theme.id, label: theme.name }));
+
+/** The locks of the fields and buttons, for a member without the permission. */
+export const LOCKS = {
+  create: "Réservé aux membres qui créent les badges",
+  edit: "Réservé aux membres qui modifient les badges",
+  delete: "Réservé aux membres qui suppriment les badges",
+};
+
+/** Saves a change of a badge, every field sent as the backend replaces them all; the tables and the details fetch again. */
+export async function saveBadgeWith(badge: AdminBadge, patch: Partial<UpdateBadgeRequest>) {
+  const { metric, family, target, tiers, name, description, themeId, icon, backgroundColor } = badge;
+  const result = await saveBadge(badge.id, { metric, family, target, tiers, name, description, themeId, icon, backgroundColor, ...patch });
+  if (result.ok) bumpCatalog();
+  return result;
+}
+
+/** Turns badges on or off, told by a toast; true once done. */
+export async function toggleBadges(ids: string[], active: boolean): Promise<boolean> {
+  const result = ids.length === 1 ? await setBadgeActive(ids[0], active) : await setBadgesActive(ids, active);
+  if (!result.ok) {
+    toast.error(result.message);
+    return false;
+  }
+  toast.success(active ? "Activé" : "Désactivé");
+  bumpCatalog();
+  return true;
+}
+
+const reasonFor = (presets: string[]): ConfirmOptions["reason"] => ({
+  label: "Raison",
+  placeholder: "Expliquez la décision, elle est consignée dans le journal.",
+  required: true,
+  minLength: ADMIN_REASON_MIN_LENGTH,
+  maxLength: ADMIN_REASON_MAX_LENGTH,
+  presets,
+});
+
+type Removal = { confirm: ConfirmOptions; run: (reason: string | undefined) => Promise<unknown> };
+
+/** The deletion of a badge, asked first with a reason and its id typed: by its detail or the menu of its row. `done` once deleted. */
+export function deleteBadgeOf(badge: AdminBadge, done: () => void): Removal {
   return {
-    label: "Raison",
-    placeholder: "Expliquez la décision, elle est consignée dans le journal.",
-    hint: `Entre ${ADMIN_REASON_MIN_LENGTH} et ${ADMIN_REASON_MAX_LENGTH} caractères.`,
-    presetsLabel: "Raisons fréquentes",
-    presets,
-    required: true,
-    min: ADMIN_REASON_MIN_LENGTH,
-    max: ADMIN_REASON_MAX_LENGTH,
+    confirm: {
+      title: `Supprimer ${badge.name} ?`,
+      description: "Définitif : le badge disparaît, ainsi que des favoris et des profils. Pour le masquer sans le perdre, désactivez-le.",
+      confirmLabel: "Supprimer",
+      reason: reasonFor(["Badge obsolète", "Doublon", "Créé par erreur"]),
+      typed: { label: `Tapez ${badge.id} pour confirmer`, expected: badge.id },
+    },
+    run: async (reason) => {
+      const result = await deleteBadge(badge.id, reason);
+      if (result.ok) {
+        bumpCatalog();
+        done();
+      }
+      return result;
+    },
   };
 }
 
-interface Controlled {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-}
-
-/** Creation of a badge, or edition of `badge`, every field in one dialog. */
-export function BadgeFormDialog({ badge, themes, ...dialog }: Controlled & { badge: AdminBadge | null; themes: AdminBadgeTheme[] }) {
-  const metric = badge?.metric ?? "distance";
-  const fields: FormField[] = [
-    {
-      kind: "text",
-      name: "id",
-      label: "Identifiant",
-      hint: badge ? undefined : "Minuscules, chiffres et _ ; définitif.",
-      defaultValue: badge?.id,
-      required: true,
-      maxLength: ADMIN_BADGE_ID_MAX_LENGTH,
-      pattern: SLUG_PATTERN,
-      readOnly: Boolean(badge),
-      half: true,
+/** The same for a collection: its badges stay, without collection. */
+export function deleteThemeOf(theme: AdminBadgeTheme, done: () => void): Removal {
+  return {
+    confirm: {
+      title: `Supprimer la collection ${theme.name} ?`,
+      description: "Ses badges restent, sans collection.",
+      confirmLabel: "Supprimer",
+      reason: reasonFor(["Collection abandonnée", "Fusionnée avec une autre", "Créée par erreur"]),
     },
-    { kind: "text", name: "name", label: "Nom", defaultValue: badge?.name, required: true, maxLength: ADMIN_BADGE_NAME_MAX_LENGTH, half: true },
-    { kind: "textarea", name: "description", label: "Description", defaultValue: badge?.description, required: true, maxLength: ADMIN_BADGE_DESCRIPTION_MAX_LENGTH },
-    {
-      kind: "select",
-      name: "metric",
-      label: "Mesure",
-      defaultValue: metric,
-      options: ADMIN_BADGE_METRICS.map((value) => ({ value, label: METRICS[value].label })),
-      half: true,
+    run: async (reason) => {
+      const result = await deleteTheme(theme.id, reason);
+      if (result.ok) {
+        bumpCatalog();
+        done();
+      }
+      return result;
     },
-    {
-      kind: "select",
-      name: "family",
-      label: "Sports",
-      defaultValue: badge?.family ?? "all",
-      options: ADMIN_BADGE_FAMILIES.map((value) => ({ value, label: FAMILIES[value].label })),
-      half: true,
-    },
-    {
-      kind: "number",
-      name: "target",
-      label: "Objectif",
-      hint: "Montant d'une itération : le badge est obtenu à chaque multiple.",
-      defaultValue: badge ? String(shownAmount(metric, badge.target)) : undefined,
-      required: true,
-      unit: { field: "metric", byValue: Object.fromEntries(ADMIN_BADGE_METRICS.map((value) => [value, METRICS[value].unit])) },
-      half: true,
-    },
-    {
-      kind: "text",
-      name: "tiers",
-      label: "Paliers",
-      hint: "Facultatif, séparés par des espaces : le badge devient un défi obtenu une seule fois, son objectif est le dernier palier.",
-      defaultValue: badge?.tiers?.map((tier) => String(shownAmount(metric, tier))).join(" "),
-      half: true,
-    },
-    {
-      kind: "select",
-      name: "themeId",
-      label: "Collection",
-      defaultValue: badge?.themeId ?? "",
-      options: [{ value: "", label: "Aucune" }, ...themes.map((theme) => ({ value: theme.id, label: theme.name }))],
-      half: true,
-    },
-    { kind: "color", name: "backgroundColor", label: "Couleur de fond", noneLabel: "Fond par défaut", defaultValue: badge?.backgroundColor ?? null, half: true },
-    {
-      kind: "icons",
-      name: "icon",
-      label: "Icône",
-      defaultValue: badge?.icon ?? BADGE_ICON_KEYS[0],
-      options: BADGE_ICON_KEYS.map((value) => ({ value, label: value, icon: <BadgeIcon icon={value} /> })),
-    },
-  ];
-  return (
-    <FormDialog
-      {...dialog}
-      // Remounted per badge, so that the fields start from its values.
-      key={badge?.id ?? "new"}
-      action={badge ? updateBadge.bind(null, badge.id) : createBadge}
-      title={badge ? `Modifier ${badge.name}` : "Nouveau badge"}
-      description={badge ? "Progression et obtentions sont recalculées pour tous les utilisateurs." : "Actif dès sa création, ajouté en fin de catalogue."}
-      submitLabel={badge ? "Enregistrer" : "Créer"}
-      cancelLabel="Annuler"
-      fields={fields}
-    />
-  );
-}
-
-/** Deletion of `badge`, its id typed again to confirm. */
-export function DeleteBadgeDialog({ badge, ...dialog }: Controlled & { badge: AdminBadge | null }) {
-  const id = badge?.id ?? "";
-  return (
-    <ActionDialog
-      {...dialog}
-      action={deleteBadge.bind(null, id)}
-      title={`Supprimer ${badge?.name ?? ""} ?`}
-      description="Définitif : le badge disparaît, ainsi que des favoris et des profils. Pour le masquer sans le perdre, désactivez-le."
-      submitLabel="Supprimer"
-      cancelLabel="Annuler"
-      destructive
-      reason={reasonFor(["Badge obsolète", "Doublon", "Créé par erreur"])}
-      confirmation={{ label: `Tapez ${id} pour confirmer`, expected: id }}
-    />
-  );
-}
-
-/** Creation of a collection, or renaming of `theme`. */
-export function ThemeFormDialog({ theme, ...dialog }: Controlled & { theme: AdminBadgeTheme | null }) {
-  return (
-    <FormDialog
-      {...dialog}
-      key={theme?.id ?? "new"}
-      action={theme ? updateTheme.bind(null, theme.id) : createTheme}
-      title={theme ? "Renommer la collection" : "Nouvelle collection"}
-      description={theme ? "L'identifiant ne change pas." : "Elle apparaît sur la page Succès dès qu'un badge actif en fait partie."}
-      submitLabel={theme ? "Enregistrer" : "Créer"}
-      cancelLabel="Annuler"
-      fields={[
-        {
-          kind: "text",
-          name: "id",
-          label: "Identifiant",
-          hint: theme ? undefined : "Minuscules, chiffres et _ ; définitif.",
-          defaultValue: theme?.id,
-          required: true,
-          maxLength: ADMIN_BADGE_THEME_ID_MAX_LENGTH,
-          pattern: SLUG_PATTERN,
-          readOnly: Boolean(theme),
-          half: true,
-        },
-        { kind: "text", name: "name", label: "Nom", defaultValue: theme?.name, required: true, maxLength: ADMIN_BADGE_THEME_NAME_MAX_LENGTH, half: true },
-      ]}
-    />
-  );
-}
-
-export function DeleteThemeDialog({ theme, ...dialog }: Controlled & { theme: AdminBadgeTheme | null }) {
-  return (
-    <ActionDialog
-      {...dialog}
-      action={deleteTheme.bind(null, theme?.id ?? "")}
-      title={`Supprimer la collection ${theme?.name ?? ""} ?`}
-      description="Ses badges restent, sans collection."
-      submitLabel="Supprimer"
-      cancelLabel="Annuler"
-      destructive
-      reason={reasonFor(["Collection abandonnée", "Fusionnée avec une autre", "Créée par erreur"])}
-    />
-  );
+  };
 }

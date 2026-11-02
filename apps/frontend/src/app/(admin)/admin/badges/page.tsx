@@ -6,8 +6,7 @@ import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import type { BadgeRights } from "./badge-bits";
-import { BadgesTable } from "./badges-table";
-import { ThemesTable } from "./themes-table";
+import { Catalog } from "./catalog";
 
 const number = new Intl.NumberFormat("fr-FR");
 const plural = (count: number, one: string, other: string) => `${number.format(count)} ${count > 1 ? other : one}`;
@@ -51,17 +50,7 @@ export default async function AdminBadgesPage() {
           <StatTile icon={UserRoundIcon} label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail="Badges épinglés sur un profil" />
         </div>
       )}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="font-medium">Collections</h2>
-          <p className="text-sm text-muted-foreground">Regroupent des badges de tous les sports, en onglets sur la page Succès.</p>
-        </div>
-        <ThemesTable themes={themes} rights={rights} />
-      </section>
-      <section className="flex flex-col gap-3">
-        <h2 className="font-medium">Badges</h2>
-        <BadgesTable themes={themes} rights={rights} />
-      </section>
+      <Catalog themes={themes} rights={rights} />
     </>
   );
 }

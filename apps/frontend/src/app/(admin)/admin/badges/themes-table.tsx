@@ -1,34 +1,44 @@
 "use client";
 
-import type { AdminBadgeTheme, AdminBadgeThemeRow } from "@kilotrace/shared/admin";
+import type { AdminBadgeThemeRow } from "@kilotrace/shared/admin";
 import type { TableQuery } from "@kilotrace/shared/table";
-import { CopyIcon, PanelRightOpenIcon, PencilIcon, Trash2Icon } from "lucide-react";
-import { useMemo } from "react";
+import { CopyIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { DataTable, type DataTableConfig, RowActions } from "@/components/admin/data-table";
+import { DataTable, type DataTableConfig, RowActions, type TableMove, useConfirmDialog } from "@/components/admin/data-table";
+import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { fetchThemesTable, moveTheme } from "./actions";
-import type { BadgeRights } from "./badge-bits";
-import { THEME_COLUMNS, useCatalogVersion } from "./badge-columns";
-import { useThemeDialogs } from "./badge-dialogs";
-import { useCatalogPanel, useStableRights } from "./catalog-panel";
+import { type BadgeRights, deleteThemeOf, THEME_ROW, useCatalogVersion } from "./badge-bits";
+import { themeColumns } from "./badge-columns";
+import { loadThemeRow, ThemeCreate, ThemeRowPanel } from "./theme-detail";
+
+/** Its `?row=`, apart from the ids of the badges: the id of a collection in the table. */
+const rowOf = (id: string) => `${THEME_ROW}${id}`;
+const idOf = (row: string) => row.slice(THEME_ROW.length);
 
 function copy(text: string, done: string) {
   navigator.clipboard.writeText(text).then(() => toast.success(done), () => toast.error("Copie impossible"));
 }
 
-/** The collections, tabs of the page Succès in this order; rows move by their handle, a click opens one in the side panel. */
-export function ThemesTable({ themes, rights: given }: { themes: AdminBadgeTheme[]; rights: BadgeRights }) {
-  const rights = useStableRights(given);
+/** A move of the table, its rows told back by the ids of their collections. */
+const move = ({ id, after, before }: TableMove) => moveTheme({ id: idOf(id), after: after && idOf(after), before: before && idOf(before) });
+
+/**
+ * The collections, tabs of the page Succès in this order; rows move by their
+ * handle, a click opens one in the side panel, `openBadge` one of its badges.
+ */
+export function ThemesTable({ rights, openBadge }: { rights: BadgeRights; openBadge: (id: string) => void }) {
   const version = useCatalogVersion();
-  const { openEdit, openDelete, dialogs } = useThemeDialogs(rights);
-  const { openTheme, activeTheme } = useCatalogPanel(themes, rights);
+  const { ask, dialog } = useConfirmDialog();
+  // The panel, read by the menus of the rows: the config stays the same as it changes.
+  const panelRef = useRef<{ controls: RowPanelControls | null; active: string | null }>({ controls: null, active: null });
 
   const config = useMemo<DataTableConfig<AdminBadgeThemeRow>>(
     () => ({
       id: "themes",
       fetch: (query: TableQuery) => fetchThemesTable(query),
-      rowId: (theme) => theme.id,
+      rowId: (theme) => rowOf(theme.id),
       search: "Nom ou identifiant",
       noun: (total) => (total > 1 ? "collections" : "collection"),
       empty: { title: "Aucune collection", description: "Les collections regroupent des badges de tous les sports, en onglets sur la page Succès." },
@@ -38,13 +48,12 @@ export function ThemesTable({ themes, rights: given }: { themes: AdminBadgeTheme
         { id: "cards", label: "Cartes", layout: "cards", columns: ["position", "name", "id", "badges"] },
         { id: "table", label: "Tableau", columns: ["position", "name", "id", "badges"] },
       ],
-      columns: THEME_COLUMNS,
-      ...(rights.create && { create: { label: "Nouvelle", onClick: () => openEdit(null) } }),
-      ...(rights.edit && { reorder: moveTheme }),
+      columns: themeColumns(rights.edit),
+      ...(rights.edit && { reorder: move }),
       actions: (theme) => (
         <RowActions label={`Actions de ${theme.name}`}>
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => openTheme(theme)}>
+            <DropdownMenuItem onClick={() => panelRef.current.controls?.open(rowOf(theme.id))}>
               <PanelRightOpenIcon />
               Ouvrir la fiche
             </DropdownMenuItem>
@@ -53,16 +62,20 @@ export function ThemesTable({ themes, rights: given }: { themes: AdminBadgeTheme
               Copier l&apos;identifiant
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          {rights.edit && (
-            <DropdownMenuItem onClick={() => openEdit(theme)}>
-              <PencilIcon />
-              Renommer
-            </DropdownMenuItem>
-          )}
+          {/* The button of the detail, when open to this member. */}
           {rights.delete && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => openDelete(theme)}>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => {
+                  const removal = deleteThemeOf(theme, () => {
+                    const { controls, active } = panelRef.current;
+                    if (active === rowOf(theme.id)) controls?.removed(rowOf(theme.id));
+                  });
+                  ask(removal.confirm, removal.run);
+                }}
+              >
                 <Trash2Icon />
                 Supprimer
               </DropdownMenuItem>
@@ -71,13 +84,30 @@ export function ThemesTable({ themes, rights: given }: { themes: AdminBadgeTheme
         </RowActions>
       ),
     }),
-    [rights, openTheme, openEdit, openDelete],
+    [rights, ask],
   );
 
+  const panel = useRowPanel<AdminBadgeThemeRow>({
+    config,
+    title: (theme) => theme.name,
+    load: (row) => loadThemeRow(row).then((found) => found?.theme ?? null),
+    detail: (row, controls) => <ThemeRowPanel id={row} rights={rights} onOpenBadge={openBadge} panel={controls} />,
+    ...(rights.create && {
+      create: {
+        id: "new:collection",
+        label: "Nouvelle",
+        title: "Nouvelle collection",
+        form: ({ close, created }) => <ThemeCreate onCancel={close} onCreated={created} />,
+      },
+    }),
+  });
+  useLayoutEffect(() => {
+    panelRef.current = { controls: panel, active: panel.table.activeRowId };
+  });
   return (
     <>
-      <DataTable config={config} onRowClick={openTheme} activeRowId={activeTheme} refreshKey={version} />
-      {dialogs}
+      <DataTable {...panel.table} refreshKey={version} />
+      {dialog}
     </>
   );
 }

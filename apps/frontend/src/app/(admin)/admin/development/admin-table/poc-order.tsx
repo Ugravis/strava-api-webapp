@@ -1,12 +1,13 @@
 "use client";
 
-import { CalendarPlusIcon, ImageIcon, LayersIcon, MedalIcon, UsersIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarIcon, CalendarPlusIcon, GaugeIcon, ImageIcon, LayersIcon, MedalIcon, PaletteIcon, ShapesIcon, ToggleRightIcon, UsersIcon } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import {
   type CellImage,
   DataTable,
   type DataTableConfig,
   dateColumn,
+  editColumn,
   imageColumn,
   localTableSource,
   numberColumn,
@@ -127,7 +128,16 @@ export const BADGES_TABLE: DataTableConfig<PocBadge> = {
   ],
   columns: [
     orderColumn({ id: "position", header: "Ordre", value: (badge) => badge.position }),
-    textColumn({ id: "name", header: "Badge", icon: <MedalIcon />, sortable: true, locked: true, value: (badge) => badge.name, width: "max-w-56" }),
+    textColumn({
+      id: "name",
+      header: "Badge",
+      icon: <MedalIcon />,
+      sortable: true,
+      locked: true,
+      value: (badge) => badge.name,
+      width: "max-w-56",
+      edit: (badge) => ({ kind: "text", value: badge.name, onSave: (name) => savePocBadge(badge.id, { name }) }),
+    }),
     imageColumn({ id: "picture", header: "Image", icon: <ImageIcon />, value: (badge) => badge.picture }),
     pillsColumn({
       id: "collection",
@@ -140,6 +150,39 @@ export const BADGES_TABLE: DataTableConfig<PocBadge> = {
         value: badge.collection,
         options: COLLECTION_OPTIONS,
         onSave: (collection) => savePocBadge(badge.id, { collection: collection as PocBadge["collection"] | null }),
+      }),
+    }),
+    // Every other kind of edit, in its cell: the same as in the detail.
+    editColumn({ id: "color", header: "Couleur", icon: <PaletteIcon />, edit: (badge) => ({ kind: "color", value: badge.color, noneLabel: "Aucune", onSave: (color) => savePocBadge(badge.id, { color }) }) }),
+    editColumn({ id: "icon", header: "Icône", icon: <ShapesIcon />, edit: (badge) => ({ kind: "icon", value: badge.icon, onSave: (icon) => savePocBadge(badge.id, { icon }) }) }),
+    numberColumn({
+      id: "threshold",
+      header: "Seuil",
+      icon: <GaugeIcon />,
+      value: (badge) => badge.threshold,
+      edit: (badge) => ({ kind: "number", value: badge.threshold, min: 1, unit: COLLECTIONS[badge.collection].unit, onSave: (threshold) => savePocBadge(badge.id, { threshold }) }),
+    }),
+    editColumn({ id: "active", header: "Actif", icon: <ToggleRightIcon />, edit: (badge) => ({ kind: "switch", value: badge.active, onSave: (active) => savePocBadge(badge.id, { active }) }) }),
+    dateColumn({
+      id: "availableFrom",
+      header: "Disponible dès",
+      icon: <CalendarIcon />,
+      value: (badge) => badge.availableFrom,
+      edit: (badge) => ({ kind: "date", value: badge.availableFrom, onSave: (availableFrom) => savePocBadge(badge.id, { availableFrom }) }),
+    }),
+    dateColumn({
+      id: "endsAt",
+      header: "Fin",
+      icon: <CalendarClockIcon />,
+      time: true,
+      value: (badge) => badge.endsAt,
+      edit: (badge) => ({
+        kind: "date",
+        time: true,
+        value: badge.endsAt,
+        // Hangs on another field: refused before the call, in a bubble.
+        validate: (endsAt) => (endsAt && badge.availableFrom && endsAt.slice(0, 10) < badge.availableFrom ? "La fin doit suivre « Disponible dès »." : null),
+        onSave: (endsAt) => savePocBadge(badge.id, { endsAt }),
       }),
     }),
     numberColumn({ id: "holders", header: "Détenteurs", icon: <UsersIcon />, sortable: true, value: (badge) => badge.holders }),

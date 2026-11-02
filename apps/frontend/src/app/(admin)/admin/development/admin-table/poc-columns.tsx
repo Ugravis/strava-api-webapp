@@ -116,9 +116,26 @@ export const USERS: DataTableConfig<PocUser> = {
         onSave: (file) => savePocUser(user.id, { cover: file && { src: URL.createObjectURL(file), alt: `Couverture de @${user.username}` } }),
       }),
     }),
-    textColumn({ id: "displayName", header: "Nom affiché", icon: <TypeIcon />, sortable: true, value: (user) => user.displayName, width: "max-w-44" }),
+    textColumn({
+      id: "displayName",
+      header: "Nom affiché",
+      icon: <TypeIcon />,
+      sortable: true,
+      value: (user) => user.displayName,
+      width: "max-w-44",
+      edit: (user) => ({ kind: "text", value: user.displayName, placeholder: "Nom affiché", onSave: (displayName) => savePocUser(user.id, { displayName: displayName ?? "" }) }),
+    }),
     statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, sortable: true, value: (user) => user.status, statuses: STATUSES }),
-    textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, value: (user) => user.email, muted: true, width: "max-w-52" }),
+    textColumn({
+      id: "email",
+      header: "E-mail",
+      icon: <MailIcon />,
+      value: (user) => user.email,
+      muted: true,
+      width: "max-w-52",
+      // Refused by the server without « @ »: its message in the bubble.
+      edit: (user) => ({ kind: "text", value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }),
+    }),
     dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
     dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true, now: POC_NOW }),
     numberColumn({ id: "activities", header: "Activités", icon: <ActivityIcon />, sortable: true, value: (user) => user.activitiesCount }),
@@ -166,7 +183,13 @@ export const USERS: DataTableConfig<PocUser> = {
       // Several picked in a list, in the cell as in the detail.
       edit: (user) => ({ kind: "multiselect", value: user.categories, options: CATEGORY_OPTIONS, onSave: (categories) => savePocUser(user.id, { categories: categories as PocUser["categories"] }) }),
     }),
-    textColumn({ id: "note", header: "Note", icon: <StickyNoteIcon />, value: (user) => user.note }),
+    textColumn({
+      id: "note",
+      header: "Note",
+      icon: <StickyNoteIcon />,
+      value: (user) => user.note,
+      edit: (user) => ({ kind: "text", value: user.note, multiline: true, placeholder: "Une note pour l'équipe", onSave: (note) => savePocUser(user.id, { note }) }),
+    }),
     codeColumn({
       id: "stravaId",
       header: "Strava",

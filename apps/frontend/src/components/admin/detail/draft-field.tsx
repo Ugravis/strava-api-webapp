@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { type DetailFieldEdit, type DraftBinding, draftOf, EditValue, editEmpty, type InlineEdit, isInline, isMultiline, parse, type PickerEdit } from "./field-edit";
 import { Markdown } from "./markdown";
+import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
 import { PickerField, usePreview } from "./field-picker";
 
 /*
@@ -15,8 +16,8 @@ import { PickerField, usePreview } from "./field-picker";
  * by the draft until it is submitted as a whole.
  */
 
-/** Of the fields of a phone at 16 px, so that the browser does not zoom on them. */
-const FIELD = "h-9 text-base md:h-8 md:text-sm";
+/** As tall as a finger on a phone, in the size of the text around (the back office keeps the browser from zooming on them: its `viewport`). */
+const FIELD = "h-9 text-sm md:h-8";
 
 type Bound<E extends DetailFieldEdit> = E & { draft: DraftBinding };
 
@@ -72,6 +73,7 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
   }
   const multiline = isMultiline(edit);
   const [preview, setPreview] = useState(false);
+  const [textarea, setTextarea] = useState<HTMLTextAreaElement | null>(null);
   const field = {
     value: text,
     disabled: edit.draft.disabled,
@@ -98,19 +100,32 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
   if (edit.kind === "markdown")
     return (
       <div className="flex flex-col gap-1">
+        {/* Its shaping buttons, and the text drawn as it will show. */}
+        <MarkdownToolbar
+          field={preview ? null : textarea}
+          onChange={(next) => field.onChange({ target: { value: next } })}
+          disabled={edit.draft.disabled || preview}
+          aside={
+            <button type="button" onClick={() => setPreview((shown) => !shown)} className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground [&_svg]:size-3">
+              {preview ? <PencilIcon aria-hidden /> : <EyeIcon aria-hidden />}
+              {preview ? "Modifier" : "Aperçu"}
+            </button>
+          }
+        />
         {preview ? (
           <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{text.trim() ? <Markdown source={text} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
         ) : (
-          <Textarea {...field} onKeyDown={onKeyDown} placeholder={edit.placeholder} className="min-h-28 text-base md:text-sm" />
+          <Textarea
+            {...field}
+            ref={setTextarea}
+            onKeyDown={(event) => markdownShortcut(event, (next) => field.onChange({ target: { value: next } })) || onKeyDown(event)}
+            placeholder={edit.placeholder}
+            className="min-h-28 text-sm"
+          />
         )}
-        {/* Markdown drawn as it will show. */}
-        <button type="button" onClick={() => setPreview((shown) => !shown)} className="inline-flex items-center gap-1 self-end text-xs text-muted-foreground hover:text-foreground [&_svg]:size-3">
-          {preview ? <PencilIcon aria-hidden /> : <EyeIcon aria-hidden />}
-          {preview ? "Modifier le texte" : "Aperçu · Markdown"}
-        </button>
       </div>
     );
-  if (multiline) return <Textarea {...field} onKeyDown={onKeyDown} placeholder={"placeholder" in edit ? edit.placeholder : undefined} className="min-h-20 text-base md:text-sm" />;
+  if (multiline) return <Textarea {...field} onKeyDown={onKeyDown} placeholder={"placeholder" in edit ? edit.placeholder : undefined} className="min-h-20 text-sm" />;
   if (edit.kind === "number")
     return (
       <div className="relative">
@@ -149,7 +164,7 @@ function DraftPicker({ edit, label }: { edit: Bound<PickerEdit>; label: string }
         onMouseDown={(event) => open && event.preventDefault()}
         onClick={() => setOpen((shown) => !shown)}
         className={cn(
-          "flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 md:min-h-8 md:text-sm dark:bg-input/30",
+          "flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 md:min-h-8 dark:bg-input/30",
           "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
           open && "border-ring ring-3 ring-ring/50",
         )}

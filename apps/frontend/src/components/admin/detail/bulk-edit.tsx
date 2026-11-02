@@ -5,7 +5,7 @@ import { ArrowLeftIcon, ChevronRightIcon, LoaderCircleIcon, LockIcon, PencilIcon
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
-import type { DataTableColumn } from "@/components/admin/data-table";
+import { type DataTableColumn, Tip, useSelectionIconsOnly } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -62,20 +62,27 @@ export function BulkEditAction<T>({
   const [picked, setPicked] = useState<BulkEditField | null>(null);
   const rows = `${count.toLocaleString("fr-FR")} ${noun(count)}`;
   const columnOf = (id: string) => columns.find((column) => column.id === id);
+  // The bar too narrow: its icon alone, named in a bubble.
+  const iconOnly = useSelectionIconsOnly();
+  const button = (
+    <Button
+      size={iconOnly ? "icon-sm" : "sm"}
+      variant="ghost"
+      aria-label={iconOnly ? "Modifier" : undefined}
+      className="shrink-0"
+      onClick={() => {
+        setPicked(fields.length === 1 && !fields[0]!.edit.locked ? fields[0]! : null);
+        setOpen(true);
+      }}
+    >
+      <PencilIcon data-icon="inline-start" />
+      {!iconOnly && "Modifier"}
+    </Button>
+  );
 
   return (
     <>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => {
-          setPicked(fields.length === 1 && !fields[0]!.edit.locked ? fields[0]! : null);
-          setOpen(true);
-        }}
-      >
-        <PencilIcon data-icon="inline-start" />
-        Modifier
-      </Button>
+      {iconOnly ? <Tip label="Modifier">{button}</Tip> : button}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="gap-4 sm:max-w-md">
           {picked ? (

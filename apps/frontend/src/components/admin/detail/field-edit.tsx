@@ -13,6 +13,7 @@ import { ErrorBubble } from "./error-bubble";
 import { DetailFieldButton, FieldButtons } from "./field-buttons";
 import { LucideIconByName } from "./icon-picker";
 import { Markdown } from "./markdown";
+import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
 
 /*
  * The kinds of values a `DetailField` edits in place: typed in its field
@@ -389,7 +390,12 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
     if ("error" in parsed) setError(parsed.error);
     else void commit(parsed.value);
   };
+  const type = (text: string) => {
+    setDraft(text);
+    setError(null);
+  };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (edit.kind === "markdown" && markdownShortcut(event as KeyboardEvent<HTMLTextAreaElement>, type)) return;
     if (event.key === "Escape") {
       // Left to the field: the panel stays open.
       event.preventDefault();
@@ -419,10 +425,18 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
   return (
     <div className={cn("relative w-full", multiline ? "min-w-0" : edit.kind === "date" ? "min-w-44" : "min-w-32")}>
       <ErrorBubble anchor={anchor} message={error} />
-      {preview ? (
-        <div className="min-h-20 rounded-lg border px-2.5 py-1 pr-24 text-sm">{draft.trim() ? <Markdown source={draft} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
+      {edit.kind === "markdown" ? (
+        // Its shaping buttons above it, beside the ✓ and ✕ of the field.
+        <div className="flex flex-col gap-1">
+          <MarkdownToolbar field={preview ? null : (anchor as HTMLTextAreaElement | null)} onChange={type} disabled={saving || preview} className="min-h-7 pr-24" />
+          {preview ? (
+            <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{draft.trim() ? <Markdown source={draft} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
+          ) : (
+            <Textarea {...field} placeholder={edit.placeholder} className="min-h-24 text-sm" />
+          )}
+        </div>
       ) : multiline ? (
-        <Textarea {...field} placeholder={"placeholder" in edit ? edit.placeholder : undefined} className={cn("min-h-20 text-sm", edit.kind === "markdown" ? "pr-24" : "pr-16")} />
+        <Textarea {...field} placeholder={"placeholder" in edit ? edit.placeholder : undefined} className="min-h-20 pr-16 text-sm" />
       ) : edit.kind === "number" ? (
         <Input {...field} type="number" inputMode="decimal" min={edit.min} max={edit.max} step={edit.step ?? "any"} className="h-7 w-0 min-w-full [appearance:textfield] pr-15 text-sm [&::-webkit-inner-spin-button]:appearance-none" />
       ) : edit.kind === "date" ? (

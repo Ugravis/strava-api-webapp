@@ -94,7 +94,7 @@ export function TagsInput({
         placeholder={placeholder ?? "Ajouter puis Entrée"}
         aria-label="Ajouter une valeur"
         aria-invalid={!!error || undefined}
-        className="h-8 text-base md:text-sm"
+        className="h-8 text-sm"
       />
       {error && <p className="-mt-1 text-xs text-destructive">{error}</p>}
       {offered.length > 0 && (
@@ -179,7 +179,7 @@ export function RelationList({
     <>
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={placeholder ?? "Rechercher"} aria-label="Rechercher" className="h-8 pr-8 pl-8 text-base md:text-sm" />
+        <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={placeholder ?? "Rechercher"} aria-label="Rechercher" className="h-8 pr-8 pl-8 text-sm" />
         {loading && <LoaderCircleIcon className="absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" aria-label="Recherche" />}
       </div>
       <div role="menu" className={cn("flex max-h-64 flex-col overflow-y-auto transition-opacity", loading && options && "opacity-60")}>

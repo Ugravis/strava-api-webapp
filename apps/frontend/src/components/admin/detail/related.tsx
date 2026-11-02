@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRightIcon, RotateCcwIcon } from "lucide-react";
+import { ChevronRightIcon, LoaderCircleIcon, RotateCcwIcon } from "lucide-react";
 import { type ReactNode, useEffect, useEffectEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,24 +40,44 @@ export interface DetailRelatedItem {
   onOpen?: () => void;
 }
 
+type RelatedPage = { items: DetailRelatedItem[]; total: number };
+
 /**
- * Rows related to the one shown, loaded by the block itself: the first ones
- * (`load` answers them and their `total`), each opened on click, « Voir
- * tout » (`more`) beyond. Skeleton meanwhile, `empty` without any, a retry
- * after a failure; a new `refreshKey` loads them again.
+ * Rows related to the one shown, loaded by the block itself: `load(offset)`
+ * answers those from `offset` and their `total`; « Voir plus (n) » loads the
+ * next ones under them, `n` those left; `all` (« Voir tout », e.g. the list
+ * filtered) beside it. Each opened on click. Skeleton meanwhile, `empty`
+ * without any, a retry after a failure; a new `refreshKey` loads them again
+ * from the start.
  */
 export function DetailRelated({
   load,
   refreshKey,
   empty,
-  more,
+  all,
 }: {
-  load: () => Promise<{ items: DetailRelatedItem[]; total: number }>;
+  load: (offset: number) => Promise<RelatedPage>;
   refreshKey?: unknown;
   empty: string;
-  more?: { label: string; onClick: () => void };
+  all?: { label: string; onClick: () => void };
 }) {
-  const { data, failed, retry } = useDetailLoad(load, refreshKey);
+  const first = useDetailLoad(() => load(0), refreshKey);
+  // The pages after the first one, dropped as it loads again.
+  const [more, setMore] = useState<{ after: RelatedPage; pages: RelatedPage[] } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [failedMore, setFailedMore] = useState(false);
+  const { failed, retry } = first;
+  const pages = first.data && more?.after === first.data ? more.pages : [];
+  const data = first.data && { items: [first.data, ...pages].flatMap((page) => page.items), total: (pages.at(-1) ?? first.data).total };
+  const loadMore = () => {
+    if (!data || loadingMore) return;
+    const after = first.data!;
+    setLoadingMore(true);
+    setFailedMore(false);
+    load(data.items.length)
+      .then((page) => setMore({ after, pages: [...pages, page] }), () => setFailedMore(true))
+      .finally(() => setLoadingMore(false));
+  };
   if (failed && !data) return <Failed onRetry={retry} />;
   if (!data)
     return (
@@ -102,16 +122,24 @@ export function DetailRelated({
           );
         })}
       </ul>
-      <div className="flex items-center justify-between gap-2 pt-1 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-muted-foreground">
         <span className="tabular-nums">
           {data.items.length < data.total ? `${data.items.length} sur ${data.total.toLocaleString("fr-FR")}` : `${data.total.toLocaleString("fr-FR")} au total`}
         </span>
-        {more && data.items.length < data.total && (
-          <Button size="xs" variant="ghost" onClick={more.onClick}>
-            {more.label}
-            <ChevronRightIcon aria-hidden />
-          </Button>
-        )}
+        <span className="flex items-center gap-1">
+          {data.items.length < data.total && (
+            <Button size="xs" variant="ghost" disabled={loadingMore} onClick={loadMore}>
+              {loadingMore && <LoaderCircleIcon className="animate-spin" aria-hidden />}
+              {failedMore ? "Échec, réessayer" : `Voir plus (${(data.total - data.items.length).toLocaleString("fr-FR")})`}
+            </Button>
+          )}
+          {all && data.items.length < data.total && (
+            <Button size="xs" variant="ghost" onClick={all.onClick}>
+              {all.label}
+              <ChevronRightIcon aria-hidden />
+            </Button>
+          )}
+        </span>
       </div>
     </div>
   );

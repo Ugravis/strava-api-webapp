@@ -1,5 +1,6 @@
 "use client";
 
+import type { ModeratableField } from "@kilotrace/shared/admin";
 import {
   AtSignIcon,
   CalendarIcon,
@@ -12,18 +13,15 @@ import {
   GlobeIcon,
   KeyRoundIcon,
   MapPinIcon,
-  EraserIcon,
-  PlusIcon,
+  GavelIcon,
+  TagIcon,
   RefreshCwIcon,
   StickyNoteIcon,
   UserCheckIcon,
   UserPlusIcon,
   UsersIcon,
-  XIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
 import { formatDateTime, formatRelative } from "@/components/admin/data-table";
 import {
   DetailAction,
@@ -33,53 +31,42 @@ import {
   DetailField,
   DetailFields,
   DetailHeader,
-  DetailItem,
-  DetailItemButton,
-  DetailItems,
   DetailLoader,
   DetailSection,
+  DetailHistory,
   DetailSkeleton,
-  DetailTimeline,
-  DetailTimelineItem,
+  type RowPanelControls,
 } from "@/components/admin/detail";
+import { useSplitPanel } from "@/components/split-panel";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { userProfileHref } from "@/config/routes";
 import { countryName } from "@/lib/countries/country-format";
 import { publicNameOf } from "@/lib/user";
-import { loadUserDetail, setUserTag, type UserDetailData } from "./actions";
-import { useUserActionDialog, userActionsOf } from "./user-actions";
-import { USER_COLUMNS, UserMarks, UserTagIcon } from "./user-columns";
-import { bumpUsers, useUsersVersion } from "./users-store";
+import { loadUserDetail, loadUserHistory, type UserDetailData } from "./actions";
+import { moderateTool, NOT_GRANTED, useUserActionDialog, userActionsOf } from "./user-actions";
+import { tagsEdit, userColumns, UserMarks } from "./user-columns";
+import { useUsersVersion } from "./users-store";
 
-const REFUSALS = {
-  self: "C'est votre compte : les actions sont désactivées.",
-  protected: "Membre de l'équipe de rang égal ou supérieur : les actions sont désactivées.",
-  readOnly: "Lecture seule : votre rôle n'a la permission d'aucune action sur les comptes.",
-};
-
-/** The account loaded by the panel, its skeleton meanwhile; loaded again after every change. */
-export function UserRowPanel({ id }: { id: string }) {
+/** The account loaded by the panel, its skeleton meanwhile; loaded again after every change. `panel` when opened from its table; else (from the audit log) a deletion closes the panel. */
+export function UserRowPanel({ id, panel }: { id: string; panel?: RowPanelControls }) {
   const version = useUsersVersion();
   return (
-    <DetailLoader id={id} load={loadUserDetail} refreshKey={version} skeleton={<DetailSkeleton cover actions={4} sections={[7, 7, 5, 2]} />}>
-      {(data) => <UserDetail data={data} />}
+    <DetailLoader id={id} load={loadUserDetail} refreshKey={version} skeleton={<DetailSkeleton cover media actions={4} sections={[7, 7, 5, 2, 4, 3]} />}>
+      {(data) => <UserDetail data={data} panel={panel} version={version} />}
     </DetailLoader>
   );
 }
 
-/** Everything the back office shows of an account, and the actions the role grants on it. */
-function UserDetail({ data: { user, permissions, refusal, catalog, history } }: { data: UserDetailData }) {
-  const { openAction, dialog } = useUserActionDialog();
-  const [pending, setPending] = useState<string | null>(null);
-  const toggleTag = async (tagId: string, granted: boolean) => {
-    setPending(tagId);
-    const result = await setUserTag(user.id, tagId, granted).catch(() => ({ ok: false, message: "L'API n'a pas répondu." }));
-    setPending(null);
-    if (!result.ok) return toast.error(result.message);
-    toast.success(result.message);
-    bumpUsers();
-  };
-  const field = (id: string) => <DetailColumnField row={user} columns={USER_COLUMNS} id={id} />;
+/** Everything the back office shows of an account, and its actions, locked with their reason when the role does not grant them. */
+function UserDetail({ data: { user, permissions, refusal, catalog, historyHref, tagsPath }, panel, version }: { data: UserDetailData; panel?: RowPanelControls; version: number }) {
+  const { close } = useSplitPanel();
+  const { openAction, dialog } = useUserActionDialog((id) => (panel ? panel.removed(id) : close()));
+  /** The gavel of a field holding a value, opening the moderation with it checked; none when the member may not. */
+  const moderate = (target: ModeratableField, shown: unknown) => !!shown && moderateTool(user, target, permissions, refusal, openAction);
+  const tags = tagsEdit(user, catalog, tagsPath, permissions.includes("users.userTags") ? null : NOT_GRANTED);
+  const columns = userColumns({ moderate: (each, target) => moderateTool(each, target, permissions, refusal, openAction) });
+  const field = (id: string) => <DetailColumnField row={user} columns={columns} id={id} />;
+  const actions = userActionsOf(user, permissions, refusal);
 
   return (
     <>
@@ -92,19 +79,16 @@ function UserDetail({ data: { user, permissions, refusal, catalog, history } }: 
         actions={<DetailAction label="Voir le profil public" icon={<ExternalLinkIcon aria-hidden />} href={userProfileHref(user.username)} />}
       />
       <DetailActions>
-        {refusal ? (
-          <p className="min-w-0 text-sm text-muted-foreground">{REFUSALS[refusal]}</p>
-        ) : (
-          userActionsOf(user, permissions).map((action) => (
-            <DetailAction
-              key={action.key}
-              label={action.label}
-              icon={action.icon}
-              variant={action.destructive ? "destructive" : "outline"}
-              onClick={() => openAction(user, action.key)}
-            />
-          ))
-        )}
+        {actions.map((action) => (
+          <DetailAction
+            key={action.key}
+            label={action.label}
+            icon={action.icon}
+            variant={action.destructive ? "destructive" : "outline"}
+            locked={action.locked}
+            onClick={() => openAction(user, action.key)}
+          />
+        ))}
       </DetailActions>
       {dialog}
 
@@ -125,20 +109,20 @@ function UserDetail({ data: { user, permissions, refusal, catalog, history } }: 
       )}
 
       {/* The only free texts of the account: what moderation is about. */}
-      <DetailSection title="Profil" pill={{ icon: <EraserIcon />, label: "Modération", tone: "amber" }}>
+      <DetailSection title="Profil" pill={{ icon: <GavelIcon />, label: "Modération", tone: "amber" }}>
         <DetailFields>
           {field("avatar")}
           {field("displayName")}
-          <DetailField label="Pseudo" icon={<AtSignIcon />} copy={user.username}>
+          <DetailField label="Pseudo" icon={<AtSignIcon />} copy={user.username} tools={moderate("username", user.username)}>
             @{user.username}
           </DetailField>
-          <DetailField label="Bio" icon={<FileTextIcon />} copy={user.bio} stacked={!!user.bio}>
+          <DetailField label="Bio" icon={<FileTextIcon />} copy={user.bio} stacked={!!user.bio} tools={moderate("bio", user.bio)}>
             {user.bio && <span className="whitespace-pre-line">{user.bio}</span>}
           </DetailField>
-          <DetailField label="Ville" icon={<MapPinIcon />}>
+          <DetailField label="Ville" icon={<MapPinIcon />} tools={moderate("city", user.city)}>
             {user.city}
           </DetailField>
-          <DetailField label="Pays" icon={<GlobeIcon />}>
+          <DetailField label="Pays" icon={<GlobeIcon />} tools={moderate("city", user.countryCode)}>
             {user.countryCode && countryName(user.countryCode, "fr")}
           </DetailField>
           <DetailField label="Visibilité" icon={<EyeIcon />}>
@@ -151,6 +135,7 @@ function UserDetail({ data: { user, permissions, refusal, catalog, history } }: 
         <DetailFields>
           {field("status")}
           {field("roles")}
+          <DetailField label="Tags" icon={<TagIcon />} edit={tags} />
           {field("email")}
           {field("createdAt")}
           {field("lastSeenAt")}
@@ -195,62 +180,38 @@ function UserDetail({ data: { user, permissions, refusal, catalog, history } }: 
           </DetailField>
         </DetailFields>
       </DetailSection>
-      <DetailSection title="Tags">
-        <DetailItems>
-          {catalog.map((tag) => {
-            const held = user.userTags.find((each) => each.id === tag.id);
-            return (
-              <DetailItem
-                key={tag.id}
-                icon={<UserTagIcon tag={tag} />}
-                actions={
-                  permissions.includes("users.userTags") &&
-                  (held ? (
-                    <DetailItemButton label={`Retirer ${tag.name}`} disabled={pending === tag.id} onClick={() => toggleTag(tag.id, false)}>
-                      <XIcon />
-                    </DetailItemButton>
-                  ) : (
-                    <DetailItemButton label={`Attribuer ${tag.name}`} disabled={pending === tag.id} onClick={() => toggleTag(tag.id, true)}>
-                      <PlusIcon />
-                    </DetailItemButton>
-                  ))
-                }
-              >
-                <span className={held ? undefined : "text-muted-foreground"}>{tag.name}</span>
-              </DetailItem>
-            );
-          })}
-        </DetailItems>
-      </DetailSection>
 
       <DetailSection
         title="Historique"
         aside={
-          history.total > 0 && (
-            <Link href={history.href} className="text-xs font-medium text-primary underline-offset-4 hover:underline">
-              Tout l&apos;historique
-            </Link>
-          )
+          <Link href={historyHref} className="text-xs font-medium text-primary underline-offset-4 hover:underline">
+            Dans le journal
+          </Link>
         }
       >
-        {history.entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune action sur ce compte.</p>
-        ) : (
-          <DetailTimeline>
-            {history.entries.map((entry) => (
-              <DetailTimelineItem
-                key={entry.id}
-                icon={entry.succeeded ? <CircleCheckIcon /> : <CircleXIcon />}
-                tone={entry.succeeded ? "default" : "red"}
-                title={entry.label}
-                date={entry.createdAt}
-              >
-                {entry.actor && <span className="block">par {entry.actor.displayName ?? entry.actor.username ?? "—"}</span>}
-                {entry.reason && <span className="block">« {entry.reason} »</span>}
-              </DetailTimelineItem>
-            ))}
-          </DetailTimeline>
-        )}
+        <DetailHistory
+          refreshKey={version}
+          empty="Aucune action sur ce compte."
+          load={(cursor) =>
+            loadUserHistory(user.id, cursor).then(({ entries, next, total }) => ({
+              next,
+              total,
+              events: entries.map((entry) => ({
+                id: entry.id,
+                icon: entry.succeeded ? <CircleCheckIcon /> : <CircleXIcon />,
+                tone: entry.succeeded ? "default" : "red",
+                title: entry.label,
+                date: entry.createdAt,
+                details: (entry.actor || entry.reason) && (
+                  <>
+                    {entry.actor && <span className="block">par {entry.actor.displayName ?? entry.actor.username ?? "—"}</span>}
+                    {entry.reason && <span className="block">« {entry.reason} »</span>}
+                  </>
+                ),
+              })),
+            }))
+          }
+        />
       </DetailSection>
     </>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { type AdminUserSummary, type AdminUserTagLook, highestAdminRole } from "@kilotrace/shared/admin";
+import { type AdminUserSummary, type AdminUserTagLook, highestAdminRole, type ModeratableField } from "@kilotrace/shared/admin";
 import {
   ActivityIcon,
   AtSignIcon,
@@ -18,6 +18,7 @@ import {
   TagIcon,
   TypeIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import {
   codeColumn,
   type DataTableColumn,
@@ -33,10 +34,13 @@ import {
   type Tone,
   userColumn,
 } from "@/components/admin/data-table";
+import type { DetailFieldEdit } from "@/components/admin/detail";
 import { GoogleIcon } from "@/components/auth/google-icon";
 import { BadgeIcon } from "@/components/distances/badge-icon";
 import { StravaIcon } from "@/components/strava/strava-icon";
 import { cn } from "@/lib/utils";
+import { setUserTags } from "./actions";
+import { bumpUsers } from "./users-store";
 
 /*
  * How an account is drawn, shared by its table and its detail.
@@ -82,17 +86,70 @@ export function UserTagIcon({ tag }: { tag: AdminUserTagLook }) {
 
 const tagItems = (user: AdminUserSummary): IconItem[] => user.userTags.map((tag) => ({ key: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} /> }));
 
-export const USER_COLUMNS: DataTableColumn<AdminUserSummary>[] = [
-  userColumn({ id: "user", header: "Utilisateur", icon: <AtSignIcon />, sortable: true, value: (user) => user, marks: (user) => <UserMarks user={user} /> }),
-  imageColumn({ id: "avatar", header: "Photo", icon: <ImageIcon />, value: (user) => (user.avatarUrl ? { src: user.avatarUrl, alt: `Photo de @${user.username}` } : null) }),
-  textColumn({ id: "displayName", header: "Nom affiché", icon: <TypeIcon />, sortable: true, value: (user) => user.displayName, width: "max-w-44" }),
+/**
+ * The tags of an account, picked among the `catalog`; each one held leads
+ * to its row in the table of the tags (`tagsPath`). `locked`: not for this
+ * member, and why.
+ */
+export function tagsEdit(user: AdminUserSummary, catalog: AdminUserTagLook[], tagsPath: string, locked: string | null): DetailFieldEdit<"multiselect"> {
+  const held = user.userTags.map((tag) => tag.id);
+  return {
+    kind: "multiselect",
+    value: held,
+    options: catalog.map((tag) => ({ value: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} />, href: `${tagsPath}?row=${encodeURIComponent(tag.id)}` })),
+    locked,
+    onSave: async (next) => {
+      const result = await setUserTags(user.id, held, next);
+      if (result.ok) bumpUsers();
+      return result;
+    },
+  };
+}
+
+/**
+ * What the columns act with, else they only draw: `moderate` the gavel of
+ * a moderable field holding a value (null when the member may not), `tags`
+ * the edit of the tags.
+ */
+export interface UserColumnActs {
+  moderate?: (user: AdminUserSummary, field: ModeratableField) => ReactNode;
+  tags?: (user: AdminUserSummary) => DetailFieldEdit;
+}
+
+/** The columns of the accounts, shared by their table and their detail. */
+export const userColumns = ({ moderate, tags }: UserColumnActs = {}): DataTableColumn<AdminUserSummary>[] => [
+  userColumn({
+    id: "user",
+    header: "Utilisateur",
+    icon: <AtSignIcon />,
+    sortable: true,
+    value: (user) => user,
+    marks: (user) => <UserMarks user={user} />,
+    tools: (user) => moderate?.(user, "username"),
+  }),
+  imageColumn({
+    id: "avatar",
+    header: "Photo",
+    icon: <ImageIcon />,
+    value: (user) => (user.avatarUrl ? { src: user.avatarUrl, alt: `Photo de @${user.username}` } : null),
+    tools: (user) => user.avatarUrl && moderate?.(user, "avatar"),
+  }),
+  textColumn({
+    id: "displayName",
+    header: "Nom affiché",
+    icon: <TypeIcon />,
+    sortable: true,
+    value: (user) => user.displayName,
+    width: "max-w-44",
+    tools: (user) => user.displayName && moderate?.(user, "displayName"),
+  }),
   pillsColumn({ id: "roles", header: "Rôle", icon: <ShieldUserIcon />, value: (user) => user.roles.map((role) => ROLES[role]!).filter(Boolean) }),
   statusColumn({ id: "status", header: "Statut", icon: <CircleDotIcon />, sortable: true, value: statusOf, statuses: STATUSES }),
   textColumn({ id: "email", header: "E-mail", icon: <MailIcon />, sortable: true, value: (user) => user.email, muted: true, width: "max-w-52" }),
   dateColumn({ id: "createdAt", header: "Inscription", icon: <CalendarPlusIcon />, sortable: true, value: (user) => user.createdAt }),
   dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true }),
   iconsColumn({ id: "connections", header: "Connexions", icon: <LinkIcon />, sortable: true, value: connectionItems }),
-  iconsColumn({ id: "userTags", header: "Tags", icon: <TagIcon />, sortable: true, value: tagItems }),
+  iconsColumn({ id: "userTags", header: "Tags", icon: <TagIcon />, sortable: true, value: tagItems, edit: tags }),
   numberColumn({ id: "activities", header: "Activités", icon: <ActivityIcon />, sortable: true, value: (user) => user.activitiesCount }),
   codeColumn({ id: "id", header: "ID", icon: <HashIcon />, sortable: true, value: (user) => user.id, width: "max-w-20" }),
 ];

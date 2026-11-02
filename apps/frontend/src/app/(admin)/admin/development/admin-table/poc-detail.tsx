@@ -126,7 +126,26 @@ export function PocUserDetail({ user }: { user: PocUser }) {
             edit={{ value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }}
           />
         </DetailFields>
-        <DetailColumnFields row={user} columns={USERS.columns} ids={["status", "cover", "createdAt", "lastSeenAt"]} />
+        <DetailColumnFields
+          row={user}
+          columns={USERS.columns}
+          ids={[
+            "status",
+            // A file of 2 MB at most, saved by « Valider »; removed by « Retirer ».
+            {
+              id: "cover",
+              edit: {
+                kind: "image",
+                value: user.cover?.src ?? null,
+                maxSize: 2 * 1024 * 1024,
+                noneLabel: "Retirer",
+                onSave: (file) => savePocUser(user.id, { cover: file && { src: URL.createObjectURL(file), alt: `Couverture de @${user.username}` } }),
+              },
+            },
+            "createdAt",
+            "lastSeenAt",
+          ]}
+        />
       </DetailSection>
       <DetailSection title="Accès">
         <DetailFields>

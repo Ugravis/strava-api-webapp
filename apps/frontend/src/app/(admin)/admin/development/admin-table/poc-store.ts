@@ -38,7 +38,7 @@ export async function loadPocUser(id: string): Promise<PocUser | null> {
   return user ? structuredClone(user) : null;
 }
 
-export async function savePocUser(id: string, patch: Partial<Pick<PocUser, "displayName" | "email" | "note" | "categories">>): Promise<ActionResult> {
+export async function savePocUser(id: string, patch: Partial<Pick<PocUser, "displayName" | "email" | "note" | "categories" | "cover">>): Promise<ActionResult> {
   await pause(300, 300);
   if (patch.email !== undefined && !patch.email?.includes("@")) return { ok: false, message: "Adresse e-mail invalide." };
   const at = POC_USERS.findIndex((each) => each.id === id);

@@ -1,7 +1,7 @@
 "use client";
 
 import { CopyCheckIcon, CopyIcon } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "../types";
@@ -90,6 +90,14 @@ export function IconBox({ label, children }: { label: string; children: ReactNod
     </span>
   );
 }
+
+/**
+ * Cells drawn whole, outside of a table (a detail): every item of a list
+ * shown, wrapping, none of them counted.
+ */
+export const WholeCells = createContext(false);
+/** How many items of a list a cell shows: all of them when drawn whole. */
+export const useShownCount = (max: number) => (useContext(WholeCells) ? Infinity : max);
 
 /** The items left out of a cell, counted, their names on hover. */
 export function MoreCount({ names }: { names: string[] }) {

@@ -126,7 +126,17 @@ export function PocUserDetail({ user }: { user: PocUser }) {
             edit={{ value: user.email, onSave: (email) => savePocUser(user.id, { email: email ?? "" }) }}
           />
         </DetailFields>
-        <DetailColumnFields row={user} columns={USERS.columns} ids={["status", "cover", "createdAt", "lastSeenAt"]} />
+        <DetailColumnFields
+          row={user}
+          columns={USERS.columns}
+          ids={[
+            "status",
+            // Edited as in the table: the `edit` of its column.
+            "cover",
+            "createdAt",
+            "lastSeenAt",
+          ]}
+        />
       </DetailSection>
       <DetailSection title="Accès">
         <DetailFields>
@@ -179,7 +189,16 @@ export function PocUserDetail({ user }: { user: PocUser }) {
         </DetailFields>
       </DetailSection>
       <DetailSection title="Activité">
-        <DetailColumnFields row={user} columns={USERS.columns} ids={["activities", "storage", "categories"]} />
+        {/* Drawn by its column, several picked in a list, saved as the list closes. */}
+        <DetailColumnFields
+          row={user}
+          columns={USERS.columns}
+          ids={[
+            "activities",
+            "storage",
+            "categories",
+          ]}
+        />
       </DetailSection>
       <DetailSection title="Technique">
         <DetailColumnFields row={user} columns={USERS.columns} ids={["id", "avatarKey"]} />

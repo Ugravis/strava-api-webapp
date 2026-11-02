@@ -60,4 +60,7 @@ const CATEGORIES: Record<PocCategory, Pill> = {
   triathlete: { label: "Triathlète", tone: "fuchsia" },
 };
 
+/** The categories as the options of a list. */
+export const CATEGORY_OPTIONS = Object.entries(CATEGORIES).map(([value, pill]) => ({ value, ...pill }));
+
 export const categoryPills = (user: PocUser): Pill[] => user.categories.map((category) => CATEGORIES[category]);

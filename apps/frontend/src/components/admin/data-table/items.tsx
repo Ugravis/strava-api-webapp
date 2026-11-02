@@ -6,7 +6,7 @@ import { type KeyboardEvent, memo, type MouseEvent, type ReactNode } from "react
 import { TableCheckbox } from "./cells/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { CopyButton, drawCell } from "./cells/base";
+import { CellValue, keepsItsClick } from "./cells/value";
 import { MovableItem } from "./reorder";
 import type { DataTableColumn, DataTableConfig } from "./types";
 import type { DataTableState } from "./use-data-table";
@@ -154,8 +154,7 @@ interface ItemProps<T> {
 /** A row, drawn again only when its own props change, as a row of the table. */
 const Item = memo(function Item<T>({ config, row, id, columns, order, cover, layout, selected, active, onOpen: open, onToggle, movable, blocked }: ItemProps<T>) {
   const openFrom = (event: MouseEvent | KeyboardEvent) => {
-    // Buttons, links and checkboxes of the item keep their own click.
-    if ((event.target as HTMLElement).closest("button, a, [role=checkbox], [role=menuitem]")) return;
+    if (keepsItsClick(event)) return;
     open?.(row);
   };
   return (
@@ -179,8 +178,7 @@ const Item = memo(function Item<T>({ config, row, id, columns, order, cover, lay
       >
         {columns.map((column, at) => (
           <Value key={column.id} column={column} layout={layout} first={at === 0}>
-            {drawCell(column, row)}
-            {column.copy && <CopyButton value={column.copy(row)} />}
+            <CellValue column={column} row={row} onOpen={open && (() => open(row))} />
           </Value>
         ))}
       </ItemFrame>

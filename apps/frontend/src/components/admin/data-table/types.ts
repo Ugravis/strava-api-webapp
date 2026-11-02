@@ -1,6 +1,7 @@
 import type { TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
 import type { ReactNode } from "react";
 import type { ActionResult } from "../action-state";
+import type { DetailFieldEdit } from "../detail/field-edit";
 
 export type { TableEntry, TableGroup, TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
 
@@ -24,6 +25,11 @@ export interface DataTableColumn<T> {
   order?: boolean;
   /** The text a floating button copies on hover, none when null. */
   copy?: (row: T) => string | null;
+  /**
+   * Edits the value of a row in place, from a pencil floating beside copy, in
+   * the cell as in the detail (`edit` of the detail kit); none when undefined.
+   */
+  edit?: (row: T) => DetailFieldEdit | undefined;
   /** An outside page its value opens in a new tab, underlined on hover; none when null. */
   href?: (row: T) => string | null;
   /** In cards, drawn as the cover at the top of the card instead of a value: the image of `imageColumn`. */

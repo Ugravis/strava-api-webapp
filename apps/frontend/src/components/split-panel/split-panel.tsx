@@ -24,6 +24,8 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
   const full = panel.expanded && !!entry;
   const split = (panel.mode === "split" || full) && !mobile;
   const shown = !!entry && (!folded || full);
+  // A page of its own, without gutter nor card: expanded, or on a phone.
+  const page = full || mobile;
   // The last content stays while the panel slides out.
   const [last, setLast] = useState(entry);
   if (entry && entry !== last) setLast(entry);
@@ -72,7 +74,7 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
             className={cn(
               "absolute inset-y-0 right-0 flex p-2 md:p-3",
               // A page of its own: no gutter, no card.
-              full && "p-0 md:p-0",
+              page && "p-0 md:p-0",
               !dragging && `transition-[translate,opacity,width] ${SLIDE}`,
               !shown && "translate-x-full opacity-0",
             )}
@@ -82,8 +84,8 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
               className={cn(
                 "flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background transition-shadow",
                 SLIDE,
-                split ? "shadow-none" : "shadow-xl",
-                full && "rounded-none border-0",
+                split || page ? "shadow-none" : "shadow-xl",
+                page && "rounded-none border-0",
               )}
             >
               <Header title={last?.title} />

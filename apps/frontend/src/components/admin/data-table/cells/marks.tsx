@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { cn } from "@/lib/utils";
-import { EmptyValue, IconBox, MoreCount, Truncate } from "./base";
+import { EmptyValue, IconBox, MoreCount, Truncate, useShownCount } from "./base";
 
 /** The colours of the marks, the same in every table. */
 export type Tone = "gray" | "green" | "red" | "amber" | "blue" | "violet" | "sky" | "cyan" | "fuchsia";
@@ -50,15 +50,16 @@ export interface Pill {
 
 /** Labels among many, e.g. categories: coloured pills, the first ones shown, the others counted. */
 export function PillsCell({ items, max = 2 }: { items: Pill[]; max?: number }) {
+  const shown = useShownCount(max);
   if (items.length === 0) return <EmptyValue />;
   return (
-    <span className="flex items-center gap-1">
-      {items.slice(0, max).map((item) => (
+    <span className={cn("flex items-center gap-1", shown === Infinity && "flex-wrap py-1")}>
+      {items.slice(0, shown).map((item) => (
         <span key={item.label} className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-medium", PILL_TONES[item.tone])}>
           {item.label}
         </span>
       ))}
-      <MoreCount names={items.slice(max).map((item) => item.label)} />
+      <MoreCount names={items.slice(shown).map((item) => item.label)} />
     </span>
   );
 }
@@ -71,15 +72,16 @@ export interface IconItem {
 
 /** Things told by their icon, e.g. connections or tags: the first ones shown, the others counted. */
 export function IconsCell({ items, max = 3 }: { items: IconItem[]; max?: number }) {
+  const shown = useShownCount(max);
   if (items.length === 0) return <EmptyValue />;
   return (
-    <span className="flex items-center gap-1">
-      {items.slice(0, max).map((item) => (
+    <span className={cn("flex items-center gap-1", shown === Infinity && "flex-wrap py-1")}>
+      {items.slice(0, shown).map((item) => (
         <IconBox key={item.key} label={item.label}>
           {item.icon}
         </IconBox>
       ))}
-      <MoreCount names={items.slice(max).map((item) => item.label)} />
+      <MoreCount names={items.slice(shown).map((item) => item.label)} />
     </span>
   );
 }

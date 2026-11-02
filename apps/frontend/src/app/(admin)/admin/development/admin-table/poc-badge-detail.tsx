@@ -1,6 +1,6 @@
 "use client";
 
-import { CopyIcon, MedalIcon, PencilIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarIcon, CopyIcon, GaugeIcon, PaletteIcon, PencilIcon, ShapesIcon, TextIcon, ToggleRightIcon, Trash2Icon, TypeIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   DetailAction,
@@ -11,8 +11,10 @@ import {
   DetailFields,
   DetailHeader,
   DetailLoader,
+  DetailMedia,
   DetailSkeleton,
   DetailSection,
+  LucideIconByName,
 } from "@/components/admin/detail";
 import { BADGES_TABLE, COLLECTIONS, type PocBadge } from "./poc-order";
 import { loadPocBadge, savePocBadge, usePocVersion } from "./poc-store";
@@ -30,34 +32,71 @@ const RULES: Record<PocBadge["collection"], string> = {
 export function PocBadgePanel({ id }: { id: string }) {
   const version = usePocVersion();
   return (
-    <DetailLoader id={id} load={loadPocBadge} refreshKey={version} skeleton={<DetailSkeleton cover sections={[4, 1]} />}>
+    <DetailLoader id={id} load={loadPocBadge} refreshKey={version} skeleton={<DetailSkeleton cover sections={[5, 2, 5]} />}>
       {(badge) => <PocBadgeDetail badge={badge} />}
     </DetailLoader>
   );
 }
 
-/** What the detail panel shows of a fake badge: its picture large as the cover, then small as a field, and its buttons kept at the bottom. */
+/**
+ * What the detail panel shows of a fake badge: its picture large as the
+ * cover, then small as a field, a field of every kind edited in place, and
+ * its buttons kept at the bottom.
+ */
 export function PocBadgeDetail({ badge }: { badge: PocBadge }) {
+  const save = (patch: Parameters<typeof savePocBadge>[1]) => savePocBadge(badge.id, patch);
   return (
     <>
       <DetailCover image={badge.picture} />
       <DetailHeader
-        media={
-          <span className="flex size-12 items-center justify-center rounded-full bg-muted [&_svg]:size-6">
-            <MedalIcon aria-hidden />
-          </span>
-        }
+        media={<DetailMedia icon={<LucideIconByName name={badge.icon} />} color={badge.color ?? undefined} />}
         title={badge.name}
         subtitle={COLLECTIONS[badge.collection].label}
       />
       <DetailSection title="Badge">
         <DetailFields>
-          <DetailField label="Nom" icon={<TypeIcon />} copy={badge.name} edit={{ value: badge.name, onSave: (name) => savePocBadge(badge.id, { name }) }} />
+          <DetailField label="Nom" icon={<TypeIcon />} copy={badge.name} edit={{ value: badge.name, onSave: (name) => save({ name }) }} />
         </DetailFields>
-        <DetailColumnFields row={badge} columns={BADGES_TABLE.columns} ids={["picture", "collection", "holders", "createdAt"]} />
+        {/* Drawn by its column, picked in a list. */}
+        <DetailColumnFields
+          row={badge}
+          columns={BADGES_TABLE.columns}
+          ids={[
+            "picture",
+            "collection",
+            "holders",
+            "createdAt",
+          ]}
+        />
+      </DetailSection>
+      <DetailSection title="Apparence">
+        <DetailFields>
+          {/* Swatches, any hue or its code; cleared by « Aucune ». */}
+          <DetailField label="Couleur" icon={<PaletteIcon />} edit={{ kind: "color", value: badge.color, noneLabel: "Aucune", onSave: (color) => save({ color }) }} />
+          {/* Every icon of Lucide, searched by name. */}
+          <DetailField label="Icône" icon={<ShapesIcon />} edit={{ kind: "icon", value: badge.icon, onSave: (icon) => save({ icon }) }} />
+        </DetailFields>
       </DetailSection>
       <DetailSection title="Règle">
         <DetailFields>
+          {/* Refused below 1, cleared refused by the store. */}
+          <DetailField
+            label="Seuil"
+            icon={<GaugeIcon />}
+            edit={{ kind: "number", value: badge.threshold, min: 1, unit: COLLECTIONS[badge.collection].unit, onSave: (threshold) => save({ threshold }) }}
+          />
+          {/* Saved as soon as switched. */}
+          <DetailField label="Actif" icon={<ToggleRightIcon />} edit={{ kind: "switch", value: badge.active, onSave: (active) => save({ active }) }} />
+          <DetailField label="Disponible dès" icon={<CalendarIcon />} edit={{ kind: "date", value: badge.availableFrom, onSave: (availableFrom) => save({ availableFrom }) }} />
+          <DetailField label="Fin" icon={<CalendarClockIcon />} edit={{
+              kind: "date",
+              time: true,
+              value: badge.endsAt,
+              // Hangs on another field: refused before the call, in a bubble.
+              validate: (endsAt) => (endsAt && badge.availableFrom && endsAt.slice(0, 10) < badge.availableFrom ? "La fin doit suivre « Disponible dès »." : null),
+              onSave: (endsAt) => save({ endsAt }),
+            }}
+          />
           <DetailField label="Condition" icon={<TextIcon />} copy={RULES[badge.collection]} stacked>
             {RULES[badge.collection]}
           </DetailField>

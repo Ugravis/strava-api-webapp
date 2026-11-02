@@ -38,7 +38,7 @@ export async function loadPocUser(id: string): Promise<PocUser | null> {
   return user ? structuredClone(user) : null;
 }
 
-export async function savePocUser(id: string, patch: Partial<Pick<PocUser, "displayName" | "email" | "note">>): Promise<ActionResult> {
+export async function savePocUser(id: string, patch: Partial<Pick<PocUser, "displayName" | "email" | "note" | "categories" | "cover">>): Promise<ActionResult> {
   await pause(300, 300);
   if (patch.email !== undefined && !patch.email?.includes("@")) return { ok: false, message: "Adresse e-mail invalide." };
   const at = POC_USERS.findIndex((each) => each.id === id);
@@ -55,13 +55,23 @@ export async function loadPocBadge(id: string): Promise<PocBadge | null> {
   return badge ? structuredClone(badge) : null;
 }
 
-export async function savePocBadge(id: string, patch: { name: string | null }): Promise<ActionResult> {
+type BadgePatch = Partial<Omit<PocBadge, "id" | "position" | "holders" | "createdAt" | "picture" | "name" | "collection" | "icon" | "threshold">> & {
+  // Edited fields may be cleared; these are refused when they are.
+  name?: string | null;
+  collection?: string | null;
+  icon?: string | null;
+  threshold?: number | null;
+};
+
+export async function savePocBadge(id: string, patch: BadgePatch): Promise<ActionResult> {
   await pause(300, 300);
-  const { name } = patch;
-  if (name === null) return { ok: false, message: "Un badge a toujours un nom." };
+  if (patch.name === null) return { ok: false, message: "Un badge a toujours un nom." };
+  if (patch.icon === null) return { ok: false, message: "Un badge a toujours une icône." };
+  if (patch.threshold === null) return { ok: false, message: "Un badge a toujours un seuil." };
+  if (patch.collection === null) return { ok: false, message: "Un badge a toujours une collection." };
   const at = BADGES.findIndex((each) => each.id === id);
   if (at === -1) return { ok: false, message: "Ce badge n'existe plus." };
-  BADGES[at] = { ...BADGES[at], name };
+  BADGES[at] = { ...BADGES[at]!, ...(patch as Partial<PocBadge>) };
   bump();
   return { ok: true, message: "Enregistré" };
 }

@@ -1,3 +1,6 @@
+import type { FieldRules } from "../rules";
+import { ADMIN_BADGE_SLUG, ADMIN_ICON_PATTERN, ADMIN_COLOR_PATTERN } from "./badges";
+
 /** Limits of the fields of a user tag; its id follows `ADMIN_BADGE_SLUG`. */
 export const ADMIN_USER_TAG_ID_MAX_LENGTH = 32;
 export const ADMIN_USER_TAG_NAME_MAX_LENGTH = 40;
@@ -34,3 +37,12 @@ export interface UpdateUserTagRequest {
 export interface CreateUserTagRequest extends UpdateUserTagRequest {
   id: string;
 }
+
+/** The rules of a user tag, followed by the back office as typed and by the API. */
+export const USER_TAG_RULES: FieldRules<CreateUserTagRequest> = {
+  id: { type: "text", required: true, maxLength: ADMIN_USER_TAG_ID_MAX_LENGTH, pattern: ADMIN_BADGE_SLUG, patternMessage: "Minuscules et chiffres, mots joints par _." },
+  name: { type: "text", required: true, maxLength: ADMIN_USER_TAG_NAME_MAX_LENGTH },
+  description: { type: "text", maxLength: ADMIN_USER_TAG_DESCRIPTION_MAX_LENGTH },
+  icon: { type: "text", required: true, pattern: ADMIN_ICON_PATTERN, patternMessage: "Icône inconnue." },
+  color: { type: "text", pattern: ADMIN_COLOR_PATTERN, patternMessage: "Couleur au format #rrggbb." },
+};

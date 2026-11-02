@@ -76,13 +76,18 @@ export class AdminReservedUsernamesService {
     }));
   }
 
-  async reserve(actor: User, dto: ReserveUsernameDto): Promise<void> {
-    if (await this.users.existsBy({ username: dto.username })) {
+  /** Refuses a username held by an account: reserving it would not free it. */
+  private async assertUnheld(username: string): Promise<void> {
+    if (await this.users.existsBy({ username })) {
       throw ApiErrors.conflict(
         ApiErrorCode.UsernameTaken,
         'An account holds this username',
       );
     }
+  }
+
+  async reserve(actor: User, dto: ReserveUsernameDto): Promise<void> {
+    await this.assertUnheld(dto.username);
     try {
       await this.reserved.insert({
         username: dto.username,
@@ -105,10 +110,27 @@ export class AdminReservedUsernamesService {
     username: string,
     dto: UpdateReservedUsernameDto,
   ): Promise<void> {
-    const { affected } = await this.reserved.update(
-      { username },
-      { category: dto.category, note: dto.note ?? null },
-    );
+    const renamed = dto.username !== undefined && dto.username !== username;
+    if (renamed) await this.assertUnheld(dto.username!);
+    let affected: number | null | undefined;
+    try {
+      ({ affected } = await this.reserved.update(
+        { username },
+        {
+          ...(renamed && { username: dto.username }),
+          category: dto.category,
+          note: dto.note ?? null,
+        },
+      ));
+    } catch (error) {
+      if (renamed && isUniqueViolation(error, 'username')) {
+        throw ApiErrors.conflict(
+          ApiErrorCode.UsernameReserved,
+          'This username is already reserved',
+        );
+      }
+      throw error;
+    }
     if (!affected) {
       throw ApiErrors.notFound(
         ApiErrorCode.NotFound,

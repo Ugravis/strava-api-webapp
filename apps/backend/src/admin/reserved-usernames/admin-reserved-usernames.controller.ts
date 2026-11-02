@@ -1,4 +1,8 @@
-import { type AdminReservedUsername } from '@kilotrace/shared/admin';
+import {
+  type AdminReservedUsername,
+  RESERVED_USERNAME_RULES,
+} from '@kilotrace/shared/admin';
+import { assertRules } from '../../common/field-rules';
 import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
@@ -43,17 +47,19 @@ export class AdminReservedUsernamesController {
     @CurrentUser() actor: User,
     @Body() dto: ReserveUsernameDto,
   ): Promise<void> {
+    assertRules(RESERVED_USERNAME_RULES, dto);
     return this.reserved.reserve(actor, dto);
   }
 
   @Patch(':username')
   @Permission('usernames.manage')
-  @Audited({ action: 'usernames.update', details: ['category'] })
+  @Audited({ action: 'usernames.update', details: ['username', 'category'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   update(
     @Param('username') username: string,
     @Body() dto: UpdateReservedUsernameDto,
   ): Promise<void> {
+    assertRules(RESERVED_USERNAME_RULES, dto, { partial: true });
     return this.reserved.update(username, dto);
   }
 

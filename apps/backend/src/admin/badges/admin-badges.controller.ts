@@ -1,7 +1,9 @@
-import type {
-  AdminBadge,
-  AdminBadgeCatalog,
-  AdminBadgeThemeRow,
+import {
+  type AdminBadge,
+  type AdminBadgeCatalog,
+  type AdminBadgeThemeRow,
+  BADGE_RULES,
+  BADGE_THEME_RULES,
 } from '@kilotrace/shared/admin';
 import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
@@ -15,6 +17,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { assertRules } from '../../common/field-rules';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
@@ -66,6 +69,7 @@ export class AdminBadgesController {
   @Audited({ action: 'badges.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateBadgeDto): Promise<void> {
+    assertRules(BADGE_RULES, dto);
     return this.badges.createBadge(dto);
   }
 
@@ -74,6 +78,7 @@ export class AdminBadgesController {
   @Audited({ action: 'badges.update', target: BADGE, details: ['name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   update(@Param('id') id: string, @Body() dto: UpdateBadgeDto): Promise<void> {
+    assertRules(BADGE_RULES, dto, { partial: true });
     return this.badges.updateBadge(id, dto);
   }
 
@@ -123,6 +128,7 @@ export class AdminBadgeThemesController {
   @Audited({ action: 'badges.themes.create', details: ['id', 'name'] })
   @HttpCode(HttpStatus.NO_CONTENT)
   create(@Body() dto: CreateBadgeThemeDto): Promise<void> {
+    assertRules(BADGE_THEME_RULES, dto);
     return this.badges.createTheme(dto);
   }
 
@@ -134,6 +140,7 @@ export class AdminBadgeThemesController {
     @Param('id') id: string,
     @Body() dto: UpdateBadgeThemeDto,
   ): Promise<void> {
+    assertRules(BADGE_THEME_RULES, dto, { partial: true });
     return this.badges.updateTheme(id, dto);
   }
 

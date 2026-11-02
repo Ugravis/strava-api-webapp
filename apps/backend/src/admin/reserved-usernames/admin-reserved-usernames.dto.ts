@@ -22,6 +22,10 @@ export class ReserveUsernameDto {
 }
 
 export class UpdateReservedUsernameDto {
+  @IsOptional()
+  @UsernameField()
+  username?: string;
+
   @IsIn(RESERVED_USERNAME_CATEGORIES)
   category!: ReservedUsernameCategory;
 

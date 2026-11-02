@@ -30,6 +30,8 @@ interface SplitPanelContextValue {
   /** Shows `content` in place of what the panel shows, without a new step of back and forward, nor asking first: e.g. a row once created. */
   replace: (content: ReactNode, options?: SplitPanelOptions) => void;
   close: () => void;
+  /** Titles the contents opened for `id`, e.g. once its row is loaded. */
+  setTitle: (id: string, title: string) => void;
   /** Counts a content holding work not saved yet, while `dirty`: leaving it asks first. */
   guard: (dirty: boolean) => () => void;
   isOpen: boolean;
@@ -137,6 +139,11 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
     writeParams({ [ROW_PARAM]: options.id ?? null, [MODE_PARAM]: modeRef.current });
   }, []);
   const open = useCallback((content: ReactNode, options: SplitPanelOptions = {}) => attempt(() => show(content, options, false)), [attempt, show]);
+  const setTitle = useCallback(
+    (id: string, title: string) =>
+      setHistory((last) => last && { ...last, entries: last.entries.map((entry) => (entry.id === id ? { ...entry, title } : entry)) }),
+    [],
+  );
   const replace = useCallback((content: ReactNode, options: SplitPanelOptions = {}) => show(content, options, true), [show]);
   const close = useCallback(
     () =>
@@ -199,7 +206,7 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
     };
   }, [isOpen, router]);
 
-  const value = useMemo(() => ({ open, replace, close, guard, isOpen, activeId }), [open, replace, close, guard, isOpen, activeId]);
+  const value = useMemo(() => ({ open, replace, close, setTitle, guard, isOpen, activeId }), [open, replace, close, setTitle, guard, isOpen, activeId]);
 
   const state: SplitPanelState = {
     entry: history ? history.entries[history.at] : null,

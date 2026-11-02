@@ -17,7 +17,7 @@ A detail panel on the right of the pages of a section, e.g. the row of a table o
 - **Back and forward.** Arrows in the header, as in a browser, through the contents opened since the panel opened (50 at most). Opening another one drops those ahead. `?row=` follows.
 - **Folding.** A button in the header slides the panel out without closing it; a handle stays on the right edge to bring it back. In split mode the page takes the whole width meanwhile. Opening another content unfolds it.
 - **Full screen.** A button in the header lays the panel over the whole page, as a page of its own (`?panel=full`), without gutter or card, its content in a centred column; the arrows of the table still move from row to row. The same button, or `Esc`, comes back to the mode it left. Neither fold nor mode nor resize meanwhile; never on a phone.
-- **Phone** (under 768 px): over the whole width of the page, under the header of the site and above the footer, never split, not resizable.
+- **Phone** (under 768 px): a page of its own under the header of the site, as once expanded (no gutter, no card, no shadow), never split, not resizable.
 - **Closing.** The X, `Esc` (unless a menu or a dialog handled it first; out of full screen first), or a change of page.
 - **URL.** `open(content, { id })` writes `?row=<id>&panel=<mode>` through the history (no server round trip); `close()` removes both. A link with `?row=` is shared: the page opens that row on arrival, in the mode of `?panel=`.
 - **Header.** Icon buttons, each named in a bubble after 400 ms.

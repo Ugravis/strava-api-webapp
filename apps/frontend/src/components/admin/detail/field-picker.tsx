@@ -8,6 +8,7 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useNoHover } from "@/hooks/use-no-hover";
 import { ErrorBubble } from "./error-bubble";
+import { SAVE_BUTTON } from "./field-buttons";
 import { type DetailEditOption, OptionLabel, type PickerEdit, useCommit } from "./field-edit";
 import { IconGrid } from "./icon-picker";
 
@@ -139,7 +140,7 @@ export function PickerField({
                 change(edit.options.map((option) => option.value).filter((each) => (each === value) !== (draft as string[]).includes(each)))
               }
             />
-            <Button size="sm" disabled={saving} onClick={() => void commit(draft)}>
+            <Button size="sm" className={SAVE_BUTTON} disabled={saving} onClick={() => void commit(draft)}>
               Valider
             </Button>
           </>
@@ -293,7 +294,7 @@ function ColorPicker({
           aria-invalid={code !== "" && !HEX.test(code)}
           className="h-8 font-mono text-sm"
         />
-        <Button size="sm" disabled={disabled} onClick={onDone}>
+        <Button size="sm" className={SAVE_BUTTON} disabled={disabled} onClick={onDone}>
           Valider
         </Button>
       </div>
@@ -394,7 +395,7 @@ function ImagePicker({
         <Button size="sm" variant="outline" className="ml-auto" disabled={disabled} onClick={onCancel}>
           Annuler
         </Button>
-        <Button size="sm" disabled={disabled || value === current} onClick={onDone}>
+        <Button size="sm" className={SAVE_BUTTON} disabled={disabled || value === current} onClick={onDone}>
           Valider
         </Button>
       </div>

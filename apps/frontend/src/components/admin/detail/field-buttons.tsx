@@ -5,6 +5,9 @@ import { FLOATING_BUTTON } from "@/components/admin/data-table/cells/base";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+/** The blue of the buttons that save an edit: ✓ of a field, « Valider » of a popover. */
+export const SAVE_BUTTON = "border-blue-600 bg-blue-600 text-white hover:bg-blue-600/90 hover:text-white";
+
 /** Inside a field: told by a button that changes its value, the field then marked modifiable. */
 export const FieldModifiable = createContext<((on: boolean) => void) | null>(null);
 
@@ -56,7 +59,7 @@ export function DetailFieldButton({
   label: string;
   disabled?: boolean;
   pressed?: boolean;
-  /** The button that saves: dark, as the main button of a form. */
+  /** The button that saves: blue, as every button saving an edit. */
   primary?: boolean;
   /** It changes the value (a tool, e.g. reset): the field is marked modifiable. */
   modifies?: boolean;
@@ -95,7 +98,7 @@ export function DetailFieldButton({
               event.stopPropagation();
               onClick();
             }}
-            className={cn(FLOATING_BUTTON, pressed && "bg-muted text-foreground", primary && "border-foreground bg-foreground text-background hover:bg-foreground/85 hover:text-background")}
+            className={cn(FLOATING_BUTTON, pressed && "bg-muted text-foreground", primary && SAVE_BUTTON)}
           >
             {children}
           </button>

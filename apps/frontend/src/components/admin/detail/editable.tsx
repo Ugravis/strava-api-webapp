@@ -27,8 +27,8 @@ import { PickerField } from "./field-picker";
  * phone), none is shown: a tap on the value opens a bubble of its actions,
  * each with its icon and its name: the outside page of `href` (its link no
  * longer followed at once), `onOpen` (the row of a table), the tools, copy
- * and edit. Any tap outside its buttons closes it, and only closes it. `cell`: in a cell of a table, typed on a phone in a
- * bubble under it, which the screen holds, rather than in the narrow cell.
+ * and edit. Any tap outside its buttons closes it, and only closes it. On a phone, a text, a number or a date is typed in a
+ * bubble under the value, centred on the screen, in a cell as in a detail.
  */
 export function EditableValue({
   label,
@@ -38,7 +38,6 @@ export function EditableValue({
   stacked,
   onOpen,
   href,
-  cell,
   valueClassName,
   children,
 }: {
@@ -49,7 +48,6 @@ export function EditableValue({
   stacked?: boolean;
   onOpen?: () => void;
   href?: string | null;
-  cell?: boolean;
   valueClassName?: string;
   children?: ReactNode;
 }) {
@@ -88,8 +86,8 @@ export function EditableValue({
     </>
   );
 
-  // Typed in the cell itself, unless a phone: in a bubble under it.
-  const floating = cell && noHover;
+  // Typed in place, unless a phone: in a modal bubble under it, as every bubble there.
+  const floating = noHover;
   if (edit && editing && isInline(edit) && !floating) return <InlineEditor edit={edit} label={label} onClose={() => setEditing(false)} />;
   return (
     <>
@@ -208,13 +206,13 @@ function ActionsBubble({
 }
 
 /**
- * On a phone, the field typing the value of a cell, in a bubble under it,
+ * On a phone, the field typing a value, in a bubble under it,
  * centred on the screen. A tap outside leaves the field, which saves, and
  * reaches nothing beneath; Esc gives up.
  */
 function FloatingEditor({ edit, label, className, onClose, children }: { edit: InlineEdit; label: string; className?: string; onClose: () => void; children: ReactNode }) {
   const [cellBox, setCellBox] = useState<HTMLDivElement | null>(null);
-  // The height of the cell, the width of the screen: under the cell, centred on the screen.
+  // The height of the value, the width of the screen: under the value, centred on the screen.
   const anchor = useMemo(
     () =>
       cellBox && {

@@ -16,7 +16,7 @@ export function CellValue<T>({ column, row, onOpen }: { column: DataTableColumn<
   if (!edit && !column.copy)
     return drawCell(column, row);
   return (
-    <EditableValue label={column.header} edit={edit} copy={column.copy?.(row) ?? null} onOpen={onOpen} href={column.href?.(row)} cell>
+    <EditableValue label={column.header} edit={edit} copy={column.copy?.(row) ?? null} onOpen={onOpen} href={column.href?.(row)}>
       {drawCell(column, row)}
     </EditableValue>
   );

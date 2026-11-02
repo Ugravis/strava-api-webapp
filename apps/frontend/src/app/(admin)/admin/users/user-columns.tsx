@@ -87,16 +87,15 @@ export function UserTagIcon({ tag }: { tag: AdminUserTagLook }) {
 const tagItems = (user: AdminUserSummary): IconItem[] => user.userTags.map((tag) => ({ key: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} /> }));
 
 /**
- * The tags of an account, picked among the `catalog`; each one held leads
- * to its row in the table of the tags (`tagsPath`). `locked`: not for this
+ * The tags of an account, picked among the `catalog`. `locked`: not for this
  * member, and why.
  */
-export function tagsEdit(user: AdminUserSummary, catalog: AdminUserTagLook[], tagsPath: string, locked: string | null): DetailFieldEdit<"multiselect"> {
+export function tagsEdit(user: AdminUserSummary, catalog: AdminUserTagLook[], locked: string | null): DetailFieldEdit<"multiselect"> {
   const held = user.userTags.map((tag) => tag.id);
   return {
     kind: "multiselect",
     value: held,
-    options: catalog.map((tag) => ({ value: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} />, href: `${tagsPath}?row=${encodeURIComponent(tag.id)}` })),
+    options: catalog.map((tag) => ({ value: tag.id, label: tag.name, icon: <UserTagIcon tag={tag} /> })),
     locked,
     onSave: async (next) => {
       const result = await setUserTags(user.id, held, next);

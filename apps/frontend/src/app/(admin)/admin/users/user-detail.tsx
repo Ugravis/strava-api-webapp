@@ -13,6 +13,7 @@ import {
   GlobeIcon,
   KeyRoundIcon,
   MapPinIcon,
+  PanelRightOpenIcon,
   GavelIcon,
   TagIcon,
   RefreshCwIcon,
@@ -34,6 +35,9 @@ import {
   DetailLoader,
   DetailSection,
   DetailHistory,
+  DetailItem,
+  DetailItemButton,
+  DetailItems,
   DetailSkeleton,
   type RowPanelControls,
 } from "@/components/admin/detail";
@@ -44,7 +48,8 @@ import { countryName } from "@/lib/countries/country-format";
 import { publicNameOf } from "@/lib/user";
 import { loadUserDetail, loadUserHistory, type UserDetailData } from "./actions";
 import { moderateTool, NOT_GRANTED, useUserActionDialog, userActionsOf } from "./user-actions";
-import { tagsEdit, userColumns, UserMarks } from "./user-columns";
+import { useOpenTag } from "./use-user-panel";
+import { tagsEdit, userColumns, UserMarks, UserTagIcon } from "./user-columns";
 import { useUsersVersion } from "./users-store";
 
 /** The account loaded by the panel, its skeleton meanwhile; loaded again after every change. `panel` when opened from its table; else (from the audit log) a deletion closes the panel. */
@@ -58,12 +63,13 @@ export function UserRowPanel({ id, panel }: { id: string; panel?: RowPanelContro
 }
 
 /** Everything the back office shows of an account, and its actions, locked with their reason when the role does not grant them. */
-function UserDetail({ data: { user, permissions, refusal, catalog, historyHref, tagsPath }, panel, version }: { data: UserDetailData; panel?: RowPanelControls; version: number }) {
+function UserDetail({ data: { user, permissions, refusal, catalog, historyHref }, panel, version }: { data: UserDetailData; panel?: RowPanelControls; version: number }) {
   const { close } = useSplitPanel();
+  const openTag = useOpenTag();
   const { openAction, dialog } = useUserActionDialog((id) => (panel ? panel.removed(id) : close()));
   /** The gavel of a field holding a value, opening the moderation with it checked; none when the member may not. */
   const moderate = (target: ModeratableField, shown: unknown) => !!shown && moderateTool(user, target, permissions, refusal, openAction);
-  const tags = tagsEdit(user, catalog, tagsPath, permissions.includes("users.userTags") ? null : NOT_GRANTED);
+  const tags = tagsEdit(user, catalog, permissions.includes("users.userTags") ? null : NOT_GRANTED);
   const columns = userColumns({ moderate: (each, target) => moderateTool(each, target, permissions, refusal, openAction) });
   const field = (id: string) => <DetailColumnField row={user} columns={columns} id={id} />;
   const actions = userActionsOf(user, permissions, refusal);
@@ -135,7 +141,27 @@ function UserDetail({ data: { user, permissions, refusal, catalog, historyHref, 
         <DetailFields>
           {field("status")}
           {field("roles")}
-          <DetailField label="Tags" icon={<TagIcon />} edit={tags} />
+          <DetailField label="Tags" icon={<TagIcon />} edit={tags} copy={user.userTags.map((tag) => tag.name).join(", ") || null}>
+            {user.userTags.length > 0 && (
+              <DetailItems>
+                {user.userTags.map((tag) => (
+                  <DetailItem
+                    key={tag.id}
+                    pill
+                    floating
+                    icon={<UserTagIcon tag={tag} />}
+                    actions={
+                      <DetailItemButton label={`Ouvrir le tag ${tag.name}`} modifies={false} onClick={() => openTag(tag)}>
+                        <PanelRightOpenIcon aria-hidden />
+                      </DetailItemButton>
+                    }
+                  >
+                    {tag.name}
+                  </DetailItem>
+                ))}
+              </DetailItems>
+            )}
+          </DetailField>
           {field("email")}
           {field("createdAt")}
           {field("lastSeenAt")}

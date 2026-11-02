@@ -14,6 +14,7 @@ import { actRefusal } from "@/lib/admin/permissions";
 import { fetchUsersTable, loadUserDetail } from "./actions";
 import { CONNECTIONS, ROLES, type Status, STATUSES, tagsEdit, userColumns, UserTagIcon } from "./user-columns";
 import { moderateTool, NOT_GRANTED, useUserActionDialog, userActionsOf } from "./user-actions";
+import { useTagArrival } from "./use-user-panel";
 import { UserRowPanel } from "./user-detail";
 import { useUsersVersion } from "./users-store";
 
@@ -24,8 +25,8 @@ function copy(text: string, done: string) {
   navigator.clipboard.writeText(text).then(() => toast.success(done), () => toast.error("Copie impossible"));
 }
 
-/** The accounts; a click opens one in the side panel. `tags` is the catalog, in its order, `tagsPath` its table. */
-export function UsersTable({ me, auditLogPath, tags, tagsPath }: { me: AdminMeResponse; auditLogPath: string; tags: AdminUserTagLook[]; tagsPath: string }) {
+/** The accounts; a click opens one in the side panel. `tags` is the catalog, in its order. */
+export function UsersTable({ me, auditLogPath, tags }: { me: AdminMeResponse; auditLogPath: string; tags: AdminUserTagLook[] }) {
   const router = useRouter();
   const version = useUsersVersion();
   // The panel, read by the menus of the rows: the config stays the same as it changes.
@@ -57,7 +58,7 @@ export function UsersTable({ me, auditLogPath, tags, tagsPath }: { me: AdminMeRe
       ],
       columns: userColumns({
         moderate: (user, field) => moderateTool(user, field, me.permissions, actRefusal(me, user), openAction),
-        tags: (user) => tagsEdit(user, tags, tagsPath, me.permissions.includes("users.userTags") ? null : NOT_GRANTED),
+        tags: (user) => tagsEdit(user, tags, me.permissions.includes("users.userTags") ? null : NOT_GRANTED),
       }),
       facets: [
         { id: "connections", label: "Connexion", options: Object.entries(CONNECTIONS).map(([value, { label, icon }]) => ({ value, label, icon })) },
@@ -127,7 +128,7 @@ export function UsersTable({ me, auditLogPath, tags, tagsPath }: { me: AdminMeRe
         </RowActions>
       ),
     };
-  }, [router, auditLogPath, tags, tagsPath, me, openAction]);
+  }, [router, auditLogPath, tags, me, openAction]);
 
   const panel = useRowPanel<AdminUserSummary>({
     config,
@@ -135,6 +136,8 @@ export function UsersTable({ me, auditLogPath, tags, tagsPath }: { me: AdminMeRe
     load: (id) => loadUserDetail(id).then((data) => data?.user ?? null),
     detail: (id, controls) => <UserRowPanel id={id} panel={controls} />,
   });
+  // A tag opened from an account: its `?row=` once on arrival.
+  useTagArrival();
   useLayoutEffect(() => {
     panelRef.current = { controls: panel, active: panel.table.activeRowId };
   });

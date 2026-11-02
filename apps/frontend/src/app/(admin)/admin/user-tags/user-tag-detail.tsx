@@ -29,11 +29,12 @@ import { bumpUserTags, deleteLock, deleteOf, LOCKS, saveTag, SystemMark, userTag
 const BLANK: UserTagDraft = { id: null, name: null, description: null, icon: BADGE_ICON_KEYS[0], color: null };
 
 /** The user tag loaded by the panel, its skeleton meanwhile; loaded again after every change. */
-export function UserTagRowPanel({ id, rights, usersPath, panel }: { id: string; rights: UserTagRights; usersPath: string; panel: RowPanelControls }) {
+/** `openUser`: a holder opened in the panel, else on the page of the accounts. */
+export function UserTagRowPanel({ id, rights, usersPath, panel, openUser }: { id: string; rights: UserTagRights; usersPath: string; panel: RowPanelControls; openUser?: (user: { id: string; username: string }) => void }) {
   const version = useUserTagsVersion();
   return (
     <DetailLoader id={id} load={loadUserTag} refreshKey={version} skeleton={<DetailSkeleton media actions={2} sections={[7, 2, 3]} />}>
-      {(userTag) => <UserTagDetail userTag={userTag} rights={rights} usersPath={usersPath} panel={panel} version={version} />}
+      {(userTag) => <UserTagDetail userTag={userTag} rights={rights} usersPath={usersPath} panel={panel} version={version} openUser={openUser} />}
     </DetailLoader>
   );
 }
@@ -45,12 +46,14 @@ function UserTagDetail({
   usersPath,
   panel,
   version,
+  openUser,
 }: {
   userTag: AdminUserTag;
   rights: UserTagRights;
   usersPath: string;
   panel: RowPanelControls;
   version: number;
+  openUser?: (user: { id: string; username: string }) => void;
 }) {
   const router = useRouter();
   const columns = useMemo(() => userTagColumns(rights.edit), [rights.edit]);
@@ -110,7 +113,7 @@ function UserTagDetail({
                 media: <UserAvatar user={user} className="size-8" />,
                 title: publicNameOf(user),
                 subtitle: `@${user.username}`,
-                onOpen: () => router.push(`${usersPath}?row=${user.id}`),
+                onOpen: () => (openUser ? openUser(user) : router.push(`${usersPath}?row=${user.id}`)),
               })),
             }))
           }

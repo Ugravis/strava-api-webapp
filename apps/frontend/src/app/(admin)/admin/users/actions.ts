@@ -42,8 +42,6 @@ export interface UserDetailData {
   catalog: AdminUserTagLook[];
   /** The whole history of the account, in the audit log. */
   historyHref: string;
-  /** The table of the tags, a tag opened by `?row=`. */
-  tagsPath: string;
 }
 
 /** The detail of an account, null when it is gone. */
@@ -62,7 +60,6 @@ export async function loadUserDetail(id: string): Promise<UserDetailData | null>
     refusal: actRefusal(me, user),
     catalog: catalog.ok ? catalog.data : user.userTags,
     historyHref: `${adminRoutes.auditLog}?target=${id}`,
-    tagsPath: adminRoutes.userTags,
   };
 }
 

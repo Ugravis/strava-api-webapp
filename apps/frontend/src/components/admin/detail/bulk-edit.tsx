@@ -5,15 +5,15 @@ import { ArrowLeftIcon, ChevronRightIcon, LoaderCircleIcon, LockIcon, PencilIcon
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/components/admin/action-state";
-import { type DataTableColumn, Tip, useSelectionIconsOnly } from "@/components/admin/data-table";
+import { type DataTableColumn, formatNumber, Tip, useSelectionIconsOnly } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { type DetailDraftSpec, useDetailDraft } from "./draft";
+import { type DetailDraftSpec, useDetailDraft } from "./use-detail-draft";
 import { DetailField, DetailFields } from "./field";
 import { SAVE_BUTTON } from "./field-buttons";
-import type { DetailEditKind } from "./field-edit";
+import type { DetailEditKind } from "./edit-types";
 
 /** A list changed on several rows: its values replaced, or some added to or removed from each. */
 export type BulkEditMode = "replace" | "add" | "remove";
@@ -60,7 +60,7 @@ export function BulkEditAction<T>({
 }) {
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<BulkEditField | null>(null);
-  const rows = `${count.toLocaleString("fr-FR")} ${noun(count)}`;
+  const rows = `${formatNumber(count)} ${noun(count)}`;
   const columnOf = (id: string) => columns.find((column) => column.id === id);
   // The bar too narrow: its icon alone, named in a bubble.
   const iconOnly = useSelectionIconsOnly();

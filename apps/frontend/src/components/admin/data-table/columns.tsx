@@ -8,7 +8,9 @@ import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCel
 import { type CellUser, IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { type CellImage, ImageCell, ImageCover } from "./cells/image";
 import { formatBytes, formatDate, formatDateTime } from "./format";
-import { type DetailFieldEdit, EditValue, editCopy } from "../detail/field-edit";
+import type { DetailFieldEdit } from "../detail/edit-types";
+import { EditValue } from "../detail/edit-value";
+import { editCopy } from "../detail/field-edit";
 import { OrderCell } from "./reorder";
 import type { DataTableColumn } from "./types";
 

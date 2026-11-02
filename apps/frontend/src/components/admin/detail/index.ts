@@ -5,10 +5,12 @@
 export { DetailAction, DetailActions } from "./actions";
 export { BulkEditAction, type BulkEditChange, type BulkEditField, type BulkEditMode } from "./bulk-edit";
 export { DetailColumnField, DetailColumnFields } from "./column-fields";
-export { type DetailDraft, type DetailDraftResult, type DetailDraftSpec, DetailForm, DetailSectionForm, useDetailDraft } from "./draft";
+export { DetailForm, DetailSectionForm } from "./draft";
+export { type DetailDraft, type DetailDraftResult, type DetailDraftSpec, useDetailDraft } from "./use-detail-draft";
 export { DetailFields, DetailField } from "./field";
 export { DetailFieldButton } from "./field-buttons";
-export { type DetailEditKind, type DetailEditOption, type DetailFieldEdit, fromRule } from "./field-edit";
+export type { DetailEditKind, DetailEditOption, DetailFieldEdit } from "./edit-types";
+export { fromRule } from "./field-edit";
 export { Markdown } from "./markdown";
 export { DetailCover, DetailHeader, DetailMedia } from "./header";
 export { DetailHistory, type DetailHistoryEvent } from "./history";

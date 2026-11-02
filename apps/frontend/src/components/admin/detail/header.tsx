@@ -3,7 +3,7 @@
 import { ImageIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { type CellImage, ImageCover, type Look, lookStyle } from "@/components/admin/data-table";
-import { usePreview } from "./field-picker";
+import { usePreview } from "./use-preview";
 
 /**
  * A large image across the top of the detail, above its header; a click opens

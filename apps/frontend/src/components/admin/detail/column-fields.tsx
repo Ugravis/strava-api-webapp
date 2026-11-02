@@ -2,7 +2,7 @@
 
 import { type DataTableColumn, drawCell, WholeCells } from "@/components/admin/data-table";
 import { DetailField, DetailFields } from "./field";
-import type { DetailFieldEdit } from "./field-edit";
+import type { DetailFieldEdit } from "./edit-types";
 
 /**
  * A field of a row as its table draws it: the name, icon, cell and copy of

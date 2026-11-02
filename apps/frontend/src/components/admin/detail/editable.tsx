@@ -8,7 +8,8 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { useNoHover } from "@/hooks/use-no-hover";
 import { cn } from "@/lib/utils";
 import { DetailFieldButton, FieldButtons, FieldMenuClose, FieldMenuItem } from "./field-buttons";
-import { type DetailFieldEdit, EditValue, editCopy, editEmpty, type InlineEdit, InlineEditor, isInline } from "./field-edit";
+import { DraftValue } from "./draft-field";
+import { type DetailFieldEdit, type DraftBinding, EditValue, editCopy, editEmpty, type InlineEdit, InlineEditor, isInline } from "./field-edit";
 import { PickerField } from "./field-picker";
 
 /*
@@ -29,6 +30,9 @@ import { PickerField } from "./field-picker";
  * longer followed at once), `onOpen` (the row of a table), the tools, copy
  * and edit. Any tap outside its buttons closes it, and only closes it. On a phone, a text, a number or a date is typed in a
  * bubble under the value, centred on the screen, in a cell as in a detail.
+ *
+ * Bound to a draft (`form.bind`), it is a field always open while the draft
+ * is, else its value without pencil, the draft saving it as a whole.
  */
 export function EditableValue({
   label,
@@ -53,6 +57,7 @@ export function EditableValue({
 }) {
   const noHover = useNoHover();
   const [editing, setEditing] = useState(false);
+  if (edit?.draft?.active) return <DraftValue edit={edit as DetailFieldEdit & { draft: DraftBinding }} label={label} />;
   const inline = !!edit && isInline(edit);
   const multiline = inline && (!edit.kind || edit.kind === "text") && !!edit.multiline;
   // Without children, the value of `edit` drawn after its kind.
@@ -60,7 +65,8 @@ export function EditableValue({
   const empty = drawn === undefined ? !edit || editEmpty(edit) : drawn === "" || drawn === false;
   const copied = copy !== undefined ? copy : drawn === undefined ? (edit ? editCopy(edit) : null) : typeof drawn === "string" || typeof drawn === "number" ? String(drawn) : null;
   // A switch is its own button: no pencil.
-  const editable = !!edit && edit.kind !== "switch";
+  // Bound to a draft at rest: edited with the others of its section.
+  const editable = !!edit && edit.kind !== "switch" && !edit.draft;
   // A popover open, the pencil closes it again, giving up.
   const toggle = () => editable && setEditing((open) => !open);
 
@@ -95,7 +101,7 @@ export function EditableValue({
         <FloatingEditor edit={edit} label={label} className={valueClass} onClose={() => setEditing(false)}>
           {drawnValue}
         </FloatingEditor>
-      ) : edit && !isInline(edit) && edit.kind !== "switch" ? (
+      ) : edit && editable && !isInline(edit) ? (
         <PickerField edit={edit} label={label} editing={editing} onEditing={setEditing} className={valueClass}>
           {value}
         </PickerField>

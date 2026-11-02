@@ -1,9 +1,11 @@
 "use client";
 
+import { LoaderCircleIcon } from "lucide-react";
 import { createContext, type ReactNode, useContext, useLayoutEffect, useRef, useState } from "react";
 import { Tip } from "@/components/admin/data-table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SAVE_BUTTON } from "./field-buttons";
 
 /** Inside `DetailActions`: whether its buttons show their icon only. Null elsewhere. */
 const IconsOnly = createContext<boolean | null>(null);
@@ -55,7 +57,9 @@ export function DetailActions({ sticky, children }: { sticky?: boolean; children
  * A button of the detail. In `DetailActions`, it takes its share of the row,
  * its icon and name, or its icon alone when the row is too narrow; elsewhere
  * (e.g. the `actions` of `DetailHeader`) its icon alone. Its name is then in a
- * bubble. `href` makes it a link, opened in a new tab.
+ * bubble. `href` makes it a link, opened in a new tab. `save`: the blue of
+ * the buttons that save (« Créer », « Valider »); `type="submit"` submits the
+ * draft around; `pending` swaps its icon for a spinner, disabling it.
  */
 export function DetailAction({
   label,
@@ -63,26 +67,34 @@ export function DetailAction({
   variant = "outline",
   href,
   onClick,
+  type = "button",
+  disabled,
+  pending,
 }: {
   label: string;
   icon: ReactNode;
-  variant?: "default" | "outline" | "destructive";
+  variant?: "default" | "outline" | "destructive" | "save";
   href?: string;
   onClick?: () => void;
+  type?: "button" | "submit";
+  disabled?: boolean;
+  pending?: boolean;
 }) {
   const inRow = useContext(IconsOnly);
   const iconOnly = inRow !== false;
   const link = href ? { nativeButton: false, render: <a href={href} target="_blank" rel="noopener" /> } : {};
   const button = (
     <Button
-      variant={variant}
+      variant={variant === "save" ? "default" : variant}
       size={inRow === null ? "icon-sm" : "sm"}
       aria-label={iconOnly ? label : undefined}
+      type={href ? undefined : type}
+      disabled={disabled || pending}
       onClick={onClick}
-      className={cn(inRow !== null && (iconOnly ? "min-w-0 flex-1" : "flex-[1_0_auto]"))}
+      className={cn(inRow !== null && (iconOnly ? "min-w-0 flex-1" : "flex-[1_0_auto]"), variant === "save" && SAVE_BUTTON)}
       {...link}
     >
-      {icon}
+      {pending ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : icon}
       {!iconOnly && label}
     </Button>
   );

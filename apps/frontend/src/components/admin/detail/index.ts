@@ -4,6 +4,7 @@
  */
 export { DetailAction, DetailActions } from "./actions";
 export { DetailColumnField, DetailColumnFields } from "./column-fields";
+export { type DetailDraft, type DetailDraftResult, type DetailDraftSpec, DetailForm, DetailSectionForm, useDetailDraft } from "./draft";
 export { DetailFields, DetailField } from "./field";
 export { DetailFieldButton } from "./field-buttons";
 export { type DetailEditKind, type DetailEditOption, type DetailFieldEdit } from "./field-edit";

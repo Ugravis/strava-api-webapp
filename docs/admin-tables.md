@@ -126,7 +126,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `groupings` | The « Grouper » menu. Its titles fold their group. |
 | `defaultGroupBy` | A grouping applied by the system; « Aucun » then joins the menu. |
 | `views` | Any number of views, the first one the default. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, `noSelection` / `noActions` to drop the checkboxes or the row menu, and `params` sent to `fetch` as its second argument when the view changes the rows themselves, e.g. `{ branch: "develop" }`. Two tables of other columns and cards, or a single table: as wanted. |
-| `create` | The blue « Nouveau » button. |
+| `create` | The blue « Nouveau » button: opens a blank row in the split panel, a `DetailForm` (`docs/admin-detail.md`), never a dialog of fields. |
 | `defaultSort` | `createdAt` descending unless said otherwise. |
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |
 | `pageSize` | Else the default of the layout: 30 for a table, 24 for cards, 60 for a list. At most 100. A view's own `pageSize` wins. |

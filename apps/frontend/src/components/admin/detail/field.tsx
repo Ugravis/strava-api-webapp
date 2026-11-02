@@ -37,7 +37,8 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * blue dot at the top right of its icon tells the field modifiable: an
  * `edit`, or a button inside that changes it (a `DetailItemButton`, a tool
  * `modifies`); `editHint` forces it (`true`) or hides it (`false`). On a screen without hover (a phone), no button is
- * shown: a tap on the value opens a bubble of its actions.
+ * shown: a tap on the value opens a bubble of its actions. Bound to a draft
+ * (`form.bind`), a field always open, a star after the label of a required one.
  */
 export function DetailField<K extends DetailEditKind = "text">({
   label,
@@ -66,7 +67,10 @@ export function DetailField<K extends DetailEditKind = "text">({
   // Counted, several buttons coming and going.
   const [modifiers, setModifiers] = useState(0);
   const [count] = useState(() => (on: boolean) => setModifiers((n) => n + (on ? 1 : -1)));
-  const marked = editHint ?? (!!edit || modifiers > 0);
+  // A draft open: every field is typed, none marked; those required told by a star.
+  const drafting = !!edit?.draft?.active;
+  const marked = !drafting && (editHint ?? (!!edit || modifiers > 0));
+  const required = drafting && !!edit?.required;
   return (
     <div className="contents">
       <dt className={cn("flex min-h-8 items-center gap-1.5 self-start text-muted-foreground", stacked && "col-span-2")}>
@@ -78,6 +82,11 @@ export function DetailField<K extends DetailEditKind = "text">({
           </span>
         )}
         {label}
+        {required && (
+          <span className="-ml-1 text-destructive" aria-hidden>
+            *
+          </span>
+        )}
         {marked && !icon && <EditableMark className="-ml-0.5 -translate-y-1.5" />}
       </dt>
       <dd

@@ -1,16 +1,31 @@
 "use client";
 
+import { ImageIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { type CellImage, ImageCover, type Look, lookStyle } from "@/components/admin/data-table";
+import { usePreview } from "./field-picker";
 
 /**
  * A large image across the top of the detail, above its header; a click opens
- * it whole. A grey band without an image: a detail that has a cover has one
- * for every row. Small, an image is a field: an `imageColumn` in
- * `DetailColumnFields`.
+ * it whole. Without one, a band telling there is none: a detail that has a
+ * cover has one for every row, a draft too, `image` then the value of its
+ * field (a URL, or the file picked, shown at once). Small, an image is a
+ * field: an `imageColumn` in `DetailColumnFields`.
  */
-export function DetailCover({ image }: { image: CellImage | null | undefined }) {
-  return <ImageCover image={image} className="h-40 rounded-none" />;
+export function DetailCover({ image, alt = "" }: { image: CellImage | string | File | null | undefined; alt?: string }) {
+  const src = usePreview(image instanceof File || typeof image === "string" ? image : null);
+  const shown = src ? { src, alt } : image instanceof File || typeof image === "string" ? null : image;
+  if (!shown)
+    return (
+      <div
+        aria-hidden
+        className="flex h-40 w-full shrink-0 flex-col items-center justify-center gap-1.5 border-b bg-muted bg-[repeating-linear-gradient(135deg,transparent_0_10px,color-mix(in_oklab,var(--color-foreground)_3%,transparent)_10px_20px)] text-muted-foreground/60"
+      >
+        <ImageIcon className="size-6" />
+        <span className="text-xs">Aucune image</span>
+      </div>
+    );
+  return <ImageCover image={shown} className="h-40 rounded-none" />;
 }
 
 /** Who or what the detail is about: a picture, a name, what tells it apart, and its buttons. */

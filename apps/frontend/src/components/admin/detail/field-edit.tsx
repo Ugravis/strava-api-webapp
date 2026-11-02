@@ -29,10 +29,31 @@ export interface DetailEditOption {
 }
 
 /**
- * Saves a value; `validate` refuses it first, its reason in a bubble above
- * the field, e.g. a date before another field of the row.
+ * Bound to a draft by `form.bind` (`draft.tsx`): typed in a field always
+ * open while `active`, else shown without its pencil. Not for pages.
  */
-type Saved<T> = { onSave: Save<T>; validate?: (value: T) => string | null };
+export interface DraftBinding {
+  active: boolean;
+  /** Refused as it stands, told or not yet. */
+  invalid: boolean;
+  /** Shown under the field. */
+  error: string | null;
+  required: boolean;
+  disabled: boolean;
+  /** The value held, a `File` picked for an image. */
+  raw: unknown;
+  /** A text that is no value yet, e.g. a number half typed: its reason, null once it is. */
+  onTyped: (error: string | null) => void;
+  /** The field left: its error shown from then on. */
+  onLeave: () => void;
+}
+
+/**
+ * Saves a value; `validate` refuses it first, its reason in a bubble above
+ * the field, e.g. a date before another field of the row. `required` refuses
+ * it cleared, « Champ obligatoire. ».
+ */
+type Saved<T> = { onSave: Save<T>; validate?: (value: T) => string | null; required?: boolean; draft?: DraftBinding };
 
 /** The kinds of in-place edits, by their `kind`; `text` when none. */
 export interface DetailEditKinds {
@@ -86,7 +107,9 @@ export function useCommit(edit: DetailFieldEdit, close: () => void) {
     if (saving) return;
     // A file is always new.
     if (!(next instanceof File) && JSON.stringify(next) === JSON.stringify(edit.value)) return close();
-    const refused = (edit.validate as ((value: unknown) => string | null) | undefined)?.(next);
+    // A draft judges its fields as a whole, on submitting.
+    const cleared = !edit.draft && edit.required && isEmptyValue(next);
+    const refused = cleared ? REQUIRED : (edit.validate as ((value: unknown) => string | null) | undefined)?.(next);
     if (refused) return setError(refused);
     setSaving(true);
     setError(null);
@@ -102,6 +125,10 @@ export function useCommit(edit: DetailFieldEdit, close: () => void) {
   };
   return { saving, commit, error, setError };
 }
+
+export const REQUIRED = "Champ obligatoire.";
+/** No value: nothing typed, none picked; a switch always has one. */
+export const isEmptyValue = (value: unknown) => value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0);
 
 const labelsOf = (options: DetailEditOption[], values: string[]) =>
   values.map((value) => options.find((option) => option.value === value)?.label ?? value);
@@ -152,7 +179,8 @@ export function ColorValue({ color }: { color: string }) {
 
 /** The value of a field without children, drawn after its kind. */
 export function EditValue({ edit }: { edit: DetailFieldEdit }) {
-  if (edit.kind === "switch") return <SwitchValue edit={edit} />;
+  // Bound to a draft at rest: told, not switched.
+  if (edit.kind === "switch") return edit.draft ? <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span> : <SwitchValue edit={edit} />;
   if (editEmpty(edit)) return <EmptyValue />;
   switch (edit.kind) {
     case "number":
@@ -214,7 +242,7 @@ const toLocal = (iso: string) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-const draftOf = (edit: InlineEdit) =>
+export const draftOf = (edit: InlineEdit) =>
   edit.value === null ? "" : edit.kind === "number" ? String(edit.value) : edit.kind === "date" && edit.time ? toLocal(edit.value) : edit.value;
 
 /** The bounds of a number in words, e.g. « entre 1 et 100 km », « d'au moins 1 km »; none without bounds. */
@@ -227,7 +255,7 @@ function numberBounds({ min, max, unit }: Extract<InlineEdit, { kind: "number" }
 }
 
 /** The value typed, or the reason it is refused, telling what is expected. */
-function parse(edit: InlineEdit, draft: string): { value: string | number | null } | { error: string } {
+export function parse(edit: InlineEdit, draft: string): { value: string | number | null } | { error: string } {
   const text = draft.trim();
   if (!text) return { value: null };
   if (edit.kind === "number") {

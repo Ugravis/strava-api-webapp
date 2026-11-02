@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import type { ActionResult } from "@/components/admin/action-state";
+import type { DetailDraftResult } from "@/components/admin/detail";
 import { POC_USERS, type PocUser } from "./poc-data";
+import type { PocBadgeDraft } from "./poc-badge-create";
 import { BADGES, type PocBadge } from "./poc-order";
 
 /*
@@ -55,7 +57,8 @@ export async function loadPocBadge(id: string): Promise<PocBadge | null> {
   return badge ? structuredClone(badge) : null;
 }
 
-type BadgePatch = Partial<Omit<PocBadge, "id" | "position" | "holders" | "createdAt" | "picture" | "name" | "collection" | "icon" | "threshold">> & {
+type BadgePatch = Partial<Omit<PocBadge, "id" | "position" | "holders" | "createdAt" | "picture" | "name" | "collection" | "icon" | "threshold" | "sports">> & {
+  sports?: string[];
   // Edited fields may be cleared; these are refused when they are.
   name?: string | null;
   collection?: string | null;
@@ -74,4 +77,38 @@ export async function savePocBadge(id: string, patch: BadgePatch): Promise<Actio
   BADGES[at] = { ...BADGES[at]!, ...(patch as Partial<PocBadge>) };
   bump();
   return { ok: true, message: "Enregistré" };
+}
+
+/**
+ * A badge created from its draft, at the end of the order: refused under its
+ * field when its name is taken, failing as a whole when it holds « 500 ».
+ */
+export async function createPocBadge(draft: PocBadgeDraft): Promise<DetailDraftResult> {
+  await pause(500, 400);
+  const name = draft.name!.trim();
+  if (name.includes("500")) return { ok: false, message: "Le serveur n'a pas répondu (500). Réessayer." };
+  if (BADGES.some((each) => each.name.toLowerCase() === name.toLowerCase())) return { ok: false, field: "name", message: "Un badge porte déjà ce nom." };
+  const id = `${draft.collection}-${Date.now().toString(36)}`;
+  // Uploaded, as a Server Action would, its URL answered.
+  const src = draft.picture instanceof File ? URL.createObjectURL(draft.picture) : draft.picture;
+  BADGES.push({
+    id,
+    name,
+    collection: draft.collection!,
+    position: BADGES.length + 1,
+    holders: 0,
+    createdAt: new Date().toISOString(),
+    picture: src ? { src, alt: `Image du badge ${name}` } : null,
+    color: draft.color,
+    icon: draft.icon!,
+    threshold: draft.threshold!,
+    active: draft.active,
+    availableFrom: draft.availableFrom,
+    endsAt: draft.endsAt,
+    description: draft.description,
+    // Counted by a distance only.
+    sports: draft.collection === "distance" ? draft.sports : [],
+  });
+  bump();
+  return { ok: true, id, message: `Badge « ${name} » créé` };
 }

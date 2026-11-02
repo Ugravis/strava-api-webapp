@@ -19,6 +19,8 @@ A detail panel on the right of the pages of a section, e.g. the row of a table o
 - **Full screen.** A button in the header lays the panel over the whole page, as a page of its own (`?panel=full`), without gutter or card, its content in a centred column; the arrows of the table still move from row to row. The same button, or `Esc`, comes back to the mode it left. Neither fold nor mode nor resize meanwhile; never on a phone.
 - **Phone** (under 768 px): a page of its own under the header of the site, as once expanded (no gutter, no card, no shadow), never split, not resizable.
 - **Closing.** The X, `Esc` (unless a menu or a dialog handled it first; out of full screen first), or a change of page.
+- **Work not saved.** A content calling `useSplitPanelGuard(dirty)` (a draft of the detail kit) is not left while `dirty` without asking, « Abandonner la saisie ? » (« Continuer la saisie » / « Abandonner »): closing, opening another content (a row clicked, ↑ / ↓), back and forward, a link of the page followed. Closing or reloading the tab, the browser asks. Outside a panel, the hook only makes the browser ask.
+- **Fresh contents.** Each content opened starts afresh, even of the same component: a draft opened again is blank.
 - **URL.** `open(content, { id })` writes `?row=<id>&panel=<mode>` through the history (no server round trip); `close()` removes both. A link with `?row=` is shared: the page opens that row on arrival, in the mode of `?panel=`.
 - **Header.** Icon buttons, each named in a bubble after 400 ms.
 - **Content.** Pages hand only the content, scrolled with the thin scrollbar of the tables; the panel draws the header (back, forward, title, fold, full screen, mode, close) and scrolls its body, a column at least as tall as the panel (so that a sticky row of buttons sits at the bottom).
@@ -33,7 +35,9 @@ open(<Detail row={row} />, { id: row.id, title: "@username" });
 | Key | Use |
 | --- | --- |
 | `open(content, options?)` | Shows `content`, replacing what the panel showed. `options.id` goes in `?row=`; `options.title` in the header (« Détail » otherwise). |
+| `replace(content, options?)` | Shows `content` in place of the content shown, without a new step of back and forward and without asking: e.g. the row once created from its draft. |
 | `close()` | Closes, removes `?row=`. |
+| `useSplitPanelGuard(dirty)` | In a content: asks before leaving it while `dirty`. |
 | `isOpen` | Whether it shows something. |
 | `activeId` | The `?row=` of the URL. |
 

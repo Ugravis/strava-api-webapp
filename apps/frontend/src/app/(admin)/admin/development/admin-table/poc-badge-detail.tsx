@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClockIcon, CalendarIcon, CopyIcon, GaugeIcon, PaletteIcon, PencilIcon, ShapesIcon, TextIcon, ToggleRightIcon, Trash2Icon, TypeIcon } from "lucide-react";
+import { CopyIcon, FootprintsIcon, GaugeIcon, PaletteIcon, ShapesIcon, StickyNoteIcon, TextIcon, ToggleRightIcon, Trash2Icon, TypeIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   DetailAction,
@@ -14,9 +14,10 @@ import {
   DetailMedia,
   DetailSkeleton,
   DetailSection,
+  DetailSectionForm,
   LucideIconByName,
 } from "@/components/admin/detail";
-import { BADGES_TABLE, COLLECTIONS, type PocBadge } from "./poc-order";
+import { BADGES_TABLE, COLLECTIONS, type PocBadge, SPORTS, useCreateBadge } from "./poc-order";
 import { loadPocBadge, savePocBadge, usePocVersion } from "./poc-store";
 
 const RULES: Record<PocBadge["collection"], string> = {
@@ -32,7 +33,7 @@ const RULES: Record<PocBadge["collection"], string> = {
 export function PocBadgePanel({ id }: { id: string }) {
   const version = usePocVersion();
   return (
-    <DetailLoader id={id} load={loadPocBadge} refreshKey={version} skeleton={<DetailSkeleton cover sections={[5, 2, 5]} />}>
+    <DetailLoader id={id} load={loadPocBadge} refreshKey={version} skeleton={<DetailSkeleton cover sections={[5, 2, 4, 2, 1]} />}>
       {(badge) => <PocBadgeDetail badge={badge} />}
     </DetailLoader>
   );
@@ -45,6 +46,7 @@ export function PocBadgePanel({ id }: { id: string }) {
  */
 export function PocBadgeDetail({ badge }: { badge: PocBadge }) {
   const save = (patch: Parameters<typeof savePocBadge>[1]) => savePocBadge(badge.id, patch);
+  const duplicate = useCreateBadge();
   return (
     <>
       <DetailCover image={badge.picture} />
@@ -87,25 +89,63 @@ export function PocBadgeDetail({ badge }: { badge: PocBadge }) {
           />
           {/* Saved as soon as switched. */}
           <DetailField label="Actif" icon={<ToggleRightIcon />} edit={{ kind: "switch", value: badge.active, onSave: (active) => save({ active }) }} />
-          <DetailField label="Disponible dès" icon={<CalendarIcon />} edit={{ kind: "date", value: badge.availableFrom, onSave: (availableFrom) => save({ availableFrom }) }} />
-          <DetailField label="Fin" icon={<CalendarClockIcon />} edit={{
-              kind: "date",
-              time: true,
-              value: badge.endsAt,
-              // Hangs on another field: refused before the call, in a bubble.
-              validate: (endsAt) => (endsAt && badge.availableFrom && endsAt.slice(0, 10) < badge.availableFrom ? "La fin doit suivre « Disponible dès »." : null),
-              onSave: (endsAt) => save({ endsAt }),
-            }}
-          />
+          {/* A distance only; never left without a sport. */}
+          {badge.collection === "distance" && (
+            <DetailField label="Sports" icon={<FootprintsIcon />} edit={{ kind: "multiselect", value: badge.sports, options: SPORTS, required: true, onSave: (sports) => save({ sports }) }} />
+          )}
           <DetailField label="Condition" icon={<TextIcon />} copy={RULES[badge.collection]} stacked>
             {RULES[badge.collection]}
           </DetailField>
         </DetailFields>
       </DetailSection>
+      {/*
+       * Bound to each other: edited together, saved by one « Valider », the
+       * end refused before the start under its field.
+       */}
+      <DetailSectionForm
+        title="Période"
+        initial={{ availableFrom: badge.availableFrom, endsAt: badge.endsAt }}
+        onSubmit={({ availableFrom, endsAt }) => save({ availableFrom, endsAt })}
+      >
+        {(form) => (
+          <DetailColumnFields
+            row={badge}
+            columns={BADGES_TABLE.columns}
+            ids={[
+              { id: "availableFrom", edit: form.bind("availableFrom", { kind: "date" }) },
+              {
+                id: "endsAt",
+                edit: form.bind("endsAt", {
+                  kind: "date",
+                  time: true,
+                  min: form.values.availableFrom ?? undefined,
+                  validate: (endsAt, { availableFrom }) => (endsAt && availableFrom && endsAt.slice(0, 10) < availableFrom ? "La fin doit suivre « Disponible dès »." : null),
+                }),
+              },
+            ]}
+          />
+        )}
+      </DetailSectionForm>
+      <DetailSection title="Présentation">
+        <DetailFields>
+          <DetailField
+            label="Description"
+            icon={<StickyNoteIcon />}
+            stacked
+            edit={{ value: badge.description, multiline: true, placeholder: "Ce que l'athlète lit sous le badge", onSave: (description) => save({ description }) }}
+          />
+        </DetailFields>
+      </DetailSection>
       {/* Kept at the bottom of the panel as the detail scrolls. */}
       <DetailActions sticky>
-        <DetailAction label="Modifier" icon={<PencilIcon aria-hidden />} variant="default" onClick={() => toast(`Ouvrirait la modification de ${badge.name}`)} />
-        <DetailAction label="Dupliquer" icon={<CopyIcon aria-hidden />} onClick={() => toast(`Ouvrirait la copie de ${badge.name}`)} />
+        {/* A blank panel filled from this badge: nothing created before « Créer ». */}
+        <DetailAction
+          label="Dupliquer"
+          icon={<CopyIcon aria-hidden />}
+          onClick={() =>
+            duplicate({ ...badge, name: `${badge.name} (copie)`, picture: badge.picture?.src ?? null })
+          }
+        />
         <DetailAction label="Supprimer" icon={<Trash2Icon aria-hidden />} variant="destructive" onClick={() => toast(`Ouvrirait la suppression de ${badge.name}`)} />
       </DetailActions>
     </>

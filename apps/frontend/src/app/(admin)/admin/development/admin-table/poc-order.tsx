@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClockIcon, CalendarIcon, CalendarPlusIcon, GaugeIcon, ImageIcon, LayersIcon, MedalIcon, PaletteIcon, ShapesIcon, ToggleRightIcon, UsersIcon } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   type CellImage,
   DataTable,
@@ -19,6 +19,7 @@ import {
 } from "@/components/admin/data-table";
 import { useSplitPanel } from "@/components/split-panel";
 import { landscape } from "./poc-data";
+import { PocBadgeCreate, type PocBadgeDraft } from "./poc-badge-create";
 import { PocBadgePanel } from "./poc-badge-detail";
 import { savePocBadge, usePocVersion } from "./poc-store";
 
@@ -51,7 +52,21 @@ export interface PocBadge {
   availableFrom: string | null;
   /** An instant after which it is no longer won. */
   endsAt: string | null;
+  /** Shown to the athletes, on several lines. */
+  description: string | null;
+  /** The sports counted, of `SPORTS`: a distance only, at least one. */
+  sports: string[];
 }
+
+/** The sports a badge of distance counts. */
+export const SPORTS = [
+  { value: "run", label: "Course" },
+  { value: "ride", label: "Vélo" },
+  { value: "walk", label: "Marche" },
+  { value: "hike", label: "Randonnée" },
+  { value: "ski", label: "Ski" },
+  { value: "swim", label: "Natation" },
+];
 
 export const COLLECTIONS: Record<PocCollection, { label: string; tone: Tone; unit: string; icon: string }> = {
   distance: { label: "Distance", tone: "blue", unit: "km", icon: "route" },
@@ -86,6 +101,8 @@ export const BADGES: PocBadge[] = (Object.keys(NAMES) as PocCollection[]).flatMa
     active: index !== 2,
     availableFrom: index % 2 === 0 ? `2026-0${4 + at}-01` : null,
     endsAt: index === 4 ? new Date(Date.UTC(2027, 0, 1, 23)).toISOString() : null,
+    description: index === 0 ? `Le premier badge de la collection ${COLLECTIONS[collection].label.toLowerCase()}.` : null,
+    sports: collection === "distance" ? ["run", "ride", "walk"].slice(0, 1 + (index % 3)) : [],
   })),
 );
 BADGES.forEach((badge, index) => (badge.position = index + 1));
@@ -197,18 +214,45 @@ export function PocOrderTable() {
   const version = usePocVersion();
   // Opened at once on its skeleton, the badge loaded by the panel.
   const openBadge = useCallback((badge: PocBadge) => open(<PocBadgePanel id={badge.id} />, { id: badge.id, title: badge.name }), [open]);
-  // A shared link: the badge of `?row=`, once on arrival. Its ids never meet those of the accounts.
+  const create = useCreateBadge();
+  // A shared link: the badge of `?row=`, or a new one, once on arrival. Its ids never meet those of the accounts.
   useEffect(() => {
-    const badge = BADGES.find((each) => each.id === new URLSearchParams(window.location.search).get("row"));
+    const row = new URLSearchParams(window.location.search).get("row");
+    const badge = BADGES.find((each) => each.id === row);
     if (badge) openBadge(badge);
-  }, [openBadge]);
+    else if (row === NEW_BADGE) create();
+  }, [openBadge, create]);
+  const config = useMemo(() => ({ ...BADGES_TABLE, create: { label: "Nouveau badge", onClick: () => create() } }), [create]);
   return (
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="font-medium">Ordre</h2>
         <p className="text-sm text-muted-foreground">Glisser une ligne par sa poignée, triée par « Ordre », sans recherche ni filtre.</p>
+        <p className="text-sm text-muted-foreground">
+          « Nouveau badge » ou « Dupliquer » : un panneau vierge. Un nom déjà pris est refusé sous son champ, un nom contenant « 500 » échoue côté serveur.
+        </p>
       </div>
-      <DataTable config={BADGES_TABLE} onRowClick={openBadge} activeRowId={isOpen ? activeId : null} refreshKey={version} />
+      <DataTable config={config} onRowClick={openBadge} activeRowId={isOpen ? activeId : null} refreshKey={version} />
     </section>
+  );
+}
+
+/** The `?row=` of a badge being created: shared, the link opens a blank one. */
+export const NEW_BADGE = "new:badge";
+
+/** Opens a blank badge in the panel, or one filled from `initial` (a copy); once created, the panel shows it. */
+export function useCreateBadge() {
+  const { open, replace, close } = useSplitPanel();
+  return useCallback(
+    (initial?: Partial<PocBadgeDraft>) =>
+      open(
+        <PocBadgeCreate
+          initial={initial}
+          onCancel={close}
+          onCreated={(id) => replace(<PocBadgePanel id={id} />, { id, title: BADGES.find((each) => each.id === id)?.name })}
+        />,
+        { id: NEW_BADGE, title: initial ? "Copie de badge" : "Nouveau badge" },
+      ),
+    [open, replace, close],
   );
 }

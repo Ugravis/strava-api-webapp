@@ -217,21 +217,33 @@ const toLocal = (iso: string) => {
 const draftOf = (edit: InlineEdit) =>
   edit.value === null ? "" : edit.kind === "number" ? String(edit.value) : edit.kind === "date" && edit.time ? toLocal(edit.value) : edit.value;
 
-/** The value typed, or the reason it is refused. */
+/** The bounds of a number in words, e.g. « entre 1 et 100 km », « d'au moins 1 km »; none without bounds. */
+function numberBounds({ min, max, unit }: Extract<InlineEdit, { kind: "number" }>) {
+  const shown = (value: number) => `${value.toLocaleString("fr-FR")}${unit ? `\u00a0${unit}` : ""}`;
+  if (min !== undefined && max !== undefined) return `entre ${min.toLocaleString("fr-FR")} et ${shown(max)}`;
+  if (min !== undefined) return `d'au moins ${shown(min)}`;
+  if (max !== undefined) return `d'au plus ${shown(max)}`;
+  return null;
+}
+
+/** The value typed, or the reason it is refused, telling what is expected. */
 function parse(edit: InlineEdit, draft: string): { value: string | number | null } | { error: string } {
   const text = draft.trim();
   if (!text) return { value: null };
   if (edit.kind === "number") {
+    const bounds = numberBounds(edit);
     const number = Number(text.replace(",", "."));
-    if (!Number.isFinite(number)) return { error: "Ce n'est pas un nombre." };
-    if (edit.min !== undefined && number < edit.min) return { error: `Au moins ${edit.min}.` };
-    if (edit.max !== undefined && number > edit.max) return { error: `Au plus ${edit.max}.` };
+    if (!Number.isFinite(number)) return { error: bounds ? `Saisir un nombre ${bounds}.` : "Saisir un nombre, par exemple 12 ou 3,5." };
+    if ((edit.min !== undefined && number < edit.min) || (edit.max !== undefined && number > edit.max)) return { error: `Le nombre doit être ${bounds}.` };
     return { value: number };
   }
   if (edit.kind === "date") {
     // The browser lets years of six digits through.
     const date = new Date(text);
-    if (Number.isNaN(date.getTime()) || date.getFullYear() > 9999) return { error: "Date invalide." };
+    if (Number.isNaN(date.getTime()) || date.getFullYear() > 9999) return { error: "Date incomplète : jour, mois et année attendus." };
+    // Bounds of a day, compared as typed: `YYYY-MM-DD` first.
+    if (edit.min && text.slice(0, 10) < edit.min.slice(0, 10)) return { error: `La date doit être le ${formatDate(edit.min)} ou après.` };
+    if (edit.max && text.slice(0, 10) > edit.max.slice(0, 10)) return { error: `La date doit être le ${formatDate(edit.max)} ou avant.` };
     if (edit.time) return { value: date.toISOString() };
   }
   return { value: text };
@@ -276,30 +288,30 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
     },
     onKeyDown,
     onBlur: save,
-    // As wide as its box, not as its text: a cell of a table keeps its width.
-    size: 1,
   };
 
+  // The field and its buttons in one box: the buttons stay inside its frame, in a cell as in a detail.
+  // The field fills the box but gives it no width: a cell of a table keeps its own, the box its minimum.
   return (
-    <>
+    <div className={cn("relative w-full", multiline ? "min-w-0" : edit.kind === "date" ? "min-w-44" : "min-w-32")}>
       <ErrorBubble anchor={anchor} message={error} />
       {multiline ? (
         <Textarea {...field} placeholder={edit.placeholder} className="min-h-20 pr-16 text-sm" />
       ) : edit.kind === "number" ? (
-        <Input {...field} type="number" inputMode="decimal" min={edit.min} max={edit.max} step={edit.step ?? "any"} className="h-7 min-w-32 [appearance:textfield] pr-16 text-sm [&::-webkit-inner-spin-button]:appearance-none" />
+        <Input {...field} type="number" inputMode="decimal" min={edit.min} max={edit.max} step={edit.step ?? "any"} className="h-7 w-0 min-w-full [appearance:textfield] pr-15 text-sm [&::-webkit-inner-spin-button]:appearance-none" />
       ) : edit.kind === "date" ? (
-        <Input {...field} type={edit.time ? "datetime-local" : "date"} min={edit.min} max={edit.max} className="h-7 min-w-44 pr-16 text-sm" />
+        <Input {...field} type={edit.time ? "datetime-local" : "date"} min={edit.min} max={edit.max} className="h-7 w-0 min-w-full pr-15 text-sm" />
       ) : (
-        <Input {...field} placeholder={edit.placeholder} className="h-7 min-w-32 pr-16 text-sm" />
+        <Input {...field} placeholder={edit.placeholder} className="h-7 w-0 min-w-full pr-15 text-sm" />
       )}
       <FieldButtons top={multiline} shown>
-        <DetailFieldButton label="Enregistrer" disabled={saving} onClick={save}>
+        <DetailFieldButton label="Enregistrer" primary disabled={saving} onClick={save}>
           {saving ? <LoaderCircleIcon className="animate-spin" /> : <CheckIcon />}
         </DetailFieldButton>
         <DetailFieldButton label="Annuler" disabled={saving} onClick={onClose}>
           <XIcon />
         </DetailFieldButton>
       </FieldButtons>
-    </>
+    </div>
   );
 }

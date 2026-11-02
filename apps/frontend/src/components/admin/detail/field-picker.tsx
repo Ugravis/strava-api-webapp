@@ -24,11 +24,11 @@ const PRESETS = [
   "#0284c7", "#2563eb", "#4f46e5", "#7c3aed", "#9333ea", "#c026d3", "#db2777", "#e11d48", "#64748b",
 ];
 const HEX = /^#[0-9a-f]{6}$/i;
-/** The widths of the popover of an image: at first, and between which its bottom left corner resizes it. */
+/** The widths of the popover of an image: at first, and between which its bottom left corner resizes it, both sides alike. */
 const IMAGE_WIDTH = { initial: 320, min: 272, max: 480 };
 const IMAGE_TYPES = "image/png,image/jpeg,image/webp";
 
-const megabytes = (bytes: number) => `${Math.round((bytes / 1024 / 1024) * 10) / 10} Mo`;
+const megabytes = (bytes: number) => `${(Math.round((bytes / 1024 / 1024) * 10) / 10).toLocaleString("fr-FR")}\u00a0Mo`;
 
 /** The formats and the weight an image may have, e.g. « PNG, JPEG, WebP · 2 Mo max ». */
 function imageRules(accept: string, maxSize?: number) {
@@ -103,8 +103,8 @@ export function PickerField({
       </div>
       <PopoverContent
         anchor={anchor}
-        // An image grows from its bottom left corner, its right edge kept.
-        align={edit.kind === "image" ? "end" : "start"}
+        // Centred under the value, in a cell as in a detail.
+        align="center"
         className={cn("relative gap-2 p-2", edit.kind === "icon" ? "w-80" : edit.kind === "image" ? "w-auto" : "w-64")}
         aria-label={label}
       >
@@ -341,7 +341,8 @@ function ImagePicker({
     const move = (each: globalThis.PointerEvent) => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        box.current!.style.width = `${Math.min(IMAGE_WIDTH.max, Math.max(IMAGE_WIDTH.min, from + x - each.clientX)) - 16}px`;
+        // Centred: each side moves as much as the corner.
+        box.current!.style.width = `${Math.min(IMAGE_WIDTH.max, Math.max(IMAGE_WIDTH.min, from + 16 + 2 * (x - each.clientX))) - 16}px`;
       });
     };
     const end = () => {
@@ -354,8 +355,8 @@ function ImagePicker({
   const take = (file: File | undefined) => {
     if (!file) return;
     const types = accept.split(",").map((each) => each.trim());
-    if (!types.some((type) => (type.endsWith("/*") ? file.type.startsWith(type.slice(0, -1)) : file.type === type))) return onError(`Format refusé : ${imageRules(accept)} seulement.`);
-    if (maxSize !== undefined && file.size > maxSize) return onError(`Image trop lourde : ${megabytes(maxSize)} au plus.`);
+    if (!types.some((type) => (type.endsWith("/*") ? file.type.startsWith(type.slice(0, -1)) : file.type === type))) return onError(`Format non accepté : ${imageRules(accept)} uniquement.`);
+    if (maxSize !== undefined && file.size > maxSize) return onError(`Image trop lourde (${megabytes(file.size)}) : ${megabytes(maxSize)} maximum.`);
     onChange(file);
   };
 

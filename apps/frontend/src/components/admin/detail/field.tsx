@@ -33,7 +33,7 @@ export function DetailFields({ children }: { children: ReactNode }) {
  * Nothing is ever left unsaved, so nothing guards the closing of the panel.
  * The pencil of a popover stays shown while it is open, and closes it again,
  * giving up. Without children, the value is drawn after its kind. A small
- * blue dot at the top right of the label tells the field editable, unless
+ * blue dot at the top right of its icon tells the field editable, unless
  * `editHint={false}`. On a screen without hover (a phone), no button is
  * shown: a tap on the value opens a bubble of its actions.
  */
@@ -60,9 +60,15 @@ export function DetailField<K extends DetailEditKind = "text">({
   return (
     <div className="contents">
       <dt className={cn("flex min-h-8 items-center gap-1.5 self-start text-muted-foreground", stacked && "col-span-2")}>
-        {icon && <span className="inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">{icon}</span>}
+        {/* The dot of an editable field at the top right of its icon, as a badge on an icon; after the label without one. */}
+        {icon && (
+          <span className="relative inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">
+            {icon}
+            {edit && editHint && <EditableMark className="absolute -top-0.5 -right-0.5" />}
+          </span>
+        )}
         {label}
-        {edit && editHint && <EditableMark />}
+        {edit && editHint && !icon && <EditableMark className="-ml-0.5 -translate-y-1.5" />}
       </dt>
       <dd
         className={cn(

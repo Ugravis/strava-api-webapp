@@ -31,7 +31,22 @@ export function FieldMenuItem({ label, disabled, onClick, children }: { label: s
  * named in a bubble: the `tools` of a `DetailField`. On a screen without
  * hover, a line of the bubble of actions of the field.
  */
-export function DetailFieldButton({ label, disabled, pressed, onClick, children }: { label: string; disabled?: boolean; pressed?: boolean; onClick: () => void; children: ReactNode }) {
+export function DetailFieldButton({
+  label,
+  disabled,
+  pressed,
+  primary,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  pressed?: boolean;
+  /** The button that saves: dark, as the main button of a form. */
+  primary?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
   const close = useContext(FieldMenuClose);
   if (close)
     return (
@@ -63,7 +78,7 @@ export function DetailFieldButton({ label, disabled, pressed, onClick, children 
               event.stopPropagation();
               onClick();
             }}
-            className={cn(FLOATING_BUTTON, pressed && "bg-muted text-foreground")}
+            className={cn(FLOATING_BUTTON, pressed && "bg-muted text-foreground", primary && "border-foreground bg-foreground text-background hover:bg-foreground/85 hover:text-background")}
           >
             {children}
           </button>

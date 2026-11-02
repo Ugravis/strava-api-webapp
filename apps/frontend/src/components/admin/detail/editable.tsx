@@ -8,7 +8,7 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { useNoHover } from "@/hooks/use-no-hover";
 import { cn } from "@/lib/utils";
 import { DetailFieldButton, FieldButtons, FieldMenuClose, FieldMenuItem } from "./field-buttons";
-import { type DetailFieldEdit, EditValue, editCopy, editEmpty, InlineEditor, isInline } from "./field-edit";
+import { type DetailFieldEdit, EditValue, editCopy, editEmpty, type InlineEdit, InlineEditor, isInline } from "./field-edit";
 import { PickerField } from "./field-picker";
 
 /*
@@ -25,7 +25,9 @@ import { PickerField } from "./field-picker";
  *
  * With hover, the buttons float at the right of the value. Without (a
  * phone), none is shown: a tap on the value opens a bubble of its actions,
- * each with its icon and its name, `onOpen` first (the row of a table).
+ * each with its icon and its name, `onOpen` first (the row of a table), a
+ * second tap closing it. `cell`: in a cell of a table, typed on a phone in a
+ * bubble under it, which the screen holds, rather than in the narrow cell.
  */
 export function EditableValue({
   label,
@@ -34,6 +36,7 @@ export function EditableValue({
   edit,
   stacked,
   onOpen,
+  cell,
   valueClassName,
   children,
 }: {
@@ -43,6 +46,7 @@ export function EditableValue({
   edit?: DetailFieldEdit;
   stacked?: boolean;
   onOpen?: () => void;
+  cell?: boolean;
   valueClassName?: string;
   children?: ReactNode;
 }) {
@@ -81,10 +85,16 @@ export function EditableValue({
     </>
   );
 
-  if (edit && editing && isInline(edit)) return <InlineEditor edit={edit} label={label} onClose={() => setEditing(false)} />;
+  // Typed in the cell itself, unless a phone: in a bubble under it.
+  const floating = cell && noHover;
+  if (edit && editing && isInline(edit) && !floating) return <InlineEditor edit={edit} label={label} onClose={() => setEditing(false)} />;
   return (
     <>
-      {edit && !isInline(edit) && edit.kind !== "switch" ? (
+      {edit && editing && isInline(edit) && floating ? (
+        <FloatingEditor edit={edit} label={label} className={valueClass} onClose={() => setEditing(false)}>
+          {drawnValue}
+        </FloatingEditor>
+      ) : edit && !isInline(edit) && edit.kind !== "switch" ? (
         <PickerField edit={edit} label={label} editing={editing} onEditing={setEditing} className={valueClass}>
           {value}
         </PickerField>
@@ -120,6 +130,8 @@ function ActionsBubble({
   const [done, setDone] = useState(false);
   const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
   const close = () => setOpen(false);
+  // A tap on the value again closes the bubble: left to its own click.
+  const fromValue = (target: EventTarget | null) => target instanceof Node && !!anchor?.contains(target);
 
   return (
     <>
@@ -133,13 +145,13 @@ function ActionsBubble({
           // Kept from the row of a table, opened from the bubble instead.
           event.stopPropagation();
           setDone(false);
-          setOpen(true);
+          setOpen((shown) => !shown);
         }}
         className="min-w-0 cursor-pointer"
       >
         {children}
       </div>
-      <Popover open={open} onOpenChange={(next) => !next && close()}>
+      <Popover open={open} onOpenChange={(next, details) => !next && !(details.reason === "outside-press" && fromValue(details.event.target)) && close()}>
         <PopoverContent anchor={anchor} side="top" align="center" className="w-auto min-w-44 gap-0.5 p-1" aria-label={label}>
           <FieldMenuClose value={close}>
             {onOpen && (
@@ -179,11 +191,40 @@ function ActionsBubble({
   );
 }
 
-/** Tells a field editable: a small blue dot at the top right of its label, named in a bubble. */
-export function EditableMark() {
+/**
+ * On a phone, the field typing the value of a cell, in a bubble centred under
+ * it that the screen holds. Leaving the field saves; Esc gives up.
+ */
+function FloatingEditor({ edit, label, className, onClose, children }: { edit: InlineEdit; label: string; className?: string; onClose: () => void; children: ReactNode }) {
+  const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
+  return (
+    <>
+      <div ref={setAnchor} className={className}>
+        {children}
+      </div>
+      <Popover
+        open
+        onOpenChange={(open, details) => {
+          // A tap outside leaves the field, which saves; Esc gives up.
+          if (!open && details.reason === "escape-key") {
+            details.event.preventDefault();
+            onClose();
+          }
+        }}
+      >
+        <PopoverContent anchor={anchor} align="center" className="w-[min(20rem,calc(100vw-1rem))] p-2" aria-label={label}>
+          <InlineEditor edit={edit} label={label} onClose={onClose} />
+        </PopoverContent>
+      </Popover>
+    </>
+  );
+}
+
+/** Tells a field editable: a small blue dot, named in a bubble, at the top right of the icon of the field (`className` places it). */
+export function EditableMark({ className }: { className?: string }) {
   return (
     <Tip label="Champ modifiable">
-      <span aria-label="Champ modifiable" className="-ml-0.5 size-1.5 shrink-0 -translate-y-1.5 rounded-full bg-blue-500" />
+      <span aria-label="Champ modifiable" className={cn("size-1.5 shrink-0 rounded-full bg-blue-500 ring-2 ring-background", className)} />
     </Tip>
   );
 }

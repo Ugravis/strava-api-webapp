@@ -92,7 +92,7 @@ export function SplitPanelArea({ children }: { children: ReactNode }) {
               {/* The thin scrollbar of the tables. */}
               <div className="flex-1 overflow-y-auto overscroll-contain [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
                 {/* Read as a page once expanded: a column of text, not a line across the screen. */}
-                <div className={cn("flex min-h-full flex-col", full && "mx-auto w-full max-w-3xl")}>{last?.content}</div>
+                <div key={last?.key} className={cn("flex min-h-full flex-col", full && "mx-auto w-full max-w-3xl")}>{last?.content}</div>
               </div>
             </div>
           </aside>

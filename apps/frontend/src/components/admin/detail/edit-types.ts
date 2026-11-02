@@ -18,6 +18,8 @@ export interface DetailEditOption {
   tone?: Tone;
   /** Under its label in a list, e.g. the @username of an account. */
   description?: string;
+  /** A page of the back office it leads to once picked, e.g. its row in another table (`?row=`): a link in the value shown. */
+  href?: string;
 }
 
 /**

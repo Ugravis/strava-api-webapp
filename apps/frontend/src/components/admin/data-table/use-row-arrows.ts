@@ -5,6 +5,51 @@ import type { DataTableState } from "./use-data-table";
 /** Rest of the arrows, pressed in a row or held down, after which the row reached opens. */
 const ARROW_REST = 150;
 
+/** The nearest box scrolling `element` up and down, the page when none. */
+function scrollerOf(element: Element): Element {
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    const { overflowY } = getComputedStyle(parent);
+    if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) return parent;
+  }
+  return document.scrollingElement ?? document.documentElement;
+}
+
+/** The top and bottom of what `scroller` shows on the screen. */
+function viewOf(scroller: Element) {
+  if (scroller === document.scrollingElement || scroller === document.documentElement) return { top: 0, bottom: window.innerHeight };
+  const { top, bottom } = scroller.getBoundingClientRect();
+  return { top, bottom };
+}
+
+/**
+ * Brings `row` to the middle of the screen as far as it can, with the page
+ * and the box of its rows (a table scrolling within its height). The page
+ * never scrolls past the bottom of `table`, so that what lies under it (the
+ * pagination, the end of the page) does not come up for the row: down, the
+ * page moves first, bringing the table into sight, the box the rest; up,
+ * the box first, the page the rest.
+ */
+function centreRow(row: Element, table: Element) {
+  const { top, bottom } = row.getBoundingClientRect();
+  const delta = (top + bottom) / 2 - window.innerHeight / 2;
+  const page = scrollerOf(table);
+  const scroller = scrollerOf(row);
+  const inner = scroller !== page && table.contains(scroller) ? scroller : null;
+  /** What the box can move by, toward `wanted`. */
+  const innerBy = (wanted: number) => (inner ? Math.min(Math.max(wanted, -inner.scrollTop), inner.scrollHeight - inner.clientHeight - inner.scrollTop) : 0);
+  let pageBy: number;
+  let boxBy: number;
+  if (delta > 0) {
+    pageBy = Math.min(delta, Math.max(0, table.getBoundingClientRect().bottom - viewOf(page).bottom));
+    boxBy = innerBy(delta - pageBy);
+  } else {
+    boxBy = innerBy(delta);
+    pageBy = delta - boxBy;
+  }
+  if (inner && Math.abs(boxBy) >= 1) inner.scrollBy({ top: boxBy, behavior: "smooth" });
+  if (Math.abs(pageBy) >= 1) page.scrollBy({ top: pageBy, behavior: "smooth" });
+}
+
 /*
  * Pressed in a row, quickly or held down, the arrows only move the
  * highlight, cheap on memoized rows: the row opens once they rest, so that
@@ -39,6 +84,8 @@ export function useRowArrows<T>({
     cancel();
     if (row) onOpen?.(row);
   });
+  // The row this table opened (a click, the arrows): kept in sight, never centred.
+  const own = useRef<string | null>(null);
   // A click wins over a row still waiting.
   const openRow = useMemo(
     () =>
@@ -46,9 +93,10 @@ export function useRowArrows<T>({
       ((row: T) => {
         cancel();
         setCursor(null);
+        own.current = config.rowId(row);
         onOpen(row);
       }),
-    [onOpen],
+    [onOpen, config],
   );
   useEffect(() => cancel, []);
 
@@ -91,15 +139,26 @@ export function useRowArrows<T>({
       if (lone && !pending.current) return openRow(next);
       cancel();
       pending.current = { row: next, timer: setTimeout(flush, ARROW_REST) };
+      own.current = config.rowId(next);
       setCursor(config.rowId(next));
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [active, openRow, loading, entries, config, result, state]);
-  // The active row kept in sight as the arrows move it.
+  /*
+   * The active row kept in sight as the arrows move it. Opened from
+   * elsewhere (a link of the panel, back and forward, a shared link), it is
+   * centred once, as soon as it is drawn.
+   */
+  const handled = useRef<string | null>(null);
   useEffect(() => {
     if (active === null) return;
-    box.current?.querySelector(`[data-row-id="${CSS.escape(active)}"]`)?.scrollIntoView({ block: "nearest" });
+    const row = box.current?.querySelector(`[data-row-id="${CSS.escape(active)}"]`);
+    if (!row || !box.current) return;
+    if (active !== own.current) own.current = null;
+    if (active === handled.current || own.current) row.scrollIntoView({ block: "nearest" });
+    else centreRow(row, box.current);
+    handled.current = active;
   }, [active, result]);
 
   return { active, openRow, box };

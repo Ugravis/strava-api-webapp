@@ -19,6 +19,8 @@ export interface RowPanelControls {
   created: (id: string) => void;
   /** A row removed: the panel closes, or shows the next row of the table (`afterRemove`). */
   removed: (id: string) => void;
+  /** A row whose id changed (e.g. a username renamed): shown under its new id when the panel showed it. */
+  renamed: (from: string, to: string) => void;
   close: () => void;
 }
 
@@ -53,8 +55,10 @@ export function useRowPanel<T>(options: RowPanelOptions<T>) {
   const { open, replace, close, setTitle, isOpen, activeId } = useSplitPanel();
   // The options of the last render, read by the controls, which stay stable.
   const latest = useRef(options);
+  const shown = useRef<string | null>(null);
   useLayoutEffect(() => {
     latest.current = options;
+    shown.current = isOpen ? activeId : null;
   });
   // The rows shown, in order, for the next one after a removal and for the titles.
   const rows = useRef<T[]>([]);
@@ -79,6 +83,9 @@ export function useRowPanel<T>(options: RowPanelOptions<T>) {
         const next = latest.current.afterRemove === "next" && at !== -1 ? (rows.current[at + 1] ?? rows.current[at - 1]) : undefined;
         if (next) show(config.rowId(next), true);
         else close();
+      },
+      renamed: (from, to) => {
+        if (shown.current === from) show(to, true);
       },
       close,
     };

@@ -143,11 +143,11 @@ Props of `DataTable` besides `config`, for what changes with the page:
 | --- | --- |
 | `onRowClick` | Click on a row (or Enter on a card), stable (`useCallback`). Buttons, links, checkboxes and menu items of the row keep their own click. |
 | `refreshKey` | A new value fetches the page again without skeleton, e.g. a version bumped once a row changed in its detail. |
-| `activeRowId` | The row opened: tinted blue like the checked rows, with a blue bar on its first cell (a blue border on a card), kept in sight. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. Past the last row of the page, the next page opens on its first row; before the first, the previous one on its last. |
+| `activeRowId` | The row opened: tinted blue like the checked rows, with a blue bar on its first cell (a blue border on a card), kept in sight. Opened from elsewhere (a link of the panel, back and forward, a shared link) rather than by the table itself (a click, the arrows), it is centred on the screen once drawn, as far as it can: its box first, then the page, which never scrolls past the bottom of the table. While it is shown, ↑ / ↓ call `onRowClick` with the row before or after it on the page, unless the focus is in a field, a menu or a dialog. A lone press opens at once; pressed in a row (within 150 ms) or held down, they only move the highlight, and the row reached opens once they rest 150 ms. Past the last row of the page, the next page opens on its first row; before the first, the previous one on its last. |
 
 ## Columns: one builder per kind of field
 
-Each builder applies the rules of the kit: the cell of its kind, a copy button on every value of text or numbers, a skeleton of its shape, and `EmptyValue` (—) for a missing value. Every builder takes `id`, `header`, `icon`, and optionally `sortable`, `locked`, `className`, `href` and `edit`.
+Each builder applies the rules of the kit: the cell of its kind, a copy button on every value of text or numbers, a skeleton of its shape, and `EmptyValue` (—) for a missing value. Every builder takes `id`, `header`, `icon`, and optionally `sortable`, `locked`, `className`, `href`, `edit` and `tools` (buttons floating beside copy and edit on hover, any `DetailFieldButton`, e.g. moderate: `(row) => ReactNode`, in the cell as in the detail).
 
 | Builder | Field | Cell |
 | --- | --- | --- |

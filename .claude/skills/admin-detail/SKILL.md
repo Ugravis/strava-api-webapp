@@ -11,7 +11,7 @@ description: Build or change the detail of a back-office row with the detail kit
 4. Build it:
    - the table wired by `useRowPanel` (`detail`, `load`, `create`, `afterRemove`), its `table` spread on the `DataTable`; the detail a `RowPanel` component wrapping it in `DetailLoader` with a `load(id)` Server Action and a `refreshKey` shared with the `DataTable`;
    - the rules of the row in `@kilotrace/shared/rules`, followed by the drafts (`rules`), the in-place edits (`fromRule`) and the API (`assertRules`); a field or a button not for every role `locked` with its reason;
-   - a removal or a suspension through `DetailAction` `confirm` (a reason if needed), then `panel.removed(id)`; long details in `DetailTabs`, related rows in `DetailRelated`, the audit log in `DetailHistory`; a field changed on a selection with `BulkEditAction` in `bulkActions`;
+   - a removal or a suspension through `DetailAction` `confirm` (a reason if needed), then `panel.removed(id)`; tabs (`DetailTabs`) only when the user asks for them (one scrolling column by default), related rows in `DetailRelated`, the audit log in `DetailHistory`; a field changed on a selection with `BulkEditAction` in `bulkActions`;
    - `DetailCover` (if any), then `DetailHeader`, then `DetailSection`s;
    - every value shown in the table through `DetailColumnFields` and the columns of its config, never formatted again by hand;
    - free fields with `DetailFields` + `DetailField`; in-place edits with `edit: { kind, value, onSave }` (text, number, date, select, multiselect, color, icon, image, switch: table in the doc), `onSave` a Server Action answering an `ActionResult`; a value of the table edited in place through `{ id, edit }` in `DetailColumnFields`;

@@ -3,18 +3,16 @@
 import {
   type AdminReservedUsername,
   RESERVED_USERNAME_CATEGORIES,
-  RESERVED_USERNAME_NOTE_MAX_LENGTH,
+  RESERVED_USERNAME_RULES,
   type ReservedUsernameCategory,
+  type UpdateReservedUsernameRequest,
 } from "@kilotrace/shared/admin";
 import { AtSignIcon, CalendarPlusIcon, ShapesIcon, StickyNoteIcon, UserPenIcon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { ActionDialog } from "@/components/admin/action-dialog";
-import { FormDialog } from "@/components/admin/form-dialog";
-import { customColumn, type DataTableColumn, dateColumn, pillsColumn, textColumn, type Tone, UserCell } from "@/components/admin/data-table";
-import { useSplitPanel } from "@/components/split-panel";
+import { type ConfirmOptions, customColumn, type DataTableColumn, dateColumn, pillsColumn, textColumn, type Tone, UserCell } from "@/components/admin/data-table";
+import { type DetailEditOption, fromRule } from "@/components/admin/detail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createVersion } from "@/lib/admin/version";
-import { releaseUsername, updateReservedUsername } from "./actions";
+import { releaseUsername, saveReservedUsername } from "./actions";
 
 /*
  * How a reserved username is drawn and changed, shared by its table and its detail.
@@ -31,15 +29,80 @@ export const CATEGORIES: Record<ReservedUsernameCategory, { label: string; tone:
   other: { label: "Autre", tone: "amber" },
 };
 
+export const CATEGORY_OPTIONS: DetailEditOption[] = RESERVED_USERNAME_CATEGORIES.map((value) => ({ value, ...CATEGORIES[value] }));
+
+/** The lock of the fields and buttons for a member without the permission. */
+export const RESERVED_LOCK = "Réservé aux membres qui gèrent les pseudos";
+
+/** Saves a change of a reserved username, every field sent; the table and the detail fetch again. */
+export async function saveReserved(entry: AdminReservedUsername, patch: Partial<UpdateReservedUsernameRequest>) {
+  const result = await saveReservedUsername(entry.username, { category: entry.category, note: entry.note, ...patch });
+  if (result.ok) bumpReserved();
+  return result;
+}
+
+/** The removal of a reserved username, asked first: by its detail or the menu of its row. `done` once released. */
+export function releaseOf(entry: AdminReservedUsername, done: () => void): { confirm: ConfirmOptions; run: () => Promise<unknown> } {
+  return {
+    confirm: { title: `Supprimer @${entry.username} ?`, description: "Le pseudo redeviendra disponible pour tout le monde.", confirmLabel: "Supprimer" },
+    run: async () => {
+      const result = await releaseUsername(entry.username);
+      if (result.ok) {
+        bumpReserved();
+        done();
+      }
+      return result;
+    },
+  };
+}
+
 function Author({ entry }: { entry: AdminReservedUsername }) {
   if (!entry.createdBy) return <span className="text-muted-foreground">Liste initiale</span>;
   if (!entry.createdBy.username) return <span className="text-muted-foreground italic">Compte supprimé</span>;
   return <UserCell user={{ ...entry.createdBy, username: entry.createdBy.username }} />;
 }
 
-export const RESERVED_COLUMNS: DataTableColumn<AdminReservedUsername>[] = [
-  textColumn({ id: "username", header: "Pseudo", icon: <AtSignIcon />, sortable: true, locked: true, value: (entry) => `@${entry.username}` }),
-  pillsColumn({ id: "category", header: "Catégorie", icon: <ShapesIcon />, sortable: true, value: (entry) => [CATEGORIES[entry.category]] }),
+/**
+ * The columns; `canEdit` edits the username, the category and the note in
+ * place, in the table and in the detail. `renamed` once a username changed,
+ * for the panel to follow it.
+ */
+export const reservedColumns = (canEdit: boolean, renamed?: (from: string, to: string) => void): DataTableColumn<AdminReservedUsername>[] => [
+  textColumn({
+    id: "username",
+    header: "Pseudo",
+    icon: <AtSignIcon />,
+    sortable: true,
+    locked: true,
+    value: (entry) => `@${entry.username}`,
+    edit: (entry) => ({
+      kind: "text",
+      ...fromRule(RESERVED_USERNAME_RULES.username),
+      value: entry.username,
+      locked: canEdit ? null : RESERVED_LOCK,
+      onSave: async (next) => {
+        const username = (next ?? "").trim().toLowerCase();
+        const result = await saveReserved(entry, { username });
+        if (result.ok) renamed?.(entry.username, username);
+        return result;
+      },
+    }),
+  }),
+  pillsColumn({
+    id: "category",
+    header: "Catégorie",
+    icon: <ShapesIcon />,
+    sortable: true,
+    value: (entry) => [CATEGORIES[entry.category]],
+    edit: (entry) => ({
+      kind: "select",
+      ...fromRule(RESERVED_USERNAME_RULES.category),
+      value: entry.category,
+      options: CATEGORY_OPTIONS,
+      locked: canEdit ? null : RESERVED_LOCK,
+      onSave: (category) => saveReserved(entry, { category: category as ReservedUsernameCategory }),
+    }),
+  }),
   customColumn({
     id: "createdBy",
     header: "Ajouté par",
@@ -55,62 +118,22 @@ export const RESERVED_COLUMNS: DataTableColumn<AdminReservedUsername>[] = [
     ),
   }),
   dateColumn({ id: "createdAt", header: "Date", icon: <CalendarPlusIcon />, sortable: true, value: (entry) => entry.createdAt }),
-  textColumn({ id: "note", header: "Note", icon: <StickyNoteIcon />, sortable: true, value: (entry) => entry.note, muted: true, width: "max-w-64" }),
+  textColumn({
+    id: "note",
+    header: "Note",
+    icon: <StickyNoteIcon />,
+    sortable: true,
+    value: (entry) => entry.note,
+    muted: true,
+    width: "max-w-64",
+    edit: (entry) => ({
+      kind: "text",
+      ...fromRule(RESERVED_USERNAME_RULES.note),
+      value: entry.note,
+      multiline: true,
+      placeholder: "Une note pour l'équipe",
+      locked: canEdit ? null : RESERVED_LOCK,
+      onSave: (note) => saveReserved(entry, { note }),
+    }),
+  }),
 ];
-
-export const noteField = (defaultValue?: string) =>
-  ({ kind: "textarea", name: "note", label: "Note (optionnelle)", hint: "Visible par l'équipe seulement.", maxLength: RESERVED_USERNAME_NOTE_MAX_LENGTH, defaultValue }) as const;
-
-export const categoryField = (defaultValue: ReservedUsernameCategory) =>
-  ({
-    kind: "select",
-    name: "category",
-    label: "Catégorie",
-    defaultValue,
-    options: RESERVED_USERNAME_CATEGORIES.map((value) => ({ value, label: CATEGORIES[value].label })),
-  }) as const;
-
-/**
- * The edit and the release of a reserved username, opened by a menu item or
- * a button of its detail; `dialogs` goes anywhere in the page. Once done, the
- * table and the detail fetch again; a released username open in the panel closes it.
- */
-export function useReservedDialogs() {
-  const { close, activeId } = useSplitPanel();
-  // Kept once closed, so that the texts stay while the dialog fades out.
-  const [editing, setEditing] = useState<{ open: boolean; entry: AdminReservedUsername | null }>({ open: false, entry: null });
-  const [releasing, setReleasing] = useState({ open: false, username: "" });
-  const openEdit = useCallback((entry: AdminReservedUsername) => setEditing({ open: true, entry }), []);
-  const openRelease = useCallback((username: string) => setReleasing({ open: true, username }), []);
-  const dialogs = (
-    <>
-      <FormDialog
-        key={editing.entry?.username ?? ""}
-        open={editing.open}
-        onOpenChange={(open) => setEditing({ ...editing, open })}
-        onSuccess={bumpReserved}
-        action={updateReservedUsername.bind(null, editing.entry?.username ?? "")}
-        title={`Modifier @${editing.entry?.username ?? ""}`}
-        description="Le pseudo reste désactivé ; seules sa catégorie et sa note changent."
-        submitLabel="Enregistrer"
-        cancelLabel="Annuler"
-        fields={[categoryField(editing.entry?.category ?? "other"), noteField(editing.entry?.note ?? "")]}
-      />
-      <ActionDialog
-        open={releasing.open}
-        onOpenChange={(open) => setReleasing({ ...releasing, open })}
-        onSuccess={() => {
-          if (activeId === releasing.username) close();
-          bumpReserved();
-        }}
-        action={releaseUsername.bind(null, releasing.username)}
-        title={`Supprimer @${releasing.username} ?`}
-        description="Le pseudo redeviendra disponible pour tout le monde."
-        submitLabel="Supprimer"
-        cancelLabel="Annuler"
-        destructive
-      />
-    </>
-  );
-  return { openEdit, openRelease, dialogs };
-}

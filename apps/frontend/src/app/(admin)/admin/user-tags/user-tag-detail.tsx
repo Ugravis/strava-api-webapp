@@ -1,45 +1,61 @@
 "use client";
 
-import type { AdminUserTag } from "@kilotrace/shared/admin";
-import { ArrowDownUpIcon, PaletteIcon, PencilIcon, ShapesIcon, StickyNoteIcon, Trash2Icon, TypeIcon } from "lucide-react";
+import { type AdminUserTag, USER_TAG_RULES } from "@kilotrace/shared/admin";
+import { ArrowDownUpIcon, CopyPlusIcon, FingerprintIcon, StickyNoteIcon, Trash2Icon, TypeIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import {
   DetailAction,
   DetailActions,
-  DetailColumnField,
+  DetailColumnFields,
   DetailField,
   DetailFields,
+  DetailForm,
   DetailHeader,
   DetailLoader,
   DetailMedia,
+  DetailRelated,
   DetailSection,
   DetailSkeleton,
+  fromRule,
+  type RowPanelControls,
 } from "@/components/admin/detail";
-import { BadgeIcon } from "@/components/distances/badge-icon";
-import { cn } from "@/lib/utils";
-import { loadUserTag, saveUserTag } from "./actions";
-import { bumpUserTags, SystemMark, USER_TAG_COLUMNS, type UserTagRights, useUserTagDialogs, useUserTagsVersion } from "./user-tag-bits";
+import { BADGE_ICON_KEYS, BadgeIcon } from "@/components/distances/badge-icon";
+import { UserAvatar } from "@/components/user/user-avatar";
+import { publicNameOf } from "@/lib/user";
+import { createUserTag, loadUserTag, loadUserTagHolders, type UserTagDraft } from "./actions";
+import { bumpUserTags, deleteLock, deleteOf, LOCKS, saveTag, SystemMark, userTagColumns, type UserTagRights, useUserTagsVersion } from "./user-tag-bits";
+
+const BLANK: UserTagDraft = { id: null, name: null, description: null, icon: BADGE_ICON_KEYS[0], color: null };
 
 /** The user tag loaded by the panel, its skeleton meanwhile; loaded again after every change. */
-export function UserTagRowPanel({ id, rights }: { id: string; rights: UserTagRights }) {
+export function UserTagRowPanel({ id, rights, usersPath, panel }: { id: string; rights: UserTagRights; usersPath: string; panel: RowPanelControls }) {
   const version = useUserTagsVersion();
   return (
-    <DetailLoader id={id} load={loadUserTag} refreshKey={version} skeleton={<DetailSkeleton actions={rights.edit ? 2 : 0} sections={[7, 2]} />}>
-      {(userTag) => <UserTagDetail userTag={userTag} rights={rights} />}
+    <DetailLoader id={id} load={loadUserTag} refreshKey={version} skeleton={<DetailSkeleton media actions={2} sections={[7, 2, 3]} />}>
+      {(userTag) => <UserTagDetail userTag={userTag} rights={rights} usersPath={usersPath} panel={panel} version={version} />}
     </DetailLoader>
   );
 }
 
-/** Everything about a user tag, and what the rights allow on it; those of the code are never deleted. */
-function UserTagDetail({ userTag, rights }: { userTag: AdminUserTag; rights: UserTagRights }) {
-  const { openEdit, openDelete, dialogs } = useUserTagDialogs(rights);
-  const field = (id: string) => <DetailColumnField row={userTag} columns={USER_TAG_COLUMNS} id={id} />;
-  const save = async (patch: Partial<Pick<AdminUserTag, "name" | "description">>) => {
-    const result = await saveUserTag(userTag.id, { name: userTag.name, description: userTag.description, icon: userTag.icon, color: userTag.color, ...patch });
-    if (result.ok) bumpUserTags();
-    return result;
-  };
-  const deletable = rights.delete && !userTag.system;
-  const icon = <BadgeIcon icon={userTag.icon} strokeWidth={1.75} className={cn(!userTag.color && "text-muted-foreground")} style={userTag.color ? { color: userTag.color } : undefined} />;
+/** Everything about a user tag, its fields edited in place, and the accounts holding it; those of the code are never deleted. */
+function UserTagDetail({
+  userTag,
+  rights,
+  usersPath,
+  panel,
+  version,
+}: {
+  userTag: AdminUserTag;
+  rights: UserTagRights;
+  usersPath: string;
+  panel: RowPanelControls;
+  version: number;
+}) {
+  const router = useRouter();
+  const columns = useMemo(() => userTagColumns(rights.edit), [rights.edit]);
+  const removal = deleteOf(userTag, () => panel.removed(userTag.id));
+  const { name, description, icon, color } = userTag;
 
   return (
     <>
@@ -49,61 +65,107 @@ function UserTagDetail({ userTag, rights }: { userTag: AdminUserTag; rights: Use
         subtitle={userTag.id}
         marks={userTag.system && <SystemMark />}
       />
-      {(rights.edit || deletable) && (
-        <DetailActions>
-          {rights.edit && <DetailAction label="Modifier" icon={<PencilIcon aria-hidden />} onClick={() => openEdit(userTag)} />}
-          {deletable && <DetailAction label="Supprimer" icon={<Trash2Icon aria-hidden />} variant="destructive" onClick={() => openDelete(userTag)} />}
-        </DetailActions>
-      )}
-      {dialogs}
+      <DetailActions>
+        <DetailAction
+          label="Dupliquer"
+          icon={<CopyPlusIcon aria-hidden />}
+          locked={rights.create ? null : LOCKS.create}
+          onClick={() => panel.create({ name, description, icon, color } satisfies Partial<UserTagDraft>)}
+        />
+        <DetailAction label="Supprimer" icon={<Trash2Icon aria-hidden />} variant="destructive" locked={deleteLock(userTag, rights)} confirm={removal.confirm} onClick={removal.run} />
+      </DetailActions>
       <DetailSection title="Tag">
         <DetailFields>
-          {rights.edit ? (
-            <DetailField label="Nom" icon={<TypeIcon />} edit={{ value: userTag.name, onSave: (name) => save({ name: name ?? "" }) }} />
-          ) : (
-            field("name")
-          )}
-          {field("id")}
-          {rights.edit ? (
-            <DetailField
-              label="Description"
-              icon={<StickyNoteIcon />}
-              stacked
-              edit={{ value: userTag.description, multiline: true, placeholder: "Affichée dans le détail du tag", onSave: (description) => save({ description }) }}
-            />
-          ) : (
-            <DetailField label="Description" icon={<StickyNoteIcon />} stacked={!!userTag.description}>
-              {userTag.description}
-            </DetailField>
-          )}
-          {field("kind")}
-          {field("holders")}
+          <DetailField
+            label="Nom"
+            icon={<TypeIcon />}
+            edit={{
+              ...fromRule(USER_TAG_RULES.name),
+              value: userTag.name,
+              locked: rights.edit ? null : LOCKS.edit,
+              onSave: (next) => saveTag(userTag, { name: next?.trim() ?? "" }),
+            }}
+          />
+        </DetailFields>
+        <DetailColumnFields row={userTag} columns={columns} ids={["id", { id: "description", stacked: true }, "kind", "holders"]} />
+        <DetailFields>
           <DetailField label="Position" icon={<ArrowDownUpIcon />}>
             {userTag.position}
           </DetailField>
-          {field("createdAt")}
         </DetailFields>
+        <DetailColumnFields row={userTag} columns={columns} ids={["createdAt"]} />
       </DetailSection>
       <DetailSection title="Apparence">
-        <DetailFields>
-          <DetailField label="Icône" icon={<ShapesIcon />} copy={userTag.icon}>
-            <span className="inline-flex items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded-md bg-muted [&_svg]:size-3.5">{icon}</span>
-              {userTag.icon}
-            </span>
-          </DetailField>
-          <DetailField label="Couleur" icon={<PaletteIcon />} copy={userTag.color}>
-            {userTag.color ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="size-4 rounded-full border" style={{ backgroundColor: userTag.color }} aria-hidden />
-                {userTag.color}
-              </span>
-            ) : (
-              "Par défaut"
-            )}
-          </DetailField>
-        </DetailFields>
+        <DetailColumnFields row={userTag} columns={columns} ids={["icon", "color"]} />
+      </DetailSection>
+      <DetailSection title="Membres">
+        <DetailRelated
+          refreshKey={version}
+          empty="Aucun compte ne porte ce tag."
+          load={(offset) =>
+            loadUserTagHolders(userTag.id, offset).then(({ users, total }) => ({
+              total,
+              items: users.map((user) => ({
+                id: user.id,
+                media: <UserAvatar user={user} className="size-8" />,
+                title: publicNameOf(user),
+                subtitle: `@${user.username}`,
+                onOpen: () => router.push(`${usersPath}?row=${user.id}`),
+              })),
+            }))
+          }
+        />
       </DetailSection>
     </>
+  );
+}
+
+/** A user tag to create, blank or copied: nothing saved before « Créer ». */
+export function UserTagCreate({ initial, onCancel, onCreated }: { initial?: Partial<UserTagDraft>; onCancel: () => void; onCreated: (id: string) => void }) {
+  const columns = useMemo(() => userTagColumns(true), []);
+  return (
+    <DetailForm<UserTagDraft>
+      initial={{ ...BLANK, ...initial }}
+      rules={USER_TAG_RULES}
+      onSubmit={async (draft) => {
+        const result = await createUserTag(draft);
+        if (result.ok) bumpUserTags();
+        return result;
+      }}
+      onCancel={onCancel}
+      onCreated={(created) => onCreated(created.id!)}
+      submitLabel="Créer le tag"
+    >
+      {(form) => (
+        <>
+          <DetailHeader
+            media={<DetailMedia icon={<BadgeIcon icon={form.values.icon ?? BADGE_ICON_KEYS[0]} strokeWidth={1.75} />} color={form.values.color} />}
+            title={form.values.name?.trim() || "Nouveau tag"}
+            subtitle="Ajouté en fin de liste, attribué ensuite depuis la fiche d'un compte."
+          />
+          <DetailSection title="Tag">
+            <DetailFields>
+              <DetailField label="Nom" icon={<TypeIcon />} edit={form.bind("name", { kind: "text", placeholder: "Ambassadeur" })} />
+              <DetailField label="Identifiant" icon={<FingerprintIcon />} edit={form.bind("id", { kind: "text", placeholder: "Minuscules, chiffres et _ ; définitif" })} />
+              <DetailField
+                label="Description"
+                icon={<StickyNoteIcon />}
+                stacked
+                edit={form.bind("description", { kind: "text", multiline: true, placeholder: "Affichée dans le détail du tag" })}
+              />
+            </DetailFields>
+          </DetailSection>
+          <DetailSection title="Apparence">
+            <DetailColumnFields
+              columns={columns}
+              ids={[
+                { id: "icon", edit: form.bind("icon", { kind: "icon" }) },
+                { id: "color", edit: form.bind("color", { kind: "color", noneLabel: "Couleur par défaut" }) },
+              ]}
+            />
+          </DetailSection>
+        </>
+      )}
+    </DetailForm>
   );
 }

@@ -16,7 +16,8 @@ import { User } from '../users/user.entity';
  * profile of the user, who is never told by whom. `moderation`: the team
  * reset free fields of the profile. `strava_unlinked`: the team unlinked the
  * Strava account. `role_changed`: the team changed the back-office role of
- * the user, null once out of the team. The last three have no actor.
+ * the user, null once out of the team. `release_note`: a new version of the
+ * site has a note to read. The last four have no actor.
  */
 export const NOTIFICATION_TYPES = [
   'follow',
@@ -26,6 +27,7 @@ export const NOTIFICATION_TYPES = [
   'moderation',
   'strava_unlinked',
   'role_changed',
+  'release_note',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -49,6 +51,8 @@ export interface NotificationDetails {
   fields?: string[];
   /** New back-office role, null once out of the team. */
   role?: string | null;
+  /** Version of a `release_note`. */
+  version?: string;
 }
 
 export const ANONYMOUS_NOTIFICATIONS: ReadonlySet<NotificationType> = new Set([

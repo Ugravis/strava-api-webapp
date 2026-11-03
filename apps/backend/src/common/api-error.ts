@@ -43,6 +43,10 @@ export enum ApiErrorCode {
   SignupsDisabled = 'SIGNUPS_DISABLED',
   InvalidPermissions = 'INVALID_PERMISSIONS',
   SystemUserTag = 'SYSTEM_USER_TAG',
+  /** A release note made ready without anything to say. */
+  ReleaseNoteEmpty = 'RELEASE_NOTE_EMPTY',
+  /** A version already out (or passed by a later one): its row is the release's own. */
+  VersionReleased = 'VERSION_RELEASED',
   /** A field breaking its shared rule: `field` tells which, `message` why. */
   InvalidField = 'INVALID_FIELD',
 }

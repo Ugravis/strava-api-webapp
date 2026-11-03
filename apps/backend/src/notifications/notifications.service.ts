@@ -14,6 +14,9 @@ import {
   type NotificationType,
 } from './notification.entity';
 
+/** Rows inserted at once when a release note goes out. */
+const RELEASE_BATCH = 1000;
+
 export interface NotificationResponse {
   id: string;
   type: NotificationType;
@@ -255,6 +258,81 @@ export class NotificationsService {
         unreadCount: await this.unreadCount(userId),
       } satisfies NotificationEvent);
     }
+  }
+
+  /**
+   * Tells the users of `userIds` that the note of `version` is out, from the
+   * team; the open streams get it at once.
+   */
+  async notifyRelease(userIds: string[], version: string): Promise<void> {
+    const details: NotificationDetails = { version };
+    for (let at = 0; at < userIds.length; at += RELEASE_BATCH) {
+      await this.notifications.insert(
+        userIds.slice(at, at + RELEASE_BATCH).map((userId) => ({
+          userId,
+          type: 'release_note' as const,
+          actorId: null,
+          details,
+        })),
+      );
+    }
+    const recipients = new Set(userIds);
+    const online = this.streams.connected().filter((id) => recipients.has(id));
+    if (online.length === 0) return;
+    const sent = await this.releaseNotifications(version)
+      .andWhere('n.user_id IN (:...online)', { online })
+      .getMany();
+    for (const notification of sent) {
+      this.streams.send(notification.userId, {
+        unreadCount: await this.unreadCount(notification.userId),
+        notification: toNotificationResponse(notification, null),
+      } satisfies NotificationEvent);
+    }
+  }
+
+  /** Withdraws the notifications of a release note, read or not, e.g. once it goes back to a draft. */
+  async withdrawRelease(version: string): Promise<void> {
+    const gone = await this.releaseNotifications(version).getMany();
+    if (gone.length === 0) return;
+    await this.notifications.delete({ id: In(gone.map(({ id }) => id)) });
+    const online = new Set(this.streams.connected());
+    for (const userId of new Set(
+      gone.map((notification) => notification.userId),
+    )) {
+      if (online.has(userId)) {
+        this.streams.send(userId, {
+          unreadCount: await this.unreadCount(userId),
+        } satisfies NotificationEvent);
+      }
+    }
+  }
+
+  /** Marks read the notifications of the release notes the user saw elsewhere: a popup, a banner, the history. */
+  async markReleasesRead(userId: string, versions: string[]): Promise<void> {
+    if (versions.length === 0) return;
+    const unread = await this.notifications
+      .createQueryBuilder('n')
+      .where('n.user_id = :userId AND n.type = :type AND n.read_at IS NULL', {
+        userId,
+        type: 'release_note',
+      })
+      .andWhere("n.details->>'version' IN (:...versions)", { versions })
+      .getMany();
+    if (unread.length === 0) return;
+    const ids = unread.map(({ id }) => id);
+    await this.notifications.update({ id: In(ids) }, { readAt: new Date() });
+    this.streams.send(userId, {
+      unreadCount: await this.unreadCount(userId),
+      read: ids,
+    } satisfies NotificationEvent);
+  }
+
+  private releaseNotifications(version: string) {
+    return this.notifications
+      .createQueryBuilder('n')
+      .where("n.type = 'release_note' AND n.details->>'version' = :version", {
+        version,
+      });
   }
 
   hasUnread(userId: string, type: NotificationType): Promise<boolean> {

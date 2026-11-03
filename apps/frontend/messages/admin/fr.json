@@ -24,7 +24,8 @@
     "dev": "Stack",
     "development": "Développement",
     "reservedUsernames": "Pseudos",
-    "releaseNotes": "Notes de release"
+    "releaseNotes": "Notes de release",
+    "siteActivity": "Activité du site"
   },
   "roles": {
     "support": "Support",
@@ -569,6 +570,229 @@
       "empty": "Une note prête doit avoir un titre, un résumé ou une section.",
       "published": "Une note publiée ne repasse pas en brouillon ni ne change de version : désactivez-la si besoin.",
       "image": "Image illisible : PNG, JPEG ou WebP."
+    }
+  },
+  "siteActivity": {
+    "title": "Activité du site",
+    "description": "Page temporaire de vérification des données : utilisateurs connectés seulement, jours et heures UTC, sur les {days} derniers jours.",
+    "error": "Impossible de charger l’activité du site.",
+    "trackedSince": "Collecte depuis le {date}.",
+    "notTracked": "Aucune activité collectée pour le moment.",
+    "period": "{days} jours",
+    "teamIncluded": "Équipe incluse",
+    "teamExcluded": "Équipe exclue",
+    "empty": "Aucune donnée sur la période.",
+    "previous": "Période précédente : {value}",
+    "tabs": {
+      "users": "Utilisateurs",
+      "pages": "Pages",
+      "sessions": "Sessions",
+      "params": "Paramètres d’URL",
+      "funnel": "Funnel"
+    },
+    "overview": {
+      "users": "Comptes",
+      "activeUsers": "Utilisateurs actifs",
+      "newUsers": "Inscriptions",
+      "views": "Pages vues",
+      "sessions": "Sessions",
+      "visibleMs": "Temps visible",
+      "stickiness": "Stickiness moyenne",
+      "averageSession": "Durée moyenne de session",
+      "pagesPerSession": "Pages par session",
+      "bounceRate": "Sessions d’une page"
+    },
+    "activeUsers": {
+      "title": "Utilisateurs actifs",
+      "dau": "Jour (DAU)",
+      "wau": "7 jours (WAU)",
+      "mau": "30 jours (MAU)"
+    },
+    "stickiness": {
+      "title": "Stickiness (DAU / MAU)",
+      "series": "DAU / MAU"
+    },
+    "newVsReturning": {
+      "title": "Nouveaux et récurrents",
+      "chart": "Utilisateurs actifs de chaque jour, nouveaux et récurrents",
+      "total": "Total",
+      "new": "Inscrits le jour même",
+      "returning": "Récurrents"
+    },
+    "weekly": {
+      "title": "Croissance hebdomadaire",
+      "hint": "Actifs de chaque semaine : nouveaux, retenus de la semaine précédente, revenus après une absence. Perdus : actifs la semaine précédente, absents cette semaine.",
+      "chart": "Utilisateurs actifs par semaine",
+      "total": "Actifs",
+      "new": "Nouveaux",
+      "retained": "Retenus",
+      "resurrected": "Revenus",
+      "churned": "Perdus"
+    },
+    "monthly": {
+      "title": "Actifs par mois (12 mois)",
+      "users": "Utilisateurs actifs",
+      "averageDays": "Jours actifs moyens"
+    },
+    "activeDaysInPeriod": {
+      "title": "Jours actifs sur la période",
+      "hint": "Utilisateurs selon leur nombre de jours actifs dans la période."
+    },
+    "activeDays": {
+      "title": "Jours actifs par utilisateur et par mois",
+      "hint": "Utilisateurs selon leur nombre de jours actifs dans le mois."
+    },
+    "retention": {
+      "title": "Rétention par cohorte d’inscription",
+      "hint": "Cohortes hebdomadaires depuis le début de la collecte : revenus exactement à J+1, J+7, J+30, puis pendant chacune des 8 semaines suivantes (— : pas encore atteint).",
+      "week": "Semaine",
+      "size": "Inscrits",
+      "empty": "Aucune cohorte depuis le début de la collecte."
+    },
+    "retentionCurve": {
+      "title": "Courbe de rétention (J0 à J+30)",
+      "hint": "Toutes cohortes confondues : revenus ce jour-là (classique) ou ce jour-là ou après (glissante).",
+      "classic": "Classique",
+      "rolling": "Glissante"
+    },
+    "dormancy": {
+      "title": "Dernière activité",
+      "buckets": {
+        "0-6": "0–6 j",
+        "7-13": "7–13 j",
+        "14-29": "14–29 j",
+        "30-89": "30–89 j",
+        "90+": "90 j et +",
+        "never": "Jamais"
+      }
+    },
+    "streaks": {
+      "title": "Plus longue série de jours consécutifs",
+      "hint": "Utilisateurs selon leur plus longue série de jours actifs d’affilée, depuis le début."
+    },
+    "segments": {
+      "title": "Segments d’utilisateurs",
+      "hint": "Comptes de chaque segment, et ceux actifs sur la période.",
+      "segment": "Segment",
+      "total": "Comptes",
+      "active": "Actifs",
+      "rate": "Taux d’activité",
+      "names": {
+        "strava": "Strava connecté",
+        "noStrava": "Sans Strava",
+        "google": "Compte Google",
+        "password": "Mot de passe",
+        "privateProfile": "Profil privé",
+        "publicProfile": "Profil public",
+        "team": "Équipe"
+      }
+    },
+    "countries": {
+      "title": "Pays",
+      "country": "Pays",
+      "none": "Non renseigné"
+    },
+    "daily": {
+      "title": "Pages vues par jour",
+      "views": "Vues",
+      "viewers": "Utilisateurs"
+    },
+    "visibleTime": {
+      "title": "Temps visible par jour",
+      "series": "Temps visible (min)"
+    },
+    "pages": {
+      "title": "Pages les plus vues",
+      "path": "Page",
+      "views": "Vues",
+      "users": "Utilisateurs",
+      "reach": "Portée",
+      "total": "Temps total",
+      "average": "Moyen",
+      "median": "Médian"
+    },
+    "trends": {
+      "title": "Vues par jour des 5 pages principales"
+    },
+    "heatmap": {
+      "title": "Pages vues par jour et heure (UTC)",
+      "days": {
+        "1": "Lun",
+        "2": "Mar",
+        "3": "Mer",
+        "4": "Jeu",
+        "5": "Ven",
+        "6": "Sam",
+        "7": "Dim"
+      }
+    },
+    "durations": {
+      "title": "Temps visible par page vue"
+    },
+    "devices": {
+      "title": "Appareils",
+      "device": "Appareil",
+      "views": "Vues",
+      "users": "Utilisateurs",
+      "visible": "Temps visible",
+      "mobile": "Mobile",
+      "tablet": "Tablette",
+      "desktop": "Ordinateur",
+      "daily": "Pages vues par appareil et par jour",
+      "total": "Total"
+    },
+    "multiDevice": {
+      "title": "Types d’appareils par utilisateur",
+      "label": "{count, plural, one {# type} other {# types}}"
+    },
+    "areas": {
+      "title": "Site et back-office",
+      "app": "Site",
+      "admin": "Back-office"
+    },
+    "sessions": {
+      "hint": "Une session se termine après {minutes} minutes sans nouvelle page.",
+      "daily": "Sessions par jour",
+      "sessions": "Sessions",
+      "users": "Utilisateurs",
+      "lengths": "Durée visible des sessions",
+      "pages": "Pages par session",
+      "perUser": "Sessions par utilisateur sur la période",
+      "entries": "Pages d’entrée",
+      "exits": "Pages de sortie",
+      "transitions": "Enchaînements de pages",
+      "from": "De",
+      "to": "Vers",
+      "count": "Fois",
+      "path": "Page"
+    },
+    "params": {
+      "hint": "États de query string pris par chaque page pendant qu’elle était visible (outils et modules de la carte, onglets…). Les valeurs d’identifiants (tuile, activité, gare) sont regroupées en [id].",
+      "keys": "Paramètres utilisés",
+      "values": "Valeurs des paramètres",
+      "queries": "Query strings complètes",
+      "path": "Page",
+      "key": "Paramètre",
+      "value": "Valeur",
+      "query": "Query",
+      "views": "Vues",
+      "users": "Utilisateurs",
+      "share": "Part des vues",
+      "visible": "Temps visible",
+      "distinct": "Valeurs distinctes",
+      "none": "(aucune)"
+    },
+    "funnel": {
+      "title": "Funnel d’activation",
+      "hint": "Tous les utilisateurs. La visite de la carte n’est connue que depuis le début de la collecte, et pendant 90 jours.",
+      "signedUp": "Inscrits",
+      "stravaConnected": "Strava connecté",
+      "firstSync": "Première synchro",
+      "mapVisited": "Carte visitée",
+      "median": "Délai médian depuis l’inscription",
+      "days": "{days} j",
+      "cohorts": "Funnel par semaine d’inscription",
+      "week": "Semaine"
     }
   }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from '../mail/mail.module';
+import { SiteActivityModule } from '../site-activity/site-activity.module';
 import { StravaModule } from '../strava/strava.module';
 import { SystemModule } from '../system/system.module';
 import { TilesModule } from '../tiles/tiles.module';
@@ -30,6 +31,7 @@ import { UserTokensService } from './tokens/user-tokens.service';
     StravaModule,
     TilesModule,
     SystemModule,
+    SiteActivityModule,
   ],
   controllers: [AuthController, GoogleAuthController, AccountController],
   providers: [

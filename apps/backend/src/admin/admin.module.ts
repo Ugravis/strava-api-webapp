@@ -51,6 +51,8 @@ import { AdminReleaseNotesController } from './release-notes/admin-release-notes
 import { AdminReleaseNotesService } from './release-notes/admin-release-notes.service';
 import { AdminReservedUsernamesController } from './reserved-usernames/admin-reserved-usernames.controller';
 import { AdminReservedUsernamesService } from './reserved-usernames/admin-reserved-usernames.service';
+import { AdminSiteActivityController } from './site-activity/admin-site-activity.controller';
+import { AdminSiteActivityService } from './site-activity/admin-site-activity.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
 import { AdminSystemController } from './system/admin-system.controller';
@@ -100,6 +102,7 @@ export const ADMIN_ROUTES = [
     AdminMeController,
     AdminNavigationController,
     AdminStatisticsController,
+    AdminSiteActivityController,
     AdminUsersController,
     AdminAuditLogController,
     AdminBadgesController,
@@ -117,6 +120,7 @@ export const ADMIN_ROUTES = [
     AdminUsersService,
     AdminBootstrapService,
     AdminStatisticsService,
+    AdminSiteActivityService,
     AdminBadgesService,
     AdminUserTagsService,
     AdminUploadsService,

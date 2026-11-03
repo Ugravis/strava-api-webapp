@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -8,6 +8,8 @@ export const adminRoutes = {
   index: "/admin",
   dashboard: "/admin/dashboard",
   statistics: "/admin/statistics",
+  /** Temporary charts of the site activity, replaced by a real dashboard. */
+  siteActivity: "/admin/site-activity",
   users: "/admin/users",
   badges: "/admin/badges",
   userTags: "/admin/user-tags",
@@ -23,7 +25,7 @@ export const adminRoutes = {
 } as const;
 
 interface AdminNavItem {
-  key: "dashboard" | "statistics" | "users" | "reservedUsernames" | "badges" | "userTags" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
+  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
   href: string;
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
@@ -42,6 +44,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     items: [
       { key: "dashboard", href: adminRoutes.dashboard, icon: GaugeIcon },
       { key: "statistics", href: adminRoutes.statistics, icon: ChartColumnIcon },
+      { key: "siteActivity", href: adminRoutes.siteActivity, icon: ActivityIcon },
     ],
   },
   {

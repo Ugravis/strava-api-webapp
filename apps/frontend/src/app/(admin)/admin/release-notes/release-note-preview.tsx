@@ -41,14 +41,15 @@ export function ReleaseNotePreview({ note, open, onOpenChange }: { note: PublicR
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-4 sm:max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-3 sm:max-w-2xl">
+        <DialogHeader className="gap-1">
           <DialogTitle>Aperçu de la v{note.version}</DialogTitle>
-          <DialogDescription>
-            Affichage : {DISPLAYS[note.display].label.toLowerCase()}. {empty ? "La note est vide : rien ne sera montré." : "Rien n'est envoyé ni compté comme vu."}
+          <DialogDescription className="text-xs">
+            {DISPLAYS[note.display].label}
+            {empty ? " · note vide, rien ne sera montré" : " · rien n'est envoyé ni compté comme vu"}
           </DialogDescription>
         </DialogHeader>
-        <div role="tablist" aria-label="Surface" className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
+        <div role="tablist" aria-label="Surface" className="-mx-4 flex gap-4 border-b px-4">
           {SURFACES.map(({ id, label, icon }) => (
             <button
               key={id}
@@ -57,9 +58,9 @@ export function ReleaseNotePreview({ note, open, onOpenChange }: { note: PublicR
               aria-selected={surface === id}
               onClick={() => setSurface(id)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors [&_svg]:size-4",
-                surface === id ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground",
-                !shown.includes(id) && surface !== id && "opacity-50",
+                "-mb-px flex items-center gap-1.5 border-b-2 py-2 text-sm transition-colors [&_svg]:size-3.5",
+                surface === id ? "border-foreground font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                !shown.includes(id) && surface !== id && "opacity-60",
               )}
             >
               {icon}
@@ -67,47 +68,43 @@ export function ReleaseNotePreview({ note, open, onOpenChange }: { note: PublicR
             </button>
           ))}
         </div>
-        {!shown.includes(surface) && (
-          <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
-            Avec cet affichage, les utilisateurs ne voient pas cette surface{surface === "popup" ? " d'eux-mêmes : seulement depuis le bouton du bandeau." : "."}
-          </p>
-        )}
-        {surface === "banner" && note.display === "banner" && (
-          <p className="text-xs text-muted-foreground">« Voir les nouveautés » ouvre la popup.</p>
-        )}
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border bg-muted/30 p-4 [scrollbar-width:thin] sm:p-6">
+        <p className="text-xs text-muted-foreground">{HINTS[surface](note.display, shown.includes(surface))}</p>
+        <div className="-mx-4 -mb-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:thin]">
           {surface === "popup" && (
-            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-xl bg-popover text-sm shadow-lg ring-1 ring-foreground/10">
+            <div className="mx-auto w-full max-w-lg overflow-hidden rounded-xl border bg-popover text-sm shadow-sm">
               <ReleaseNoteCard note={note} footer={<ReleaseNoteFooter index={0} count={1} onIndexChange={() => undefined} onDone={() => undefined} historyHref="#" />} />
             </div>
           )}
           {surface === "banner" && (
-            <div className="overflow-hidden rounded-lg border bg-background">
+            <div className="overflow-hidden rounded-lg border">
               <ReleaseNoteBanner notes={[note]} onOpen={() => setSurface("popup")} onClose={() => undefined} />
               <div className="flex flex-col gap-2 p-4" aria-hidden>
-                <div className="h-4 w-1/3 rounded bg-muted" />
+                <div className="h-3 w-1/3 rounded bg-muted" />
                 <div className="h-3 w-2/3 rounded bg-muted" />
-                <div className="h-24 rounded-lg bg-muted" />
               </div>
             </div>
           )}
           {surface === "notification" && <NotificationMock version={note.version} />}
-          {surface === "history" && (
-            <div className="mx-auto w-full max-w-3xl rounded-xl bg-background p-5">
-              <ReleaseNoteArticle note={note} latest />
-            </div>
-          )}
+          {surface === "history" && <ReleaseNoteArticle note={note} latest />}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
+/** What each surface is, and whether the users get it with the display of the note. */
+const HINTS: Record<Surface, (display: ReleaseNoteDisplay, shown: boolean) => string> = {
+  popup: (display, shown) => (display === "banner" ? "Ouverte par « Voir les nouveautés » du bandeau." : shown ? "À l'ouverture du site, une fois par note." : "Non montrée avec cet affichage."),
+  banner: (_, shown) => (shown ? "Au-dessus des pages, jusqu'à sa fermeture." : "Non montré avec cet affichage."),
+  notification: (_, shown) => (shown ? "Dans la cloche ; un clic mène à l'historique." : "Non envoyée avec cet affichage."),
+  history: () => "La page « Nouveautés », pour tous les utilisateurs.",
+};
+
 /** The item of the bell, as the users read it. */
 function NotificationMock({ version }: { version: string }) {
   const t = useTranslations("notifications");
   return (
-    <div className="mx-auto w-full max-w-sm rounded-xl border bg-popover p-1 shadow-sm">
+    <div className="mx-auto w-full max-w-sm rounded-xl border bg-popover p-1">
       <div className="flex items-start gap-3 rounded-md bg-rose-500/5 px-2 py-2 dark:bg-rose-500/10">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-500/15 text-violet-600 dark:text-violet-400">
           <MegaphoneIcon className="size-4" aria-hidden />

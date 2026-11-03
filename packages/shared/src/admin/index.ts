@@ -12,6 +12,7 @@ export * from "./permissions";
 export * from "./release-notes";
 export * from "./reserved-usernames";
 export * from "./roles";
+export * from "./site-activity";
 export * from "./statistics";
 export * from "./system";
 export * from "./team";

@@ -6,7 +6,7 @@ export class ReleaseNoteView {
   @PrimaryColumn({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @PrimaryColumn({ type: 'varchar', length: 16 })
+  @PrimaryColumn({ type: 'varchar', length: 40 })
   version!: string;
 
   @CreateDateColumn({ name: 'seen_at', type: 'timestamptz' })

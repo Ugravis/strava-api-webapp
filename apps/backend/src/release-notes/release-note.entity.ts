@@ -14,13 +14,22 @@ import {
  */
 @Entity('release_notes')
 export class ReleaseNote {
-  /** `major.minor.patch`, e.g. `0.3.0`. */
+  /** Semantic Versioning, e.g. `0.3.0` or `1.0.0-beta.1`. */
   @PrimaryColumn({
     type: 'varchar',
-    length: 16,
+    length: 40,
     primaryKeyConstraintName: 'PK_release_notes',
   })
   version!: string;
+
+  /** `versionSortKey` of the version: sorted as text, in the order of the versions. */
+  @Column({
+    name: 'version_order',
+    type: 'varchar',
+    length: 200,
+    collation: 'C',
+  })
+  versionOrder!: string;
 
   /** First start of the backend on this version; null while it is not out. */
   @Column({ name: 'released_at', type: 'timestamptz', nullable: true })
@@ -51,7 +60,15 @@ export class ReleaseNote {
   @Column({ name: 'section_other', type: 'text', nullable: true })
   sectionOther!: string | null;
 
-  /** When the users were notified; cleared once the notifications are withdrawn. */
+  /** Hidden from the users once published, null while shown. */
+  @Column({ name: 'disabled_at', type: 'timestamptz', nullable: true })
+  disabledAt!: Date | null;
+
+  /** Storage key of the banner image, null without one. */
+  @Column({ name: 'banner_key', type: 'varchar', length: 200, nullable: true })
+  bannerKey!: string | null;
+
+  /** When the users were notified: once only, even after the note is disabled and enabled again. */
   @Column({ name: 'notified_at', type: 'timestamptz', nullable: true })
   notifiedAt!: Date | null;
 

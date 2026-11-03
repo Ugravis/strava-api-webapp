@@ -2,6 +2,7 @@ import {
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
+  versionSortKey,
   type PublicReleaseNote,
   type ReleaseNoteContent,
   strongestDisplay,
@@ -26,11 +27,18 @@ const CURRENT_VERSION = appVersion();
 /** The most unseen notes shown together, the latest first. */
 const UNSEEN_LIMIT = 10;
 
-/** Sorts `release_notes` (aliased `note`) by version, as numbers. */
-export const VERSION_ORDER = "string_to_array(note.version, '.')::int[]";
+/** Sorts `release_notes` (aliased `note`) by version, pre-releases before their release. */
+export const VERSION_ORDER = 'note.version_order';
 
 /** Whether a note (aliased `note`) has anything to say. */
 export const NOTE_HAS_CONTENT = `(COALESCE(btrim(note.title), '') <> '' OR COALESCE(btrim(note.summary), '') <> '' OR COALESCE(btrim(note.section_new), '') <> '' OR COALESCE(btrim(note.section_improved), '') <> '' OR COALESCE(btrim(note.section_fixed), '') <> '' OR COALESCE(btrim(note.section_other), '') <> '')`;
+
+/** Shown to the users: ready, out, not disabled, with something to say (aliased `note`). */
+const PUBLISHED = `note.status = 'ready' AND note.released_at IS NOT NULL AND note.disabled_at IS NULL AND ${NOTE_HAS_CONTENT}`;
+
+/** The public address of a banner, from its storage key. */
+export const bannerUrlOf = (note: ReleaseNote) =>
+  note.bannerKey ? `/api/${note.bannerKey}` : null;
 
 /** The accounts (aliased `u`) a note released at `releasedAt` (an SQL expression) is for: active, created before the release. */
 export const concernedUsers = (releasedAt: string) =>
@@ -54,15 +62,17 @@ function toPublic(note: ReleaseNote): PublicReleaseNote {
     version: note.version,
     display: note.display,
     releasedAt: (note.releasedAt ?? note.createdAt).toISOString(),
+    bannerUrl: bannerUrlOf(note),
     ...contentOf(note),
   };
 }
 
-/** Whether the users are told about the note: ready, out, shown somewhere, with something to say. */
+/** Whether the users are told about the note: ready, out, not disabled, shown somewhere, with something to say. */
 export function isDelivered(note: ReleaseNote): boolean {
   return (
     note.status === 'ready' &&
     note.releasedAt !== null &&
+    note.disabledAt === null &&
     note.display !== 'none' &&
     hasReleaseNoteContent(contentOf(note))
   );
@@ -109,7 +119,12 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
       .createQueryBuilder()
       .insert()
       .into(ReleaseNote)
-      .values({ version, display: defaultDisplayOf(version), status: 'draft' })
+      .values({
+        version,
+        versionOrder: versionSortKey(version),
+        display: defaultDisplayOf(version),
+        status: 'draft',
+      })
       .orIgnore()
       .execute();
     const pending = await this.notes.findBy({ releasedAt: IsNull() });
@@ -122,8 +137,9 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
   }
 
   /**
-   * Brings the notifications of a note in line with it: sent once it is
-   * delivered, withdrawn once it no longer is (back to a draft, hidden).
+   * Brings the notifications of a note in line with it: sent once, when it
+   * is first delivered; withdrawn while it no longer is (disabled, shown
+   * nowhere), never sent again.
    */
   async sync(version: string): Promise<void> {
     const note = await this.notes.findOneBy({ version });
@@ -135,7 +151,6 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
         version,
       );
     } else if (!isDelivered(note) && note.notifiedAt) {
-      await this.notes.update(version, { notifiedAt: null });
       await this.notifications.withdrawRelease(version);
     }
   }
@@ -149,12 +164,11 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
     return rows.map(({ id }) => id);
   }
 
-  /** Every note shown to the users, hidden ones included, the latest first: the history. */
+  /** Every note shown to the users, those without popup nor banner included, the latest first: the history. */
   async published(): Promise<PublicReleaseNote[]> {
     const notes = await this.notes
       .createQueryBuilder('note')
-      .where("note.status = 'ready' AND note.released_at IS NOT NULL")
-      .andWhere(NOTE_HAS_CONTENT)
+      .where(PUBLISHED)
       .orderBy(VERSION_ORDER, 'DESC')
       .getMany();
     return notes.map(toPublic);
@@ -164,11 +178,10 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
   async unseen(user: User): Promise<UnseenReleaseNotesResponse> {
     const notes = await this.notes
       .createQueryBuilder('note')
-      .where(
-        "note.status = 'ready' AND note.display <> 'none' AND note.released_at > :createdAt",
-        { createdAt: user.createdAt },
-      )
-      .andWhere(NOTE_HAS_CONTENT)
+      .where(PUBLISHED)
+      .andWhere("note.display <> 'none' AND note.released_at > :createdAt", {
+        createdAt: user.createdAt,
+      })
       .andWhere(
         'NOT EXISTS (SELECT 1 FROM release_note_views v WHERE v.version = note.version AND v.user_id = :userId)',
         { userId: user.id },
@@ -188,6 +201,7 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
     const known = await this.notes.find({
       select: { version: true },
       where: versions.map((version) => ({
+        disabledAt: IsNull(),
         version,
         releasedAt: Not(IsNull()),
       })),

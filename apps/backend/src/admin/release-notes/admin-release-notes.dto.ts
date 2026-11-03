@@ -3,6 +3,7 @@ import {
   RELEASE_NOTE_SECTION_MAX_LENGTH,
   RELEASE_NOTE_SUMMARY_MAX_LENGTH,
   RELEASE_NOTE_TITLE_MAX_LENGTH,
+  RELEASE_VERSION_MAX_LENGTH,
   RELEASE_VERSION_PATTERN,
   type ReleaseNoteDisplay,
 } from '@kilotrace/shared';
@@ -11,6 +12,7 @@ import {
   type ReleaseNoteStatus,
 } from '@kilotrace/shared/admin';
 import {
+  IsBoolean,
   IsIn,
   IsOptional,
   IsString,
@@ -24,8 +26,14 @@ const nullable = ValidateIf(
   (_, value) => value !== null && value !== undefined,
 );
 
-/** The fields sent are changed; an empty text is cleared. */
+/** The fields sent are changed; an empty text is cleared; `version` renames a draft not out yet. */
 export class UpdateReleaseNoteDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(RELEASE_VERSION_MAX_LENGTH)
+  @Matches(RELEASE_VERSION_PATTERN)
+  version?: string;
+
   @TrimToNull()
   @nullable
   @IsString()
@@ -69,8 +77,14 @@ export class UpdateReleaseNoteDto {
 
 export class CreateReleaseNoteDto extends UpdateReleaseNoteDto {
   @IsString()
+  @MaxLength(RELEASE_VERSION_MAX_LENGTH)
   @Matches(RELEASE_VERSION_PATTERN)
-  version!: string;
+  declare version: string;
+}
+
+export class SetReleaseNoteActiveDto {
+  @IsBoolean()
+  active!: boolean;
 }
 
 export class SetReleaseNoteStatusDto {

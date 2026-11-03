@@ -1,6 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import type { Repository } from 'typeorm';
 import type { ReleaseNote } from '../../release-notes/release-note.entity';
+import type { ReleaseNoteBannersService } from '../../release-notes/release-note-banners.service';
 import type { ReleaseNotesService } from '../../release-notes/release-notes.service';
 import type { User } from '../../users/user.entity';
 import { AdminReleaseNotesService } from './admin-release-notes.service';
@@ -19,6 +20,8 @@ const note = (fields: Partial<ReleaseNote>): ReleaseNote =>
     sectionImproved: null,
     sectionFixed: null,
     sectionOther: null,
+    disabledAt: null,
+    bannerKey: null,
     ...fields,
   }) as ReleaseNote;
 
@@ -32,6 +35,7 @@ describe('AdminReleaseNotesService', () => {
     merge: jest.Mock;
   };
   let releaseNotes: { currentVersion: string; sync: jest.Mock };
+  let banners: { deleteQuietly: jest.Mock; store: jest.Mock };
   let service: AdminReleaseNotesService;
 
   beforeEach(() => {
@@ -47,10 +51,12 @@ describe('AdminReleaseNotesService', () => {
       })),
     };
     releaseNotes = { currentVersion: '0.2.0', sync: jest.fn() };
+    banners = { deleteQuietly: jest.fn(), store: jest.fn() };
     service = new AdminReleaseNotesService(
       notes as unknown as Repository<ReleaseNote>,
       {} as Repository<User>,
       releaseNotes as unknown as ReleaseNotesService,
+      banners as unknown as ReleaseNoteBannersService,
     );
   });
 
@@ -138,5 +144,82 @@ describe('AdminReleaseNotesService', () => {
     await expect(service.delete('9.9.9')).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('takes a draft back before the release', async () => {
+    notes.findOneBy.mockResolvedValue(note({ status: 'ready', title: 'T' }));
+    await service.setStatus('0.3.0', 'draft', actor);
+    expect(notes.update).toHaveBeenCalledWith('0.3.0', {
+      status: 'draft',
+      updatedById: 'admin',
+    });
+  });
+
+  it('never takes a published note back to a draft', async () => {
+    notes.findOneBy.mockResolvedValue(
+      note({ status: 'ready', title: 'T', releasedAt: new Date() }),
+    );
+    await expect(
+      service.setStatus('0.3.0', 'draft', actor),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('disables a published note, and enables it again', async () => {
+    notes.findOneBy.mockResolvedValue(
+      note({ status: 'ready', title: 'T', releasedAt: new Date() }),
+    );
+    await service.setActive('0.3.0', false, actor);
+    expect(notes.update).toHaveBeenCalledWith('0.3.0', {
+      disabledAt: expect.any(Date) as Date,
+      updatedById: 'admin',
+    });
+    await service.setActive('0.3.0', true, actor);
+    expect(notes.update).toHaveBeenLastCalledWith('0.3.0', {
+      disabledAt: null,
+      updatedById: 'admin',
+    });
+    expect(releaseNotes.sync).toHaveBeenCalledTimes(2);
+  });
+
+  it('disables only a published note', async () => {
+    notes.findOneBy.mockResolvedValue(note({ title: 'T' }));
+    await expect(
+      service.setActive('0.3.0', false, actor),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('renames a draft not out yet, its order following', async () => {
+    notes.findOneBy.mockResolvedValue(note({}));
+    await service.update('0.3.0', { version: '1.0.0-beta.1' }, actor);
+    expect(notes.update).toHaveBeenCalledWith(
+      '0.3.0',
+      expect.objectContaining({
+        version: '1.0.0-beta.1',
+        versionOrder: expect.stringContaining('-') as string,
+      }),
+    );
+    expect(releaseNotes.sync).toHaveBeenCalledWith('1.0.0-beta.1');
+  });
+
+  it('never renames a release nor a ready note', async () => {
+    notes.findOneBy.mockResolvedValue(note({ releasedAt: new Date() }));
+    await expect(
+      service.update('0.3.0', { version: '0.4.0' }, actor),
+    ).rejects.toBeInstanceOf(ConflictException);
+    notes.findOneBy.mockResolvedValue(note({ status: 'ready', title: 'T' }));
+    await expect(
+      service.update('0.3.0', { version: '0.4.0' }, actor),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('replaces a banner, the previous file deleted', async () => {
+    notes.findOneBy.mockResolvedValue(note({ bannerKey: 'old' }));
+    banners.store.mockResolvedValue('new');
+    await service.setBanner('0.3.0', Buffer.from(''), actor);
+    expect(notes.update).toHaveBeenCalledWith('0.3.0', {
+      bannerKey: 'new',
+      updatedById: 'admin',
+    });
+    expect(banners.deleteQuietly).toHaveBeenCalledWith('old');
   });
 });

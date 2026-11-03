@@ -47,6 +47,8 @@ export enum ApiErrorCode {
   ReleaseNoteEmpty = 'RELEASE_NOTE_EMPTY',
   /** A version already out (or passed by a later one): its row is the release's own. */
   VersionReleased = 'VERSION_RELEASED',
+  /** A release note published: never back to a draft, only disabled. */
+  ReleaseNotePublished = 'RELEASE_NOTE_PUBLISHED',
   /** A field breaking its shared rule: `field` tells which, `message` why. */
   InvalidField = 'INVALID_FIELD',
 }

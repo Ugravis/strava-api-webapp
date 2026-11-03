@@ -2,6 +2,7 @@ import {
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
+  versionSortKey,
 } from '@kilotrace/shared';
 import type {
   AdminReleaseNote,
@@ -19,7 +20,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { ReleaseNote } from '../../release-notes/release-note.entity';
+import { ReleaseNoteBannersService } from '../../release-notes/release-note-banners.service';
 import {
+  bannerUrlOf,
   concernedUsers,
   contentOf,
   NOTE_HAS_CONTENT,
@@ -34,7 +37,7 @@ import type {
   UpdateReleaseNoteDto,
 } from './admin-release-notes.dto';
 
-const STATE = `CASE WHEN NOT ${NOTE_HAS_CONTENT} THEN 'empty' WHEN note.status = 'draft' THEN 'draft' WHEN note.released_at IS NULL THEN 'scheduled' WHEN note.display = 'none' THEN 'silent' ELSE 'published' END`;
+const STATE = `CASE WHEN NOT ${NOTE_HAS_CONTENT} THEN 'empty' WHEN note.status = 'draft' THEN 'draft' WHEN note.disabled_at IS NOT NULL THEN 'disabled' WHEN note.released_at IS NULL THEN 'scheduled' WHEN note.display = 'none' THEN 'silent' ELSE 'published' END`;
 
 const CONCERNED = `(CASE WHEN note.released_at IS NULL THEN NULL ELSE (SELECT COUNT(*) FROM users u WHERE ${concernedUsers('note.released_at')}) END)`;
 
@@ -68,6 +71,7 @@ const RELEASE_NOTES_TABLE: TableSpec = {
         scheduled: `${STATE} = 'scheduled'`,
         published: `${STATE} = 'published'`,
         silent: `${STATE} = 'silent'`,
+        disabled: `${STATE} = 'disabled'`,
       },
     },
     display: { column: 'note.display' },
@@ -95,6 +99,7 @@ function fieldsOf(dto: UpdateReleaseNoteDto): Partial<ReleaseNote> {
 function stateOf(note: ReleaseNote): ReleaseNoteState {
   if (!hasReleaseNoteContent(contentOf(note))) return 'empty';
   if (note.status === 'draft') return 'draft';
+  if (note.disabledAt) return 'disabled';
   if (!note.releasedAt) return 'scheduled';
   return note.display === 'none' ? 'silent' : 'published';
 }
@@ -108,6 +113,7 @@ export class AdminReleaseNotesService {
     @InjectRepository(User)
     private readonly users: Repository<User>,
     private readonly releaseNotes: ReleaseNotesService,
+    private readonly banners: ReleaseNoteBannersService,
   ) {}
 
   async table(query: TableQuery): Promise<TablePage<AdminReleaseNote>> {
@@ -164,6 +170,7 @@ export class AdminReleaseNotesService {
     }
     await this.notes.insert({
       version: dto.version,
+      versionOrder: versionSortKey(dto.version),
       display: defaultDisplayOf(dto.version),
       status: 'draft',
       ...fieldsOf(dto),
@@ -177,6 +184,8 @@ export class AdminReleaseNotesService {
     actor: User,
   ): Promise<void> {
     const note = await this.find(version);
+    const renamed = dto.version !== undefined && dto.version !== version;
+    if (renamed) await this.assertRenamable(note, dto.version!);
     const next = this.notes.merge(note, fieldsOf(dto));
     if (note.status === 'ready' && !hasReleaseNoteContent(contentOf(next))) {
       throw ApiErrors.conflict(
@@ -186,12 +195,38 @@ export class AdminReleaseNotesService {
     }
     await this.notes.update(version, {
       ...fieldsOf(dto),
+      ...(renamed && {
+        version: dto.version,
+        versionOrder: versionSortKey(dto.version!),
+      }),
       updatedById: actor.id,
     });
-    await this.releaseNotes.sync(version);
+    await this.releaseNotes.sync(renamed ? dto.version! : version);
   }
 
-  /** Ready: shown to the users as soon as the version is out (at once if it is). Draft: withdrawn. */
+  /** A draft not out yet takes another version, neither listed nor out. */
+  private async assertRenamable(note: ReleaseNote, to: string): Promise<void> {
+    if (note.status !== 'draft' || note.releasedAt) {
+      throw ApiErrors.conflict(
+        ApiErrorCode.ReleaseNotePublished,
+        'Only a draft not out yet is renamed',
+      );
+    }
+    if (await this.notes.existsBy({ version: to })) {
+      throw ApiErrors.conflict(ApiErrorCode.IdTaken, 'Release note exists');
+    }
+    if (compareVersions(to, this.releaseNotes.currentVersion) <= 0) {
+      throw ApiErrors.conflict(
+        ApiErrorCode.VersionReleased,
+        'Version already out',
+      );
+    }
+  }
+
+  /**
+   * Ready: shown to the users as soon as the version is out, at once if it
+   * is. Back to a draft only before: a published note is disabled at most.
+   */
   async setStatus(
     version: string,
     status: ReleaseNoteStatus,
@@ -204,8 +239,54 @@ export class AdminReleaseNotesService {
         'Nothing to publish',
       );
     }
+    if (status === 'draft' && note.status === 'ready' && note.releasedAt) {
+      throw ApiErrors.conflict(
+        ApiErrorCode.ReleaseNotePublished,
+        'A published note is disabled, never back to a draft',
+      );
+    }
     await this.notes.update(version, { status, updatedById: actor.id });
     await this.releaseNotes.sync(version);
+  }
+
+  /**
+   * Hides a published note from the users (history, popup, banner, its
+   * notifications withdrawn), or shows it again without notifying anyone.
+   */
+  async setActive(
+    version: string,
+    active: boolean,
+    actor: User,
+  ): Promise<void> {
+    const note = await this.find(version);
+    if (note.status !== 'ready' || !note.releasedAt) {
+      throw ApiErrors.conflict(
+        ApiErrorCode.ReleaseNotePublished,
+        'Only a published note is disabled',
+      );
+    }
+    await this.notes.update(version, {
+      disabledAt: active ? null : new Date(),
+      updatedById: actor.id,
+    });
+    await this.releaseNotes.sync(version);
+  }
+
+  /** A new banner in place of the previous one, deleted once replaced. */
+  async setBanner(version: string, file: Buffer, actor: User): Promise<void> {
+    const note = await this.find(version);
+    const key = await this.banners.store(file);
+    await this.notes.update(version, { bannerKey: key, updatedById: actor.id });
+    await this.banners.deleteQuietly(note.bannerKey);
+  }
+
+  async removeBanner(version: string, actor: User): Promise<void> {
+    const note = await this.find(version);
+    await this.notes.update(version, {
+      bannerKey: null,
+      updatedById: actor.id,
+    });
+    await this.banners.deleteQuietly(note.bannerKey);
   }
 
   /** Only a note written ahead: a release stays listed. */
@@ -218,6 +299,7 @@ export class AdminReleaseNotesService {
       );
     }
     await this.notes.delete(version);
+    await this.banners.deleteQuietly(note.bannerKey);
   }
 
   private async find(version: string): Promise<ReleaseNote> {
@@ -257,6 +339,8 @@ export class AdminReleaseNotesService {
         display: note.display,
         ...content,
         hasContent: hasReleaseNoteContent(content),
+        disabledAt: note.disabledAt?.toISOString() ?? null,
+        bannerUrl: bannerUrlOf(note),
         concernedCount: countOf.get(note.version)?.concerned ?? null,
         seenCount: countOf.get(note.version)?.seen ?? 0,
         notifiedAt: note.notifiedAt?.toISOString() ?? null,

@@ -5,14 +5,56 @@ import {
   parseVersion,
   releaseImpact,
   strongestDisplay,
+  versionSortKey,
 } from '@kilotrace/shared';
 
+const ORDERED = [
+  '0.2.0',
+  '0.10.0',
+  '1.0.0-alpha',
+  '1.0.0-alpha.1',
+  '1.0.0-alpha.beta',
+  '1.0.0-beta',
+  '1.0.0-beta.2',
+  '1.0.0-beta.11',
+  '1.0.0-rc.1',
+  '1.0.0',
+  '1.0.1',
+];
+
 describe('release versions', () => {
-  it('reads major.minor.patch only', () => {
-    expect(parseVersion('1.12.3')).toEqual([1, 12, 3]);
+  it('reads major.minor.patch, without prefix', () => {
+    expect(parseVersion('1.12.3')).toEqual({
+      major: 1,
+      minor: 12,
+      patch: 3,
+      prerelease: [],
+    });
     expect(parseVersion('v1.2.3')).toBeNull();
     expect(parseVersion('1.2')).toBeNull();
     expect(parseVersion('01.2.3')).toBeNull();
+  });
+
+  it('reads pre-releases and build metadata', () => {
+    expect(parseVersion('1.0.0-beta.1')).toEqual({
+      major: 1,
+      minor: 0,
+      patch: 0,
+      prerelease: ['beta', 1],
+    });
+    expect(parseVersion('1.0.0-rc.1+20261103')?.prerelease).toEqual(['rc', 1]);
+    expect(parseVersion('1.0.0-')).toBeNull();
+    expect(parseVersion('1.0.0-beta.01')).toBeNull();
+  });
+
+  it('orders pre-releases before their release, as Semantic Versioning does', () => {
+    const shuffled = [...ORDERED].reverse();
+    expect(shuffled.sort(compareVersions)).toEqual(ORDERED);
+  });
+
+  it('sorts the database key in the same order', () => {
+    const keys = ORDERED.map(versionSortKey);
+    expect([...keys].sort()).toEqual(keys);
   });
 
   it('compares as numbers, not as text', () => {
@@ -28,6 +70,7 @@ describe('release versions', () => {
     expect(releaseImpact('2.0.0')).toBe('major');
     expect(releaseImpact('0.3.0')).toBe('minor');
     expect(releaseImpact('0.3.1')).toBe('patch');
+    expect(releaseImpact('1.0.0-beta.1')).toBe('patch');
   });
 
   it('shows a larger change louder by default', () => {

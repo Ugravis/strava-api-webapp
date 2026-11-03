@@ -17,6 +17,7 @@ const note = (fields: Partial<ReleaseNote>): ReleaseNote =>
     sectionFixed: null,
     sectionOther: null,
     notifiedAt: null,
+    disabledAt: null,
     createdAt: new Date('2026-10-01'),
     ...fields,
   }) as ReleaseNote;
@@ -65,6 +66,7 @@ describe('ReleaseNotesService', () => {
     expect(isDelivered(note({ releasedAt: null }))).toBe(false);
     expect(isDelivered(note({ display: 'none' }))).toBe(false);
     expect(isDelivered(note({ title: null }))).toBe(false);
+    expect(isDelivered(note({ disabledAt: new Date() }))).toBe(false);
   });
 
   it('releases the notes written for this version or a skipped one, not later ones', async () => {
@@ -100,12 +102,13 @@ describe('ReleaseNotesService', () => {
     expect(notifications.withdrawRelease).not.toHaveBeenCalled();
   });
 
-  it('withdraws the notifications of a note no longer delivered', async () => {
+  it('withdraws the notifications of a disabled note, never to send them again', async () => {
     notes.findOneBy.mockResolvedValue(
-      note({ status: 'draft', notifiedAt: new Date() }),
+      note({ disabledAt: new Date(), notifiedAt: new Date() }),
     );
     await service.sync('0.3.0');
-    expect(notes.update).toHaveBeenCalledWith('0.3.0', { notifiedAt: null });
     expect(notifications.withdrawRelease).toHaveBeenCalledWith('0.3.0');
+    // Still marked notified: enabled again, it notifies nobody.
+    expect(notes.update).not.toHaveBeenCalled();
   });
 });

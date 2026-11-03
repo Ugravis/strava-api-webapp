@@ -23,7 +23,8 @@
     "team": "Permissions",
     "dev": "Stack",
     "development": "Développement",
-    "reservedUsernames": "Pseudos"
+    "reservedUsernames": "Pseudos",
+    "releaseNotes": "Notes de MAJ"
   },
   "roles": {
     "support": "Support",
@@ -167,6 +168,12 @@
             "delete": "Fichiers orphelins supprimés"
           }
         }
+      },
+      "releaseNotes": {
+        "create": "Note de MAJ écrite à l'avance",
+        "update": "Note de MAJ modifiée",
+        "status": "Statut d'une note de MAJ changé",
+        "delete": "Note de MAJ supprimée"
       }
     },
     "overview": {
@@ -353,7 +360,8 @@
         "userTags": "Tags",
         "audit": "Logs",
         "system": "Maintenance",
-        "team": "Permissions"
+        "team": "Permissions",
+        "releaseNotes": "Notes de MAJ"
       },
       "list": {
         "users": {
@@ -447,6 +455,24 @@
             "label": "Gérer les permissions",
             "description": "Modifier ce tableau."
           }
+        },
+        "releaseNotes": {
+          "create": {
+            "label": "Écrire à l'avance",
+            "description": "Ajouter la note d'une version pas encore sortie, publiée d'elle-même à sa sortie."
+          },
+          "edit": {
+            "label": "Modifier",
+            "description": "Rédiger le texte d'une note et choisir son affichage (popup, bandeau, notification)."
+          },
+          "publish": {
+            "label": "Publier",
+            "description": "Rendre une note prête, montrée aux utilisateurs dès la sortie de sa version, ou la repasser en brouillon."
+          },
+          "delete": {
+            "label": "Supprimer",
+            "description": "Supprimer la note d'une version pas encore sortie."
+          }
         }
       }
     }
@@ -530,6 +556,15 @@
       "top": "Catégorie principale",
       "topDetail": "« {category} »",
       "topEmpty": "Aucun pseudo réservé"
+    }
+  },
+  "releaseNotes": {
+    "title": "Notes de MAJ",
+    "description": "Une ligne par version du site, enregistrée à son premier démarrage. Une note prête est montrée aux utilisateurs inscrits avant la sortie ; écrite à l'avance, elle part d'elle-même avec sa version.",
+    "errors": {
+      "idTaken": "Cette version a déjà sa ligne.",
+      "released": "Cette version est déjà sortie, ou dépassée par une version sortie.",
+      "empty": "Une note prête doit avoir un titre, un résumé ou une section."
     }
   }
 }

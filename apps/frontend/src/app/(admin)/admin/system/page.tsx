@@ -1,6 +1,7 @@
 import type { SystemStatusResponse } from "@kilotrace/shared";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -30,6 +31,7 @@ export default async function AdminSystemPage() {
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("statusError")}</p>
       )}
 
+      <Separator />
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="text-base font-semibold">{t("uploads.title")}</h2>

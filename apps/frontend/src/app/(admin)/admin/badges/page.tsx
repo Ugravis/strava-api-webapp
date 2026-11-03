@@ -2,6 +2,7 @@ import type { AdminBadgeCatalog } from "@kilotrace/shared/admin";
 import { HeartIcon, LayersIcon, MedalIcon, UserRoundIcon } from "lucide-react";
 import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -50,6 +51,7 @@ export default async function AdminBadgesPage() {
           <StatTile icon={UserRoundIcon} label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail="Badges épinglés sur un profil" />
         </div>
       )}
+      <Separator />
       <Catalog themes={themes} rights={rights} />
     </>
   );

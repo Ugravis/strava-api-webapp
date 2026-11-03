@@ -13,6 +13,7 @@ import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/admin/api";
 import { formatBytes, formatDateTime } from "@/lib/admin/format";
@@ -150,11 +151,13 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
         />
       </div>
 
+      <Separator />
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-medium">{t("heaviest")}</h3>
         <HeaviestTable files={heaviest} />
       </div>
 
+      <Separator />
       <div className="flex flex-col gap-2">
         <div>
           <h3 className="text-sm font-medium">{t("orphansTitle")}</h3>

@@ -9,6 +9,7 @@ import {
 } from "@kilotrace/shared/admin";
 import { AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -41,12 +42,14 @@ export default async function AdminTeamPage() {
               <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} />
             ))}
           </div>
+          <Separator />
           <TeamTable meId={me?.id ?? null} canEdit={canEdit} paths={{ users: adminRoutes.users, auditLog: adminRoutes.auditLog }} />
         </>
       ) : (
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>
       )}
 
+      <Separator />
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="text-base font-semibold">{t("permissions.title")}</h2>

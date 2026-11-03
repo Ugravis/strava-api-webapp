@@ -12,14 +12,14 @@ import {
   DetailForm,
   DetailHeader,
   DetailLoader,
-  DetailMedia,
   DetailSection,
   DetailSectionForm,
   DetailSkeleton,
   fromRule,
   type RowPanelControls,
 } from "@/components/admin/detail";
-import { BADGE_ICON_KEYS, BadgeIcon } from "@/components/distances/badge-icon";
+import { BadgeBanner } from "@/components/distances/badge-banner";
+import { BADGE_ICON_KEYS } from "@/components/distances/badge-icon";
 import { createBadge, loadBadge } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteBadgeOf, FAMILY_OPTIONS, LOCKS, METRIC_OPTIONS, METRICS, saveBadgeWith, themeOptions, useCatalogVersion } from "./badge-bits";
 import { badgeColumns } from "./badge-columns";
@@ -92,10 +92,16 @@ export function copyOfBadge(badge: AdminBadge): Partial<BadgeDraft> {
 export function BadgeRowPanel({ id, themes, rights, panel }: { id: string; themes: AdminBadgeTheme[]; rights: BadgeRights; panel: RowPanelControls }) {
   const version = useCatalogVersion();
   return (
-    <DetailLoader id={id} load={loadBadge} refreshKey={version} skeleton={<DetailSkeleton media actions={2} sections={[7, 4, 3, 2]} />}>
+    <DetailLoader id={id} load={loadBadge} refreshKey={version} skeleton={<DetailSkeleton cover actions={2} sections={[7, 4, 3, 2]} />}>
       {(badge) => <BadgeDetail badge={badge} themes={themes} rights={rights} panel={panel} />}
     </DetailLoader>
   );
+}
+
+/** The banner of the public detail of a badge, at the height of a cover. */
+function AdminBadgeBanner({ badge }: { badge: Pick<AdminBadge, "icon" | "family" | "tiers" | "backgroundColor"> }) {
+  const background = badge.backgroundColor ? { kind: "color" as const, color: badge.backgroundColor } : null;
+  return <BadgeBanner badge={{ ...badge, background }} className="h-40 shrink-0" />;
 }
 
 /**
@@ -110,7 +116,8 @@ function BadgeDetail({ badge, themes, rights, panel }: { badge: AdminBadge; them
 
   return (
     <>
-      <DetailHeader media={<DetailMedia icon={<BadgeIcon icon={badge.icon} />} background={badge.backgroundColor} />} title={badge.name} subtitle={badge.id} />
+      <AdminBadgeBanner badge={badge} />
+      <DetailHeader title={badge.name} subtitle={badge.id} />
       <DetailActions>
         <DetailAction
           label="Dupliquer"
@@ -237,8 +244,10 @@ export function BadgeCreate({
         const unit = values.metric ? METRICS[values.metric].unit : undefined;
         return (
           <>
+            <AdminBadgeBanner
+              badge={{ icon: values.icon ?? BADGE_ICON_KEYS[0], family: values.family ?? "all", tiers: null, backgroundColor: values.backgroundColor }}
+            />
             <DetailHeader
-              media={<DetailMedia icon={<BadgeIcon icon={values.icon ?? BADGE_ICON_KEYS[0]} />} background={values.backgroundColor} />}
               title={values.name?.trim() || "Nouveau badge"}
               subtitle="Actif dès sa création, ajouté en fin de catalogue."
             />

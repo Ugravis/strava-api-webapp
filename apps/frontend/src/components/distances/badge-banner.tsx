@@ -16,11 +16,16 @@ const FAMILY_GRADIENTS: Record<DistanceFamily, string> = {
 /** Concentric circles behind the icon. */
 const RINGS = [36, 60, 84, 108, 132];
 
+/** What the banner draws: without `completions` (the catalog of the back office), the disc is full and uncounted. */
+type BannerBadge = Pick<DistanceBadge, "icon" | "family" | "background" | "tiers"> & Partial<Pick<DistanceBadge, "completions">>;
+
 /** Header picture of a badge: its icon on its own background or the colors of its family, full once obtained. */
-export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
+export function BadgeBanner({ badge, className }: { badge: BannerBadge; className?: string }) {
   const t = useTranslations("distances");
   const format = useFormatter();
-  const achieved = badge.completions > 0;
+  const completions = badge.completions ?? 0;
+  const counted = completions > 0;
+  const achieved = badge.completions === undefined || counted;
   const { background } = badge;
   // Dark text and disc on light backgrounds, like the yellow of the Tour de France.
   const light = background ? lightTextOn(background) : true;
@@ -31,6 +36,7 @@ export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
         "relative grid h-32 place-items-center overflow-hidden",
         background ? "bg-cover bg-center" : cn("bg-linear-to-br", FAMILY_GRADIENTS[badge.family]),
         light ? "text-white" : "text-zinc-950",
+        className,
       )}
       style={
         background?.kind === "color"
@@ -60,12 +66,12 @@ export function BadgeBanner({ badge }: { badge: DistanceBadge }) {
         >
           <BadgeIcon icon={badge.icon} className="size-9" strokeWidth={1.75} aria-hidden />
         </div>
-        {achieved && (
+        {counted && (
           <span
             className="absolute -top-1 -right-3 flex h-6 min-w-6 items-center justify-center rounded-full bg-neutral-900 px-1.5 text-xs font-semibold text-white tabular-nums ring-2 ring-white"
             aria-hidden
           >
-            {badge.tiers ? t("level", { level: badge.completions }) : `×${format.number(badge.completions)}`}
+            {badge.tiers ? t("level", { level: completions }) : `×${format.number(completions)}`}
           </span>
         )}
       </div>

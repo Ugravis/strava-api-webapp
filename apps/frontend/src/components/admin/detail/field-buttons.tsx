@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 /** The blue of the buttons that save an edit: ✓ of a field, « Valider » of a popover. */
 export const SAVE_BUTTON = "border-blue-600 bg-blue-600 text-white hover:bg-blue-600/90 hover:text-white";
 
+/** A switch turned on: blue as the buttons that save, its thumb white. */
+export const SWITCH_ON = "data-checked:bg-blue-600 dark:data-checked:bg-blue-600 dark:[&_[data-slot=switch-thumb][data-checked]]:bg-white";
+
 /** Inside a field: told by a button that changes its value, the field then marked modifiable. */
 export const FieldModifiable = createContext<((on: boolean) => void) | null>(null);
 

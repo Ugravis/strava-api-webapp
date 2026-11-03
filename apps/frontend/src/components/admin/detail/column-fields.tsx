@@ -39,7 +39,7 @@ export function DetailColumnField<T>({
   if (row === undefined) return null;
   return (
     <DetailField label={column.header} icon={column.icon} copy={column.copy?.(row) ?? null} href={column.href?.(row)} stacked={stacked} edit={edit ?? column.edit?.(row)} editHint={editHint} tools={tools ?? column.tools?.(row)}>
-      <WholeCells value>{drawCell(column, row)}</WholeCells>
+      <WholeCells value>{column.detailCell ? column.detailCell(row) : drawCell(column, row)}</WholeCells>
     </DetailField>
   );
 }

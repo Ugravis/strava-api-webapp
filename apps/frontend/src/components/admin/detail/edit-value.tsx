@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { DetailEditOption, DetailFieldEdit } from "./edit-types";
 import { ErrorBubble } from "./error-bubble";
 import { editEmpty, useCommit } from "./field-edit";
+import { SWITCH_ON } from "./field-buttons";
 import { LucideIconByName } from "./icon-picker";
 import { Markdown } from "./markdown";
 
@@ -44,10 +45,10 @@ export function ColorValue({ color }: { color: string }) {
   );
 }
 
-/** The value of a field without children, drawn after its kind. */
-export function EditValue({ edit }: { edit: DetailFieldEdit }) {
+/** The value of a field without children, drawn after its kind; `bare`: without its words, e.g. a switch without « Oui » / « Non » in a table. */
+export function EditValue({ edit, bare }: { edit: DetailFieldEdit; bare?: boolean }) {
   // Bound to a draft at rest: told, not switched.
-  if (edit.kind === "switch") return edit.draft ? <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span> : <SwitchValue edit={edit} />;
+  if (edit.kind === "switch") return edit.draft ? <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span> : <SwitchValue edit={edit} bare={bare} />;
   if (editEmpty(edit)) return <EmptyValue />;
   switch (edit.kind) {
     case "number":
@@ -116,8 +117,8 @@ export function EditValue({ edit }: { edit: DetailFieldEdit }) {
   }
 }
 
-/** A switch saving as soon as switched, « Oui » or « Non » beside it. */
-function SwitchValue({ edit }: { edit: Extract<DetailFieldEdit, { kind: "switch" }> }) {
+/** A switch saving as soon as switched, « Oui » or « Non » beside it unless `bare`. */
+function SwitchValue({ edit, bare }: { edit: Extract<DetailFieldEdit, { kind: "switch" }>; bare?: boolean }) {
   const { saving, commit, error } = useCommit(edit, () => {});
   const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
   return (
@@ -126,13 +127,13 @@ function SwitchValue({ edit }: { edit: Extract<DetailFieldEdit, { kind: "switch"
       {edit.locked ? (
         <Tip label={edit.locked}>
           <span tabIndex={0} className="inline-flex cursor-not-allowed">
-            <Switch checked={edit.value} disabled aria-label={edit.locked} />
+            <Switch checked={edit.value} disabled aria-label={edit.locked} className={SWITCH_ON} />
           </span>
         </Tip>
       ) : (
-        <Switch checked={edit.value} disabled={saving} onCheckedChange={(next) => void commit(next)} aria-label={edit.value ? "Oui" : "Non"} />
+        <Switch checked={edit.value} disabled={saving} onCheckedChange={(next) => void commit(next)} aria-label={edit.value ? "Oui" : "Non"} className={SWITCH_ON} />
       )}
-      <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span>
+      {!bare && <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span>}
       {saving && <LoaderCircleIcon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />}
     </span>
   );

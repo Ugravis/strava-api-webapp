@@ -1,13 +1,17 @@
 "use client";
 
-import { defaultDisplayOf, type PublicReleaseNote, RELEASE_VERSION_PATTERN, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
-import { type AdminReleaseNote, RELEASE_NOTE_RULES } from "@kilotrace/shared/admin";
-import { BellRingIcon, EyeIcon, FileCheckIcon, FilePenIcon, ReceiptTextIcon, TagIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
+import { defaultDisplayOf, type PublicReleaseNote, type ReleaseNoteDisplay, RELEASE_VERSION_PATTERN, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
+import { type AdminReleaseNote, RELEASE_NOTE_BANNER_MAX_BYTES, RELEASE_NOTE_BANNER_TYPES, RELEASE_NOTE_RULES } from "@kilotrace/shared/admin";
+import { usePreview } from "@/components/admin/detail/use-preview";
+import { useReleaseNotePdf } from "@/components/release-notes/download-release-note-pdf";
+import { toast } from "sonner";
+import { BellRingIcon, EyeIcon, FileDownIcon, ReceiptTextIcon, TagIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   DetailAction,
   DetailActions,
   DetailColumnFields,
+  DetailCover,
   DetailField,
   DetailFields,
   DetailForm,
@@ -22,7 +26,7 @@ import {
 import { formatDateTime } from "@/components/admin/data-table";
 import { RELEASE_NOTE_SECTION_LOOKS } from "@/components/release-notes/release-note-article";
 import { createReleaseNote, loadReleaseNote, type ReleaseNoteDraft } from "./actions";
-import { CurrentMark, deleteOf, displayOptions, LOCKS, publishOf, releaseNoteColumns, type ReleaseNoteRights, saveNote, STATE_HINTS, STATES, useReleaseNotesVersion, bumpReleaseNotes } from "./release-note-bits";
+import { CurrentMark, deleteOf, displayOptions, LOCKS, stepOf, STEP_ICONS, releaseNoteColumns, type ReleaseNoteRights, saveNote, STATE_HINTS, STATES, useReleaseNotesVersion, bumpReleaseNotes } from "./release-note-bits";
 import { ReleaseNotePreview } from "./release-note-preview";
 
 /** The names, hints and placeholders of the parts of a note. */
@@ -39,14 +43,24 @@ const SectionIcon = ({ section }: { section: ReleaseNoteSection }) => {
 };
 
 /** The note as the users get it, from the row or the draft. */
-export const publicOf = (note: Pick<AdminReleaseNote, "version" | "display" | "title" | "summary" | "sections"> & { releasedAt: string | null }): PublicReleaseNote => ({
+export const publicOf = (note: Pick<AdminReleaseNote, "version" | "display" | "title" | "summary" | "sections" | "bannerUrl"> & { releasedAt: string | null }): PublicReleaseNote => ({
   version: note.version,
+  bannerUrl: note.bannerUrl,
   display: note.display,
   releasedAt: note.releasedAt ?? new Date().toISOString(),
   title: note.title,
   summary: note.summary,
   sections: note.sections,
 });
+
+/** Downloads the PDF of a note, told by a toast while it is built. */
+export function pdfOf(note: AdminReleaseNote, download: (note: PublicReleaseNote) => Promise<void>) {
+  return toast.promise(download(publicOf(note)), {
+    loading: `PDF de la v${note.version} en préparation…`,
+    success: `PDF de la v${note.version} téléchargé`,
+    error: "Le PDF n'a pas pu être créé",
+  });
+}
 
 /** The release loaded by the panel, its skeleton meanwhile; loaded again after every change. */
 export function ReleaseNoteRowPanel({ id, rights, panel }: { id: string; rights: ReleaseNoteRights; panel: RowPanelControls }) {
@@ -63,7 +77,9 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
   const columns = useMemo(() => releaseNoteColumns(rights.edit), [rights.edit]);
   const [previewing, setPreviewing] = useState(false);
   const locked = rights.edit ? null : LOCKS.edit;
-  const publish = publishOf(note);
+  const step = stepOf(note);
+  const download = useReleaseNotePdf();
+  const renamable = note.status === "draft" && !note.releasedAt;
   const removal = deleteOf(note, () => panel.removed(note.version));
   const subtitle = note.releasedAt
     ? `Sortie le ${formatDateTime(note.releasedAt)}`
@@ -71,6 +87,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
 
   return (
     <>
+      <DetailCover image={note.bannerUrl} alt={`Bannière de la v${note.version}`} />
       <DetailHeader
         media={<DetailMedia icon={<ReceiptTextIcon />} color={note.releasedAt ? null : "#3b82f6"} />}
         title={`v${note.version}${note.title ? ` · ${note.title}` : ""}`}
@@ -79,13 +96,14 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
       />
       <DetailActions>
         <DetailAction label="Aperçu" icon={<EyeIcon aria-hidden />} onClick={() => setPreviewing(true)} />
+        <DetailAction label="PDF" icon={<FileDownIcon aria-hidden />} onClick={() => pdfOf(note, download)} />
         <DetailAction
-          label={publish.label}
-          icon={note.status === "ready" ? <FilePenIcon aria-hidden /> : <FileCheckIcon aria-hidden />}
-          variant={note.status === "ready" ? "outline" : "save"}
-          locked={rights.publish ? publish.lock : LOCKS.publish}
-          confirm={publish.confirm}
-          onClick={publish.run}
+          label={step.label}
+          icon={STEP_ICONS[step.kind]}
+          variant={step.kind === "publish" ? "save" : step.kind === "disable" ? "destructive" : "outline"}
+          locked={rights.publish ? step.lock : LOCKS.publish}
+          confirm={step.confirm}
+          onClick={step.run}
         />
         <DetailAction
           label="Supprimer"
@@ -102,7 +120,24 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
           row={note}
           columns={columns}
           ids={[
-            "version",
+            {
+              id: "version",
+              edit: {
+                kind: "text",
+                ...fromRule(RELEASE_NOTE_RULES.version),
+                value: note.version,
+                required: true,
+                placeholder: "1.2.3 ou 1.2.3-beta.1",
+                locked: !rights.edit ? LOCKS.edit : renamable ? null : LOCKS.renamed,
+                onSave: async (next) => {
+                  const to = next?.trim() ?? "";
+                  if (to === note.version) return { ok: true, message: "" };
+                  const result = await saveNote(note, { version: to });
+                  if (result.ok) panel.renamed(note.version, to);
+                  return result;
+                },
+              },
+            },
             "state",
             { id: "display", edit: { kind: "select", value: note.display, options: displayOptions(note.version), required: true, locked, onSave: (display) => saveNote(note, { display: (display ?? defaultDisplayOf(note.version)) as AdminReleaseNote["display"] }) } },
             "releasedAt",
@@ -118,7 +153,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
         </DetailFields>
       </DetailSection>
       <DetailSection title="Note">
-        <DetailColumnFields row={note} columns={columns} ids={["title", { id: "summary", stacked: true }]} />
+        <DetailColumnFields row={note} columns={columns} ids={["banner", "title", { id: "summary", stacked: true }]} />
         <DetailFields>
           {RELEASE_NOTE_SECTIONS.map((section) => (
             <DetailField
@@ -147,7 +182,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
   );
 }
 
-const BLANK: ReleaseNoteDraft = { version: null, display: null, title: null, summary: null, new: null, improved: null, fixed: null, other: null };
+const BLANK: ReleaseNoteDraft = { version: null, display: null, title: null, summary: null, new: null, improved: null, fixed: null, other: null, banner: null };
 
 /** A note written ahead for a version not out yet: a draft until made ready, nothing saved before « Créer ». */
 export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated }: { initial?: Partial<ReleaseNoteDraft>; currentVersion: string; onCancel: () => void; onCreated: (id: string) => void }) {
@@ -170,6 +205,7 @@ export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated
         const display = form.values.display ?? (version ? defaultDisplayOf(version) : "notification");
         return (
           <>
+            <DetailCover image={form.values.banner} />
             <DetailHeader
               media={<DetailMedia icon={<ReceiptTextIcon />} color="#3b82f6" />}
               title={version ? `v${version}` : "Nouvelle note"}
@@ -193,7 +229,10 @@ export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated
               </DetailFields>
               <DetailColumnFields
                 columns={releaseNoteColumns(true)}
-                ids={[{ id: "display", edit: form.bind("display", { kind: "select", options: displayOptions(version) }) }]}
+                ids={[
+                  { id: "display", edit: form.bind("display", { kind: "select", options: displayOptions(version) }) },
+                  { id: "banner", edit: form.bind("banner", { kind: "image", accept: RELEASE_NOTE_BANNER_TYPES.join(","), maxSize: RELEASE_NOTE_BANNER_MAX_BYTES, noneLabel: "Retirer la bannière" }) },
+                ]}
               />
             </DetailSection>
             <DetailSection title="Note">
@@ -212,23 +251,31 @@ export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated
               </DetailFields>
             </DetailSection>
             {version && (
-              <ReleaseNotePreview
-                key={`${previewing}`}
-                note={publicOf({
-                  version,
-                  display,
-                  releasedAt: null,
-                  title: form.values.title,
-                  summary: form.values.summary,
-                  sections: { new: form.values.new, improved: form.values.improved, fixed: form.values.fixed, other: form.values.other },
-                })}
-                open={previewing}
-                onOpenChange={setPreviewing}
-              />
+              <DraftPreview key={`${previewing}`} draft={form.values} version={version} display={display} open={previewing} onOpenChange={setPreviewing} />
             )}
           </>
         );
       }}
     </DetailForm>
+  );
+}
+
+/** The draft as the users would get it, its banner picked shown from the file. */
+function DraftPreview({ draft, version, display, open, onOpenChange }: { draft: ReleaseNoteDraft; version: string; display: ReleaseNoteDisplay; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const bannerUrl = usePreview(draft.banner);
+  return (
+    <ReleaseNotePreview
+      note={publicOf({
+        version,
+        display,
+        releasedAt: null,
+        bannerUrl: bannerUrl ?? null,
+        title: draft.title,
+        summary: draft.summary,
+        sections: { new: draft.new, improved: draft.improved, fixed: draft.fixed, other: draft.other },
+      })}
+      open={open}
+      onOpenChange={onOpenChange}
+    />
   );
 }

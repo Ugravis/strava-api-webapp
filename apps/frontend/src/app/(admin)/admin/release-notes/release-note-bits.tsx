@@ -1,13 +1,17 @@
 "use client";
 
 import { defaultDisplayOf, RELEASE_NOTE_DISPLAYS, type ReleaseNoteDisplay } from "@kilotrace/shared";
-import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH, type AdminReleaseNote, RELEASE_NOTE_RULES, type ReleaseNoteState, type UpdateReleaseNoteRequest } from "@kilotrace/shared/admin";
+import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH, type AdminReleaseNote, RELEASE_NOTE_BANNER_MAX_BYTES, RELEASE_NOTE_BANNER_TYPES, RELEASE_NOTE_RULES, type ReleaseNoteState, type UpdateReleaseNoteRequest } from "@kilotrace/shared/admin";
 import {
   CalendarClockIcon,
   CalendarPlusIcon,
   CircleDotIcon,
   EyeIcon,
+  EyeOffIcon,
+  FileCheckIcon,
+  FilePenIcon,
   HistoryIcon,
+  ImageIcon,
   MegaphoneIcon,
   PercentIcon,
   RadioTowerIcon,
@@ -21,6 +25,7 @@ import {
   type ConfirmOptions,
   type DataTableColumn,
   dateColumn,
+  imageColumn,
   lookColumn,
   Mark,
   numberColumn,
@@ -32,7 +37,8 @@ import {
 } from "@/components/admin/data-table";
 import { fromRule } from "@/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
-import { deleteReleaseNote, saveReleaseNote, setReleaseNoteStatus } from "./actions";
+import type { ReactNode } from "react";
+import { deleteReleaseNote, saveReleaseNote, setReleaseNoteActive, setReleaseNoteStatus, uploadReleaseNoteBanner } from "./actions";
 
 /*
  * How a release and its note are drawn and changed, shared by the table and the detail.
@@ -54,7 +60,8 @@ export const LOCKS = {
   edit: "Réservé aux membres qui modifient les notes",
   publish: "Réservé aux membres qui publient les notes",
   delete: "Réservé aux membres qui suppriment les notes",
-  released: "Version sortie : sa ligne reste, videz la note pour la retirer",
+  released: "Version sortie : sa ligne reste ; désactivez la note pour la masquer",
+  renamed: "Seule une note en brouillon, pour une version pas encore sortie, change de version",
 };
 
 export const STATES: Record<ReleaseNoteState, { label: string; tone: Tone }> = {
@@ -63,6 +70,7 @@ export const STATES: Record<ReleaseNoteState, { label: string; tone: Tone }> = {
   scheduled: { label: "Programmée", tone: "blue" },
   published: { label: "Publiée", tone: "green" },
   silent: { label: "Historique seul", tone: "violet" },
+  disabled: { label: "Désactivée", tone: "red" },
 };
 
 /** What each state means, under the status of the detail. */
@@ -72,6 +80,7 @@ export const STATE_HINTS: Record<ReleaseNoteState, string> = {
   scheduled: "Prête : montrée d'elle-même dès que le site démarrera sur cette version.",
   published: "Montrée aux utilisateurs inscrits avant la sortie, selon son affichage.",
   silent: "Prête, mais seulement dans l'historique « Nouveautés » : ni popup, ni bandeau, ni notification.",
+  disabled: "Publiée puis masquée : ni historique, ni popup, ni bandeau ; ses notifications ont été retirées. Réactivée, elle ne notifie personne.",
 };
 
 export const DISPLAYS: Record<ReleaseNoteDisplay, { label: string; tone: Tone; description: string }> = {
@@ -105,45 +114,83 @@ export async function saveNote(note: AdminReleaseNote, patch: UpdateReleaseNoteR
 
 const people = (count: number) => `${count.toLocaleString("fr-FR")} ${count > 1 ? "utilisateurs concernés" : "utilisateur concerné"}`;
 
-/** Making a note ready, or back to a draft, asked first: what it changes for the users. */
-export function publishOf(note: AdminReleaseNote): { label: string; lock: string | null; confirm: ConfirmOptions; run: () => Promise<unknown> } {
-  const ready = note.status === "ready";
+/** The icon of each step, in the detail and the menu of a row. */
+export const STEP_ICONS: Record<ReturnType<typeof stepOf>["kind"], ReactNode> = {
+  publish: <FileCheckIcon aria-hidden />,
+  unschedule: <FilePenIcon aria-hidden />,
+  disable: <EyeOffIcon aria-hidden />,
+  enable: <EyeIcon aria-hidden />,
+};
+
+/** The step a note may take next, asked first: what it changes for the users. */
+export interface ReleaseNoteStep {
+  label: string;
+  /** Why it may not be taken, null when it may. */
+  lock: string | null;
+  confirm: ConfirmOptions;
+  run: () => Promise<unknown>;
+}
+
+/**
+ * Draft: published (programmed before the release). Programmed: back to a
+ * draft. Published: disabled, then enabled again; never back to a draft.
+ */
+export function stepOf(note: AdminReleaseNote): ReleaseNoteStep & { kind: "publish" | "unschedule" | "disable" | "enable" } {
   const shown = note.display !== "none";
   const how = DISPLAYS[note.display].label.toLowerCase();
-  const run = async () => {
-    const result = await setReleaseNoteStatus(note.version, ready ? "draft" : "ready");
+  const done = (action: () => Promise<{ ok: boolean }>) => async () => {
+    const result = await action();
     if (result.ok) bumpReleaseNotes();
     return result;
   };
-  if (ready) {
+  if (note.status === "ready" && !note.releasedAt) {
     return {
-      label: "Repasser en brouillon",
+      kind: "unschedule",
+      label: "Déprogrammer",
       lock: null,
       confirm: {
-        title: `Repasser la v${note.version} en brouillon ?`,
-        description: note.notifiedAt
-          ? "La note quitte l'historique et ses notifications sont retirées, lues ou non. Une nouvelle publication notifiera à nouveau."
-          : "La note ne sera plus montrée, ni à la sortie de la version, ni dans l'historique.",
-        confirmLabel: "Repasser en brouillon",
+        title: `Déprogrammer la v${note.version} ?`,
+        description: "La note repasse en brouillon : elle ne partira pas à la sortie de la version tant qu'elle n'est pas reprogrammée.",
+        confirmLabel: "Déprogrammer",
         destructive: false,
       },
-      run,
+      run: done(() => setReleaseNoteStatus(note.version, "draft")),
+    };
+  }
+  if (note.status === "ready") {
+    const disabled = note.disabledAt !== null;
+    return {
+      kind: disabled ? "enable" : "disable",
+      label: disabled ? "Réactiver" : "Désactiver",
+      lock: null,
+      confirm: disabled
+        ? {
+            title: `Réactiver la note de la v${note.version} ?`,
+            description: "Elle revient dans l'historique, et dans la popup ou le bandeau de ceux qui ne l'ont pas vue. Aucune notification n'est renvoyée.",
+            confirmLabel: "Réactiver",
+            destructive: false,
+          }
+        : {
+            title: `Désactiver la note de la v${note.version} ?`,
+            description: "Elle disparaît de l'historique, de la popup et du bandeau ; ses notifications sont retirées, lues ou non. Elle reste modifiable et peut être réactivée.",
+            confirmLabel: "Désactiver",
+          },
+      run: done(() => setReleaseNoteActive(note.version, disabled)),
     };
   }
   return {
+    kind: "publish",
     label: note.releasedAt ? "Publier" : "Programmer",
     lock: note.hasContent ? null : "Note vide : écrivez au moins un titre, un résumé ou une section",
     confirm: {
       title: `${note.releasedAt ? "Publier" : "Programmer"} la note de la v${note.version} ?`,
       description: !note.releasedAt
-        ? `Elle partira d'elle-même au premier démarrage du site sur la v${note.version}${shown ? `, en ${how}` : ", dans l'historique seulement"}.`
-        : shown
-          ? `Elle est montrée dès maintenant aux ${people(note.concernedCount ?? 0)} (inscrits avant la sortie), en ${how}.`
-          : "Elle rejoint l'historique « Nouveautés », sans popup, bandeau ni notification.",
+        ? `Elle partira d'elle-même au premier démarrage du site sur la v${note.version}${shown ? `, en ${how}` : ", dans l'historique seulement"}. Déprogrammable jusque-là.`
+        : `${shown ? `Elle est montrée dès maintenant aux ${people(note.concernedCount ?? 0)} (inscrits avant la sortie), en ${how}.` : "Elle rejoint l'historique « Nouveautés », sans popup, bandeau ni notification."} Ensuite, elle reste modifiable mais ne repasse plus en brouillon : elle peut seulement être désactivée.`,
       confirmLabel: note.releasedAt ? "Publier" : "Programmer",
       destructive: false,
     },
-    run,
+    run: done(() => setReleaseNoteStatus(note.version, "ready")),
   };
 }
 
@@ -193,6 +240,29 @@ export const releaseNoteColumns = (edit: boolean): DataTableColumn<AdminReleaseN
       value: (note) => ({ icon: <ReceiptTextIcon />, name: `v${note.version}`, color: note.releasedAt ? null : "#3b82f6" }),
       marks: (note) => note.current && <CurrentMark />,
     }),
+    // In no view: ticked in « Colonnes ».
+    {
+      ...imageColumn({
+      id: "banner",
+      header: "Bannière",
+      icon: <ImageIcon />,
+      value: (note) => (note.bannerUrl ? { src: note.bannerUrl, alt: `Bannière de la v${note.version}` } : null),
+      edit: (note) => ({
+        kind: "image",
+        value: note.bannerUrl,
+        accept: RELEASE_NOTE_BANNER_TYPES.join(","),
+        maxSize: RELEASE_NOTE_BANNER_MAX_BYTES,
+        noneLabel: "Retirer la bannière",
+        locked,
+        onSave: async (file) => {
+          const result = await uploadReleaseNoteBanner(note.version, file);
+          if (result.ok) bumpReleaseNotes();
+          return result;
+        },
+      }),
+      }),
+      extra: true,
+    },
     textColumn({
       id: "title",
       header: "Titre",

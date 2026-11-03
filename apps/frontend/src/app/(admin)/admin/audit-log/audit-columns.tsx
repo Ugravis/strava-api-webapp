@@ -13,6 +13,7 @@ import {
   CircleDotIcon,
   CrownIcon,
   DoorOpenIcon,
+  EyeOffIcon,
   FilePenIcon,
   FilePlusIcon,
   FileXIcon,
@@ -42,6 +43,7 @@ import {
   UserRoundPlusIcon,
   UserXIcon,
   ZapIcon,
+  ImageIcon,
   SendIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -107,6 +109,8 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   "releaseNotes.update": <FilePenIcon />,
   "releaseNotes.status": <SendIcon />,
   "releaseNotes.delete": <FileXIcon />,
+  "releaseNotes.active": <EyeOffIcon />,
+  "releaseNotes.banner": <ImageIcon />,
   "system.maintenance.set": <MegaphoneIcon />,
   "system.maintenance.clear": <MegaphoneOffIcon />,
   "system.signups": <UserLockIcon />,

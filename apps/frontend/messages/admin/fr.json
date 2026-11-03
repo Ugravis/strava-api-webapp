@@ -173,7 +173,9 @@
         "create": "Note de release écrite à l'avance",
         "update": "Note de release modifiée",
         "status": "Statut d'une note de release changé",
-        "delete": "Note de release supprimée"
+        "delete": "Note de release supprimée",
+        "active": "Note de release activée ou désactivée",
+        "banner": "Bannière d'une note de release changée"
       }
     },
     "overview": {
@@ -564,7 +566,9 @@
     "errors": {
       "idTaken": "Cette version a déjà sa ligne.",
       "released": "Cette version est déjà sortie, ou dépassée par une version sortie.",
-      "empty": "Une note prête doit avoir un titre, un résumé ou une section."
+      "empty": "Une note prête doit avoir un titre, un résumé ou une section.",
+      "published": "Une note publiée ne repasse pas en brouillon ni ne change de version : désactivez-la si besoin.",
+      "image": "Image illisible : PNG, JPEG ou WebP."
     }
   }
 }

@@ -4,6 +4,7 @@ import { FollowsSummaryProvider } from "@/components/community/follows-summary-p
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
 import { ReleaseNotesNotice } from "@/components/release-notes/release-notes-notice";
+import { PageViewTracker } from "@/components/site-activity/page-view-tracker";
 import { MaintenanceNotice } from "@/components/system/maintenance-notice";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
@@ -36,6 +37,7 @@ export async function AppShell({ children, ...slots }: AppSidebarSlots & { child
                 <ReleaseNotesNotice />
                 <AppHeader />
                 {children}
+                <PageViewTracker />
               </SidebarInset>
             </PersistedSidebarProvider>
           </FollowsSummaryProvider>

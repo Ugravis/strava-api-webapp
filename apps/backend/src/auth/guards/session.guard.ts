@@ -7,6 +7,7 @@ import { Reflector } from '@nestjs/core';
 import type { Response } from 'express';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import type { AuthenticatedRequest } from '../auth-request';
+import { UserActivityService } from '../../site-activity/user-activity.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { SessionCookie } from '../session-cookie';
 import { SessionsService } from '../sessions/sessions.service';
@@ -18,6 +19,7 @@ export class SessionGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly sessions: SessionsService,
     private readonly sessionCookie: SessionCookie,
+    private readonly activity: UserActivityService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,6 +34,7 @@ export class SessionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     // Already validated by the back-office access middleware.
     if (request.auth) {
+      this.activity.record(request.auth.user.id);
       return true;
     }
     const token = this.sessionCookie.read(request);
@@ -53,6 +56,7 @@ export class SessionGuard implements CanActivate {
       });
     }
     request.auth = { session, user };
+    this.activity.record(user.id);
     return true;
   }
 }

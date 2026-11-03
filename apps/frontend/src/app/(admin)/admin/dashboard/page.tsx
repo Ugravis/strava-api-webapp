@@ -22,9 +22,9 @@ function BandTitle({ children, action }: { children: string; action?: ReactNode 
 
 /**
  * Home of the back office: the member greeted, what needs the team first,
- * the activity of the site, the headline figures of the community and of
- * its exploration, then the release, the system and the latest of the site
- * and of the team. Each block streams on its own and degrades alone
+ * the headline figures of the community, the activity of the site, the
+ * exploration of the community, then the release, the system and the
+ * latest of the site and of the team. Each block streams on its own and degrades alone
  * when its call fails. `?team=true` counts the team in the site activity.
  */
 export default async function AdminDashboardPage({ searchParams }: PageProps<"/admin/dashboard">) {
@@ -40,6 +40,11 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
       <Suspense fallback={<DashboardAttentionSkeleton />}>
         <DashboardAttention />
+      </Suspense>
+
+      <BandTitle>{t("community")}</BandTitle>
+      <Suspense fallback={<DashboardKpisSkeleton />}>
+        <DashboardKpis />
       </Suspense>
 
       <BandTitle action={<TeamSwitch team={team} />}>{t("activity")}</BandTitle>
@@ -59,11 +64,6 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
           <DashboardSports />
         </Suspense>
       </div>
-
-      <BandTitle>{t("community")}</BandTitle>
-      <Suspense fallback={<DashboardKpisSkeleton />}>
-        <DashboardKpis />
-      </Suspense>
 
       <BandTitle>{t("exploration")}</BandTitle>
       <Suspense fallback={<DashboardKpisSkeleton />}>

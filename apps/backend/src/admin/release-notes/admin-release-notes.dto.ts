@@ -8,6 +8,7 @@ import {
   type ReleaseNoteDisplay,
 } from '@kilotrace/shared';
 import {
+  RELEASE_NOTE_GITHUB_URL_MAX_LENGTH,
   RELEASE_NOTE_STATUSES,
   type ReleaseNoteStatus,
 } from '@kilotrace/shared/admin';
@@ -16,6 +17,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   MaxLength,
   ValidateIf,
@@ -73,6 +75,13 @@ export class UpdateReleaseNoteDto {
   @IsOptional()
   @IsIn(RELEASE_NOTE_DISPLAYS)
   display?: ReleaseNoteDisplay;
+
+  @TrimToNull()
+  @nullable
+  @IsString()
+  @MaxLength(RELEASE_NOTE_GITHUB_URL_MAX_LENGTH)
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  githubUrl?: string | null;
 }
 
 export class CreateReleaseNoteDto extends UpdateReleaseNoteDto {

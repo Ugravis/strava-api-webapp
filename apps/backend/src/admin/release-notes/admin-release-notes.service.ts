@@ -93,6 +93,7 @@ function fieldsOf(dto: UpdateReleaseNoteDto): Partial<ReleaseNote> {
     ...(dto.fixed !== undefined && { sectionFixed: dto.fixed }),
     ...(dto.other !== undefined && { sectionOther: dto.other }),
     ...(dto.display !== undefined && { display: dto.display }),
+    ...(dto.githubUrl !== undefined && { githubUrl: dto.githubUrl }),
   };
 }
 
@@ -341,6 +342,7 @@ export class AdminReleaseNotesService {
         hasContent: hasReleaseNoteContent(content),
         disabledAt: note.disabledAt?.toISOString() ?? null,
         bannerUrl: bannerUrlOf(note),
+        githubUrl: note.githubUrl,
         concernedCount: countOf.get(note.version)?.concerned ?? null,
         seenCount: countOf.get(note.version)?.seen ?? 0,
         notifiedAt: note.notifiedAt?.toISOString() ?? null,

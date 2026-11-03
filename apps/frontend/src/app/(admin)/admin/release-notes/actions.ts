@@ -42,6 +42,7 @@ export interface ReleaseNoteDraft {
   other: string | null;
   /** The banner picked, uploaded once the note is created. */
   banner: File | string | null;
+  githubUrl: string | null;
 }
 
 /** A note written ahead for a version not out yet, a draft until made ready. */
@@ -56,6 +57,7 @@ export async function createReleaseNote(draft: ReleaseNoteDraft): Promise<AdminA
     improved: draft.improved?.trim() || null,
     fixed: draft.fixed?.trim() || null,
     other: draft.other?.trim() || null,
+    githubUrl: draft.githubUrl?.trim() || null,
   };
   const result = await runAdminAction("/release-notes", "POST", body, errors());
   if (!result.ok) return result;

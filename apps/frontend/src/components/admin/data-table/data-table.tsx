@@ -263,8 +263,8 @@ export function DataTable<T>({
       )}
 
       {pager && pager.visible > 0 && (
-        // Stuck to the bottom of the screen while the end of the box is out of sight; its line lies on the one of the box.
-        <div className="sticky bottom-0 z-20 -mt-[calc(0.75rem+1px)] border-t border-foreground/20 bg-background py-3">
+        // Stuck to the bottom of the screen while the end of the box is out of sight; in a table, its line lies on the one of the box.
+        <div className={cn("sticky bottom-0 z-20 border-t border-foreground/20 bg-background py-3", state.layout === "table" && "-mt-[calc(0.75rem+1px)]")}>
           <Pagination pager={pager} loading={loading} noun={config.noun} onPage={turnPage} />
         </div>
       )}

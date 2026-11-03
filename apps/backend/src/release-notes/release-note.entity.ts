@@ -68,6 +68,10 @@ export class ReleaseNote {
   @Column({ name: 'banner_key', type: 'varchar', length: 200, nullable: true })
   bannerKey!: string | null;
 
+  /** The release on GitHub, null without one. */
+  @Column({ name: 'github_url', type: 'varchar', length: 300, nullable: true })
+  githubUrl!: string | null;
+
   /** When the users were notified: once only, even after the note is disabled and enabled again. */
   @Column({ name: 'notified_at', type: 'timestamptz', nullable: true })
   notifiedAt!: Date | null;

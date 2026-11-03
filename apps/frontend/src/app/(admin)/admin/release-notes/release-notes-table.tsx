@@ -19,7 +19,7 @@ function copy(text: string, done: string) {
   navigator.clipboard.writeText(text).then(() => toast.success(done), () => toast.error("Copie impossible"));
 }
 
-const COLUMNS = ["version", "title", "state", "display", "releasedAt", "concerned", "seen", "rate"];
+const COLUMNS = ["version", "title", "state", "display", "releasedAt", "concerned", "seen", "rate", "github"];
 
 /** One row per release, even without a note, the latest first; a click opens it in the side panel. */
 export function ReleaseNotesTable({ rights: given, currentVersion }: { rights: ReleaseNoteRights; currentVersion: string }) {
@@ -47,7 +47,7 @@ export function ReleaseNotesTable({ rights: given, currentVersion }: { rights: R
       maxHeight: "none",
       views: [
         { id: "table", label: "Tableau", columns: COLUMNS },
-        { id: "cards", label: "Cartes", layout: "cards", columns: ["version", "title", "state", "display", "concerned"] },
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["version", "title", "state", "display", "concerned", "rate"] },
       ],
       columns: releaseNoteColumns(rights.edit),
       muted: (note) => note.state === "empty",

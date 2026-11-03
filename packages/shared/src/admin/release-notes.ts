@@ -43,6 +43,8 @@ export interface AdminReleaseNote extends ReleaseNoteContent {
   disabledAt: string | null;
   /** The image across the top, null without one. */
   bannerUrl: string | null;
+  /** The release on GitHub, null without one. */
+  githubUrl: string | null;
   /** Active accounts created before the release: those the note is for. Null before the release. */
   concernedCount: number | null;
   /** Of those, the ones who saw it. */
@@ -65,6 +67,7 @@ export interface UpdateReleaseNoteRequest {
   fixed?: string | null;
   other?: string | null;
   display?: ReleaseNoteDisplay;
+  githubUrl?: string | null;
 }
 
 /** `PUT /api/admin/release-notes/:version/active`: hides a published note, or shows it again without notifying anyone. */
@@ -101,6 +104,9 @@ export interface AdminReleaseNotesOverview {
   latest: { version: string; concerned: number; seen: number } | null;
 }
 
+/** Longest link to the release on GitHub. */
+export const RELEASE_NOTE_GITHUB_URL_MAX_LENGTH = 300;
+
 const section = { type: "text", maxLength: RELEASE_NOTE_SECTION_MAX_LENGTH } as const;
 
 /** The rules of a note, followed by the back office as typed and by the API. */
@@ -119,5 +125,6 @@ export const RELEASE_NOTE_RULES: FieldRules<CreateReleaseNoteRequest & SetReleas
   fixed: section,
   other: section,
   display: { type: "choice", required: true, values: RELEASE_NOTE_DISPLAYS },
+  githubUrl: { type: "url", maxLength: RELEASE_NOTE_GITHUB_URL_MAX_LENGTH },
   status: { type: "choice", required: true, values: RELEASE_NOTE_STATUSES },
 };

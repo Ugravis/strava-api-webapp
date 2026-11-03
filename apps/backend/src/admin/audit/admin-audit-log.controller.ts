@@ -1,4 +1,8 @@
-import { type AdminPage, type AuditLogEntry } from '@kilotrace/shared/admin';
+import {
+  type AdminPage,
+  type AuditLogEntry,
+  type AuditLogOverview,
+} from '@kilotrace/shared/admin';
 import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
 import {
   Delete,
@@ -51,6 +55,12 @@ export class AdminAuditLogController {
       scope,
       await this.permissions.can(user.roles, 'audit.hide'),
     );
+  }
+
+  @Get('overview')
+  @AnyMember()
+  overview(): Promise<AuditLogOverview> {
+    return this.audit.overview();
   }
 
   @Get(':id')

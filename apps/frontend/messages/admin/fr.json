@@ -168,6 +168,16 @@
           }
         }
       }
+    },
+    "overview": {
+      "total": "Entrées",
+      "totalDetail": "Depuis l'ouverture du back office",
+      "today": "Dernières 24 h",
+      "todayDetail": "Actions enregistrées",
+      "failures": "Échecs",
+      "failuresDetail": "{share} des actions des 7 derniers jours",
+      "actors": "Membres actifs",
+      "actorsDetail": "Ont agi ces 7 derniers jours"
     }
   },
   "statistics": {
@@ -511,6 +521,15 @@
     "errors": {
       "taken": "Ce pseudo est porté par un compte : modérez d'abord le profil.",
       "reserved": "Ce pseudo est déjà réservé."
+    },
+    "overview": {
+      "total": "Pseudos",
+      "totalDetail": "dont {count} système",
+      "recent": "Ajouts",
+      "recentDetail": "Ces 30 derniers jours",
+      "top": "Catégorie principale",
+      "topDetail": "« {category} »",
+      "topEmpty": "Aucun pseudo réservé"
     }
   }
 }

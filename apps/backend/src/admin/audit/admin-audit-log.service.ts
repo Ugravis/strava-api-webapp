@@ -2,6 +2,7 @@ import {
   ADMIN_PAGE_SIZE,
   type AdminPage,
   type AuditLogEntry,
+  type AuditLogOverview,
 } from '@kilotrace/shared/admin';
 import {
   mapTablePage,
@@ -19,6 +20,8 @@ import { toAuditUser } from '../common/audit-user';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 import { AdminAuditLog } from './admin-audit-log.entity';
 import type { AuditLogQueryDto } from './audit-log-query.dto';
+
+const DAY_MS = 86_400_000;
 
 const MATCHING_USERS =
   'SELECT id FROM users WHERE username ILIKE :q OR display_name ILIKE :q';
@@ -150,6 +153,36 @@ export class AdminAuditLogService {
    * A page of the data table of the entries, optionally of one author or
    * one target. Masked entries are left out unless `withHidden`.
    */
+  async overview(): Promise<AuditLogOverview> {
+    const now = Date.now();
+    const row = await this.entries
+      .createQueryBuilder('entry')
+      .select('COUNT(*)', 'total')
+      .addSelect('COUNT(*) FILTER (WHERE entry.created_at >= :day)', 'today')
+      .addSelect('COUNT(*) FILTER (WHERE entry.created_at >= :week)', 'week')
+      .addSelect(
+        'COUNT(*) FILTER (WHERE entry.created_at >= :week AND NOT entry.succeeded)',
+        'failures',
+      )
+      .addSelect(
+        'COUNT(DISTINCT entry.actor_id) FILTER (WHERE entry.created_at >= :week)',
+        'actors',
+      )
+      .where('entry.hidden_at IS NULL')
+      .setParameters({
+        day: new Date(now - DAY_MS),
+        week: new Date(now - 7 * DAY_MS),
+      })
+      .getRawOne<Record<string, string>>();
+    return {
+      total: Number(row?.total ?? 0),
+      today: Number(row?.today ?? 0),
+      week: Number(row?.week ?? 0),
+      failures: Number(row?.failures ?? 0),
+      actors: Number(row?.actors ?? 0),
+    };
+  }
+
   async table(
     query: TableQuery,
     scope: { actor?: string; target?: string },

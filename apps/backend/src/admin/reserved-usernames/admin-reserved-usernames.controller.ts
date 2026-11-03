@@ -1,6 +1,7 @@
 import {
   type AdminReservedUsername,
   RESERVED_USERNAME_RULES,
+  type ReservedUsernamesOverview,
 } from '@kilotrace/shared/admin';
 import { assertRules } from '../../common/field-rules';
 import { type TablePage, type TableQuery } from '@kilotrace/shared/table';
@@ -37,6 +38,12 @@ export class AdminReservedUsernamesController {
     @TableQueryParam() query: TableQuery,
   ): Promise<TablePage<AdminReservedUsername>> {
     return this.reserved.table(query);
+  }
+
+  @Get('overview')
+  @AnyMember()
+  overview(): Promise<ReservedUsernamesOverview> {
+    return this.reserved.overview();
   }
 
   @Post()

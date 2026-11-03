@@ -40,6 +40,7 @@ import {
 import { AuditInterceptor } from '../src/admin/audit/audit.interceptor';
 import { Audited, NotAudited } from '../src/admin/audit/audited.decorator';
 import { SessionGuard } from '../src/auth/guards/session.guard';
+import { UserActivityService } from '../src/site-activity/user-activity.service';
 import { SessionCookie } from '../src/auth/session-cookie';
 import { SessionsService } from '../src/auth/sessions/sessions.service';
 import { DEFAULT_THROTTLE } from '../src/auth/throttle';
@@ -180,6 +181,7 @@ const auditEntries: AuditEntry[] = [];
       provide: SessionsService,
       useValue: { validate: (token: string) => store.validate(token) },
     },
+    { provide: UserActivityService, useValue: { record: () => undefined } },
     {
       provide: SessionCookie,
       useValue: {

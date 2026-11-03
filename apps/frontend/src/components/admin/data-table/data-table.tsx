@@ -94,6 +94,15 @@ export function DataTable<T>({
   const follow = state.layout === "table" && (config.maxHeight ?? "none") === "none";
   const thead = useStickyHead(follow);
 
+  /** Another page: its first rows in sight, the top of the table brought back when scrolled past. */
+  const turnPage = (page: number) => {
+    state.setPage(page);
+    const node = box.current;
+    if (!node || node.getBoundingClientRect().top >= parseFloat(getComputedStyle(node).scrollMarginTop)) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    node.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+  };
+
   /** Classes of the cells pinned on the left: the box, then the first column. */
   const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && selectable && "left-10", first && SHADOW) : "");
 
@@ -187,7 +196,7 @@ export function DataTable<T>({
   const blank = !loading && entries.length === 0;
 
   return (
-    <div ref={box} className="flex flex-col gap-3">
+    <div ref={box} className="flex scroll-mt-18 flex-col gap-3 md:scroll-mt-4">
       <DataTableToolbar config={config} state={state} />
 
       {state.layout !== "table" ? (
@@ -256,7 +265,7 @@ export function DataTable<T>({
       {pager && pager.visible > 0 && (
         // Stuck to the bottom of the screen while the end of the box is out of sight; its line lies on the one of the box.
         <div className="sticky bottom-0 z-20 -mt-[calc(0.75rem+1px)] border-t border-foreground/20 bg-background py-3">
-          <Pagination pager={pager} loading={loading} noun={config.noun} onPage={state.setPage} />
+          <Pagination pager={pager} loading={loading} noun={config.noun} onPage={turnPage} />
         </div>
       )}
 

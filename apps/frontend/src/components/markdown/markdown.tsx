@@ -3,15 +3,18 @@ import { Fragment, type ReactNode } from "react";
 /*
  * A small Markdown, drawn as React elements (never HTML from the text): the
  * titles, lists, quotes and paragraphs of a note, bold, italics, code and
- * links (`http`, `https`, `mailto` only) inside them.
+ * links (`http`, `https`, `mailto` only) inside them; `==highlights==`
+ * once asked for.
  */
 
 const INLINE = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
+const INLINE_HIGHLIGHT = /(==[^=]+==|\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
 const SAFE_LINK = /^(https?:|mailto:)/i;
 
-function inline(text: string): ReactNode[] {
-  return text.split(INLINE).map((part, at) => {
+function inline(text: string, highlight = false): ReactNode[] {
+  return text.split(highlight ? INLINE_HIGHLIGHT : INLINE).map((part, at) => {
     if (at % 2 === 0) return part;
+    if (part.startsWith("==")) return <mark key={at} className="rounded-sm bg-amber-200/80 px-0.5 text-inherit dark:bg-amber-400/30">{inline(part.slice(2, -2))}</mark>;
     if (part.startsWith("**")) return <strong key={at}>{part.slice(2, -2)}</strong>;
     if (part.startsWith("`")) return <code key={at} className="rounded bg-muted px-1 font-mono text-[0.85em]">{part.slice(1, -1)}</code>;
     if (part.startsWith("[")) {
@@ -27,9 +30,12 @@ function inline(text: string): ReactNode[] {
   });
 }
 
+export type MarkdownBlock = Block;
+
 type Block = { type: "h"; level: number; text: string } | { type: "ul" | "ol"; items: string[] } | { type: "quote" | "p"; lines: string[] };
 
-function blocks(source: string): Block[] {
+/** The blocks of `source`, e.g. for another renderer (a PDF). */
+export function markdownBlocks(source: string): Block[] {
   const found: Block[] = [];
   for (const line of source.replace(/\r\n?/g, "\n").split("\n")) {
     const last = found.at(-1);
@@ -53,29 +59,29 @@ function blocks(source: string): Block[] {
   return found.filter((block) => !("lines" in block) || block.lines.length > 0);
 }
 
-const lines = (all: string[]) => all.map((line, at) => <Fragment key={at}>{at > 0 && <br />}{inline(line)}</Fragment>);
+const lines = (all: string[], highlight: boolean) => all.map((line, at) => <Fragment key={at}>{at > 0 && <br />}{inline(line, highlight)}</Fragment>);
 
-/** `source` drawn: its blocks stacked, in the size of the text around. */
-export function Markdown({ source }: { source: string }) {
+/** `source` drawn: its blocks stacked, in the size of the text around; `highlight` draws `==text==` highlighted. */
+export function Markdown({ source, highlight = false }: { source: string; highlight?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col gap-2 py-1 wrap-break-word">
-      {blocks(source).map((block, at) => {
+      {markdownBlocks(source).map((block, at) => {
         switch (block.type) {
           case "h":
-            return <p key={at} className={block.level === 1 ? "text-base font-semibold" : "font-semibold"}>{inline(block.text)}</p>;
+            return <p key={at} className={block.level === 1 ? "text-base font-semibold" : "font-semibold"}>{inline(block.text, highlight)}</p>;
           case "ul":
           case "ol": {
             const List = block.type;
             return (
               <List key={at} className={block.type === "ul" ? "list-disc pl-5" : "list-decimal pl-5"}>
-                {block.items.map((item, index) => <li key={index}>{inline(item)}</li>)}
+                {block.items.map((item, index) => <li key={index}>{inline(item, highlight)}</li>)}
               </List>
             );
           }
           case "quote":
-            return <blockquote key={at} className="border-l-2 pl-3 text-muted-foreground">{lines(block.lines)}</blockquote>;
+            return <blockquote key={at} className="border-l-2 pl-3 text-muted-foreground">{lines(block.lines, highlight)}</blockquote>;
           default:
-            return <p key={at}>{lines(block.lines)}</p>;
+            return <p key={at}>{lines(block.lines, highlight)}</p>;
         }
       })}
     </div>

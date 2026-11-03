@@ -109,6 +109,7 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
           field={preview ? null : textarea}
           onChange={(next) => field.onChange({ target: { value: next } })}
           disabled={edit.draft.disabled || preview}
+          highlight={edit.highlight}
           aside={
             <button type="button" onClick={() => setPreview((shown) => !shown)} className="inline-flex h-6 items-center gap-1 rounded-md border bg-background px-1.5 text-xs text-muted-foreground shadow-xs hover:text-foreground [&_svg]:size-3.5">
               {preview ? <PencilIcon aria-hidden /> : <EyeIcon aria-hidden />}
@@ -117,7 +118,7 @@ function DraftInline({ edit, label }: { edit: Bound<InlineEdit>; label: string }
           }
         />
         {preview ? (
-          <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{text.trim() ? <Markdown source={text} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
+          <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{text.trim() ? <Markdown source={text} highlight={edit.highlight} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
         ) : (
           <Textarea
             {...field}

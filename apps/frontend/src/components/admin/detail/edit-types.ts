@@ -88,7 +88,7 @@ export interface DetailEditKinds {
   /** An `http` or `https` link, refused malformed; shown as a link. */
   url: { kind: "url"; value: string | null; placeholder?: string } & Saved<string | null>;
   /** A text in Markdown, typed on several lines (an eye shows it drawn), shown drawn. */
-  markdown: { kind: "markdown"; value: string | null; placeholder?: string } & Saved<string | null>;
+  markdown: { kind: "markdown"; value: string | null; placeholder?: string; /** Offers `==highlight==`, drawn in a single colour. */ highlight?: boolean } & Saved<string | null>;
   /**
    * Free values, typed one by one (Enter or a comma adds one), `suggestions`
    * offered as they are typed; saved as the popover closes.

@@ -85,7 +85,7 @@ export function EditValue({ edit, bare }: { edit: DetailFieldEdit; bare?: boolea
         </a>
       );
     case "markdown":
-      return <Markdown source={edit.value!} />;
+      return <Markdown source={edit.value!} highlight={edit.highlight} />;
     case "tags":
       return (
         <span className="flex flex-wrap items-center gap-1 py-1">

@@ -10,6 +10,7 @@ import {
   EyeOffIcon,
   FileCheckIcon,
   FilePenIcon,
+  GitBranchIcon,
   HistoryIcon,
   ImageIcon,
   MegaphoneIcon,
@@ -297,6 +298,23 @@ export const releaseNoteColumns = (edit: boolean): DataTableColumn<AdminReleaseN
     numberColumn({ id: "concerned", header: "Concernés", icon: <UsersIcon />, sortable: true, value: (note) => note.concernedCount }),
     numberColumn({ id: "seen", header: "Vue par", icon: <EyeIcon />, sortable: true, value: (note) => (note.releasedAt ? note.seenCount : null), zero: true }),
     numberColumn({ id: "rate", header: "Lecture", icon: <PercentIcon />, sortable: true, value: rateOf, unit: "%", zero: true }),
+    textColumn({
+      id: "github",
+      header: "GitHub",
+      icon: <GitBranchIcon />,
+      // The tag of a release link, the whole link otherwise.
+      value: (note) => (note.githubUrl ? (/\/releases\/tag\/([^/?#]+)/.exec(note.githubUrl)?.[1] ?? note.githubUrl) : null),
+      href: (note) => note.githubUrl,
+      width: "max-w-48",
+      edit: (note) => ({
+        kind: "url",
+        ...fromRule(RELEASE_NOTE_RULES.githubUrl),
+        value: note.githubUrl,
+        placeholder: "https://github.com/…/releases/tag/v1.2.3",
+        locked,
+        onSave: (url) => saveNote(note, { githubUrl: url?.trim() || null }),
+      }),
+    }),
     textColumn({
       id: "summary",
       header: "Résumé",

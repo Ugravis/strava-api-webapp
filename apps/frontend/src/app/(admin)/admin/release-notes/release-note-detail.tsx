@@ -144,6 +144,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
             "concerned",
             "seen",
             "rate",
+            "github",
           ]}
         />
         <DetailFields>
@@ -182,7 +183,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
   );
 }
 
-const BLANK: ReleaseNoteDraft = { version: null, display: null, title: null, summary: null, new: null, improved: null, fixed: null, other: null, banner: null };
+const BLANK: ReleaseNoteDraft = { version: null, display: null, title: null, summary: null, new: null, improved: null, fixed: null, other: null, banner: null, githubUrl: null };
 
 /** A note written ahead for a version not out yet: a draft until made ready, nothing saved before « Créer ». */
 export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated }: { initial?: Partial<ReleaseNoteDraft>; currentVersion: string; onCancel: () => void; onCreated: (id: string) => void }) {
@@ -231,6 +232,7 @@ export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated
                 columns={releaseNoteColumns(true)}
                 ids={[
                   { id: "display", edit: form.bind("display", { kind: "select", options: displayOptions(version) }) },
+                  { id: "github", edit: form.bind("githubUrl", { kind: "url", placeholder: "https://github.com/…/releases/tag/v1.2.3" }) },
                   { id: "banner", edit: form.bind("banner", { kind: "image", accept: RELEASE_NOTE_BANNER_TYPES.join(","), maxSize: RELEASE_NOTE_BANNER_MAX_BYTES, noneLabel: "Retirer la bannière" }) },
                 ]}
               />

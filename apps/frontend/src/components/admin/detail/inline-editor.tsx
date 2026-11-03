@@ -9,7 +9,7 @@ import { type InlineEdit, isMultiline } from "./edit-types";
 import { ErrorBubble } from "./error-bubble";
 import { DetailFieldButton, FieldButtons } from "./field-buttons";
 import { draftOf, parse, useCommit } from "./field-edit";
-import { Markdown } from "./markdown";
+import { Markdown } from "@/components/markdown/markdown";
 import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
 
 /**

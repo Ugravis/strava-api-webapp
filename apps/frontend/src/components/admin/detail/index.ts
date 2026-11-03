@@ -11,7 +11,7 @@ export { DetailFields, DetailField } from "./field";
 export { DetailFieldButton } from "./field-buttons";
 export type { DetailEditKind, DetailEditOption, DetailFieldEdit } from "./edit-types";
 export { fromRule } from "./field-edit";
-export { Markdown } from "./markdown";
+export { Markdown } from "@/components/markdown/markdown";
 export { DetailCover, DetailHeader, DetailMedia } from "./header";
 export { DetailHistory, type DetailHistoryEvent } from "./history";
 export { LucideIconByName } from "./icon-picker";

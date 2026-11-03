@@ -11,7 +11,7 @@ import { ErrorBubble } from "./error-bubble";
 import { editEmpty, useCommit } from "./field-edit";
 import { SWITCH_ON } from "./field-buttons";
 import { LucideIconByName } from "./icon-picker";
-import { Markdown } from "./markdown";
+import { Markdown } from "@/components/markdown/markdown";
 
 /** An option as a list shows it: a pill of its tone, or its icon and label. */
 export function OptionLabel({ option }: { option: DetailEditOption }) {

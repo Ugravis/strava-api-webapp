@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { type DetailFieldEdit, type DraftBinding, type InlineEdit, isInline, isMultiline, type PickerEdit } from "./edit-types";
 import { EditValue } from "./edit-value";
 import { draftOf, editEmpty, parse } from "./field-edit";
-import { Markdown } from "./markdown";
+import { Markdown } from "@/components/markdown/markdown";
 import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
 import { PickerField } from "./field-picker";
 import { usePreview } from "./use-preview";

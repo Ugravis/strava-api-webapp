@@ -11,17 +11,19 @@ type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 /**
  * Back-office API client, for server components and Server Actions only:
  * `/api/admin` is never called by the browser (the proxy blocks it). The
- * session cookie is forwarded; the rate limit counts per admin.
+ * session cookie is forwarded; the rate limit counts per admin. A
+ * `FormData` body goes as is (a file), anything else as JSON.
  */
 export async function adminApi<T = void>(path: string, method: Method = "GET", json?: unknown): Promise<AdminApiResult<T>> {
+  const form = json instanceof FormData;
   const response = await fetch(`${API_URL}/api/admin${path}`, {
     method,
     headers: {
       Accept: "application/json",
       Cookie: (await cookies()).toString(),
-      ...(json !== undefined && { "Content-Type": "application/json" }),
+      ...(json !== undefined && !form && { "Content-Type": "application/json" }),
     },
-    body: json === undefined ? undefined : JSON.stringify(json),
+    body: json === undefined ? undefined : form ? json : JSON.stringify(json),
     cache: "no-store",
   });
   if (!response.ok) {

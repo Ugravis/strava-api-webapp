@@ -42,3 +42,27 @@ export interface AdminStatisticsResponse {
   };
   notifications: { read: number; unread: number };
 }
+
+/** A figure of the exploration of the community and what it gained each day. */
+export interface AdminExplorationFigure {
+  total: number;
+  /** Gained each UTC day of the statistics period, oldest first, by the date of the activities. */
+  daily: number[];
+}
+
+/**
+ * `GET /api/admin/statistics/exploration`: what the whole community
+ * explored, each tile, station or link counted once, whoever crossed it.
+ */
+export interface AdminExplorationResponse {
+  /** UTC days of the daily series, `YYYY-MM-DD`, oldest first. */
+  dates: string[];
+  /** Large tiles (zoom 14) crossed. */
+  tiles: AdminExplorationFigure;
+  /** Small tiles (zoom 17) crossed. */
+  smallTiles: AdminExplorationFigure;
+  /** Train stations visited, against all those imported. */
+  stations: AdminExplorationFigure & { imported: number };
+  /** Railway unlocked, a link once one user visited both its stations, in meters; against the whole imported railway. */
+  railwayM: AdminExplorationFigure & { imported: number };
+}

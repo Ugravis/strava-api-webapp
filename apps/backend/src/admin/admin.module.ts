@@ -54,6 +54,7 @@ import { AdminReservedUsernamesService } from './reserved-usernames/admin-reserv
 import { AdminSiteActivityController } from './site-activity/admin-site-activity.controller';
 import { AdminSiteActivityService } from './site-activity/admin-site-activity.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
+import { AdminExplorationService } from './statistics/admin-exploration.service';
 import { AdminStatisticsService } from './statistics/admin-statistics.service';
 import { AdminSystemController } from './system/admin-system.controller';
 import { AdminTeamController } from './team/admin-team.controller';
@@ -120,6 +121,7 @@ export const ADMIN_ROUTES = [
     AdminUsersService,
     AdminBootstrapService,
     AdminStatisticsService,
+    AdminExplorationService,
     AdminSiteActivityService,
     AdminBadgesService,
     AdminUserTagsService,

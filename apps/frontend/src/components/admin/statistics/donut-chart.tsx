@@ -19,6 +19,8 @@ interface DonutChartProps {
   totalLabel: string;
   label: string;
   emptyLabel: string;
+  /** Thin lines between the rows of the legend, as the lists of the dashboard. */
+  divided?: boolean;
 }
 
 const SIZE = 152;
@@ -34,7 +36,7 @@ const GAP = 3;
  * Parts of a whole as a ring, the total in its middle, beside a legend with
  * the figures; pointing at a segment or its row brings it forward.
  */
-export function DonutChart({ segments, totalLabel, label, emptyLabel }: DonutChartProps) {
+export function DonutChart({ segments, totalLabel, label, emptyLabel, divided = false }: DonutChartProps) {
   const format = useFormatter();
   const area = useRef<HTMLDivElement>(null);
   const { pointed, point, leave } = usePointed<string>(area);
@@ -91,12 +93,13 @@ export function DonutChart({ segments, totalLabel, label, emptyLabel }: DonutCha
         {total === 0 ? (
           <p className="text-sm text-muted-foreground">{emptyLabel}</p>
         ) : (
-          <ul className="flex w-full flex-col gap-1">
+          <ul className={cn("flex w-full flex-col", divided ? "divide-y" : "gap-1")}>
             {segments.map((segment) => (
               <li
                 key={segment.id}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                  "flex items-center gap-2 px-2 py-1.5 text-sm transition-colors",
+                  !divided && "rounded-md",
                   pointed === segment.id && "bg-muted",
                 )}
                 onPointerEnter={(event) => point(event, segment.id)}

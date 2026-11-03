@@ -34,11 +34,157 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "description": "Outils réservés à l'équipe, chaque action est consignée dans le journal d'audit.",
-    "roles": "Vos rôles",
-    "rolesDescription": "Chaque rôle donne aussi les droits des rôles inférieurs : support, puis admin, puis super-admin.",
-    "sections": "Outils",
-    "sectionsEmpty": "Les outils d'administration apparaîtront ici, selon vos rôles."
+    "seeAll": "Tout voir",
+    "error": "Données indisponibles pour le moment.",
+    "attention": {
+      "title": "À traiter",
+      "clear": "Rien à signaler.",
+      "clearDetail": "Base, déploiement, quota et journal sont en ordre.",
+      "migrations": "{count, plural, one {# migration en attente} other {# migrations en attente}}",
+      "migrationsDetail": "La base n'est pas au niveau du code déployé.",
+      "failures": "{count, plural, one {# action échouée} other {# actions échouées}} en 7 jours",
+      "failuresDetail": "Sur {week, plural, one {# action} other {# actions}} de l'équipe.",
+      "quota": "Quota Strava à {percent}",
+      "quotaDetail": "{used} lectures sur {limit} aujourd'hui.",
+      "maintenance": "Bannière de maintenance affichée",
+      "maintenanceDetail": "Visible sur tout le site jusqu'à son retrait.",
+      "signups": "Inscriptions fermées",
+      "signupsDetail": "Aucun nouveau compte ne peut être créé.",
+      "releaseNotes": "{count, plural, one {# version sans note prête} other {# versions sans note prête}}",
+      "releaseNotesDetail": "Ces mises à jour ne sont présentées à personne.",
+      "undeployed": "{count, plural, one {# commit de main non déployé} other {# commits de main non déployés}}",
+      "undeployedDetail": "La production a du retard sur main.",
+      "suspended": "{count, plural, one {# compte suspendu} other {# comptes suspendus}}",
+      "suspendedDetail": "Masqués du site le temps de leur suspension."
+    },
+    "kpis": {
+      "unavailable": "–",
+      "users": "Utilisateurs",
+      "usersDetail": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}} en 7 jours",
+      "active": "Actifs sur 7 jours",
+      "activeDetail": "Contre {value} la semaine d'avant",
+      "activities": "Activités",
+      "activitiesDetail": "{count, plural, =0 {Aucune synchronisée} one {# synchronisée} other {# synchronisées}} en 30 jours",
+      "quota": "Quota Strava du jour",
+      "quotaDetail": "{used} lectures sur {limit}",
+      "quotaUnknown": "Aucun appel aujourd'hui"
+    },
+    "signups": {
+      "title": "Inscriptions",
+      "description": "Comptes créés chaque jour, sur {days} jours",
+      "chart": "Inscriptions par jour sur {days} jours",
+      "series": "Inscriptions",
+      "total": "Inscriptions sur {days} jours",
+      "trend": "Vs période précédente"
+    },
+    "recentUsers": {
+      "title": "Derniers inscrits",
+      "empty": "Aucun compte pour l'instant.",
+      "strava": "Strava",
+      "suspended": "Suspendu",
+      "description": "{count} sur {total} avec Strava connecté",
+      "more": "Voir tous les utilisateurs"
+    },
+    "teamActivity": {
+      "title": "Activité de l'équipe",
+      "description": "{today, plural, =0 {Aucune action} one {# action} other {# actions}} en 24 h · {actors, plural, =0 {aucun membre actif} one {# membre actif} other {# membres actifs}} sur 7 jours",
+      "empty": "Aucune action consignée.",
+      "system": "Système",
+      "systemInitials": "SYS",
+      "deleted": "Compte supprimé",
+      "failed": "Échec",
+      "more": "Voir tous les logs"
+    },
+    "system": {
+      "title": "Système",
+      "commit": "Commit",
+      "unknown": "Inconnu",
+      "migrations": "Migrations",
+      "migrationsOk": "À jour",
+      "migrationsPending": "{count, plural, one {# en attente} other {# en attente}}",
+      "deployment": "Déploiement",
+      "deploymentOk": "À jour avec main",
+      "deploymentLate": "{count, plural, one {# commit de retard} other {# commits de retard}}",
+      "maintenance": "Bannière",
+      "maintenanceOn": "Affichée {since}",
+      "maintenanceOff": "Aucune",
+      "signups": "Inscriptions",
+      "signupsOn": "Ouvertes",
+      "signupsOff": "Fermées",
+      "environment": "Environnement"
+    },
+    "hero": {
+      "title": "Dashboard",
+      "description": "Vue d'ensemble du site et de l'équipe ; chaque action est consignée dans le journal d'audit.",
+      "role": "Rôle",
+      "roles": "Rôles",
+      "actions": "Mes actions",
+      "actionsValue": "{count, plural, =0 {Aucune} one {# consignée} other {# consignées}}",
+      "version": "Version",
+      "morning": "Bonjour {name}",
+      "evening": "Bonsoir {name}",
+      "pulse": "<strong>{actions, plural, =0 {Aucune action} one {# action} other {# actions}}</strong> de l'équipe en 24 h, <strong>{signups, plural, =0 {aucune inscription} one {# inscription} other {# inscriptions}}</strong> en 7 jours."
+    },
+    "days": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier"
+    },
+    "siteActivity": {
+      "title": "Activité du site",
+      "description": "Utilisateurs actifs chaque jour, sur {days} jours, équipe exclue",
+      "returning": "Habitués",
+      "new": "Nouveaux",
+      "views": "Pages vues",
+      "activeDays": "Jours-utilisateurs actifs",
+      "chart": "Utilisateurs actifs par jour sur {days} jours",
+      "total": "Actifs",
+      "legend": "Légende",
+      "descriptionTeam": "Utilisateurs actifs chaque jour, sur {days} jours, équipe comprise",
+      "teamSwitch": "Membres de l'équipe",
+      "withoutTeam": "Sans l'équipe",
+      "withTeam": "Avec l'équipe"
+    },
+    "exploration": {
+      "tiles": "Tuiles",
+      "smallTiles": "Petites tuiles",
+      "stations": "Gares",
+      "railway": "Réseau ferré",
+      "gained": "+{value} en {days} jours",
+      "ofTotal": "{share} des {total}",
+      "km": "{value} km"
+    },
+    "releaseNote": {
+      "title": "Note de release",
+      "description": "Version en ligne : v{version}",
+      "none": "Aucune note montrée pour l'instant.",
+      "version": "v{version}",
+      "seen": "Lue par {seen} sur {concerned} utilisateurs concernés",
+      "readShare": "Lue à {share}",
+      "published": "Publiées",
+      "upcoming": "À venir",
+      "missing": "Sans note"
+    },
+    "bands": {
+      "community": "Communauté",
+      "exploration": "Exploration de la communauté",
+      "activity": "Activité",
+      "operations": "Release et système",
+      "latest": "Derniers mouvements"
+    },
+    "topPages": {
+      "title": "Pages les plus vues",
+      "description": "Sur {days} jours, équipe exclue",
+      "descriptionTeam": "Sur {days} jours, équipe comprise",
+      "empty": "Aucune page vue sur la période.",
+      "figures": "{views} vues · {users, plural, one {# utilisateur} other {# utilisateurs}}"
+    },
+    "sports": {
+      "title": "Sports synchronisés",
+      "description": "Activités importées sur {days} jours",
+      "chart": "Activités synchronisées par famille de sports",
+      "total": "Activités",
+      "empty": "Aucune activité synchronisée."
+    }
   },
   "common": {
     "previous": "Précédent",

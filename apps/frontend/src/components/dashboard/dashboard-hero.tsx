@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/components/user/user-provider";
 import { routes } from "@/config/routes";
 import type { ActivitiesOverview, ActivityStats } from "@/lib/api/types";
 import { publicNameOf } from "@/lib/user";
+import { cn } from "@/lib/utils";
 
 /** Landmarks the lifetime totals are compared to. */
 const EARTH_CIRCUMFERENCE_M = 40_075_000;
@@ -139,12 +140,15 @@ export function DashboardHero({ stats, overview, welcome }: DashboardHeroProps) 
   );
 }
 
-/** A grid of tiles crossed by a railway, fading toward the left: a nod to the map. */
-export function HeroBackdrop({ id = "dashboard-hero-tiles" }: { id?: string }) {
+/**
+ * A grid of tiles crossed by a railway, fading toward the left: a nod to the
+ * map. `tone` colors the tiles, green as on the map by default.
+ */
+export function HeroBackdrop({ id = "dashboard-hero-tiles", tone = "text-green-500" }: { id?: string; tone?: string }) {
   return (
     <svg
       aria-hidden
-      className="absolute inset-y-0 right-0 -z-10 h-full w-2/3 text-green-500 mask-[linear-gradient(to_left,black,transparent)]"
+      className={cn("absolute inset-y-0 right-0 -z-10 h-full w-2/3 mask-[linear-gradient(to_left,black,transparent)]", tone)}
     >
       <defs>
         <pattern id={id} width="28" height="28" patternUnits="userSpaceOnUse">

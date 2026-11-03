@@ -10,7 +10,7 @@ const ROLE_COLORS: Record<AdminRole, string> = {
   "super-admin": "bg-violet-500/15 text-violet-700 dark:text-violet-300",
 };
 
-const ROLE_ICONS: Record<AdminRole, LucideIcon> = {
+export const ROLE_ICONS: Record<AdminRole, LucideIcon> = {
   support: ShieldIcon,
   admin: KeyRoundIcon,
   "super-admin": CrownIcon,

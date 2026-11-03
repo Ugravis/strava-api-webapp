@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { CommitsSkeleton } from "./commits-bits";
@@ -14,6 +15,7 @@ export default async function AdminDevelopmentLayout({ children }: { children: R
     <>
       <PageHeader title={t("title")} description={t("description")} />
       <Prototypes />
+      <Separator />
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="text-lg font-semibold">{commits("title")}</h2>

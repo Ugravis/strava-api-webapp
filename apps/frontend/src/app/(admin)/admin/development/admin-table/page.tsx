@@ -1,10 +1,12 @@
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { PocOrderTable } from "./poc-order";
+import { PocShots } from "./poc-shots";
 import { PocSettingsBar } from "./poc-settings";
 import { PocView } from "./poc-view";
 
@@ -20,8 +22,12 @@ export default async function AdminTablePocPage() {
       </Link>
       <PageHeader title={t("prototypes.adminTable.title")} description={t("prototypes.adminTable.liveHint")} />
       <PocSettingsBar />
+      <Separator />
       <PocView />
+      <Separator />
       <PocOrderTable />
+      <Separator />
+      <PocShots />
     </>
   );
 }

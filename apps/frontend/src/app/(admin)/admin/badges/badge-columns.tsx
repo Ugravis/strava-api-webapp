@@ -8,6 +8,7 @@ import {
   FingerprintIcon,
   FlagIcon,
   HeartIcon,
+  ImageIcon,
   LayersIcon,
   MedalIcon,
   PaletteIcon,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import {
   codeColumn,
+  customColumn,
   type DataTableColumn,
   dateColumn,
   editColumn,
@@ -28,7 +30,9 @@ import {
   statusColumn,
   textColumn,
 } from "@/components/admin/data-table";
+import { BadgeBanner } from "@/components/distances/badge-banner";
 import { BadgeIcon } from "@/components/distances/badge-icon";
+import { Skeleton } from "@/components/ui/skeleton";
 import { fromRule } from "@/components/admin/detail";
 import { saveTheme, setBadgeActive } from "./actions";
 import { bumpCatalog, FAMILIES, goalOf, LOCKS, METRICS, saveBadgeWith, themeOptions } from "./badge-bits";
@@ -41,6 +45,12 @@ export const STATUSES = {
   active: { label: "Actif", tone: "green" },
   inactive: { label: "Désactivé", tone: "gray" },
 } as const;
+
+/** The banner of the public detail of a badge: a cover, or a thumbnail when `small`. */
+export function AdminBadgeBanner({ badge, small, className }: { badge: Pick<AdminBadge, "icon" | "family" | "tiers" | "backgroundColor">; small?: boolean; className?: string }) {
+  const background = badge.backgroundColor ? { kind: "color" as const, color: badge.backgroundColor } : null;
+  return <BadgeBanner badge={{ ...badge, background }} small={small} className={className} />;
+}
 
 /** The name of a collection, its id when unknown. */
 export const themeNameOf = (themes: AdminBadgeTheme[], id: string | null) => (id ? (themes.find((theme) => theme.id === id)?.name ?? id) : null);
@@ -59,6 +69,16 @@ export function badgeColumns(themes: AdminBadgeTheme[], edit: boolean): DataTabl
       edit: (badge) => ({ kind: "text", ...fromRule(BADGE_RULES.name), value: badge.name, locked, onSave: (name) => saveBadgeWith(badge, { name: name?.trim() ?? "" }) }),
     }),
     codeColumn({ id: "id", header: "Identifiant", icon: <FingerprintIcon />, sortable: true, value: (badge) => badge.id }),
+    // The cover of a card once ticked.
+    customColumn({
+      id: "banner",
+      header: "Bannière",
+      icon: <ImageIcon />,
+      extra: true,
+      cell: (badge) => <AdminBadgeBanner badge={badge} small className="h-6 w-10 rounded-sm" />,
+      cover: (badge) => <AdminBadgeBanner badge={badge} className="w-full" />,
+      skeleton: <Skeleton className="h-6 w-10 rounded-sm" />,
+    }),
     pillsColumn({
       id: "theme",
       header: "Collection",

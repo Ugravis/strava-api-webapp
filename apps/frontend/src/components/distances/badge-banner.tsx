@@ -19,8 +19,8 @@ const RINGS = [36, 60, 84, 108, 132];
 /** What the banner draws: without `completions` (the catalog of the back office), the disc is full and uncounted. */
 type BannerBadge = Pick<DistanceBadge, "icon" | "family" | "background" | "tiers"> & Partial<Pick<DistanceBadge, "completions">>;
 
-/** Header picture of a badge: its icon on its own background or the colors of its family, full once obtained. */
-export function BadgeBanner({ badge, className }: { badge: BannerBadge; className?: string }) {
+/** Header picture of a badge: its icon on its own background or the colors of its family, full once obtained; `small` for a thumbnail. */
+export function BadgeBanner({ badge, small = false, className }: { badge: BannerBadge; small?: boolean; className?: string }) {
   const t = useTranslations("distances");
   const format = useFormatter();
   const completions = badge.completions ?? 0;
@@ -62,9 +62,10 @@ export function BadgeBanner({ badge, className }: { badge: BannerBadge; classNam
               : light
                 ? "border-2 border-dashed border-white/60 bg-white/10"
                 : "border-2 border-dashed border-black/40 bg-black/5",
+            small && "size-4.5 border shadow-none ring-0",
           )}
         >
-          <BadgeIcon icon={badge.icon} className="size-9" strokeWidth={1.75} aria-hidden />
+          <BadgeIcon icon={badge.icon} className={small ? "size-2.5" : "size-9"} strokeWidth={small ? 2.5 : 1.75} aria-hidden />
         </div>
         {counted && (
           <span

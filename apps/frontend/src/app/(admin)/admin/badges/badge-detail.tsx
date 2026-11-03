@@ -18,11 +18,10 @@ import {
   fromRule,
   type RowPanelControls,
 } from "@/components/admin/detail";
-import { BadgeBanner } from "@/components/distances/badge-banner";
 import { BADGE_ICON_KEYS } from "@/components/distances/badge-icon";
 import { createBadge, loadBadge } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteBadgeOf, FAMILY_OPTIONS, LOCKS, METRIC_OPTIONS, METRICS, saveBadgeWith, themeOptions, useCatalogVersion } from "./badge-bits";
-import { badgeColumns } from "./badge-columns";
+import { AdminBadgeBanner, badgeColumns } from "./badge-columns";
 import { shownAmount, storedAmount } from "./units";
 
 /** What a badge asks, as typed: amounts in the unit shown, tiers as typed. */
@@ -98,12 +97,6 @@ export function BadgeRowPanel({ id, themes, rights, panel }: { id: string; theme
   );
 }
 
-/** The banner of the public detail of a badge, at the height of a cover. */
-function AdminBadgeBanner({ badge }: { badge: Pick<AdminBadge, "icon" | "family" | "tiers" | "backgroundColor"> }) {
-  const background = badge.backgroundColor ? { kind: "color" as const, color: badge.backgroundColor } : null;
-  return <BadgeBanner badge={{ ...badge, background }} className="h-40 shrink-0" />;
-}
-
 /**
  * Everything about a badge, its fields edited in place, its objective as a
  * whole (the metric, the sports, the amount and the tiers hang on each
@@ -116,7 +109,7 @@ function BadgeDetail({ badge, themes, rights, panel }: { badge: AdminBadge; them
 
   return (
     <>
-      <AdminBadgeBanner badge={badge} />
+      <AdminBadgeBanner badge={badge} className="h-40 shrink-0" />
       <DetailHeader title={badge.name} subtitle={badge.id} />
       <DetailActions>
         <DetailAction
@@ -246,6 +239,7 @@ export function BadgeCreate({
           <>
             <AdminBadgeBanner
               badge={{ icon: values.icon ?? BADGE_ICON_KEYS[0], family: values.family ?? "all", tiers: null, backgroundColor: values.backgroundColor }}
+              className="h-40 shrink-0"
             />
             <DetailHeader
               title={values.name?.trim() || "Nouveau badge"}

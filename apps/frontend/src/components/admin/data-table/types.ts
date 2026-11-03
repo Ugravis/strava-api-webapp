@@ -41,6 +41,8 @@ export interface DataTableColumn<T> {
   href?: (row: T) => string | null;
   /** In cards, drawn as the cover at the top of the card instead of a value: the image of `imageColumn`. */
   cover?: (row: T) => ReactNode;
+  /** In no view: hidden until ticked in the « Colonnes » menu, in every view. */
+  extra?: boolean;
   className?: string;
 }
 

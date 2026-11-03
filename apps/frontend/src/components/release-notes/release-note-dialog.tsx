@@ -1,13 +1,13 @@
 "use client";
 
 import type { PublicReleaseNote } from "@kilotrace/shared";
-import { ChevronLeftIcon, ChevronRightIcon, SparklesIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { type ReactNode, type RefObject, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { ReleaseNoteSections, ReleaseVersionPill } from "./release-note-article";
+import { ReleaseNoteMeta, ReleaseNoteSections } from "./release-note-article";
 
 /**
  * The inside of the popup: the version and its title on a tinted band, its
@@ -21,12 +21,8 @@ export function ReleaseNoteCard({ note, footer, framed = false }: { note: Public
   const Description = framed ? DialogDescription : "p";
   return (
     <>
-      <div className="flex flex-col gap-2 border-b bg-linear-to-br from-violet-500/15 via-primary/5 to-transparent px-5 pt-5 pb-4">
-        <p className="flex items-center gap-1.5 text-xs font-medium text-violet-700 dark:text-violet-300">
-          <SparklesIcon className="size-3.5" aria-hidden />
-          {t("dialog.eyebrow")}
-          <ReleaseVersionPill version={note.version} className="ml-1" />
-        </p>
+      <div className="flex flex-col gap-2 border-b px-5 pt-5 pb-4">
+        <ReleaseNoteMeta note={note} className={framed ? "pr-8" : undefined} />
         <Title className="text-lg leading-snug font-semibold">{title}</Title>
         <Description className={note.summary ? "text-sm text-muted-foreground" : "sr-only"}>{note.summary || title}</Description>
       </div>

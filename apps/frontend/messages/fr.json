@@ -1262,13 +1262,12 @@
       "other": "Autres changements"
     },
     "dialog": {
-      "eyebrow": "Quoi de neuf ?",
       "previous": "Version précédente",
       "next": "Version suivante",
       "position": "{index} sur {count}",
       "close": "Fermer",
       "done": "C'est noté",
-      "history": "Toutes les nouveautés"
+      "history": "Historique"
     },
     "banner": {
       "label": "Nouveautés",

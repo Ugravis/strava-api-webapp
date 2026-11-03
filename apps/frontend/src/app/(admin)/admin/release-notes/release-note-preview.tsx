@@ -1,7 +1,7 @@
 "use client";
 
 import { hasReleaseNoteContent, type PublicReleaseNote, type ReleaseNoteDisplay } from "@kilotrace/shared";
-import { BellIcon, HistoryIcon, PanelTopIcon, SparklesIcon, SquareStackIcon } from "lucide-react";
+import { BellIcon, HistoryIcon, PanelTopIcon, MegaphoneIcon, SquareStackIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { ReleaseNoteArticle } from "@/components/release-notes/release-note-article";
@@ -110,7 +110,7 @@ function NotificationMock({ version }: { version: string }) {
     <div className="mx-auto w-full max-w-sm rounded-xl border bg-popover p-1 shadow-sm">
       <div className="flex items-start gap-3 rounded-md bg-rose-500/5 px-2 py-2 dark:bg-rose-500/10">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-500/15 text-violet-600 dark:text-violet-400">
-          <SparklesIcon className="size-4" aria-hidden />
+          <MegaphoneIcon className="size-4" aria-hidden />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-sm leading-snug">{t.rich("release_note", { version, b: (chunks) => <span className="font-semibold">{chunks}</span> })}</span>

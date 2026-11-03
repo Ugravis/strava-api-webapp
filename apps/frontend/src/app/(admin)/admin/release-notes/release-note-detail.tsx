@@ -128,6 +128,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
               stacked
               edit={{
                 kind: "markdown",
+                highlight: true,
                 ...fromRule(RELEASE_NOTE_RULES[section]),
                 value: note.sections[section],
                 placeholder: SECTION_FIELDS[section].placeholder,
@@ -205,7 +206,7 @@ export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated
                     label={SECTION_FIELDS[section].label}
                     icon={<SectionIcon section={section} />}
                     stacked
-                    edit={form.bind(section, { kind: "markdown", placeholder: SECTION_FIELDS[section].placeholder })}
+                    edit={form.bind(section, { kind: "markdown", highlight: true, placeholder: SECTION_FIELDS[section].placeholder })}
                   />
                 ))}
               </DetailFields>

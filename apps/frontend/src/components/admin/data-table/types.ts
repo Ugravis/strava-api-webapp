@@ -124,8 +124,8 @@ export interface DataTableConfig<T> {
   pageSize?: number;
   /**
    * Most height of the box of a table, which grows with its rows up to it:
-   * any CSS length, e.g. `"480px"` or `"calc(100dvh - 12rem)"`; 70vh by
-   * default. `"none"` lets it grow without a scroll of its own.
+   * any CSS length, e.g. `"480px"` or `"calc(100dvh - 12rem)"`. `"none"`
+   * by default: it grows without a scroll of its own, the page scrolls.
    */
   maxHeight?: string;
   /** Buttons on the selected rows, in a bar at the bottom; rows get checkboxes with it. */

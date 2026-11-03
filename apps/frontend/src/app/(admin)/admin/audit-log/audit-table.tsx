@@ -28,7 +28,10 @@ function copy(text: string, done: string) {
  * shows one again. A row opens the whole entry in the side panel, its users
  * too; `scope` keeps the entries of one author or one target.
  */
-export function AuditTable({ scope, superAdmin }: { scope: AuditScope; superAdmin: boolean }) {
+export function AuditTable({ scope: given, superAdmin }: { scope: AuditScope; superAdmin: boolean }) {
+  // A new object after every action (`refresh`): kept by value, so that the config, hence the rows, stay the same.
+  const { actor, target } = given;
+  const scope = useMemo(() => ({ actor, target }), [actor, target]);
   const version = useAuditVersion();
   // Entries and users share `?row=`: both uuids, they never meet.
   const openUser = useUserPanel();

@@ -26,7 +26,10 @@ function copy(text: string, done: string) {
  * member reads, `canEdit` adds members, changes their role or removes them,
  * never on one's own row.
  */
-export function TeamTable({ meId, canEdit, paths }: { meId: string | null; canEdit: boolean; paths: TeamPaths }) {
+export function TeamTable({ meId, canEdit, paths: given }: { meId: string | null; canEdit: boolean; paths: TeamPaths }) {
+  // A new object after every action (`refresh`): kept by value, so that the config, hence the rows, stay the same.
+  const { users, auditLog } = given;
+  const paths = useMemo(() => ({ users, auditLog }), [users, auditLog]);
   const router = useRouter();
   const version = useTeamVersion();
   const { ask, dialog } = useConfirmDialog();

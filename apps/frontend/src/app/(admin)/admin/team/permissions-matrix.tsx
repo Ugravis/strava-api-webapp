@@ -2,7 +2,7 @@
 
 import { CrownIcon, KeyRoundIcon, KeySquareIcon, LockIcon, ShapesIcon, ShieldCheckIcon, ShieldIcon, TextIcon } from "lucide-react";
 import { type MemoryTableSpec, serveTablePage, type TableQuery } from "@kilotrace/shared/table";
-import { type ReactNode, useCallback, useMemo, useRef } from "react";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import type { ActionResult } from "@/components/admin/action-state";
 import { customColumn, type DataTableColumn, type DataTableConfig, DataTable, editColumn } from "@/components/admin/data-table";
 import { DetailColumnFields, DetailField, DetailFields, DetailHeader, DetailLoader, DetailMedia, DetailSection, DetailSkeleton, useRowPanel } from "@/components/admin/detail";
@@ -58,11 +58,11 @@ const { useVersion: useGrantsVersion, bump: bumpGrants } = createVersion();
  * once, in the table as in the detail.
  */
 export function PermissionsMatrix({
-  categories,
+  categories: given,
   initial,
   canEdit,
-  labels,
-  save,
+  labels: givenLabels,
+  save: givenSave,
 }: {
   categories: MatrixCategory[];
   initial: MatrixGrants;
@@ -71,6 +71,11 @@ export function PermissionsMatrix({
   save: (grants: MatrixGrants) => Promise<ActionResult>;
 }) {
   const version = useGrantsVersion();
+  // The page is drawn again after every save (`refresh`), its props new objects of the same catalog and texts:
+  // kept from the first render, so that the config, hence the rows, stay the same.
+  const [categories] = useState(given);
+  const [labels] = useState(givenLabels);
+  const [save] = useState(() => givenSave);
   // The grants saved, read by the switches: one save at a time, each from the last one.
   const grants = useRef(initial);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
@@ -100,6 +105,7 @@ export function PermissionsMatrix({
         header: labels.roles[role],
         icon: ROLE_ICONS[role],
         className: "w-36",
+        bare: true,
         edit: (row) =>
           role === "super-admin"
             ? { kind: "switch", value: true, locked: SUPER_ADMIN_LOCK, onSave: async () => {} }

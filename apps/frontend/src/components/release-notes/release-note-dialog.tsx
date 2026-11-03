@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, type RefObject, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { ReleaseNoteMeta, ReleaseNoteSections } from "./release-note-article";
+import { ReleaseNoteCover, ReleaseNoteMeta, ReleaseNoteSections } from "./release-note-article";
 
 /**
  * The inside of the popup: the version and its title on a tinted band, its
@@ -21,6 +21,7 @@ export function ReleaseNoteCard({ note, footer, framed = false }: { note: Public
   const Description = framed ? DialogDescription : "p";
   return (
     <>
+      <ReleaseNoteCover url={note.bannerUrl} className="border-b" />
       <div className="flex flex-col gap-2 border-b px-5 pt-5 pb-4">
         <ReleaseNoteMeta note={note} className={framed ? "pr-8" : undefined} />
         <Title className="text-lg leading-snug font-semibold">{title}</Title>

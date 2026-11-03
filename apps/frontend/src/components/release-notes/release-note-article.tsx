@@ -16,6 +16,13 @@ export const RELEASE_NOTE_SECTION_LOOKS: Record<ReleaseNoteSection, { icon: Luci
   other: { icon: InfoIcon, className: "bg-muted text-muted-foreground" },
 };
 
+/** The image across the top of a note, in a wide frame whatever its size. */
+export function ReleaseNoteCover({ url, className }: { url: string | null; className?: string }) {
+  if (!url) return null;
+  // eslint-disable-next-line @next/next/no-img-element -- served by the API, already sized.
+  return <img src={url} alt="" className={cn("aspect-[3/1] w-full object-cover", className)} />;
+}
+
 /** « Nouveautés » on the left, « 25 octobre 2026 · v0.2.0 » on the right. */
 export function ReleaseNoteMeta({ note, className }: { note: Pick<PublicReleaseNote, "version" | "releasedAt">; className?: string }) {
   const t = useTranslations("releaseNotes");
@@ -65,6 +72,7 @@ export function ReleaseNoteArticle({ note, latest }: { note: PublicReleaseNote; 
   const t = useTranslations("releaseNotes");
   return (
     <article id={`v${note.version}`} className="flex scroll-mt-24 flex-col gap-4">
+      <ReleaseNoteCover url={note.bannerUrl} className="rounded-xl border" />
       <header className="flex flex-col gap-2">
         <ReleaseNoteMeta note={note} />
         <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight">

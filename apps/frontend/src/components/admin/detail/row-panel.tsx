@@ -55,10 +55,8 @@ export function useRowPanel<T>(options: RowPanelOptions<T>) {
   const { open, replace, close, setTitle, isOpen, activeId } = useSplitPanel();
   // The options of the last render, read by the controls, which stay stable.
   const latest = useRef(options);
-  const shown = useRef<string | null>(null);
   useLayoutEffect(() => {
     latest.current = options;
-    shown.current = isOpen ? activeId : null;
   });
   // The rows shown, in order, for the next one after a removal and for the titles.
   const rows = useRef<T[]>([]);
@@ -85,7 +83,8 @@ export function useRowPanel<T>(options: RowPanelOptions<T>) {
         else close();
       },
       renamed: (from, to) => {
-        if (shown.current === from) show(to, true);
+        // The URL itself: right after a draft is created, the search params read by the page may still name the draft.
+        if (new URLSearchParams(window.location.search).get("row") === from) show(to, true);
       },
       close,
     };

@@ -14,11 +14,12 @@ const FRONTEND_DEPENDENCIES: AdminDependencyVersion[] = [
   { name: "React", version: reactVersion },
 ];
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+/** A figure, its label over its value: tiles in a grid fill the width whatever their count. */
+function Tile({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-t py-2 first:border-t-0 first:pt-0 last:pb-0">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 truncate text-right font-medium">{children}</dd>
+    <div className="flex min-w-0 flex-col gap-0.5 rounded-lg border bg-muted/30 px-3 py-2">
+      <dt className="truncate text-xs text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 truncate text-sm font-medium">{children}</dd>
     </div>
   );
 }
@@ -33,11 +34,11 @@ export function DeploymentCard({ dev }: { dev: AdminDevResponse }) {
         <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent>
-        <dl className="text-sm">
-          <Row label={t("version")}>
+        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <Tile label={t("version")}>
             <span className="tabular-nums">{dev.version}</span>
-          </Row>
-          <Row label={t("commit")}>
+          </Tile>
+          <Tile label={t("commit")}>
             {dev.commit ? (
               <code className="font-mono text-xs" title={dev.commit}>
                 {dev.commit.slice(0, 12)}
@@ -45,11 +46,11 @@ export function DeploymentCard({ dev }: { dev: AdminDevResponse }) {
             ) : (
               <span className="font-normal text-muted-foreground">{t("noCommit")}</span>
             )}
-          </Row>
-          <Row label={t("environment")}>{dev.environment}</Row>
-          <Row label={t("startedAt")}>
+          </Tile>
+          <Tile label={t("environment")}>{dev.environment}</Tile>
+          <Tile label={t("startedAt")}>
             <span title={formatDateTime(dev.startedAt)}>{formatRelative(dev.startedAt)}</span>
-          </Row>
+          </Tile>
         </dl>
       </CardContent>
     </Card>
@@ -76,17 +77,17 @@ export function VersionsCard({ dependencies }: { dependencies: AdminDependencyVe
 function VersionList({ label, dependencies }: { label: string; dependencies: AdminDependencyVersion[] }) {
   const t = getAdminTranslations("dev.versions");
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <p className="text-xs font-medium text-muted-foreground uppercase">{label}</p>
-      <dl className="text-sm">
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         {dependencies.map((dependency) => (
-          <Row key={dependency.name} label={dependency.name}>
+          <Tile key={dependency.name} label={dependency.name}>
             {dependency.version ? (
               <span className="font-mono text-xs">{dependency.version}</span>
             ) : (
               <span className="font-normal text-muted-foreground">{t("unknown")}</span>
             )}
-          </Row>
+          </Tile>
         ))}
       </dl>
     </div>
@@ -122,10 +123,9 @@ export function DevSkeleton() {
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-56 w-full rounded-xl" />
-        <Skeleton className="h-56 w-full rounded-xl" />
-      </div>
+      <Skeleton className="h-36 w-full rounded-xl" />
+      <Skeleton className="h-64 w-full rounded-xl" />
+      <Skeleton className="h-px w-full" />
       <Skeleton className="h-72 w-full rounded-xl" />
     </div>
   );

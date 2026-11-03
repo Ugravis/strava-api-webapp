@@ -103,6 +103,20 @@ export class AdminTeamService {
     return mapTablePage(page, (users) => this.membersOf(users));
   }
 
+  /** One member of the team. */
+  async member(id: string): Promise<AdminTeamMember> {
+    const user = await this.users
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id })
+      .andWhere(`(${ADMIN_ROLES.map(hasRole).join(' OR ')})`)
+      .getOne();
+    if (!user) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'Not a team member');
+    }
+    const [member] = await this.membersOf([user]);
+    return member;
+  }
+
   /** The members in the shape of the API, in the order of `users`. */
   private async membersOf(users: User[]): Promise<AdminTeamMember[]> {
     const lastSeen = users.length

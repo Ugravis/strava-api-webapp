@@ -1,44 +1,20 @@
 "use client";
 
-import { ADMIN_COMMIT_KINDS, type AdminCommit, type AdminCommitKind } from "@kilotrace/shared/admin";
-import { CircleDotIcon, ClockIcon, GitCommitHorizontalIcon, GitMergeIcon, GitPullRequestIcon, HashIcon, RocketIcon, UserPenIcon } from "lucide-react";
+import { ADMIN_COMMIT_KINDS, type AdminCommit } from "@kilotrace/shared/admin";
 import { useMemo } from "react";
-import {
-  codeColumn,
-  customColumn,
-  type DataTableConfig,
-  DataTable,
-  dateColumn,
-  LinkCell,
-  lookColumn,
-  Mark,
-  statusColumn,
-  type Tone,
-  userColumn,
-} from "@/components/admin/data-table";
-import { fetchCommitsTable } from "./actions";
+import { type DataTableConfig, DataTable } from "@/components/admin/data-table";
+import { useRowPanel } from "@/components/admin/detail";
+import { fetchCommitsTable, loadCommit } from "./actions";
+import { commitColumns, KINDS } from "./commits-columns";
+import { CommitRowPanel } from "./commits-detail";
 
-/** The icon of the commit in the colour of its kind, as the dots of « Type » (blue-500, violet-500); a plain commit stays grey. */
-const ICON_COLORS: Record<AdminCommitKind, string | null> = { release: "#3b82f6", merge: "#8b5cf6", commit: null };
-
-const KINDS: Record<AdminCommitKind, { label: string; tone: Tone }> = {
-  release: { label: "Release", tone: "blue" },
-  merge: { label: "Merge", tone: "violet" },
-  commit: { label: "Commit", tone: "gray" },
-};
-
-/** The pull request on GitHub, next to the commit in the same repository. */
-const pullRequestHref = (commit: AdminCommit) => (commit.pullRequest === null ? null : commit.url.replace(/\/commit\/\w+$/, `/pull/${commit.pullRequest}`));
-
-/** The commits of `main` or `develop`, a view each, latest first; `deployed` marks the one in production. */
+/** The commits of `main` or `develop`, a view each, latest first, opened in the side panel; `deployed` marks the one in production. */
 export function CommitsTable({ deployed }: { deployed: string | null }) {
-  const config = useMemo<DataTableConfig<AdminCommit>>(() => {
-    const isDeployed = (commit: AdminCommit) => !!deployed && commit.sha.startsWith(deployed);
-    return {
+  const config = useMemo<DataTableConfig<AdminCommit>>(
+    () => ({
       id: "commits",
       fetch: fetchCommitsTable,
       rowId: (commit) => commit.sha,
-      onOpen: (commit) => window.open(commit.url, "_blank", "noopener"),
       noun: (count) => (count > 1 ? "commits" : "commit"),
       empty: { title: "Aucun commit", description: "L'historique de main apparaîtra ici." },
       search: "Titre, auteur, SHA ou #PR",
@@ -47,44 +23,21 @@ export function CommitsTable({ deployed }: { deployed: string | null }) {
         { id: "main", label: "Branche main", params: { branch: "main" } },
         { id: "develop", label: "Branche develop", params: { branch: "develop" } },
       ],
-      columns: [
-        lookColumn({
-          id: "title",
-          header: "Commit",
-          icon: <GitCommitHorizontalIcon />,
-          sortable: true,
-          href: (commit) => commit.url,
-          value: (commit) => ({ icon: commit.kind !== "commit" ? <GitMergeIcon /> : <GitCommitHorizontalIcon />, name: commit.title, color: ICON_COLORS[commit.kind] }),
-          marks: (commit) => isDeployed(commit) && <Mark label="Déployé" tone="green" icon={<RocketIcon />} />,
-        }),
-        statusColumn({ id: "kind", header: "Type", icon: <CircleDotIcon />, value: (commit) => commit.kind, statuses: KINDS }),
-        customColumn({
-          id: "pullRequest",
-          header: "Pull request",
-          icon: <GitPullRequestIcon />,
-          sortable: true,
-          cell: (commit) => <LinkCell href={pullRequestHref(commit)}>#{commit.pullRequest}</LinkCell>,
-          copy: (commit) => (commit.pullRequest === null ? null : `#${commit.pullRequest}`),
-        }),
-        userColumn({
-          id: "author",
-          header: "Auteur",
-          icon: <UserPenIcon />,
-          sortable: true,
-          locked: false,
-          href: (commit) => (commit.login ? `https://github.com/${commit.login}` : null),
-          value: (commit) => (commit.login ? { username: commit.login, displayName: commit.author, avatarUrl: commit.avatarUrl } : null),
-        }),
-        dateColumn({ id: "date", header: "Date", icon: <ClockIcon />, sortable: true, value: (commit) => commit.date, relative: true }),
-        codeColumn({ id: "sha", header: "SHA", icon: <HashIcon />, value: (commit) => commit.sha.slice(0, 7), href: (commit) => commit.url, width: "max-w-20" }),
-      ],
+      columns: commitColumns(deployed),
       facets: [{ id: "kind", label: "Type", options: ADMIN_COMMIT_KINDS.map((kind) => ({ value: kind, label: KINDS[kind].label })) }],
       groupings: [
         // Keys sent in the order of the kinds: their rank.
         { id: "kind", label: "Type", title: (key) => KINDS[ADMIN_COMMIT_KINDS[Number(key)] ?? "commit"].label },
         { id: "author", label: "Auteur", title: (key) => (key ? `@${key}` : "Sans compte GitHub") },
       ],
-    };
-  }, [deployed]);
-  return <DataTable config={config} />;
+    }),
+    [deployed],
+  );
+  const panel = useRowPanel<AdminCommit>({
+    config,
+    title: (commit) => commit.title,
+    load: loadCommit,
+    detail: (sha) => <CommitRowPanel sha={sha} deployed={deployed} />,
+  });
+  return <DataTable {...panel.table} />;
 }

@@ -41,7 +41,7 @@ export default async function AdminTeamPage() {
               <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} />
             ))}
           </div>
-          <TeamTable meId={me?.id ?? null} canEdit={canEdit} usersPath={adminRoutes.users} auditLogPath={adminRoutes.auditLog} />
+          <TeamTable meId={me?.id ?? null} canEdit={canEdit} paths={{ users: adminRoutes.users, auditLog: adminRoutes.auditLog }} />
         </>
       ) : (
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>
@@ -65,9 +65,6 @@ export default async function AdminTeamPage() {
                 "super-admin": getAdminTranslations("roles")("super-admin"),
               },
               locked: t("permissions.locked"),
-              unsaved: t("permissions.unsaved"),
-              save: t("permissions.save"),
-              reset: t("permissions.reset"),
             }}
             save={savePermissions}
           />

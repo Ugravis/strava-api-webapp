@@ -197,9 +197,11 @@ export function orderColumn<T>({ value, icon = <GripVerticalIcon />, ...base }: 
 /**
  * A value drawn as its edit draws it, and edited in place: a colour, an icon,
  * a switch, kinds without a cell of their own. Copied as the edit copies it.
+ * `bare`: the cell without its words, e.g. a switch without « Oui » / « Non »;
+ * its detail keeps them.
  */
-export function editColumn<T>({ edit, ...base }: Omit<Base<T>, "edit"> & { edit: (row: T) => DetailFieldEdit }): DataTableColumn<T> {
-  return { ...base, edit, cell: (row) => <EditValue edit={edit(row)} />, copy: (row) => editCopy(edit(row)), skeleton: <Skeleton className="h-5 w-16" /> };
+export function editColumn<T>({ edit, bare, ...base }: Omit<Base<T>, "edit"> & { edit: (row: T) => DetailFieldEdit; bare?: boolean }): DataTableColumn<T> {
+  return { ...base, edit, cell: (row) => <EditValue edit={edit(row)} bare={bare} />, ...(bare && { detailCell: (row: T) => <EditValue edit={edit(row)} /> }), copy: (row) => editCopy(edit(row)), skeleton: <Skeleton className="h-5 w-16" /> };
 }
 
 /** Anything else: its own cell, still with the copy and skeleton of the kit when given. */

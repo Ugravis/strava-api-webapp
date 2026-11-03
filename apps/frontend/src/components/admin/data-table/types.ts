@@ -13,6 +13,8 @@ export interface DataTableColumn<T> {
   /** Before the name of the column: a lucide icon, required by the rules. */
   icon: ReactNode;
   cell: (row: T) => ReactNode;
+  /** Drawn in the detail instead of `cell`, e.g. a switch with the words its cell leaves out. */
+  detailCell?: (row: T) => ReactNode;
   /** The server knows how to sort by it. */
   sortable?: boolean;
   /** Shape of its cells while loading, a bar by default. */

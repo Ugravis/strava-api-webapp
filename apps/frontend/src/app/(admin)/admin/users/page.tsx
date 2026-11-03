@@ -34,7 +34,7 @@ export default async function AdminUsersPage() {
           <StatTile icon={BanIcon} label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} />
         </div>
       )}
-      <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} tagsPath={adminRoutes.userTags} />
+      <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
     </>
   );
 }

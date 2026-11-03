@@ -169,6 +169,16 @@ export class AdminAuditLogService {
     return mapTablePage(page, (rows) => this.entriesOf(rows, withHidden));
   }
 
+  /** One entry, a masked one only `withHidden`. */
+  async entry(id: string, withHidden: boolean): Promise<AuditLogEntry> {
+    const row = await this.entries.findOneBy({ id });
+    if (!row || (row.hiddenAt && !withHidden)) {
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'Entry not found');
+    }
+    const [entry] = await this.entriesOf([row], withHidden);
+    return entry;
+  }
+
   /** The entries in the shape of the API, their users read at once. */
   private async entriesOf(
     rows: AdminAuditLog[],

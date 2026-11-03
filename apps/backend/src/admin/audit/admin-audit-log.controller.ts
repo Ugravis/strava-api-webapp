@@ -53,6 +53,18 @@ export class AdminAuditLogController {
     );
   }
 
+  @Get(':id')
+  @AnyMember()
+  async entry(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<AuditLogEntry> {
+    return this.audit.entry(
+      id,
+      await this.permissions.can(user.roles, 'audit.hide'),
+    );
+  }
+
   /** Masking leaves no entry: recorded, it would show what it hides. */
   @Put(':id/hidden')
   @Permission('audit.hide')

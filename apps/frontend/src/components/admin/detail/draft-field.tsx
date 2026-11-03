@@ -4,6 +4,7 @@ import { ChevronDownIcon, EyeIcon, LockIcon, PencilIcon } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { SWITCH_ON } from "./field-buttons";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { type DetailFieldEdit, type DraftBinding, type InlineEdit, isInline, isMultiline, type PickerEdit } from "./edit-types";
@@ -45,7 +46,7 @@ export function DraftValue({ edit, label }: { edit: Bound<DetailFieldEdit>; labe
         <DraftInline edit={edit as Bound<InlineEdit>} label={label} />
       ) : edit.kind === "switch" ? (
         <span className="flex h-8 items-center gap-2">
-          <Switch checked={edit.value} disabled={edit.draft.disabled} onCheckedChange={(next) => void edit.onSave(next)} aria-label={label} />
+          <Switch checked={edit.value} disabled={edit.draft.disabled} onCheckedChange={(next) => void edit.onSave(next)} aria-label={label} className={SWITCH_ON} />
           <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span>
         </span>
       ) : (

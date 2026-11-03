@@ -10,9 +10,12 @@ import {
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@/components/admin/action-state";
 import type { TableMove } from "@/components/admin/data-table";
+import { getAdminMe } from "@/lib/admin/access";
 import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
+import { adminRoutes } from "@/lib/admin/navigation";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
+import type { UserTagRights } from "./user-tag-bits";
 
 /** The accounts of a tag loaded at once in its detail. */
 const HOLDERS_PAGE = 10;
@@ -26,6 +29,21 @@ export async function fetchUserTagsTable(query: TableQuery): Promise<TablePage<A
 export async function loadUserTag(id: string): Promise<AdminUserTag | null> {
   if (!ADMIN_BADGE_SLUG.test(id)) return null;
   return fetchAdminRow<AdminUserTag>("/user-tags/table", id, (userTag) => userTag.id);
+}
+
+/** What a tag opened outside its page needs: the rights of the member, the pages it links to. */
+export async function loadUserTagContext(): Promise<{ rights: UserTagRights; tagsPath: string; usersPath: string }> {
+  const me = await getAdminMe();
+  if (!me) throw new Error("No member");
+  return {
+    rights: {
+      create: me.permissions.includes("userTags.create"),
+      edit: me.permissions.includes("userTags.edit"),
+      delete: me.permissions.includes("userTags.delete"),
+    },
+    tagsPath: adminRoutes.userTags,
+    usersPath: adminRoutes.users,
+  };
 }
 
 /*

@@ -76,7 +76,7 @@ export function badgeColumns(themes: AdminBadgeTheme[], edit: boolean): DataTabl
       icon: <ImageIcon />,
       extra: true,
       cell: (badge) => <AdminBadgeBanner badge={badge} small className="h-6 w-10 rounded-sm" />,
-      cover: (badge) => <AdminBadgeBanner badge={badge} className="w-full" />,
+      cover: (badge) => <AdminBadgeBanner badge={badge} className="w-full shrink-0 rounded-t-xl border-b" />,
       skeleton: <Skeleton className="h-6 w-10 rounded-sm" />,
     }),
     pillsColumn({

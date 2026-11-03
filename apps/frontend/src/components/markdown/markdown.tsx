@@ -7,9 +7,10 @@ import { Fragment, type ReactNode } from "react";
  * once asked for.
  */
 
-const INLINE = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
-const INLINE_HIGHLIGHT = /(==[^=]+==|\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
-const SAFE_LINK = /^(https?:|mailto:)/i;
+/** The inline marks: bold, italics, code, links; with `==highlights==` in the second. */
+export const INLINE = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
+export const INLINE_HIGHLIGHT = /(==[^=]+==|\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/g;
+export const SAFE_LINK = /^(https?:|mailto:)/i;
 
 function inline(text: string, highlight = false): ReactNode[] {
   return text.split(highlight ? INLINE_HIGHLIGHT : INLINE).map((part, at) => {

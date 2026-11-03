@@ -1275,6 +1275,7 @@
       "more": "{count, plural, =0 {} one {et # autre version} other {et # autres versions}}",
       "open": "Voir les nouveautés",
       "close": "Fermer"
-    }
+    },
+    "pdfFooter": "Kilotrace · Notes de version"
   }
 }

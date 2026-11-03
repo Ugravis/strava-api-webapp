@@ -3,6 +3,7 @@ import { type ReactNode, Suspense } from "react";
 import { FollowsSummaryProvider } from "@/components/community/follows-summary-provider";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
+import { ReleaseNotesNotice } from "@/components/release-notes/release-notes-notice";
 import { MaintenanceNotice } from "@/components/system/maintenance-notice";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
@@ -32,6 +33,7 @@ export async function AppShell({ children, ...slots }: AppSidebarSlots & { child
                 <Suspense fallback={null}>
                   <MaintenanceNotice />
                 </Suspense>
+                <ReleaseNotesNotice />
                 <AppHeader />
                 {children}
               </SidebarInset>

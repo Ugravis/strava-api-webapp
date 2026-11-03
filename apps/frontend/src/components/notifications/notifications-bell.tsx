@@ -1,6 +1,6 @@
 "use client";
 
-import { BellIcon, HeartIcon, ShieldIcon } from "lucide-react";
+import { BellIcon, HeartIcon, ShieldIcon, MegaphoneIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useNow, useTranslations } from "next-intl";
@@ -225,6 +225,10 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
     >
       {actor ? (
         <UserAvatar user={actor} className="size-8" />
+      ) : notification.type === "release_note" ? (
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-500/15 text-violet-600 dark:text-violet-400">
+          <MegaphoneIcon className="size-4" aria-label={t("release")} />
+        </span>
       ) : fromTeam ? (
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
           <ShieldIcon className="size-4" aria-label={t("team")} />
@@ -241,6 +245,7 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
             fields: format.list((details?.fields ?? []).map((field) => t(`fields.${field}`))),
             role: details?.role ?? "none",
             roleName: details?.role ? t(`roles.${details.role}`) : "",
+            version: details?.version ?? "",
             b: (chunks) => (
               <span className="font-semibold underline-offset-2 hover:underline">
                 {chunks}

@@ -9,7 +9,7 @@ import { type InlineEdit, isMultiline } from "./edit-types";
 import { ErrorBubble } from "./error-bubble";
 import { DetailFieldButton, FieldButtons } from "./field-buttons";
 import { draftOf, parse, useCommit } from "./field-edit";
-import { Markdown } from "./markdown";
+import { Markdown } from "@/components/markdown/markdown";
 import { MarkdownToolbar, markdownShortcut } from "./markdown-toolbar";
 
 /**
@@ -68,9 +68,9 @@ export function InlineEditor({ edit, label, onClose }: { edit: InlineEdit; label
       {edit.kind === "markdown" ? (
         // Its shaping buttons above it, beside the ✓ and ✕ of the field.
         <div className="flex flex-col gap-1">
-          <MarkdownToolbar field={preview ? null : (anchor as HTMLTextAreaElement | null)} onChange={type} disabled={saving || preview} className="mt-1 mr-22" />
+          <MarkdownToolbar field={preview ? null : (anchor as HTMLTextAreaElement | null)} onChange={type} disabled={saving || preview} highlight={edit.highlight} className="mt-1 mr-22" />
           {preview ? (
-            <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{draft.trim() ? <Markdown source={draft} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
+            <div className="min-h-20 rounded-lg border px-2.5 py-1 text-sm">{draft.trim() ? <Markdown source={draft} highlight={edit.highlight} /> : <span className="text-muted-foreground">Rien à afficher</span>}</div>
           ) : (
             <Textarea {...field} placeholder={edit.placeholder} className="min-h-24 text-sm" />
           )}

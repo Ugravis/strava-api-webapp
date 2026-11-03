@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { routes, userProfileHref } from "@/config/routes";
+import { releaseNoteHref, routes, userProfileHref } from "@/config/routes";
 import type {
   AppNotification,
   NotificationCategory,
@@ -19,10 +19,11 @@ import { NOTIFICATIONS_STREAM_URL, notificationsService } from "@/services/notif
  * Where a notification leads: the profile of its actor, the own one for an
  * anonymous like, the settings for a notice of the team.
  */
-export function notificationHref({ type, actor }: AppNotification): string {
+export function notificationHref({ type, actor, details }: AppNotification): string {
   if (type === "moderation") return routes.settingsProfile;
   if (type === "strava_unlinked") return routes.settings;
   if (type === "role_changed") return routes.dashboard;
+  if (type === "release_note") return releaseNoteHref(details?.version);
   return actor ? userProfileHref(actor.username) : routes.profiles;
 }
 

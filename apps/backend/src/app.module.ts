@@ -23,6 +23,7 @@ import profilesConfig from './config/profiles.config';
 import stravaConfig from './config/strava.config';
 import { HealthController } from './health/health.controller';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReleaseNotesModule } from './release-notes/release-notes.module';
 import { StationsModule } from './stations/stations.module';
 import { StravaModule } from './strava/strava.module';
 import { SystemModule } from './system/system.module';
@@ -62,6 +63,7 @@ import { UsersModule } from './users/users.module';
     FollowsModule,
     NotificationsModule,
     SystemModule,
+    ReleaseNotesModule,
     AdminModule,
     ApiIndexModule.forEnvironment(),
     // Temporary development tools, never loaded in production.

@@ -13,6 +13,9 @@ import {
   CircleDotIcon,
   CrownIcon,
   DoorOpenIcon,
+  EyeOffIcon,
+  FilePenIcon,
+  FilePlusIcon,
   FileXIcon,
   FolderPenIcon,
   FolderPlusIcon,
@@ -40,6 +43,8 @@ import {
   UserRoundPlusIcon,
   UserXIcon,
   ZapIcon,
+  ImageIcon,
+  SendIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { codeColumn, type DataTableColumn, dateColumn, lookColumn, statusColumn, textColumn, type Tone, userColumn } from "@/components/admin/data-table";
@@ -100,6 +105,12 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   "userTags.update": <PencilIcon />,
   "userTags.delete": <Trash2Icon />,
   "userTags.reorder": <ArrowUpDownIcon />,
+  "releaseNotes.create": <FilePlusIcon />,
+  "releaseNotes.update": <FilePenIcon />,
+  "releaseNotes.status": <SendIcon />,
+  "releaseNotes.delete": <FileXIcon />,
+  "releaseNotes.active": <EyeOffIcon />,
+  "releaseNotes.banner": <ImageIcon />,
   "system.maintenance.set": <MegaphoneIcon />,
   "system.maintenance.clear": <MegaphoneOffIcon />,
   "system.signups": <UserLockIcon />,

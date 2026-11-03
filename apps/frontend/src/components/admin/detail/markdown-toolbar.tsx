@@ -1,6 +1,6 @@
 "use client";
 
-import { BoldIcon, CodeIcon, Heading2Icon, ItalicIcon, LinkIcon, ListIcon, ListOrderedIcon, QuoteIcon } from "lucide-react";
+import { BoldIcon, CodeIcon, Heading2Icon, HighlighterIcon, ItalicIcon, LinkIcon, ListIcon, ListOrderedIcon, QuoteIcon } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { Tip } from "@/components/admin/data-table";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,7 @@ function link(text: string, start: number, end: number): Change {
 const ACTIONS: { id: string; label: string; icon: ReactNode; keys?: string; apply: (text: string, start: number, end: number) => Change }[] = [
   { id: "bold", label: "Gras", icon: <BoldIcon />, keys: "b", apply: (text, start, end) => wrap(text, start, end, "**") },
   { id: "italic", label: "Italique", icon: <ItalicIcon />, keys: "i", apply: (text, start, end) => wrap(text, start, end, "*") },
+  { id: "highlight", label: "Surligner", icon: <HighlighterIcon />, apply: (text, start, end) => wrap(text, start, end, "==") },
   { id: "code", label: "Code", icon: <CodeIcon />, apply: (text, start, end) => wrap(text, start, end, "`") },
   { id: "link", label: "Lien", icon: <LinkIcon />, keys: "k", apply: link },
   { id: "title", label: "Titre", icon: <Heading2Icon />, apply: (text, start, end) => lines(text, start, end, () => "## ", /^#{1,3}\s+/) },
@@ -72,15 +73,16 @@ export function markdownShortcut(event: KeyboardEvent<HTMLTextAreaElement>, onCh
 
 /**
  * The buttons above the field `field` (a textarea), each named in a bubble
- * (its shortcut too); `aside` on the right, e.g. the preview. Pressed
+ * (its shortcut too); `aside` on the right, e.g. the preview; `highlight`
+ * offers the highlighter. Pressed
  * without taking the focus from the field, which would save it.
  */
-export function MarkdownToolbar({ field, onChange, disabled, aside, className }: { field: HTMLTextAreaElement | null; onChange: (text: string) => void; disabled?: boolean; aside?: ReactNode; className?: string }) {
+export function MarkdownToolbar({ field, onChange, disabled, aside, highlight, className }: { field: HTMLTextAreaElement | null; onChange: (text: string) => void; disabled?: boolean; aside?: ReactNode; highlight?: boolean; className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       {/* In the scale of the buttons floating beside it (✓, ✕, copy): as tall, its icons as large. */}
       <div role="toolbar" aria-label="Mise en forme" className="flex h-6 min-w-0 items-center overflow-x-auto rounded-md border bg-background shadow-xs [scrollbar-width:none]">
-        {ACTIONS.map((action) => (
+        {ACTIONS.filter((action) => highlight || action.id !== "highlight").map((action) => (
           <Tip key={action.id} label={action.keys ? `${action.label} (⌘ ${action.keys.toUpperCase()})` : action.label}>
             <button
               type="button"

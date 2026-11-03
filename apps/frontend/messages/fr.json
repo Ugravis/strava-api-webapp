@@ -189,7 +189,8 @@
     "openMenu": "Ouvrir le menu",
     "collapseMenu": "Réduire le menu",
     "expandMenu": "Agrandir le menu",
-    "userMenu": "Menu du compte"
+    "userMenu": "Menu du compte",
+    "releaseNotes": "Nouveautés"
   },
   "theme": {
     "toggle": "Changer de thème",
@@ -1177,7 +1178,8 @@
       "profile_like": "Quelqu'un a aimé votre profil.",
       "moderation": "L'équipe a modéré votre profil.",
       "strava_unlinked": "L'équipe a délié votre compte Strava.",
-      "role_changed": "Votre rôle dans l'équipe a changé."
+      "role_changed": "Votre rôle dans l'équipe a changé.",
+      "release_note": "Une nouvelle version est disponible."
     },
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
@@ -1211,7 +1213,9 @@
       "week": "Cette semaine",
       "month": "Ce mois-ci",
       "older": "Plus ancien"
-    }
+    },
+    "release_note": "Nouveautés de la version <b>{version}</b> : découvrez ce qui change.",
+    "release": "Nouveautés"
   },
   "footer": {
     "label": "Pied de page",
@@ -1240,5 +1244,38 @@
     "more": "Voir plus",
     "less": "Voir moins",
     "close": "Masquer le bandeau"
+  },
+  "releaseNotes": {
+    "title": "Nouveautés",
+    "description": "Ce qui change sur le site, version après version.",
+    "empty": "Aucune note de version pour l'instant.",
+    "error": "Les nouveautés n'ont pas pu être chargées.",
+    "retry": "Réessayer",
+    "version": "Version {version}",
+    "latest": "Dernière version",
+    "new": "Nouveau",
+    "releasedOn": "Sortie le {date}",
+    "sections": {
+      "new": "Nouveautés",
+      "improved": "Améliorations",
+      "fixed": "Corrections",
+      "other": "Autres changements"
+    },
+    "dialog": {
+      "previous": "Version précédente",
+      "next": "Version suivante",
+      "position": "{index} sur {count}",
+      "close": "Fermer",
+      "done": "C'est noté",
+      "history": "Historique"
+    },
+    "banner": {
+      "label": "Nouveautés",
+      "fallback": "La version {version} est disponible.",
+      "more": "{count, plural, =0 {} one {et # autre version} other {et # autres versions}}",
+      "open": "Voir les nouveautés",
+      "close": "Fermer"
+    },
+    "pdfFooter": "Kilotrace · Notes de version"
   }
 }

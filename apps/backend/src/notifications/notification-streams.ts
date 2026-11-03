@@ -33,6 +33,11 @@ export class NotificationStreams {
     return merge(events, heartbeat);
   }
 
+  /** Users with at least one open stream. */
+  connected(): string[] {
+    return [...this.listeners.keys()];
+  }
+
   /** Sends an event to every open stream of the user, if any. */
   send(userId: string, data: object): void {
     this.listeners.get(userId)?.forEach((listener) => listener(data));

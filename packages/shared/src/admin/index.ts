@@ -9,6 +9,7 @@ export * from "./user-tags";
 export * from "./me";
 export * from "./navigation";
 export * from "./permissions";
+export * from "./release-notes";
 export * from "./reserved-usernames";
 export * from "./roles";
 export * from "./statistics";

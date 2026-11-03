@@ -606,7 +606,8 @@ export type NotificationType =
   | "profile_like"
   | "moderation"
   | "strava_unlinked"
-  | "role_changed";
+  | "role_changed"
+  | "release_note";
 
 /** Back-office role told by a `role_changed` notification. */
 export type TeamRole = "support" | "admin" | "super-admin";
@@ -620,7 +621,7 @@ export interface AppNotification {
   /** Null for an anonymous kind (who liked a profile is never told) and for the team. */
   actor: PublicUser | null;
   /** Said by the team: the reason, and the fields reset by a moderation. */
-  details: { reason?: string; fields?: ModeratedField[]; role?: TeamRole | null } | null;
+  details: { reason?: string; fields?: ModeratedField[]; role?: TeamRole | null; version?: string } | null;
   read: boolean;
   createdAt: string;
   /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */

@@ -15,6 +15,8 @@ import { BadgeTheme } from '../distances/badge-theme.entity';
 import { ProviderConnection } from '../connections/provider-connection.entity';
 import { Follow } from '../follows/follow.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ReleaseNote } from '../release-notes/release-note.entity';
+import { ReleaseNotesModule } from '../release-notes/release-notes.module';
 import { StorageModule } from '../storage/storage.module';
 import { StravaModule } from '../strava/strava.module';
 import { SystemModule } from '../system/system.module';
@@ -45,6 +47,8 @@ import { AdminGithubService } from './dev/admin-github.service';
 import { AdminPermissionsController } from './permissions/admin-permissions.controller';
 import { AdminPermissionsService } from './permissions/admin-permissions.service';
 import { AdminRolePermission } from './permissions/admin-role-permission.entity';
+import { AdminReleaseNotesController } from './release-notes/admin-release-notes.controller';
+import { AdminReleaseNotesService } from './release-notes/admin-release-notes.service';
 import { AdminReservedUsernamesController } from './reserved-usernames/admin-reserved-usernames.controller';
 import { AdminReservedUsernamesService } from './reserved-usernames/admin-reserved-usernames.service';
 import { AdminStatisticsController } from './statistics/admin-statistics.controller';
@@ -82,6 +86,7 @@ export const ADMIN_ROUTES = [
       BadgeTheme,
       ReservedUsername,
       AdminRolePermission,
+      ReleaseNote,
     ]),
     AuthModule,
     UsersModule,
@@ -89,6 +94,7 @@ export const ADMIN_ROUTES = [
     NotificationsModule,
     StorageModule,
     SystemModule,
+    ReleaseNotesModule,
   ],
   controllers: [
     AdminMeController,
@@ -104,6 +110,7 @@ export const ADMIN_ROUTES = [
     AdminPermissionsController,
     AdminReservedUsernamesController,
     AdminDevController,
+    AdminReleaseNotesController,
   ],
   providers: [
     AdminAuditLogService,
@@ -118,6 +125,7 @@ export const ADMIN_ROUTES = [
     AdminDevService,
     AdminGithubService,
     AdminPermissionsService,
+    AdminReleaseNotesService,
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

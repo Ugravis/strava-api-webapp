@@ -12,17 +12,16 @@ import {
   DetailForm,
   DetailHeader,
   DetailLoader,
-  DetailMedia,
   DetailSection,
   DetailSectionForm,
   DetailSkeleton,
   fromRule,
   type RowPanelControls,
 } from "@/components/admin/detail";
-import { BADGE_ICON_KEYS, BadgeIcon } from "@/components/distances/badge-icon";
+import { BADGE_ICON_KEYS } from "@/components/distances/badge-icon";
 import { createBadge, loadBadge } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteBadgeOf, FAMILY_OPTIONS, LOCKS, METRIC_OPTIONS, METRICS, saveBadgeWith, themeOptions, useCatalogVersion } from "./badge-bits";
-import { badgeColumns } from "./badge-columns";
+import { AdminBadgeBanner, badgeColumns } from "./badge-columns";
 import { shownAmount, storedAmount } from "./units";
 
 /** What a badge asks, as typed: amounts in the unit shown, tiers as typed. */
@@ -92,7 +91,7 @@ export function copyOfBadge(badge: AdminBadge): Partial<BadgeDraft> {
 export function BadgeRowPanel({ id, themes, rights, panel }: { id: string; themes: AdminBadgeTheme[]; rights: BadgeRights; panel: RowPanelControls }) {
   const version = useCatalogVersion();
   return (
-    <DetailLoader id={id} load={loadBadge} refreshKey={version} skeleton={<DetailSkeleton media actions={2} sections={[7, 4, 3, 2]} />}>
+    <DetailLoader id={id} load={loadBadge} refreshKey={version} skeleton={<DetailSkeleton cover actions={2} sections={[7, 4, 3, 2]} />}>
       {(badge) => <BadgeDetail badge={badge} themes={themes} rights={rights} panel={panel} />}
     </DetailLoader>
   );
@@ -110,7 +109,8 @@ function BadgeDetail({ badge, themes, rights, panel }: { badge: AdminBadge; them
 
   return (
     <>
-      <DetailHeader media={<DetailMedia icon={<BadgeIcon icon={badge.icon} />} background={badge.backgroundColor} />} title={badge.name} subtitle={badge.id} />
+      <AdminBadgeBanner badge={badge} className="h-40 shrink-0" />
+      <DetailHeader title={badge.name} subtitle={badge.id} />
       <DetailActions>
         <DetailAction
           label="Dupliquer"
@@ -237,8 +237,11 @@ export function BadgeCreate({
         const unit = values.metric ? METRICS[values.metric].unit : undefined;
         return (
           <>
+            <AdminBadgeBanner
+              badge={{ icon: values.icon ?? BADGE_ICON_KEYS[0], family: values.family ?? "all", tiers: null, backgroundColor: values.backgroundColor }}
+              className="h-40 shrink-0"
+            />
             <DetailHeader
-              media={<DetailMedia icon={<BadgeIcon icon={values.icon ?? BADGE_ICON_KEYS[0]} />} background={values.backgroundColor} />}
               title={values.name?.trim() || "Nouveau badge"}
               subtitle="Actif dès sa création, ajouté en fin de catalogue."
             />

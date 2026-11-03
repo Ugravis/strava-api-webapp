@@ -31,7 +31,7 @@ function availableColumns<T>(config: DataTableConfig<T>) {
   const views = config.views ?? [];
   if (views.length === 0 || views.some((each) => !each.columns)) return config.columns;
   const ids = new Set(views.flatMap((each) => each.columns ?? []));
-  return config.columns.filter((column) => ids.has(column.id));
+  return config.columns.filter((column) => column.extra || ids.has(column.id));
 }
 
 /** The state of a table: the picks of the user from the URL, and the page the server answers. */
@@ -75,7 +75,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
 
   const view = config.views?.find((each) => each.id === viewId);
   const grouping = config.groupings?.find((each) => each.id === (groupPick ?? config.defaultGroupBy));
-  // Those of any view may be shown: the view's, less the hidden ones, plus the shown ones.
+  // Those of any view, and the extra ones, may be shown: the view's, less the hidden ones, plus the shown ones.
   const available = useMemo(() => availableColumns(config), [config]);
   // The column of the grouping says what its titles already say: hidden by the system, until shown by the user.
   const grouped = available.find((column) => column.id === grouping?.id && !column.locked)?.id ?? null;
@@ -84,7 +84,7 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
       available.filter((column) =>
         column.id === grouped
           ? !!shownPick?.has(column.id)
-          : !view?.columns || view.columns.includes(column.id)
+          : !column.extra && (!view?.columns || view.columns.includes(column.id))
             ? !hiddenPick?.has(column.id)
             : !!shownPick?.has(column.id),
       ),

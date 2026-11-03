@@ -11,7 +11,7 @@ import {
   MegaphoneIcon,
   PercentIcon,
   RadioTowerIcon,
-  ScrollTextIcon,
+  ReceiptTextIcon,
   TextIcon,
   TypeIcon,
   UserPenIcon,
@@ -24,6 +24,7 @@ import {
   lookColumn,
   Mark,
   numberColumn,
+  pillsColumn,
   statusColumn,
   textColumn,
   type Tone,
@@ -76,7 +77,7 @@ export const STATE_HINTS: Record<ReleaseNoteState, string> = {
 export const DISPLAYS: Record<ReleaseNoteDisplay, { label: string; tone: Tone; description: string }> = {
   popup: { label: "Popup + notification", tone: "violet", description: "Fenêtre à l'ouverture du site" },
   banner: { label: "Bandeau + notification", tone: "sky", description: "Bandeau au-dessus des pages" },
-  notification: { label: "Notification seule", tone: "gray", description: "Dans la cloche uniquement" },
+  notification: { label: "Notification seule", tone: "amber", description: "Dans la cloche uniquement" },
   none: { label: "Aucun", tone: "gray", description: "Historique « Nouveautés » seulement" },
 };
 
@@ -187,9 +188,9 @@ export const releaseNoteColumns = (edit: boolean): DataTableColumn<AdminReleaseN
     lookColumn({
       id: "version",
       header: "Version",
-      icon: <ScrollTextIcon />,
+      icon: <ReceiptTextIcon />,
       sortable: true,
-      value: (note) => ({ icon: <ScrollTextIcon />, name: `v${note.version}`, color: note.releasedAt ? null : "#3b82f6" }),
+      value: (note) => ({ icon: <ReceiptTextIcon />, name: `v${note.version}`, color: note.releasedAt ? null : "#3b82f6" }),
       marks: (note) => note.current && <CurrentMark />,
     }),
     textColumn({
@@ -208,12 +209,11 @@ export const releaseNoteColumns = (edit: boolean): DataTableColumn<AdminReleaseN
       }),
     }),
     statusColumn({ id: "state", header: "Statut", icon: <CircleDotIcon />, value: (note) => note.state, statuses: STATES }),
-    statusColumn({
+    pillsColumn({
       id: "display",
       header: "Affichage",
       icon: <MegaphoneIcon />,
-      value: (note) => note.display,
-      statuses: DISPLAYS,
+      value: (note) => [{ label: DISPLAYS[note.display].label, tone: DISPLAYS[note.display].tone }],
       edit: (note) => ({
         kind: "select",
         value: note.display,

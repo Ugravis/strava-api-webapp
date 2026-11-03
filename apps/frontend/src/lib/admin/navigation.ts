@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ScrollTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -57,7 +57,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     key: "infrastructure",
     items: [
       { key: "system", href: adminRoutes.system, icon: BoltIcon },
-      { key: "releaseNotes", href: adminRoutes.releaseNotes, icon: ScrollTextIcon },
+      { key: "releaseNotes", href: adminRoutes.releaseNotes, icon: ReceiptTextIcon },
       { key: "dev", href: adminRoutes.dev, icon: PackageIcon },
       { key: "development", href: adminRoutes.development, icon: GitCommitHorizontalIcon },
     ],

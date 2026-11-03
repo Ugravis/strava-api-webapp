@@ -24,7 +24,7 @@
     "dev": "Stack",
     "development": "Développement",
     "reservedUsernames": "Pseudos",
-    "releaseNotes": "Notes de MAJ"
+    "releaseNotes": "Notes de release"
   },
   "roles": {
     "support": "Support",
@@ -170,10 +170,10 @@
         }
       },
       "releaseNotes": {
-        "create": "Note de MAJ écrite à l'avance",
-        "update": "Note de MAJ modifiée",
-        "status": "Statut d'une note de MAJ changé",
-        "delete": "Note de MAJ supprimée"
+        "create": "Note de release écrite à l'avance",
+        "update": "Note de release modifiée",
+        "status": "Statut d'une note de release changé",
+        "delete": "Note de release supprimée"
       }
     },
     "overview": {
@@ -361,7 +361,7 @@
         "audit": "Logs",
         "system": "Maintenance",
         "team": "Permissions",
-        "releaseNotes": "Notes de MAJ"
+        "releaseNotes": "Notes de release"
       },
       "list": {
         "users": {
@@ -559,7 +559,7 @@
     }
   },
   "releaseNotes": {
-    "title": "Notes de MAJ",
+    "title": "Notes de release",
     "description": "Une ligne par version du site, enregistrée à son premier démarrage. Une note prête est montrée aux utilisateurs inscrits avant la sortie ; écrite à l'avance, elle part d'elle-même avec sa version.",
     "errors": {
       "idTaken": "Cette version a déjà sa ligne.",

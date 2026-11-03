@@ -2,7 +2,7 @@
 
 import { defaultDisplayOf, type PublicReleaseNote, RELEASE_VERSION_PATTERN, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
 import { type AdminReleaseNote, RELEASE_NOTE_RULES } from "@kilotrace/shared/admin";
-import { BellRingIcon, EyeIcon, FileCheckIcon, FilePenIcon, ScrollTextIcon, TagIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
+import { BellRingIcon, EyeIcon, FileCheckIcon, FilePenIcon, ReceiptTextIcon, TagIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   DetailAction,
@@ -72,7 +72,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
   return (
     <>
       <DetailHeader
-        media={<DetailMedia icon={<ScrollTextIcon />} color={note.releasedAt ? null : "#3b82f6"} />}
+        media={<DetailMedia icon={<ReceiptTextIcon />} color={note.releasedAt ? null : "#3b82f6"} />}
         title={`v${note.version}${note.title ? ` · ${note.title}` : ""}`}
         subtitle={subtitle}
         marks={note.current && <CurrentMark />}
@@ -170,7 +170,7 @@ export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated
         return (
           <>
             <DetailHeader
-              media={<DetailMedia icon={<ScrollTextIcon />} color="#3b82f6" />}
+              media={<DetailMedia icon={<ReceiptTextIcon />} color="#3b82f6" />}
               title={version ? `v${version}` : "Nouvelle note"}
               subtitle={`Pour une version pas encore sortie (en ligne : v${currentVersion}). Publiée d'elle-même à sa sortie, une fois prête.`}
               actions={<DetailAction label="Aperçu" icon={<EyeIcon aria-hidden />} disabled={!version} onClick={() => setPreviewing(true)} />}

@@ -1,5 +1,5 @@
 import type { AdminReleaseNotesOverview } from "@kilotrace/shared/admin";
-import { EyeIcon, FilePenIcon, RadioTowerIcon, ScrollTextIcon } from "lucide-react";
+import { EyeIcon, FilePenIcon, RadioTowerIcon, ReceiptTextIcon } from "lucide-react";
 import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
@@ -36,7 +36,7 @@ export default async function AdminReleaseNotesPage() {
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatTile icon={RadioTowerIcon} label="En ligne" value={`v${overview.currentVersion}`} detail={`${number.format(overview.releases)} ${overview.releases > 1 ? "versions sorties" : "version sortie"}`} />
           <StatTile
-            icon={ScrollTextIcon}
+            icon={ReceiptTextIcon}
             label="Notes publiées"
             value={number.format(overview.published)}
             detail={overview.missing > 0 ? `${number.format(overview.missing)} ${overview.missing > 1 ? "versions sorties sans note prête" : "version sortie sans note prête"}` : "Toutes les versions sorties ont leur note"}

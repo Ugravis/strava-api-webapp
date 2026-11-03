@@ -3,15 +3,16 @@
 import { RELEASE_NOTE_DISPLAYS } from "@kilotrace/shared";
 import { type AdminReleaseNote, RELEASE_NOTE_STATES } from "@kilotrace/shared/admin";
 import type { TableQuery } from "@kilotrace/shared/table";
-import { CopyIcon, FileCheckIcon, FilePenIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { CopyIcon, EyeIcon, FileCheckIcon, FilePenIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type DataTableConfig, RowActions, useConfirmDialog } from "@/components/admin/data-table";
 import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { fetchReleaseNotesTable, loadReleaseNote } from "./actions";
 import { deleteOf, DISPLAYS, publishOf, RELEASES, releaseNoteColumns, type ReleaseNoteRights, STATES, useReleaseNotesVersion } from "./release-note-bits";
-import { ReleaseNoteCreate, ReleaseNoteRowPanel } from "./release-note-detail";
+import { publicOf, ReleaseNoteCreate, ReleaseNoteRowPanel } from "./release-note-detail";
+import { ReleaseNotePreview } from "./release-note-preview";
 
 function copy(text: string, done: string) {
   navigator.clipboard.writeText(text).then(() => toast.success(done), () => toast.error("Copie impossible"));
@@ -25,6 +26,8 @@ export function ReleaseNotesTable({ rights: given, currentVersion }: { rights: R
   const rights = useMemo(() => given, [given.create, given.edit, given.publish, given.delete]); // eslint-disable-line react-hooks/exhaustive-deps
   const version = useReleaseNotesVersion();
   const { ask, dialog } = useConfirmDialog();
+  // The note previewed from the menu of its row.
+  const [previewed, setPreviewed] = useState<AdminReleaseNote | null>(null);
   // The panel, read by the menus of the rows: the config stays the same as it changes.
   const panelRef = useRef<{ controls: RowPanelControls | null; active: string | null }>({ controls: null, active: null });
 
@@ -40,7 +43,7 @@ export function ReleaseNotesTable({ rights: given, currentVersion }: { rights: R
       maxHeight: "none",
       views: [
         { id: "table", label: "Tableau", columns: COLUMNS },
-        { id: "cards", label: "Cartes", layout: "cards", columns: ["version", "title", "state", "display", "releasedAt", "seen", "rate"] },
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["version", "title", "state", "display", "concerned"] },
       ],
       columns: releaseNoteColumns(rights.edit),
       muted: (note) => note.state === "empty",
@@ -63,6 +66,10 @@ export function ReleaseNotesTable({ rights: given, currentVersion }: { rights: R
               <DropdownMenuItem onClick={() => panelRef.current.controls?.open(note.version)}>
                 <PanelRightOpenIcon />
                 Ouvrir la fiche
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPreviewed(note)}>
+                <EyeIcon />
+                Aperçu
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => copy(note.version, "Version copiée")}>
                 <CopyIcon />
@@ -125,6 +132,7 @@ export function ReleaseNotesTable({ rights: given, currentVersion }: { rights: R
     <>
       <DataTable {...panel.table} refreshKey={version} />
       {dialog}
+      {previewed && <ReleaseNotePreview key={previewed.version} note={publicOf(previewed)} open onOpenChange={(open) => !open && setPreviewed(null)} />}
     </>
   );
 }

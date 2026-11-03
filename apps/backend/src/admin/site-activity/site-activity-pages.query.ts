@@ -8,6 +8,7 @@ import {
 import type { PageViewDevice } from '@kilotrace/shared';
 import {
   ADMIN_PATH,
+  viewed,
   counted,
   durationBucketSql,
   fillDays,
@@ -23,16 +24,17 @@ const TOP_PAGES = 40;
 const TREND_PAGES = 5;
 
 /** Page views counted since `$1`, `$2` the team. */
-const VIEWS = `
+const viewsSql = (admin: boolean) => `
   "v" AS (
     SELECT "p".* FROM "page_views" "p" JOIN "users" "u" ON "u"."id" = "p"."user_id"
-    WHERE "p"."at" >= $1::date AND ${counted('$2')}
+    WHERE "p"."at" >= $1::date AND ${counted('$2')} AND ${viewed(admin)}
   )`;
 
 export async function siteActivityPages(
   query: SqlQuery,
-  { from, team, dates }: SiteActivityContext,
+  { from, team, admin, dates }: SiteActivityContext,
 ): Promise<Pages> {
+  const VIEWS = viewsSql(admin);
   const params = [from, team];
   const [
     [active],

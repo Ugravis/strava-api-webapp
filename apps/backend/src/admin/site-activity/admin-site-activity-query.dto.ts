@@ -16,4 +16,10 @@ export class AdminSiteActivityQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   team: boolean = false;
+
+  /** Whether the views of the back-office pages are counted. */
+  @IsOptional()
+  @Transform(({ value }) => value !== 'false' && value !== false)
+  @IsBoolean()
+  admin: boolean = true;
 }

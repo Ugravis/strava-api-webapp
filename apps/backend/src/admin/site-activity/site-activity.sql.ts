@@ -14,6 +14,8 @@ export interface SiteActivityContext {
   /** The day after today: the end of the period, excluded. */
   until: string;
   team: boolean;
+  /** Whether the views of the back-office pages are counted. */
+  admin: boolean;
   /** Each day of the period, oldest first. */
   dates: string[];
 }
@@ -34,6 +36,13 @@ export const viewDay = (at: string) => `(${at} AT TIME ZONE 'UTC')::date`;
 /** Path of a back-office page. */
 export const ADMIN_PATH = `'/admin%'`;
 
+/**
+ * Page views `"p"` counted: all, or those outside the back office. A
+ * literal of the code, never of the request.
+ */
+export const viewed = (admin: boolean) =>
+  admin ? 'TRUE' : `"p"."path" NOT LIKE ${ADMIN_PATH}`;
+
 /** Bucket of a duration in milliseconds, as `ADMIN_DURATION_BUCKETS`. */
 export const durationBucketSql = (ms: string) => `CASE
   WHEN ${ms} < 5000 THEN '<5s'
@@ -50,7 +59,7 @@ END`;
  * `"views"`: the page views counted since `from`, each with the number of
  * its session and its rank in it; `"sessions"`: one row per session.
  */
-export const sessionsSql = (from: string, team: string) => `
+export const sessionsSql = (from: string, team: string, admin: boolean) => `
   "ordered" AS (
     SELECT "p"."id", "p"."user_id", "p"."path", "p"."at", "p"."device", "p"."duration_ms",
            CASE WHEN lag("p"."at") OVER "w" IS NULL
@@ -58,7 +67,7 @@ export const sessionsSql = (from: string, team: string) => `
                      > interval '${SESSION_GAP_MINUTES} minutes'
                 THEN 1 ELSE 0 END AS "starts"
     FROM "page_views" "p" JOIN "users" "u" ON "u"."id" = "p"."user_id"
-    WHERE "p"."at" >= ${from}::date AND ${counted(team)}
+    WHERE "p"."at" >= ${from}::date AND ${counted(team)} AND ${viewed(admin)}
     WINDOW "w" AS (PARTITION BY "p"."user_id" ORDER BY "p"."at")
   ), "views" AS (
     SELECT *, sum("starts") OVER (PARTITION BY "user_id" ORDER BY "at", "id") AS "session"

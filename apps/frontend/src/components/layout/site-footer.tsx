@@ -64,6 +64,7 @@ export function SiteFooter({ authenticated = false }: { authenticated?: boolean 
             { label: tNav("dashboard"), href: routes.dashboard },
             { label: tNav("map"), href: routes.map },
             { label: tNav("distances"), href: routes.achievements },
+            { label: tNav("releaseNotes"), href: routes.releaseNotes },
           ],
         },
         {

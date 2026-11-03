@@ -14,16 +14,21 @@ export const routes = {
   /** The own profile, then those followed, in a deck; any other one through `?user=`. */
   profiles: "/profiles",
   settings: "/settings",
+  /** The history of the release notes. */
+  releaseNotes: "/nouveautes",
   /** The profile section of the settings. */
   settingsProfile: "/settings#profile",
   sessionExpired: "/session-expired",
 } as const;
 
 /** Routes requiring a session, checked optimistically by the proxy. */
-export const PROTECTED_PREFIXES = [routes.dashboard, routes.achievements, routes.map, routes.profiles, routes.settings];
+export const PROTECTED_PREFIXES = [routes.dashboard, routes.achievements, routes.map, routes.profiles, routes.settings, routes.releaseNotes];
 
 /** Query parameter of the profiles page naming the profile shown. */
 export const PROFILE_PARAM = "user";
+
+/** A note of the history, or the history. */
+export const releaseNoteHref = (version?: string) => (version ? `${routes.releaseNotes}#v${version}` : routes.releaseNotes);
 
 /** The public profile of a user, on the profiles page. */
 export const userProfileHref = (username: string) => `${routes.profiles}?${PROFILE_PARAM}=${encodeURIComponent(username)}`;

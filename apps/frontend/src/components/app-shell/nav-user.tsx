@@ -1,6 +1,6 @@
 "use client";
 
-import { EllipsisIcon, LogOutIcon, SettingsIcon } from "lucide-react";
+import { EllipsisIcon, LogOutIcon, SettingsIcon, SparklesIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user/user-avatar";
@@ -71,6 +71,12 @@ export function NavUser({ user }: { user: User }) {
             >
               <SettingsIcon />
               {t("settings")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={<Link href={routes.releaseNotes} onClick={() => setOpenMobile(false)} />}
+            >
+              <SparklesIcon />
+              {t("releaseNotes")}
             </DropdownMenuItem>
             <ThemeMenuItem />
             <SoundSubmenu />

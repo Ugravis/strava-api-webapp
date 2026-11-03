@@ -1,8 +1,10 @@
-import type { AdminPage, AuditLogEntry } from "@kilotrace/shared/admin";
-import { XIcon } from "lucide-react";
+import type { AdminPage, AuditLogEntry, AuditLogOverview } from "@kilotrace/shared/admin";
+import { CircleAlertIcon, ListIcon, UsersIcon, XIcon, ZapIcon } from "lucide-react";
 import Link from "next/link";
+import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -12,6 +14,8 @@ import type { AuditScope } from "./actions";
 import { AuditTable } from "./audit-table";
 
 const UUID = /^[0-9a-f-]{36}$/i;
+const number = new Intl.NumberFormat("fr-FR");
+const percent = (part: number, total: number) => (total > 0 ? `${Math.round((part / total) * 100)} %` : "—");
 
 /**
  * The logs, append-only: the super-admins may only mask an entry from the
@@ -28,19 +32,30 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
     target: target && UUID.test(target) ? target : undefined,
     actor: actor && UUID.test(actor) ? actor : undefined,
   };
-  const names = await namesOf(scope);
+  const o = getAdminTranslations("auditLog.overview");
+  const [names, overview] = await Promise.all([namesOf(scope), adminApi<AuditLogOverview>("/audit-log/overview")]);
+  const figures = overview.ok ? overview.data : null;
   const href = (key: keyof AuditScope) =>
     hrefWith(adminRoutes.auditLog, Object.fromEntries(Object.keys(params).map((each) => [each, param(params, each)])), { [key]: null });
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
+      {figures && (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatTile icon={ListIcon} label={o("total")} value={number.format(figures.total)} detail={o("totalDetail")} />
+          <StatTile icon={ZapIcon} label={o("today")} value={number.format(figures.today)} detail={o("todayDetail")} />
+          <StatTile icon={CircleAlertIcon} label={o("failures")} value={number.format(figures.failures)} detail={o("failuresDetail", { share: percent(figures.failures, figures.week) })} />
+          <StatTile icon={UsersIcon} label={o("actors")} value={number.format(figures.actors)} detail={o("actorsDetail")} />
+        </div>
+      )}
       {(scope.target || scope.actor) && (
         <div className="flex flex-wrap gap-2">
           {scope.target && <FilterBadge label={t("filters.target", { name: names(scope.target) })} clear={t("filters.clear")} href={href("target")} />}
           {scope.actor && <FilterBadge label={t("filters.actor", { name: names(scope.actor) })} clear={t("filters.clear")} href={href("actor")} />}
         </div>
       )}
+      <Separator />
       <AuditTable scope={scope} superAdmin={permissions.includes("audit.hide")} />
     </>
   );

@@ -205,3 +205,32 @@
     }
   }
 }
+
+/*
+ * The header of an admin table follows the scroll of the page down to its last
+ * row. A sticky header cannot: the box scrolls sideways, so it is the box the
+ * header would stick to. Driven by the scroll itself, off the main thread: as
+ * smooth as the page. `--head-travel`, the height of the box less the header,
+ * is measured by `useStickyHead`. Under `md`, below the top bar of the shell.
+ */
+@supports (animation-timeline: view()) {
+  .table-follow {
+    view-timeline: --table-follow block;
+    view-timeline-inset: 3.5rem 0;
+  }
+  @media (width >= 48rem) {
+    .table-follow {
+      view-timeline-inset: 0 0;
+    }
+  }
+  .table-follow-head {
+    animation: table-follow-head linear both;
+    animation-timeline: --table-follow;
+    animation-range: exit-crossing 0% exit-crossing var(--head-travel, 0px);
+  }
+  @keyframes table-follow-head {
+    to {
+      translate: 0 var(--head-travel, 0px);
+    }
+  }
+}

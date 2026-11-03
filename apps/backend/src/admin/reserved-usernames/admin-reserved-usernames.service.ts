@@ -1,4 +1,9 @@
-import type { AdminReservedUsername } from '@kilotrace/shared/admin';
+import {
+  type AdminReservedUsername,
+  RESERVED_USERNAME_CATEGORIES,
+  type ReservedUsernameCategory,
+  type ReservedUsernamesOverview,
+} from '@kilotrace/shared/admin';
 import {
   mapTablePage,
   type TablePage,
@@ -17,6 +22,8 @@ import type {
   ReserveUsernameDto,
   UpdateReservedUsernameDto,
 } from './admin-reserved-usernames.dto';
+
+const DAY_MS = 86_400_000;
 
 /** The author, '' for the initial list, '~' for a deleted account. */
 const AUTHOR = `CASE WHEN reserved.created_by_id IS NULL THEN NULL ELSE COALESCE(author.username, '~') END`;
@@ -53,6 +60,37 @@ export class AdminReservedUsernamesService {
       .leftJoin(User, 'author', 'author.id = reserved.created_by_id');
     const page = await runTableQuery(base, query, RESERVED_TABLE);
     return mapTablePage(page, (entries) => this.entries(entries));
+  }
+
+  async overview(): Promise<ReservedUsernamesOverview> {
+    const rows = await this.reserved
+      .createQueryBuilder('reserved')
+      .select('reserved.category', 'category')
+      .addSelect('COUNT(*)', 'count')
+      .addSelect(
+        'COUNT(*) FILTER (WHERE reserved.created_at >= :month)',
+        'recent',
+      )
+      .setParameter('month', new Date(Date.now() - 30 * DAY_MS))
+      .groupBy('reserved.category')
+      .getRawMany<{
+        category: ReservedUsernameCategory;
+        count: string;
+        recent: string;
+      }>();
+    const byCategory = Object.fromEntries(
+      RESERVED_USERNAME_CATEGORIES.map((category) => [category, 0]),
+    ) as Record<ReservedUsernameCategory, number>;
+    let recent = 0;
+    for (const row of rows) {
+      byCategory[row.category] = Number(row.count);
+      recent += Number(row.recent);
+    }
+    return {
+      total: Object.values(byCategory).reduce((sum, count) => sum + count, 0),
+      recent,
+      byCategory,
+    };
   }
 
   private async entries(

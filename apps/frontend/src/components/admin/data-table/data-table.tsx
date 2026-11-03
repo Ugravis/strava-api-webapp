@@ -19,6 +19,7 @@ import { useColumnWidths } from "./use-column-widths";
 import { useDataTable } from "./use-data-table";
 import { useRowArrows } from "./use-row-arrows";
 import { useSelectionScope } from "./use-selection-scope";
+import { useStickyHead } from "./use-sticky-head";
 
 /** A line beside the pinned column once rows slide under it, set on the box without a render. */
 const SHADOW =
@@ -90,6 +91,17 @@ export function DataTable<T>({
   const head = useColumnWidths(loading, columns, result);
 
   const { active, openRow, box } = useRowArrows({ config, state, entries, activeRowId, onOpen });
+  const follow = state.layout === "table" && (config.maxHeight ?? "none") === "none";
+  const thead = useStickyHead(follow);
+
+  /** Another page: its first rows in sight, the top of the table brought back when scrolled past. */
+  const turnPage = (page: number) => {
+    state.setPage(page);
+    const node = box.current;
+    if (!node || node.getBoundingClientRect().top >= parseFloat(getComputedStyle(node).scrollMarginTop)) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    node.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+  };
 
   /** Classes of the cells pinned on the left: the box, then the first column. */
   const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && selectable && "left-10", first && SHADOW) : "");
@@ -184,14 +196,14 @@ export function DataTable<T>({
   const blank = !loading && entries.length === 0;
 
   return (
-    <div ref={box} className="flex flex-col gap-3">
+    <div ref={box} className="flex scroll-mt-18 flex-col gap-3 md:scroll-mt-4">
       <DataTableToolbar config={config} state={state} />
 
       {state.layout !== "table" ? (
-        // Up to the same most as a table, then scrolls: the pagination stays in sight.
+        // As tall as its rows: the page scrolls, never the box (no scroll in a scroll).
         <div
           className="-m-1 overflow-y-auto p-1 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] scrollbar-thin"
-          style={{ maxHeight: config.maxHeight ?? "70vh" }}
+          style={{ maxHeight: config.maxHeight ?? "none" }}
         >
           <MaybeDnd on={movable} id={dndId} sensors={sensors} onDragEnd={onDragEnd}>
             <DataTableItems config={config} state={state} layout={state.layout} empty={empty} onOpen={openRow} activeRowId={active} />
@@ -199,9 +211,9 @@ export function DataTable<T>({
         </div>
       ) : (
         <div
-          // As tall as its rows, up to its most; room for the message when there are none.
-          className={cn("group/table relative flex flex-col border-y border-foreground/20", blank && "h-64")}
-          style={{ maxHeight: config.maxHeight ?? "70vh" }}
+          // As tall as its rows, the page scrolls; room for the message when there are none.
+          className={cn("group/table relative flex flex-col border-y border-foreground/20", follow && "table-follow", blank && "h-64")}
+          style={{ maxHeight: config.maxHeight ?? "none" }}
           // Straight on the box: a render of the whole table on each scroll would make it stutter.
           onScrollCapture={(event) => event.currentTarget.toggleAttribute("data-scrolled", (event.target as HTMLElement).scrollLeft > 0)}
         >
@@ -213,7 +225,7 @@ export function DataTable<T>({
             aria-busy={loading}
           >
             {/* The line under the names, drawn by each cell: borders of a sticky header scroll away. */}
-            <TableHeader className="sticky top-0 z-20 [&_th]:before:pointer-events-none [&_th]:before:absolute [&_th]:before:inset-x-0 [&_th]:before:bottom-0 [&_th]:before:h-px [&_th]:before:bg-foreground/20 [&_th:not(.sticky)]:relative [&_tr]:border-b-0">
+            <TableHeader ref={thead} className={cn(follow && "table-follow-head", "sticky top-0 z-20 bg-background [&_th]:before:pointer-events-none [&_th]:before:absolute [&_th]:before:inset-x-0 [&_th]:before:bottom-0 [&_th]:before:h-px [&_th]:before:bg-foreground/20 [&_th:not(.sticky)]:relative [&_tr]:border-b-0")}>
               <TableRow ref={head}>
                 {selectable && (
                   <TableHead className={cn(pin(false), pinned && "z-30", "w-10")}>
@@ -250,7 +262,12 @@ export function DataTable<T>({
         </div>
       )}
 
-      {pager && pager.visible > 0 && <Pagination pager={pager} loading={loading} noun={config.noun} onPage={state.setPage} />}
+      {pager && pager.visible > 0 && (
+        // Stuck to the bottom of the screen while the end of the box is out of sight; its line lies on the one of the box.
+        <div className="sticky bottom-0 z-20 -mt-[calc(0.75rem+1px)] border-t border-foreground/20 bg-background py-3">
+          <Pagination pager={pager} loading={loading} noun={config.noun} onPage={turnPage} />
+        </div>
+      )}
 
       {config.bulkActions && (
         <SelectionBar count={selected.size} onClear={state.clearSelection}>

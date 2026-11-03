@@ -50,3 +50,11 @@ export const RESERVED_USERNAME_RULES: FieldRules<ReserveUsernameRequest> = {
   category: { type: "choice", required: true, values: RESERVED_USERNAME_CATEGORIES },
   note: { type: "text", maxLength: RESERVED_USERNAME_NOTE_MAX_LENGTH },
 };
+
+/** `GET /api/admin/reserved-usernames/overview`: figures above the list. */
+export interface ReservedUsernamesOverview {
+  total: number;
+  /** Reserved in the last 30 days. */
+  recent: number;
+  byCategory: Record<ReservedUsernameCategory, number>;
+}

@@ -2,6 +2,7 @@ import type { AdminUsersOverview, AdminUserTag } from "@kilotrace/shared/admin";
 import { BanIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -34,6 +35,7 @@ export default async function AdminUsersPage() {
           <StatTile icon={BanIcon} label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} />
         </div>
       )}
+      <Separator />
       <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
     </>
   );

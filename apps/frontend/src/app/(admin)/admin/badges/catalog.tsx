@@ -3,6 +3,7 @@
 import type { AdminBadgeTheme } from "@kilotrace/shared/admin";
 import { useCallback, useMemo, useRef } from "react";
 import type { RowPanelControls } from "@/components/admin/detail";
+import { Separator } from "@/components/ui/separator";
 import type { BadgeRights } from "./badge-bits";
 import { BadgesTable } from "./badges-table";
 import { ThemesTable } from "./themes-table";
@@ -25,6 +26,7 @@ export function Catalog({ themes, rights: given }: { themes: AdminBadgeTheme[]; 
         </div>
         <ThemesTable rights={rights} openBadge={openBadge} />
       </section>
+      <Separator />
       <section className="flex flex-col gap-3">
         <h2 className="font-medium">Badges</h2>
         <BadgesTable themes={themes} rights={rights} controlsRef={badgesRef} />

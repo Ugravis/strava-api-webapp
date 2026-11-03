@@ -1,6 +1,6 @@
 # Admin data tables
 
-Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on a POC (#133): its original code is the git tag `admin-table-poc-v1`, its captures are on the page Développement (`/admin/development`), and its demo, rebuilt on the kit, stays at `/admin/development/admin-table` as the live showcase on fake rows.
+Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on a POC (#133): its original code is the git tag `admin-table-poc-v1`, its card is on the page Développement (`/admin/development`), and its demo, rebuilt on the kit, stays at `/admin/development/admin-table` as the live showcase on fake rows, its original captures below it.
 
 ## Where things are
 
@@ -130,7 +130,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `defaultSort` | `createdAt` descending unless said otherwise. |
 | `defaultFilters` | Applied by the system, shown active only once the user picks. |
 | `pageSize` | Else the default of the layout: 30 for a table, 24 for cards, 60 for a list. At most 100. A view's own `pageSize` wins. |
-| `maxHeight` | Most height of the box, in every layout, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `70vh` by default; `"none"` grows without a scroll of its own. |
+| `maxHeight` | Most height of the box, in every layout, any CSS length (`"480px"`, `"calc(100dvh - 12rem)"`); `"none"` by default: the box grows without a scroll of its own, the page scrolls (no scroll in a scroll). |
 | `bulkActions` | Checkboxes on the rows, plus a bottom bar with these buttons: `(ids, clear) => …`. `SelectionAction` (`label`, `icon`, `destructive`, `confirm`, `onClick`) asks first and spins as the detail buttons do; `BulkEditAction` of the detail kit changes a field on every row (`docs/admin-detail.md`). Esc clears the selection, before a panel closes (left to a field, a menu, a dialog or the panel itself). One selection per page: rows checked in a table clear those of the others. The bar stays inside the screen: when its buttons no longer fit, they show their icon only (named in a bubble for `SelectionAction` and `BulkEditAction`; a plain `Button` keeps its name for screen readers only), the count without its word. |
 | `actions` | The `RowActions` menu at the end of the row. |
 | `onOpen` | Click on a row. Buttons, links and checkboxes keep their own click. The `onRowClick` prop of `DataTable` wins over it. |
@@ -187,7 +187,8 @@ Other bits:
 - **URL.** Every pick is in the URL under the table id: `<id>.q`, `<id>.f.<facet>`, `<id>.sort` (`-` for descending), `<id>.group` (`-` for none against a `defaultGroupBy`), `<id>.fold`, `<id>.hide`, `<id>.show`, `<id>.view`, `<id>.page`. Pinning the first column is not kept.
 - **Ids.** Ids of columns, facets, options and groupings are identifiers: no commas.
 - **Layout.**
-  - The box grows with its rows up to `maxHeight` (`70vh` by default), then scrolls, in every layout. The header of a table is sticky.
+  - The box grows with its rows, in every layout: the page scrolls, never the box, unless a `maxHeight` is given. The header of a table follows the scroll of the page down to its last row: an animation driven by the scroll (`.table-follow` in `globals.css`, travel measured by `useStickyHead`; Chrome, Edge, Safari, a still header elsewhere), or a plain sticky within the box when it has a `maxHeight`.
+  - The pagination, in a band with a line above it (laid on the bottom line of the box), sticks to the bottom of the screen while the end of the box is out of sight. Turning a page brings the top of the table (its toolbar) back into sight when it was scrolled past, smoothly unless the reduced motion is asked.
   - Cards and list draw the cells of the columns, no layout of their own: as many cards in the width as fit at 14rem at least; a card stacks the values one under the other, each after the icon of its column; an item of the list sets them side by side, and the items follow each other on the line. The first column is set apart: header of the card, bold in the list. An `orderColumn` goes before it, after the checkbox.
   - The first column is pinned (toggle in the header); never on a phone.
   - Under 640 px, the header folds onto two lines.

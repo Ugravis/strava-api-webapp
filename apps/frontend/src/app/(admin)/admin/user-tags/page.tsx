@@ -2,6 +2,7 @@ import type { AdminUserTag } from "@kilotrace/shared/admin";
 import { CrownIcon, TagIcon, UsersIcon } from "lucide-react";
 import { StatTile } from "@/components/admin/statistics/stat-tile";
 import { PageHeader } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -50,6 +51,7 @@ export default async function AdminUserTagsPage() {
           />
         </div>
       )}
+      <Separator />
       <UserTagsTable rights={rights} usersPath={adminRoutes.users} />
     </>
   );

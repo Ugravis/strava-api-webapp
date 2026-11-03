@@ -40,3 +40,16 @@ export interface AuditLogEntry {
   /** Sent to the super-admins only. */
   hiddenAt?: string | null;
 }
+
+/** `GET /api/admin/audit-log/overview`: figures above the log, masked entries left out. */
+export interface AuditLogOverview {
+  total: number;
+  /** Entries of the last 24 hours. */
+  today: number;
+  /** Failed actions of the last 7 days. */
+  failures: number;
+  /** Entries of the last 7 days, to which the failures compare. */
+  week: number;
+  /** Members who acted in the last 7 days. */
+  actors: number;
+}

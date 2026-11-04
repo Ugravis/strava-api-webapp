@@ -51,12 +51,11 @@ function usagePoints(slots: Date[], rows: UsageRow[]): AdminStravaUsagePoint[] {
 export class AdminStatisticsService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
-  async statistics(now = new Date()): Promise<AdminStatisticsResponse> {
+  /** The read quota of each day of the period and of each quarter of the last 24 hours. */
+  async stravaUsage(
+    now: Date,
+  ): Promise<AdminStatisticsResponse['stravaUsage']> {
     const days = periodDays(now);
-    const from = days[0];
-    const previousFrom = new Date(
-      from.getTime() - ADMIN_STATISTICS_DAYS * DAY_MS,
-    );
     const quarters = Array.from(
       { length: QUARTERS_PER_DAY },
       (_, index) =>
@@ -65,6 +64,34 @@ export class AdminStatisticsService {
             (QUARTERS_PER_DAY - 1 - index) * QUARTER_HOUR_MS,
         ),
     );
+    const [usageDays, usageQuarters] = await Promise.all([
+      // Quarters align on UTC days: the highest of a day is its total.
+      this.dataSource.query<UsageRow[]>(
+        `SELECT date_trunc('day', "window_start" AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' AS "start",
+             max("read_daily_usage") AS "read", max("read_daily_limit") AS "read_limit",
+             max("daily_usage") AS "overall", max("daily_limit") AS "overall_limit"
+           FROM "strava_api_usage" WHERE "window_start" >= $1 GROUP BY 1`,
+        [days[0]],
+      ),
+      this.dataSource.query<UsageRow[]>(
+        `SELECT "window_start" AS "start", "read_short_usage" AS "read", "read_short_limit" AS "read_limit",
+             "short_usage" AS "overall", "short_limit" AS "overall_limit"
+           FROM "strava_api_usage" WHERE "window_start" >= $1`,
+        [quarters[0]],
+      ),
+    ]);
+    return {
+      days: usagePoints(days, usageDays),
+      quarters: usagePoints(quarters, usageQuarters),
+    };
+  }
+
+  async statistics(now = new Date()): Promise<AdminStatisticsResponse> {
+    const days = periodDays(now);
+    const from = days[0];
+    const previousFrom = new Date(
+      from.getTime() - ADMIN_STATISTICS_DAYS * DAY_MS,
+    );
 
     const [
       users,
@@ -72,8 +99,7 @@ export class AdminStatisticsService {
       follows,
       activities,
       synced,
-      usageDays,
-      usageQuarters,
+      stravaUsage,
       notifications,
     ] = await Promise.all([
       this.dataSource.query<{ total: number; previous: number }[]>(
@@ -112,20 +138,7 @@ export class AdminStatisticsService {
           FAMILY_SPORT_TYPES.swim,
         ],
       ),
-      // Quarters align on UTC days: the highest of a day is its total.
-      this.dataSource.query<UsageRow[]>(
-        `SELECT date_trunc('day', "window_start" AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' AS "start",
-             max("read_daily_usage") AS "read", max("read_daily_limit") AS "read_limit",
-             max("daily_usage") AS "overall", max("daily_limit") AS "overall_limit"
-           FROM "strava_api_usage" WHERE "window_start" >= $1 GROUP BY 1`,
-        [from],
-      ),
-      this.dataSource.query<UsageRow[]>(
-        `SELECT "window_start" AS "start", "read_short_usage" AS "read", "read_short_limit" AS "read_limit",
-             "short_usage" AS "overall", "short_limit" AS "overall_limit"
-           FROM "strava_api_usage" WHERE "window_start" >= $1`,
-        [quarters[0]],
-      ),
+      this.stravaUsage(now),
       this.dataSource.query<{ read: number; unread: number }[]>(
         `SELECT count(*) FILTER (WHERE "read_at" IS NOT NULL)::int AS "read",
              count(*) FILTER (WHERE "read_at" IS NULL)::int AS "unread"
@@ -159,10 +172,7 @@ export class AdminStatisticsService {
           families: syncedByDate.get(utcDate(day)) ?? emptyFamilies(),
         })),
       },
-      stravaUsage: {
-        days: usagePoints(days, usageDays),
-        quarters: usagePoints(quarters, usageQuarters),
-      },
+      stravaUsage,
       notifications: notifications[0],
     };
   }

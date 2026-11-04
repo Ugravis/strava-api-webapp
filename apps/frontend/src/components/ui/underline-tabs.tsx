@@ -69,7 +69,7 @@ export function UnderlineTabs<Tab extends string>({
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  "h-full flex-none rounded-none px-2.5 text-[13px] after:hidden focus-visible:ring-inset sm:text-sm",
+                  "h-full flex-1 rounded-none px-2.5 text-[13px] after:hidden focus-visible:ring-inset sm:text-sm",
                   tab.dimmed && "not-data-active:opacity-60",
                 )}
               >

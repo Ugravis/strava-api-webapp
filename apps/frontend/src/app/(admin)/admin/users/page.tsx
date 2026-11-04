@@ -1,6 +1,6 @@
 import type { AdminUsersOverview, AdminUserTag } from "@kilotrace/shared/admin";
 import { BanIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
-import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiTile, runningTotal, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -30,10 +30,12 @@ export default async function AdminUsersPage() {
             label={o("accounts")}
             value={number.format(figures.total)}
             detail={o("accountsDetail", { share: percent(figures.stravaConnected, figures.total) })}
+            spark={runningTotal(figures.signupsByDay, figures.total)}
+            sparkFromMin
           />
-          <KpiTile icon={UserPlusIcon} color="aqua" label={o("signups")} value={number.format(figures.signups)} detail={o("signupsDetail")} />
-          <KpiTile icon={UserCheckIcon} color="yellow" label={o("active")} value={number.format(figures.active)} detail={o("activeDetail", { share: percent(figures.active, figures.total) })} />
-          <KpiTile icon={BanIcon} color="orange" label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} />
+          <KpiTile icon={UserPlusIcon} color="aqua" label={o("signups")} value={number.format(figures.signups)} detail={o("signupsDetail")} spark={figures.signupsByDay} />
+          <KpiTile icon={UserCheckIcon} color="yellow" label={o("active")} value={number.format(figures.active)} detail={o("activeDetail", { share: percent(figures.active, figures.total) })} gauge={shareOf(figures.active, figures.total)} />
+          <KpiTile icon={BanIcon} color="orange" label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} gauge={shareOf(figures.suspended, figures.total)} />
         </KpiGrid>
       )}
       <Separator />

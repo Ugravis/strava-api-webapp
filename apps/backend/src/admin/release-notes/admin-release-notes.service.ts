@@ -148,6 +148,16 @@ export class AdminReleaseNotesService {
          FROM release_notes note WHERE ${STATE} = 'published'
         ORDER BY ${VERSION_ORDER} DESC LIMIT 1`,
     );
+    const months = await this.notes.query<{ count: number }[]>(
+      `SELECT COUNT(note.released_at)::int AS count
+         FROM generate_series(
+                date_trunc('month', now(), 'UTC') - interval '11 months',
+                date_trunc('month', now(), 'UTC'),
+                interval '1 month'
+              ) AS month
+         LEFT JOIN release_notes note ON note.released_at < month + interval '1 month'
+        GROUP BY month ORDER BY month`,
+    );
     return {
       currentVersion: this.releaseNotes.currentVersion,
       releases: counts?.releases ?? 0,
@@ -155,6 +165,7 @@ export class AdminReleaseNotesService {
       missing: counts?.missing ?? 0,
       upcoming: counts?.upcoming ?? 0,
       latest: latest ?? null,
+      releasesByMonth: months.map((month) => month.count),
     };
   }
 

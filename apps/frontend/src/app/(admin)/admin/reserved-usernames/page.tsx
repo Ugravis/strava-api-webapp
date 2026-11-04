@@ -1,6 +1,6 @@
 import { type ReservedUsernamesOverview, RESERVED_USERNAME_CATEGORIES } from "@kilotrace/shared/admin";
 import { AtSignIcon, CalendarPlusIcon, LayersIcon } from "lucide-react";
-import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiTile, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -23,14 +23,15 @@ export default async function AdminReservedUsernamesPage() {
       <PageHeader title={t("title")} description={t("description")} />
       {figures && (
         <KpiGrid columns={3}>
-          <KpiTile icon={AtSignIcon} color="blue" label={o("total")} value={number.format(figures.total)} detail={o("totalDetail", { count: number.format(figures.byCategory.system) })} />
-          <KpiTile icon={CalendarPlusIcon} color="aqua" label={o("recent")} value={number.format(figures.recent)} detail={o("recentDetail")} />
+          <KpiTile icon={AtSignIcon} color="blue" label={o("total")} value={number.format(figures.total)} detail={o("totalDetail", { count: number.format(figures.byCategory.system) })} segments={RESERVED_USERNAME_CATEGORIES.map((each) => ({ label: t(`categories.${each}`), value: figures.byCategory[each] }))} />
+          <KpiTile icon={CalendarPlusIcon} color="aqua" label={o("recent")} value={number.format(figures.recent)} detail={o("recentDetail")} spark={figures.addedByDay} />
           <KpiTile
             icon={LayersIcon}
             color="orange"
             label={o("top")}
             value={top ? number.format(figures.byCategory[top]) : "—"}
             detail={top ? o("topDetail", { category: t(`categories.${top}`) }) : o("topEmpty")}
+            gauge={top ? shareOf(figures.byCategory[top], figures.total) : 0}
           />
         </KpiGrid>
       )}

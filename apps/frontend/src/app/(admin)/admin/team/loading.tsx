@@ -11,7 +11,7 @@ export default function AdminTeamLoading() {
       </div>
       <KpiGrid columns={3}>
         {Array.from({ length: 3 }, (_, index) => (
-          <KpiTileSkeleton key={index} spark={false} />
+          <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
       <Skeleton className="h-64 w-full rounded-xl" />

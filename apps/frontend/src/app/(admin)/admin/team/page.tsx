@@ -40,7 +40,7 @@ export default async function AdminTeamPage() {
         <>
           <KpiGrid columns={3}>
             {[...ADMIN_ROLES].reverse().map((role) => (
-              <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} />
+              <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} members={result.data.length} />
             ))}
           </KpiGrid>
           <Separator />

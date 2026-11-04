@@ -57,4 +57,6 @@ export interface ReservedUsernamesOverview {
   /** Reserved in the last 30 days. */
   recent: number;
   byCategory: Record<ReservedUsernameCategory, number>;
+  /** Reserved on each of the last 30 UTC days, oldest first. */
+  addedByDay: number[];
 }

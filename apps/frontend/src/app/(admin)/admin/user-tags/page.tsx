@@ -1,6 +1,6 @@
 import type { AdminUserTag } from "@kilotrace/shared/admin";
 import { CrownIcon, TagIcon, UsersIcon } from "lucide-react";
-import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiTile, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -42,14 +42,16 @@ export default async function AdminUserTagsPage() {
             label="Tags"
             value={number.format(userTags.length)}
             detail={`dont ${number.format(system)} ${system > 1 ? "automatiques" : "automatique"}`}
+            gauge={shareOf(system, userTags.length)}
           />
-          <KpiTile icon={UsersIcon} color="aqua" label="Attributions" value={number.format(held)} detail="Tags portés, tous membres confondus" />
+          <KpiTile icon={UsersIcon} color="aqua" label="Attributions" value={number.format(held)} detail="Tags portés, tous membres confondus" segments={userTags.map((userTag) => ({ label: userTag.name, value: userTag.holdersCount }))} />
           <KpiTile
             icon={CrownIcon}
             color="orange"
             label="Le plus porté"
             value={top ? number.format(top.holdersCount) : "—"}
             detail={top ? `${top.holdersCount > 1 ? "membres portent" : "membre porte"} « ${top.name} »` : "Aucun tag attribué"}
+            gauge={top ? shareOf(top.holdersCount, held) : 0}
           />
         </KpiGrid>
       )}

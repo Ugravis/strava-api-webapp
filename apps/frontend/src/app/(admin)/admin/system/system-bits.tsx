@@ -9,7 +9,7 @@ import { FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, 
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
-import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiTile, KpiTileSkeleton, shareOf } from "@/components/admin/kpi-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -137,18 +137,20 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
   }
   const { avatars, heaviest, orphans, previews } = result.data;
   const common = getAdminTranslations("common");
+  const stored = avatars.bytes + orphans.bytes + previews.bytes;
 
   return (
     <div className="flex flex-col gap-4">
       <KpiGrid columns={3}>
-        <KpiTile icon={FileImageIcon} color="blue" label={t("avatars")} value={formatBytes(avatars.bytes)} detail={t("files", { count: avatars.count })} />
-        <KpiTile icon={FileWarningIcon} color="aqua" label={t("orphans")} value={formatBytes(orphans.bytes)} detail={t("files", { count: orphans.count })} />
+        <KpiTile icon={FileImageIcon} color="blue" label={t("avatars")} value={formatBytes(avatars.bytes)} detail={t("files", { count: avatars.count })} gauge={shareOf(avatars.bytes, stored)} />
+        <KpiTile icon={FileWarningIcon} color="aqua" label={t("orphans")} value={formatBytes(orphans.bytes)} detail={t("files", { count: orphans.count })} gauge={shareOf(orphans.bytes, stored)} />
         <KpiTile
           icon={MapIcon}
           color="orange"
           label={t("previews")}
           value={formatBytes(previews.bytes)}
           detail={`${t("files", { count: previews.count })} · ${t("previewsHint")}`}
+          gauge={shareOf(previews.bytes, stored)}
         />
       </KpiGrid>
 
@@ -205,7 +207,7 @@ export function UploadsSkeleton() {
     <div className="flex flex-col gap-4" aria-busy>
       <KpiGrid columns={3}>
         {Array.from({ length: 3 }, (_, index) => (
-          <KpiTileSkeleton key={index} spark={false} />
+          <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
       <Skeleton className="h-72 w-full rounded-xl" />

@@ -11,7 +11,7 @@ export default function AdminReleaseNotesLoading() {
       </div>
       <KpiGrid>
         {Array.from({ length: 4 }, (_, index) => (
-          <KpiTileSkeleton key={index} spark={false} />
+          <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
       <Skeleton className="h-9 w-full rounded-lg" />

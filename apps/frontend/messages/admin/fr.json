@@ -217,7 +217,7 @@
       "accounts": "Comptes",
       "accountsDetail": "{share} reliés à Strava",
       "signups": "Inscriptions",
-      "signupsDetail": "Ces 7 derniers jours",
+      "signupsDetail": "Ces 7 derniers jours · courbe sur 30",
       "active": "Actifs",
       "activeDetail": "{share} des comptes, ces 7 derniers jours",
       "suspended": "Suspendus",
@@ -329,11 +329,11 @@
       "total": "Entrées",
       "totalDetail": "Depuis l'ouverture du back office",
       "today": "Dernières 24 h",
-      "todayDetail": "Actions enregistrées",
+      "todayDetail": "Actions enregistrées · courbe sur 30 jours",
       "failures": "Échecs",
       "failuresDetail": "{share} des actions des 7 derniers jours",
       "actors": "Membres actifs",
-      "actorsDetail": "Ont agi ces 7 derniers jours"
+      "actorsDetail": "Ont agi ces 7 derniers jours · courbe sur 30"
     }
   },
   "businessStatistics": {

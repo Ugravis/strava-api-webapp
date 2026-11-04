@@ -1,7 +1,7 @@
 import "server-only";
 import type { AdminRole } from "@kilotrace/shared/admin";
 import { CrownIcon, KeyRoundIcon, type LucideIcon, ShieldIcon } from "lucide-react";
-import { KpiTile } from "@/components/admin/kpi-tile";
+import { KpiTile, shareOf } from "@/components/admin/kpi-tile";
 import type { SeriesColorName } from "@/components/admin/statistics/palette";
 import { getAdminTranslations } from "@/lib/admin/messages";
 
@@ -18,7 +18,7 @@ export const ROLE_ICONS: Record<AdminRole, LucideIcon> = {
 };
 
 /** A role, what it grants and how many members hold it. */
-export function RoleSummary({ role, count }: { role: AdminRole; count: number }) {
+export function RoleSummary({ role, count, members }: { role: AdminRole; count: number; members: number }) {
   const t = getAdminTranslations("team");
   return (
     <KpiTile
@@ -27,6 +27,7 @@ export function RoleSummary({ role, count }: { role: AdminRole; count: number })
       label={getAdminTranslations("roles")(role)}
       value={count.toLocaleString("fr-FR")}
       detail={t(`roleHints.${role}`)}
+      gauge={shareOf(count, members)}
     />
   );
 }

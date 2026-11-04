@@ -1,6 +1,6 @@
 import type { AdminBadgeCatalog } from "@kilotrace/shared/admin";
 import { HeartIcon, LayersIcon, MedalIcon, UserRoundIcon } from "lucide-react";
-import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiTile, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -29,6 +29,8 @@ export default async function AdminBadgesPage() {
   const inactive = badges.filter((badge) => !badge.active).length;
   const loose = badges.filter((badge) => !badge.themeId).length;
   const sum = (count: (badge: (typeof badges)[number]) => number) => badges.reduce((total, badge) => total + count(badge), 0);
+  const favorited = badges.filter((badge) => badge.favoritesCount > 0).length;
+  const pinned = badges.filter((badge) => badge.profilesCount > 0).length;
 
   return (
     <>
@@ -41,6 +43,7 @@ export default async function AdminBadgesPage() {
             label="Badges"
             value={number.format(badges.length)}
             detail={inactive > 0 ? `dont ${plural(inactive, "désactivé", "désactivés")}` : "Tous actifs"}
+            gauge={shareOf(badges.length - inactive, badges.length)}
           />
           <KpiTile
             icon={LayersIcon}
@@ -48,9 +51,10 @@ export default async function AdminBadgesPage() {
             label="Collections"
             value={number.format(themes.length)}
             detail={loose > 0 ? `${plural(loose, "badge", "badges")} sans collection` : "Chaque badge a sa collection"}
+            gauge={shareOf(badges.length - loose, badges.length)}
           />
-          <KpiTile icon={HeartIcon} color="orange" label="Favoris" value={number.format(sum((badge) => badge.favoritesCount))} detail="Badges mis en favori" />
-          <KpiTile icon={UserRoundIcon} color="yellow" label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail="Badges épinglés sur un profil" />
+          <KpiTile icon={HeartIcon} color="orange" label="Favoris" value={number.format(sum((badge) => badge.favoritesCount))} detail={`${plural(favorited, "badge", "badges")} sur ${number.format(badges.length)} en favori`} gauge={shareOf(favorited, badges.length)} />
+          <KpiTile icon={UserRoundIcon} color="yellow" label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail={`${plural(pinned, "badge", "badges")} sur ${number.format(badges.length)} sur un profil`} gauge={shareOf(pinned, badges.length)} />
         </KpiGrid>
       )}
       <Separator />

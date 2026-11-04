@@ -1,7 +1,7 @@
 import type { AdminPage, AuditLogEntry, AuditLogOverview } from "@kilotrace/shared/admin";
 import { CircleAlertIcon, ListIcon, UsersIcon, XIcon, ZapIcon } from "lucide-react";
 import Link from "next/link";
-import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiTile, runningTotal, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -43,10 +43,10 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps<"/ad
       <PageHeader title={t("title")} description={t("description")} />
       {figures && (
         <KpiGrid>
-          <KpiTile icon={ListIcon} color="blue" label={o("total")} value={number.format(figures.total)} detail={o("totalDetail")} />
-          <KpiTile icon={ZapIcon} color="aqua" label={o("today")} value={number.format(figures.today)} detail={o("todayDetail")} />
-          <KpiTile icon={CircleAlertIcon} color="orange" label={o("failures")} value={number.format(figures.failures)} detail={o("failuresDetail", { share: percent(figures.failures, figures.week) })} />
-          <KpiTile icon={UsersIcon} color="yellow" label={o("actors")} value={number.format(figures.actors)} detail={o("actorsDetail")} />
+          <KpiTile icon={ListIcon} color="blue" label={o("total")} value={number.format(figures.total)} detail={o("totalDetail")} spark={runningTotal(figures.entriesByDay, figures.total)} sparkFromMin />
+          <KpiTile icon={ZapIcon} color="aqua" label={o("today")} value={number.format(figures.today)} detail={o("todayDetail")} spark={figures.entriesByDay} />
+          <KpiTile icon={CircleAlertIcon} color="orange" label={o("failures")} value={number.format(figures.failures)} detail={o("failuresDetail", { share: percent(figures.failures, figures.week) })} gauge={shareOf(figures.failures, figures.week)} />
+          <KpiTile icon={UsersIcon} color="yellow" label={o("actors")} value={number.format(figures.actors)} detail={o("actorsDetail")} spark={figures.actorsByDay} />
         </KpiGrid>
       )}
       {(scope.target || scope.actor) && (

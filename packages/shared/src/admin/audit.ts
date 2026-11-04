@@ -52,4 +52,7 @@ export interface AuditLogOverview {
   week: number;
   /** Members who acted in the last 7 days. */
   actors: number;
+  /** Each of the last 30 UTC days, oldest first. */
+  entriesByDay: number[];
+  actorsByDay: number[];
 }

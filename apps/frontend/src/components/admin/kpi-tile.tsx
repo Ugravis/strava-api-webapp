@@ -13,6 +13,20 @@ export function KpiGrid({ columns = 4, children }: { columns?: keyof typeof COLU
   return <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", COLUMNS[columns])}>{children}</div>;
 }
 
+export interface KpiSegment {
+  label: string;
+  value: number;
+}
+
+/** Daily additions as a running total, ending on the total of today. */
+export function runningTotal(daily: number[], total: number) {
+  let remaining = total - daily.reduce((sum, count) => sum + count, 0);
+  return daily.map((count) => (remaining += count));
+}
+
+/** The part of a whole, 0 without a whole. */
+export const shareOf = (part: number, whole: number) => (whole > 0 ? part / whole : 0);
+
 interface KpiTileProps {
   icon: LucideIcon;
   label: string;
@@ -27,14 +41,20 @@ interface KpiTileProps {
   color?: SeriesColorName;
   /** The page it sums up, opened on click. */
   href?: string;
-  /** In place of the sparkline, e.g. a gauge. */
+  /** A share, from 0 to 1, drawn as a bar under the figure. */
+  gauge?: number | null;
+  /** The parts of the figure, drawn as a stacked bar with their legend. */
+  segments?: KpiSegment[];
+  /** In place of the drawings above, e.g. a gauge with a warning. */
   footer?: ReactNode;
 }
 
 /** A headline figure, with its trend and its last days when it has them. */
-export function KpiTile({ icon: Icon, label, value, detail, trend, spark, sparkFromMin = false, color = "blue", href, footer }: KpiTileProps) {
+export function KpiTile({ icon: Icon, label, value, detail, trend, spark, sparkFromMin = false, color = "blue", href, gauge, segments, footer }: KpiTileProps) {
   const TrendIcon = trend && trend.ratio < 0 ? ArrowDownRightIcon : ArrowUpRightIcon;
-  const bottom = footer ?? (spark && <Sparkline values={spark} color={color} fromMin={sparkFromMin} />);
+  const bottom =
+    footer ??
+    (spark ? <Sparkline values={spark} color={color} fromMin={sparkFromMin} /> : segments ? <Segments segments={segments} /> : gauge != null ? <Gauge ratio={gauge} color={color} /> : null);
   const card = (
     <Card className={cn("h-full gap-2 px-4 py-4", href && "transition-shadow group-hover/kpi:ring-foreground/20 group-hover/kpi:shadow-sm")}>
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground sm:text-sm">
@@ -72,15 +92,45 @@ export function KpiTile({ icon: Icon, label, value, detail, trend, spark, sparkF
   );
 }
 
-/** Stands for a tile while its data loads; `spark` for a tile that draws its last days. */
-export function KpiTileSkeleton({ spark = true }: { spark?: boolean }) {
+/** Stands for a tile while its data loads. */
+export function KpiTileSkeleton() {
   return (
     <Card className="gap-3 px-4 py-4">
       <Skeleton className="h-7 w-28" />
       <Skeleton className="h-8 w-20" />
       <Skeleton className="h-3 w-32" />
-      {spark && <Skeleton className="h-8 w-full" />}
+      <Skeleton className="h-8 w-full" />
     </Card>
+  );
+}
+
+function Gauge({ ratio, color }: { ratio: number; color: SeriesColorName }) {
+  return (
+    <span className="block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+      <span className={cn("block h-full rounded-full", SERIES_COLORS[color].swatch)} style={{ width: `${Math.min(ratio, 1) * 100}%` }} />
+    </span>
+  );
+}
+
+const SEGMENT_COLORS: SeriesColorName[] = ["blue", "aqua", "orange", "yellow", "muted"];
+
+function Segments({ segments }: { segments: KpiSegment[] }) {
+  const total = segments.reduce((sum, { value }) => sum + value, 0);
+  const colorOf = (index: number) => SERIES_COLORS[SEGMENT_COLORS[index % SEGMENT_COLORS.length]].swatch;
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+        {segments.map(({ label, value }, index) => value > 0 && <span key={label} className={colorOf(index)} style={{ width: `${(value / total) * 100}%` }} />)}
+      </span>
+      <ul className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
+        {segments.map(({ label, value }, index) => (
+          <li key={label} className="flex items-center gap-1">
+            <span className={cn("size-1.5 rounded-full", colorOf(index))} aria-hidden />
+            {label} <span className="tabular-nums">{value.toLocaleString("fr-FR")}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

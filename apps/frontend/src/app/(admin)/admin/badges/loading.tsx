@@ -11,7 +11,7 @@ export default function AdminBadgesLoading() {
       </div>
       <KpiGrid>
         {Array.from({ length: 4 }, (_, index) => (
-          <KpiTileSkeleton key={index} spark={false} />
+          <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
       <Skeleton className="h-5 w-24" />

@@ -59,7 +59,7 @@ export function UnderlineTabs<Tab extends string>({
         else onValueChange?.(tab.id);
       }}
     >
-      <div ref={scroller} className="overflow-x-auto [scrollbar-width:none]">
+      <div ref={scroller} className="@container overflow-x-auto [scrollbar-width:none]">
         <TabsList variant="line" aria-label={label} className="relative w-full min-w-max justify-start border-b p-0 group-data-horizontal/tabs:h-10">
           <TabsPrimitive.Indicator className="absolute -bottom-px left-(--active-tab-left) h-0.5 w-(--active-tab-width) bg-foreground transition-[left,width] duration-300 ease-out motion-reduce:transition-none" />
           {tabs.map((tab) => {
@@ -69,11 +69,11 @@ export function UnderlineTabs<Tab extends string>({
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  "h-full flex-1 rounded-none px-2.5 text-[13px] after:hidden focus-visible:ring-inset sm:text-sm",
+                  "h-full flex-1 rounded-none px-2.5 text-[13px] after:hidden focus-visible:ring-inset @lg:text-sm",
                   tab.dimmed && "not-data-active:opacity-60",
                 )}
               >
-                {Icon && <Icon aria-hidden className="hidden sm:block" />}
+                {Icon && <Icon aria-hidden className="hidden @xl:block" />}
                 {tab.label}
               </TabsTrigger>
             );

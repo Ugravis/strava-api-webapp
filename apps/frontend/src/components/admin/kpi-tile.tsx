@@ -4,13 +4,18 @@ import type { ReactNode } from "react";
 import { SERIES_COLORS, type SeriesColorName } from "@/components/admin/statistics/palette";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const COLUMNS = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4" } as const;
+const COLUMNS = { 3: "@xl:grid-cols-3", 4: "@2xl:grid-cols-4" } as const;
 
-/** The row of headline figures of a page. */
+/** The row of headline figures of a page, following its own width: a side panel narrows it without resizing the window. */
 export function KpiGrid({ columns = 4, children }: { columns?: keyof typeof COLUMNS; children: ReactNode }) {
-  return <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", COLUMNS[columns])}>{children}</div>;
+  return (
+    <div className="@container">
+      <div className={cn("grid grid-cols-1 gap-3 @xs:grid-cols-2 @lg:gap-4", COLUMNS[columns])}>{children}</div>
+    </div>
+  );
 }
 
 export interface KpiSegment {
@@ -43,7 +48,7 @@ interface KpiTileProps {
   href?: string;
   /** A share, from 0 to 1, drawn as a bar under the figure. */
   gauge?: number | null;
-  /** The parts of the figure, drawn as a stacked bar with their legend. */
+  /** The parts of the figure, drawn as a stacked bar; each one tells its label and value on hover. */
   segments?: KpiSegment[];
   /** In place of the drawings above, e.g. a gauge with a warning. */
   footer?: ReactNode;
@@ -57,7 +62,7 @@ export function KpiTile({ icon: Icon, label, value, detail, trend, spark, sparkF
     (spark ? <Sparkline values={spark} color={color} fromMin={sparkFromMin} /> : segments ? <Segments segments={segments} /> : gauge != null ? <Gauge ratio={gauge} color={color} /> : null);
   const card = (
     <Card className={cn("h-full gap-2 px-4 py-4", href && "transition-shadow group-hover/kpi:ring-foreground/20 group-hover/kpi:shadow-sm")}>
-      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground sm:text-sm">
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground @lg:text-sm">
         <span className="flex min-w-0 items-center gap-2">
           <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md bg-muted", SERIES_COLORS[color].text)}>
             <Icon className="size-4" aria-hidden />
@@ -67,7 +72,7 @@ export function KpiTile({ icon: Icon, label, value, detail, trend, spark, sparkF
         {href && <ArrowRightIcon className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover/kpi:opacity-100" aria-hidden />}
       </div>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{value}</span>
+        <span className="text-2xl font-semibold tracking-tight tabular-nums @lg:text-3xl">{value}</span>
         {trend && (
           <span
             className={cn(
@@ -116,21 +121,32 @@ const SEGMENT_COLORS: SeriesColorName[] = ["blue", "aqua", "orange", "yellow", "
 
 function Segments({ segments }: { segments: KpiSegment[] }) {
   const total = segments.reduce((sum, { value }) => sum + value, 0);
-  const colorOf = (index: number) => SERIES_COLORS[SEGMENT_COLORS[index % SEGMENT_COLORS.length]].swatch;
+  const parts = segments.flatMap((segment, index) => (segment.value > 0 ? [{ ...segment, color: SERIES_COLORS[SEGMENT_COLORS[index % SEGMENT_COLORS.length]].swatch }] : []));
+  const text = ({ label, value }: KpiSegment) => `${label} : ${value.toLocaleString("fr-FR")} (${Math.round((value / total) * 100)} %)`;
+  if (total === 0) return <span className="block h-1.5 rounded-full bg-muted" aria-hidden />;
   return (
-    <div className="flex flex-col gap-2">
-      <span className="flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-        {segments.map(({ label, value }, index) => value > 0 && <span key={label} className={colorOf(index)} style={{ width: `${(value / total) * 100}%` }} />)}
-      </span>
-      <ul className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
-        {segments.map(({ label, value }, index) => (
-          <li key={label} className="flex items-center gap-1">
-            <span className={cn("size-1.5 rounded-full", colorOf(index))} aria-hidden />
-            {label} <span className="tabular-nums">{value.toLocaleString("fr-FR")}</span>
-          </li>
+    <>
+      {/* Taller than the bar, so that a part is easy to hover; the margins keep it in line with the gauges. */}
+      <div className="-my-[5px] flex h-4 gap-0.5" aria-hidden>
+        {parts.map((part) => (
+          <Tooltip key={part.label}>
+            <TooltipTrigger
+              render={<span />}
+              className="group/segment flex min-w-1 items-center first:[&>span]:rounded-l-full last:[&>span]:rounded-r-full"
+              style={{ flexGrow: part.value, flexBasis: 0 }}
+            >
+              <span className={cn("h-1.5 w-full transition-[height] group-hover/segment:h-2", part.color)} />
+            </TooltipTrigger>
+            <TooltipContent>{text(part)}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+      <ul className="sr-only">
+        {parts.map((part) => (
+          <li key={part.label}>{text(part)}</li>
         ))}
       </ul>
-    </div>
+    </>
   );
 }
 

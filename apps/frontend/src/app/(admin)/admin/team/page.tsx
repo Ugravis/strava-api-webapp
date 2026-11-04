@@ -8,6 +8,7 @@ import {
   permissionDefinition,
 } from "@kilotrace/shared/admin";
 import { AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { KpiGrid } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
@@ -37,11 +38,11 @@ export default async function AdminTeamPage() {
 
       {result.ok ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <KpiGrid columns={3}>
             {[...ADMIN_ROLES].reverse().map((role) => (
               <RoleSummary key={role} role={role} count={result.data.filter((member) => member.role === role).length} />
             ))}
-          </div>
+          </KpiGrid>
           <Separator />
           <TeamTable meId={me?.id ?? null} canEdit={canEdit} paths={{ users: adminRoutes.users, auditLog: adminRoutes.auditLog }} />
         </>

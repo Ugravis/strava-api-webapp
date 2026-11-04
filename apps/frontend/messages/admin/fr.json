@@ -790,7 +790,6 @@
     "description": "Les membres de l'équipe, leur rôle et les permissions de chaque rôle.",
     "readOnly": "Lecture seule : seuls les super-admins gèrent l'équipe.",
     "error": "L'équipe n'a pas pu être chargée.",
-    "count": "{count, plural, one {# membre} other {# membres}}",
     "roleHints": {
       "support": "Voit tout le back-office, avec les actions cochées pour le support.",
       "admin": "Voit tout le back-office, avec les actions cochées pour les admins.",

@@ -5,7 +5,7 @@ import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { cn } from "@/lib/utils";
 import { dashboardData } from "./data";
-import { KpiTile, KpiTileSkeleton } from "./parts";
+import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 
 /** Share of the Strava read quota from which it is flagged. */
 export const QUOTA_WARNING = 0.8;
@@ -28,7 +28,7 @@ export async function DashboardKpis() {
   const quota = today?.read != null && today.readLimit ? today.read / today.readLimit : null;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <KpiGrid>
       <KpiTile
         icon={UsersIcon}
         label={t("users")}
@@ -70,16 +70,16 @@ export async function DashboardKpis() {
         }
         footer={<Progress value={Math.min((quota ?? 0) * 100, 100)} className={cn(quota !== null && quota >= QUOTA_WARNING && "[&_[data-slot=progress-indicator]]:bg-destructive")} />}
       />
-    </div>
+    </KpiGrid>
   );
 }
 
 export function DashboardKpisSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <KpiGrid>
       {Array.from({ length: 4 }, (_, index) => (
         <KpiTileSkeleton key={index} />
       ))}
-    </div>
+    </KpiGrid>
   );
 }

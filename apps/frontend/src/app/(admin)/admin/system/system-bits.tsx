@@ -9,7 +9,7 @@ import { FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, 
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
-import { StatTile } from "@/components/admin/statistics/stat-tile";
+import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,16 +140,17 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <StatTile icon={FileImageIcon} label={t("avatars")} value={formatBytes(avatars.bytes)} detail={t("files", { count: avatars.count })} />
-        <StatTile icon={FileWarningIcon} label={t("orphans")} value={formatBytes(orphans.bytes)} detail={t("files", { count: orphans.count })} />
-        <StatTile
+      <KpiGrid columns={3}>
+        <KpiTile icon={FileImageIcon} color="blue" label={t("avatars")} value={formatBytes(avatars.bytes)} detail={t("files", { count: avatars.count })} />
+        <KpiTile icon={FileWarningIcon} color="aqua" label={t("orphans")} value={formatBytes(orphans.bytes)} detail={t("files", { count: orphans.count })} />
+        <KpiTile
           icon={MapIcon}
+          color="orange"
           label={t("previews")}
           value={formatBytes(previews.bytes)}
           detail={`${t("files", { count: previews.count })} · ${t("previewsHint")}`}
         />
-      </div>
+      </KpiGrid>
 
       <Separator />
       <div className="flex flex-col gap-2">
@@ -202,11 +203,11 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
 export function UploadsSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <KpiGrid columns={3}>
         {Array.from({ length: 3 }, (_, index) => (
-          <Skeleton key={index} className="h-28 w-full rounded-xl" />
+          <KpiTileSkeleton key={index} spark={false} />
         ))}
-      </div>
+      </KpiGrid>
       <Skeleton className="h-72 w-full rounded-xl" />
     </div>
   );

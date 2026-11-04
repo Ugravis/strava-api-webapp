@@ -1,6 +1,6 @@
 import type { AdminBadgeCatalog } from "@kilotrace/shared/admin";
 import { HeartIcon, LayersIcon, MedalIcon, UserRoundIcon } from "lucide-react";
-import { StatTile } from "@/components/admin/statistics/stat-tile";
+import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -34,22 +34,24 @@ export default async function AdminBadgesPage() {
     <>
       <PageHeader title={t("title")} description={t("description")} />
       {result.ok && (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatTile
+        <KpiGrid>
+          <KpiTile
             icon={MedalIcon}
+            color="blue"
             label="Badges"
             value={number.format(badges.length)}
             detail={inactive > 0 ? `dont ${plural(inactive, "désactivé", "désactivés")}` : "Tous actifs"}
           />
-          <StatTile
+          <KpiTile
             icon={LayersIcon}
+            color="aqua"
             label="Collections"
             value={number.format(themes.length)}
             detail={loose > 0 ? `${plural(loose, "badge", "badges")} sans collection` : "Chaque badge a sa collection"}
           />
-          <StatTile icon={HeartIcon} label="Favoris" value={number.format(sum((badge) => badge.favoritesCount))} detail="Badges mis en favori" />
-          <StatTile icon={UserRoundIcon} label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail="Badges épinglés sur un profil" />
-        </div>
+          <KpiTile icon={HeartIcon} color="orange" label="Favoris" value={number.format(sum((badge) => badge.favoritesCount))} detail="Badges mis en favori" />
+          <KpiTile icon={UserRoundIcon} color="yellow" label="Profils" value={number.format(sum((badge) => badge.profilesCount))} detail="Badges épinglés sur un profil" />
+        </KpiGrid>
       )}
       <Separator />
       <Catalog themes={themes} rights={rights} />

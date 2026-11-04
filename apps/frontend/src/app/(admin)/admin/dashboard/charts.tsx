@@ -168,7 +168,7 @@ export async function DashboardTopPages({ team }: { team: boolean }) {
 /** Activities synchronized over the period, by family of sports. */
 export async function DashboardSports() {
   const t = getAdminTranslations("dashboard.sports");
-  const families = getAdminTranslations("statistics.activities.families");
+  const families = getAdminTranslations("businessStatistics.families");
   const statistics = await dashboardData.statistics();
   const totals = Object.fromEntries(
     ADMIN_SPORT_FAMILIES.map((family) => [family, statistics?.activities.synced.reduce((sum, day) => sum + day.families[family], 0) ?? 0]),

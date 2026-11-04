@@ -14,7 +14,7 @@
       "security": "Sécurité"
     },
     "dashboard": "Dashboard",
-    "statistics": "Statistiques",
+    "statistics": "Statistiques métier",
     "users": "Utilisateurs",
     "badges": "Badges",
     "userTags": "Tags",
@@ -336,68 +336,369 @@
       "actorsDetail": "Ont agi ces 7 derniers jours"
     }
   },
-  "statistics": {
-    "title": "Statistiques",
-    "description": "Chiffres de toute l'application, par jour UTC, sur les {days} derniers jours. Calculés à {time}.",
-    "error": "Les statistiques n'ont pas pu être chargées. Réessayez dans un instant.",
-    "tiles": {
-      "users": "Inscrits",
-      "usersDetail": "{count, plural, =0 {Aucune inscription} one {# inscription} other {# inscriptions}} sur {days} jours",
-      "trend": "{trend} par rapport aux {days} jours précédents",
+  "businessStatistics": {
+    "units": {
+      "week": "Semaine du {date}"
+    },
+    "families": {
+      "ride": "Vélo",
+      "run": "Course",
+      "hike": "Marche et rando",
+      "swim": "Natation",
+      "other": "Autres"
+    },
+    "tabs": {
+      "label": "Parties des statistiques métier",
+      "accounts": "Comptes",
+      "sports": "Sports",
+      "exploration": "Exploration",
+      "community": "Communauté",
+      "strava": "Strava"
+    },
+    "header": {
+      "title": "Statistiques métier",
+      "period": "Période",
+      "periods": {
+        "30": "30 jours",
+        "90": "90 jours",
+        "365": "12 mois",
+        "all": "Tout l'historique"
+      },
+      "teamSwitch": "Compter l'équipe",
+      "withTeam": "Équipe incluse",
+      "withoutTeam": "Équipe exclue",
+      "fallback": "Comptes, sports, exploration, communauté et lien avec Strava.",
+      "range": "Depuis le {from}, {unit}",
+      "perUnit": {
+        "day": "par jour",
+        "week": "par semaine",
+        "month": "par mois"
+      },
+      "activityDates": "activités comptées à leur date",
+      "computedAt": "calculé à {time}",
+      "rangeAll": "Depuis le {from}"
+    },
+    "kpis": {
+      "accounts": "Comptes",
+      "newAccounts": "{count, plural, =0 {Aucun nouveau} one {# nouveau} other {# nouveaux}} sur la période",
+      "athletes": "Athlètes actifs",
+      "athletesShare": "{share} des comptes ont une activité sur la période",
       "activities": "Activités",
-      "activitiesDetail": "{count, plural, =0 {Aucune synchronisée} one {# synchronisée} other {# synchronisées}} sur {days} jours",
-      "follows": "Abonnements",
-      "followsDetail": "{count, plural, =0 {Aucune demande en attente} one {# demande en attente} other {# demandes en attente}}",
-      "quota": "Quota Strava du jour",
-      "quotaDetail": "{used} requêtes de lecture sur {limit}",
-      "quotaUnknown": "Aucun appel à Strava aujourd'hui"
+      "distance": "Distance",
+      "previous": "{value} la période précédente",
+      "wholeHistory": "Tout l'historique",
+      "connectionRate": "Taux de lien Strava",
+      "connectionRateDetail": "{connected} {connected, plural, one {compte lié} other {comptes liés}} sur {accounts}",
+      "perAthlete": "Activités par athlète",
+      "perAthleteDetail": "{distance} par athlète actif",
+      "moving": "Temps en mouvement",
+      "elevation": "Dénivelé positif",
+      "discoveries": "Tuiles découvertes"
     },
-    "signups": {
-      "title": "Inscriptions",
-      "series": "Inscriptions",
-      "chart": "Inscriptions par jour sur {days} jours"
-    },
-    "follows": {
-      "title": "Abonnements",
-      "accepted": "Abonnements",
-      "pending": "Demandes en attente",
-      "total": "relations",
-      "chart": "Répartition des abonnements et des demandes en attente",
-      "empty": "Aucun abonnement pour l'instant."
-    },
-    "activities": {
-      "title": "Activités synchronisées",
-      "total": "Total",
-      "legend": "Familles de sports",
-      "chart": "Activités synchronisées par jour et par famille de sports sur {days} jours",
-      "families": {
-        "ride": "Vélo",
-        "run": "Course",
-        "hike": "Marche et rando",
-        "swim": "Natation",
-        "other": "Autres"
+    "accounts": {
+      "legend": "Séries du graphique",
+      "signups": {
+        "title": "Nouveaux comptes",
+        "description": "Par méthode d'inscription",
+        "email": "E-mail",
+        "google": "Google",
+        "total": "Inscriptions affichées"
+      },
+      "cumulated": {
+        "title": "Total des comptes",
+        "description": "En fin de chaque période",
+        "today": "Aujourd'hui",
+        "series": "Comptes"
+      },
+      "activation": {
+        "title": "Activation",
+        "description": "{count, plural, =0 {Aucun compte créé} one {Le compte créé} other {Les # comptes créés}} sur la période, aujourd'hui",
+        "connected": "Strava lié",
+        "imported": "Première activité importée",
+        "explored": "Première tuile explorée",
+        "regular": "10 activités ou plus",
+        "social": "Au moins un abonnement",
+        "empty": "Aucun compte créé sur la période.",
+        "median": "Lien à Strava {days} jours après l'inscription, en médiane."
+      },
+      "profile": {
+        "title": "Complétion des profils",
+        "description": "Part des comptes ayant renseigné chaque champ",
+        "avatar": "Photo",
+        "country": "Pays",
+        "sports": "Sports favoris",
+        "city": "Ville",
+        "bio": "Bio",
+        "color": "Couleur du profil",
+        "empty": "Aucun compte."
+      },
+      "recency": {
+        "title": "Dernière activité",
+        "description": "Comptes selon l'ancienneté de leur dernière activité sportive",
+        "buckets": {
+          "0-6": "Moins de 7 jours",
+          "7-29": "7 à 29 jours",
+          "30-89": "30 à 89 jours",
+          "90-364": "90 à 364 jours",
+          "365+": "Un an ou plus",
+          "never": "Aucune activité"
+        }
+      },
+      "countries": {
+        "title": "Pays déclarés",
+        "description": "Les 10 premiers, déclarés sur le profil",
+        "none": "Non renseigné",
+        "empty": "Aucun compte."
+      },
+      "sports": {
+        "title": "Sports favoris",
+        "description": "Déclarés sur le profil",
+        "empty": "Aucun sport favori déclaré."
+      },
+      "status": {
+        "title": "État et tags",
+        "description": "État des comptes aujourd'hui, puis tags attribués",
+        "active": "Actifs",
+        "suspended": "Suspendus",
+        "team": "Équipe",
+        "noTags": "Aucun tag attribué."
       }
     },
-    "stravaUsage": {
-      "title": "Usage de l'API Strava",
-      "period": "Période",
-      "days": "{days} jours",
-      "quarters": "24 heures",
-      "read": "Requêtes de lecture",
-      "dailyLimit": "Limite quotidienne",
-      "shortLimit": "Limite par 15 minutes",
-      "limitCaption": "{limit} : {value} requêtes, hors de l'échelle.",
-      "overall": "Toutes requêtes",
-      "chart": "Requêtes de lecture envoyées à Strava",
-      "empty": "Aucun appel à Strava enregistré sur la période."
+    "sports": {
+      "legend": "Familles de sports",
+      "total": "Total",
+      "activities": {
+        "title": "Activités",
+        "description": "Par famille de sports, à la date de l'activité",
+        "total": "Activités",
+        "average": "Durée moyenne"
+      },
+      "kinds": {
+        "title": "Nature des activités",
+        "description": "Enregistrées dehors, en intérieur ou saisies à la main",
+        "total": "activités",
+        "outdoor": "Extérieur",
+        "indoor": "Intérieur",
+        "manual": "Saisie manuelle",
+        "empty": "Aucune activité sur la période."
+      },
+      "distance": {
+        "title": "Distance",
+        "description": "En kilomètres, par famille de sports",
+        "total": "Distance cumulée",
+        "median": "Distance médiane",
+        "elevation": "Dénivelé positif"
+      },
+      "athletes": {
+        "title": "Athlètes actifs",
+        "description": "Par nombre d'activités sur la période",
+        "total": "Sur la période",
+        "peak": "Pic par point",
+        "bucket": "{range} {range, select, 1 {activité} other {activités}}"
+      },
+      "table": {
+        "title": "Par sport",
+        "description": "Les 12 sports les plus pratiqués sur la période",
+        "empty": "Aucune activité sur la période.",
+        "sport": "Sport",
+        "activities": "Activités",
+        "share": "Part",
+        "athletes": "Athlètes",
+        "distance": "Distance",
+        "time": "Temps",
+        "elevation": "Dénivelé",
+        "averageDistance": "Dist. moy.",
+        "averageSpeed": "Vitesse moy."
+      },
+      "week": {
+        "title": "Quand les athlètes sortent",
+        "description": "Départs par jour et par heure, à l'heure locale de chaque activité",
+        "less": "Moins",
+        "more": "Plus",
+        "cell": "{day} {hour} h : {count, plural, =0 {aucune activité} one {# activité} other {# activités}}",
+        "days": {
+          "1": "lun.",
+          "2": "mar.",
+          "3": "mer.",
+          "4": "jeu.",
+          "5": "ven.",
+          "6": "sam.",
+          "7": "dim."
+        }
+      },
+      "distances": {
+        "title": "Distance par activité",
+        "description": "Répartition des activités",
+        "bucket": "{range} km"
+      }
     },
-    "notifications": {
-      "title": "Notifications",
-      "unread": "Non lues",
-      "read": "Lues",
-      "total": "notifications",
-      "chart": "Répartition des notifications lues et non lues",
-      "empty": "Aucune notification envoyée."
+    "exploration": {
+      "legend": "Séries du graphique",
+      "totals": {
+        "tiles": "Tuiles communes",
+        "explorers": "{count, plural, =0 {Aucun explorateur} one {# explorateur} other {# explorateurs}}",
+        "smallTiles": "Petites tuiles",
+        "smallTilesDetail": "Chacune comptée une fois",
+        "countries": "Pays traversés",
+        "countriesDetail": "Au moins une petite tuile",
+        "stations": "Gares visitées",
+        "railway": "Rail débloqué",
+        "imported": "Sur {value} importés, {share}"
+      },
+      "discoveries": {
+        "title": "Découvertes",
+        "description": "Tuiles nouvelles pour leur athlète et pour toute la communauté",
+        "individual": "Pour l'athlète",
+        "community": "Pour la communauté",
+        "individualTotal": "Pour un athlète",
+        "communityTotal": "Pour la communauté",
+        "smallTiles": "Petites tuiles gagnées"
+      },
+      "explorers": {
+        "title": "Explorateurs",
+        "description": "Par nombre de tuiles, médianes des comptes calculés",
+        "medianTiles": "Tuiles",
+        "medianSquare": "Carré",
+        "medianCluster": "Cluster",
+        "bucket": "{range} tuiles"
+      },
+      "countries": {
+        "title": "Pays les plus explorés",
+        "description": "Les 15 premiers sur {count, plural, =0 {aucun pays} one {# pays} other {# pays}}, tuiles communes",
+        "empty": "Aucune tuile explorée.",
+        "country": "Pays",
+        "tiles": "Tuiles explorées",
+        "total": "Tuiles du pays",
+        "completion": "Couverture",
+        "explorers": "Explorateurs"
+      }
+    },
+    "community": {
+      "legend": "Séries du graphique",
+      "strip": {
+        "follows": "Abonnements",
+        "perAccount": "{value} par compte",
+        "pending": "Demandes en attente",
+        "pendingDetail": "{share} acceptées",
+        "mutual": "Abonnements mutuels",
+        "mutualDetail": "Paires de comptes",
+        "connected": "Comptes reliés",
+        "connectedDetail": "{count} {count, plural, one {compte} other {comptes}} sur {accounts}",
+        "likes": "J'aime",
+        "previous": "{value} la période précédente",
+        "wholeHistory": "Tout l'historique"
+      },
+      "growth": {
+        "title": "Liens créés",
+        "description": "Nouveaux abonnements et j'aime de profils",
+        "follows": "Abonnements",
+        "likes": "J'aime",
+        "followsTotal": "Abonnements",
+        "likesTotal": "J'aime"
+      },
+      "followers": {
+        "title": "Abonnés par compte",
+        "description": "Comptes selon leurs abonnés aujourd'hui",
+        "bucket": "{range} {range, select, 0 {abonné} 1 {abonné} other {abonnés}}"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Envoyées sur la période, par type",
+        "empty": "Aucune notification sur la période.",
+        "type": "Type",
+        "sent": "Envoyées",
+        "read": "Lues",
+        "rate": "Taux de lecture",
+        "types": {
+          "follow": "Nouvel abonné",
+          "follow_request": "Demande d'abonnement",
+          "follow_accepted": "Demande acceptée",
+          "profile_like": "J'aime de profil",
+          "moderation": "Modération",
+          "role_changed": "Changement de rôle",
+          "strava_unlinked": "Strava délié",
+          "release_note": "Note de mise à jour"
+        }
+      },
+      "profiles": {
+        "title": "Confidentialité",
+        "description": "Profils privés ou publics aujourd'hui",
+        "total": "profils",
+        "private": "Privés",
+        "public": "Publics",
+        "empty": "Aucun profil."
+      },
+      "badges": {
+        "empty": "Rien pour l'instant.",
+        "earned": "Badges les plus obtenus",
+        "earnedDescription": "{athletes, plural, one {# athlète} other {# athlètes}}, {count} badges actifs, palier initial atteint",
+        "favorites": "Badges favoris",
+        "favoritesDescription": "Ajoutés aux favoris par les comptes",
+        "pinned": "Badges épinglés",
+        "pinnedDescription": "Affichés sur les profils"
+      }
+    },
+    "strava": {
+      "legend": "Séries du graphique",
+      "total": "Total",
+      "strip": {
+        "connected": "Comptes liés",
+        "connectedDetail": "{share} des comptes",
+        "fresh": "Synchronisés récemment",
+        "freshDetail": "Ces 7 derniers jours",
+        "neverSynced": "Jamais synchronisés",
+        "neverSyncedDetail": "Liés mais rien d'importé",
+        "privateScope": "Activités privées",
+        "privateScopeDetail": "Part des liens qui les autorisent",
+        "quota": "Quota du jour",
+        "quotaDetail": "Pic {peak} requêtes sur {limit}"
+      },
+      "imports": {
+        "title": "Activités importées",
+        "description": "À la date d'import, pas à celle de l'activité",
+        "total": "Importées sur la période",
+        "series": "Activités"
+      },
+      "links": {
+        "title": "Nouveaux liens",
+        "description": "Comptes liés à Strava, encore liés aujourd'hui",
+        "total": "Sur la période",
+        "series": "Liens"
+      },
+      "jobs": {
+        "title": "Synchronisations",
+        "description": "Imports initiaux et rattrapages terminés, par date de fin",
+        "completed": "Réussies",
+        "failed": "Échouées",
+        "successRate": "Réussite",
+        "medianDuration": "Durée médiane",
+        "active": "En cours"
+      },
+      "webhooks": {
+        "title": "Webhooks Strava",
+        "description": "Événements reçus, équipe comprise : ils ne sont pas rattachés à un compte",
+        "create": "Créations",
+        "update": "Modifications",
+        "delete": "Suppressions",
+        "received": "Reçus",
+        "medianDelay": "Délai médian",
+        "pending": "En attente",
+        "failing": "En erreur"
+      },
+      "usage": {
+        "title": "Quota de l'API Strava",
+        "description": "Requêtes de lecture, quelle que soit la période choisie",
+        "period": "Période",
+        "days": "30 jours",
+        "quarters": "24 heures",
+        "read": "Requêtes de lecture",
+        "dailyLimit": "Limite quotidienne",
+        "shortLimit": "Limite par 15 minutes",
+        "limitCaption": "{limit} : {value} requêtes, hors de l'échelle.",
+        "overall": "Toutes requêtes",
+        "chart": "Requêtes de lecture envoyées à Strava",
+        "empty": "Aucun appel à Strava enregistré sur la période."
+      }
     }
   },
   "badges": {

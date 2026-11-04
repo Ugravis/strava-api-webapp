@@ -1,24 +1,31 @@
 "use client";
 
 import { hasReleaseNoteContent, type PublicReleaseNote, type ReleaseNoteDisplay } from "@kilotrace/shared";
-import { BellIcon, HistoryIcon, PanelTopIcon, MegaphoneIcon, SquareStackIcon } from "lucide-react";
+import { BellIcon, HistoryIcon, type LucideIcon, MegaphoneIcon, PanelTopIcon, SquareStackIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { ReleaseNoteArticle } from "@/components/release-notes/release-note-article";
 import { ReleaseNoteBanner } from "@/components/release-notes/release-note-banner";
 import { ReleaseNoteCard, ReleaseNoteFooter } from "@/components/release-notes/release-note-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { UnderlineTabs } from "@/components/ui/underline-tabs";
 import { DISPLAYS } from "./release-note-bits";
 
 type Surface = "popup" | "banner" | "notification" | "history";
 
-const SURFACES: { id: Surface; label: string; icon: ReactNode }[] = [
-  { id: "popup", label: "Popup", icon: <SquareStackIcon /> },
-  { id: "banner", label: "Bandeau", icon: <PanelTopIcon /> },
-  { id: "notification", label: "Notification", icon: <BellIcon /> },
-  { id: "history", label: "Historique", icon: <HistoryIcon /> },
+const SURFACES: { id: Surface; label: string }[] = [
+  { id: "popup", label: "Popup" },
+  { id: "banner", label: "Bandeau" },
+  { id: "notification", label: "Notification" },
+  { id: "history", label: "Historique" },
 ];
+
+const SURFACE_ICONS: Record<Surface, LucideIcon> = {
+  popup: SquareStackIcon,
+  banner: PanelTopIcon,
+  notification: BellIcon,
+  history: HistoryIcon,
+};
 
 const surfaceOf = (display: ReleaseNoteDisplay): Surface => (display === "none" ? "history" : display);
 
@@ -49,25 +56,13 @@ export function ReleaseNotePreview({ note, open, onOpenChange }: { note: PublicR
             {empty ? " · note vide, rien ne sera montré" : " · rien n'est envoyé ni compté comme vu"}
           </DialogDescription>
         </DialogHeader>
-        <div role="tablist" aria-label="Surface" className="-mx-4 flex gap-4 border-b px-4">
-          {SURFACES.map(({ id, label, icon }) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={surface === id}
-              onClick={() => setSurface(id)}
-              className={cn(
-                "-mb-px flex items-center gap-1.5 border-b-2 py-2 text-sm transition-colors [&_svg]:size-3.5",
-                surface === id ? "border-foreground font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
-                !shown.includes(id) && surface !== id && "opacity-60",
-              )}
-            >
-              {icon}
-              {label}
-            </button>
-          ))}
-        </div>
+        <UnderlineTabs
+          value={surface}
+          label="Surface"
+          icons={SURFACE_ICONS}
+          onValueChange={setSurface}
+          tabs={SURFACES.map(({ id, label }) => ({ id, label, dimmed: !shown.includes(id) }))}
+        />
         <p className="text-xs text-muted-foreground">{HINTS[surface](note.display, shown.includes(surface))}</p>
         <div className="-mx-4 -mb-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:thin]">
           {surface === "popup" && (

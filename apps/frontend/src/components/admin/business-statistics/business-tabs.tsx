@@ -1,7 +1,7 @@
 "use client";
 
 import { ActivityIcon, GridIcon, HeartHandshakeIcon, type LucideIcon, RefreshCwIcon, UsersIcon } from "lucide-react";
-import { ViewTabs, type ViewTabsProps } from "@/components/admin/site-activity/view-tabs";
+import { UnderlineTabs, type UnderlineTabsProps } from "@/components/ui/underline-tabs";
 import type { BusinessTab } from "./tabs";
 
 const ICONS: Record<BusinessTab, LucideIcon> = {
@@ -13,6 +13,6 @@ const ICONS: Record<BusinessTab, LucideIcon> = {
 };
 
 /** Parts of the business statistics. */
-export function BusinessTabs(props: ViewTabsProps<BusinessTab>) {
-  return <ViewTabs {...props} icons={ICONS} />;
+export function BusinessTabs(props: UnderlineTabsProps<BusinessTab>) {
+  return <UnderlineTabs {...props} icons={ICONS} />;
 }

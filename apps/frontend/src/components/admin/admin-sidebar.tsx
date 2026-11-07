@@ -23,11 +23,12 @@ export async function AdminNavigation() {
       key={group.key}
       separated={index > 0}
       title={t(`groups.${group.key}`)}
-      items={group.items.map(({ key, href, icon: Icon, count }) => ({
+      items={group.items.map(({ key, href, icon: Icon, count, alert }) => ({
         href,
         label: t(key),
         icon: <Icon />,
         badge: count && counts.ok ? counts.data[count] : undefined,
+        alert: alert && counts.ok ? counts.data[alert] : undefined,
       }))}
     />
   ));

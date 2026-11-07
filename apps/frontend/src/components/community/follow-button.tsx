@@ -27,29 +27,12 @@ export type FollowState = "none" | "requested" | "following";
 export const followStateOf = ({ followed, requested }: Pick<ProfileSummary, "followed" | "requested">): FollowState =>
   followed ? "following" : requested ? "requested" : "none";
 
-interface FollowButtonProps {
-  username: string;
-  state: FollowState;
-  /** Whether they follow the current user: offers to follow back. */
-  followsViewer?: boolean;
-  /** Called with the new state, and with the previous one if the server refuses. */
-  onChange?: (state: FollowState) => void;
-  size?: "sm" | "default";
-  className?: string;
-}
-
 /**
- * Follows a user, or asks to when their profile is private; unfollows them or
- * cancels the request at once, back as it was if the server refuses.
+ * Follows a user, or asks to when their profile is private; unfollows them,
+ * confirmed first, or cancels the request at once, back as it was if the
+ * server refuses. `dialog` goes next to what calls `request`.
  */
-export function FollowButton({
-  username,
-  state,
-  followsViewer = false,
-  onChange,
-  size = "sm",
-  className,
-}: FollowButtonProps) {
+export function useFollowAction(username: string, state: FollowState, onChange?: (state: FollowState) => void) {
   const t = useTranslations("community.follow");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
@@ -81,6 +64,53 @@ export function FollowButton({
     }
   };
 
+  const dialog = (
+    <AlertDialog open={confirming} onOpenChange={setConfirming}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("confirm.title", { username })}</AlertDialogTitle>
+          <AlertDialogDescription>{t("confirm.description")}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              setConfirming(false);
+              void toggle();
+            }}
+          >
+            {t("unfollow")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+  return { pending, request: () => (state === "following" ? setConfirming(true) : void toggle()), dialog };
+}
+
+interface FollowButtonProps {
+  username: string;
+  state: FollowState;
+  /** Whether they follow the current user: offers to follow back. */
+  followsViewer?: boolean;
+  /** Called with the new state, and with the previous one if the server refuses. */
+  onChange?: (state: FollowState) => void;
+  size?: "sm" | "default";
+  className?: string;
+}
+
+/** The follow of a user as a button; once hovered, it says what a click does. */
+export function FollowButton({
+  username,
+  state,
+  followsViewer = false,
+  onChange,
+  size = "sm",
+  className,
+}: FollowButtonProps) {
+  const t = useTranslations("community.follow");
+  const { pending, request, dialog } = useFollowAction(username, state, onChange);
+
   return (
     <>
       <Button
@@ -89,8 +119,7 @@ export function FollowButton({
         variant={state === "none" ? "default" : "outline"}
         disabled={pending}
         aria-pressed={state !== "none"}
-        // Unfollowing is confirmed first.
-        onClick={() => (state === "following" ? setConfirming(true) : void toggle())}
+        onClick={request}
         // Says what a click does once hovered: unfollowing, or cancelling the request.
         className={cn(
           "group/follow shrink-0",
@@ -115,25 +144,7 @@ export function FollowButton({
           </>
         )}
       </Button>
-      <AlertDialog open={confirming} onOpenChange={setConfirming}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("confirm.title", { username })}</AlertDialogTitle>
-            <AlertDialogDescription>{t("confirm.description")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirming(false);
-                void toggle();
-              }}
-            >
-              {t("unfollow")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {dialog}
     </>
   );
 }

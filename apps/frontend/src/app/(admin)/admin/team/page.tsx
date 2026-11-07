@@ -7,7 +7,7 @@ import {
   type AdminTeamMember,
   permissionDefinition,
 } from "@kilotrace/shared/admin";
-import { AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { FlagIcon, AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { KpiGrid } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
@@ -83,6 +83,7 @@ export default async function AdminTeamPage() {
 /** As in the navigation; the reserved usernames as on their section. */
 const CATEGORY_ICONS: Record<AdminPermissionCategory, LucideIcon> = {
   users: UsersIcon,
+  reports: FlagIcon,
   usernames: AtSignIcon,
   badges: TrophyIcon,
   userTags: TagIcon,

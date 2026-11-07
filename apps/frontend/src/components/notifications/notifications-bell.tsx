@@ -198,7 +198,7 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
 }
 
 /** Kinds told by the team, shown with its shield. */
-const TEAM_NOTIFICATIONS: ReadonlySet<AppNotification["type"]> = new Set(["moderation", "strava_unlinked", "role_changed"]);
+const TEAM_NOTIFICATIONS: ReadonlySet<AppNotification["type"]> = new Set(["moderation", "strava_unlinked", "role_changed", "report_received", "report_closed"]);
 
 function NotificationItem({ notification, unread }: { notification: AppNotification; unread: boolean }) {
   const t = useTranslations("notifications");
@@ -246,6 +246,8 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
             role: details?.role ?? "none",
             roleName: details?.role ? t(`roles.${details.role}`) : "",
             version: details?.version ?? "",
+            username: details?.username ?? "",
+            outcome: details?.outcome ?? "dismissed",
             b: (chunks) => (
               <span className="font-semibold underline-offset-2 hover:underline">
                 {chunks}

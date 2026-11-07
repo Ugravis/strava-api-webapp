@@ -271,7 +271,10 @@
     "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
     "PROFILE_BADGES_FULL": "Vous avez déjà épinglé 5 badges.",
     "CANNOT_LIKE_SELF": "Vous ne pouvez pas aimer votre propre profil.",
-    "SIGNUPS_DISABLED": "Les inscriptions sont fermées pour le moment."
+    "SIGNUPS_DISABLED": "Les inscriptions sont fermées pour le moment.",
+    "CANNOT_REPORT_SELF": "Vous ne pouvez pas vous signaler vous-même.",
+    "ALREADY_REPORTED": "Vous avez déjà un signalement en cours sur ce profil.",
+    "REPORT_DETAILS_REQUIRED": "Précisez la raison de votre signalement."
   },
   "auth": {
     "continueWithGoogle": "Continuer avec Google",
@@ -456,7 +459,37 @@
       "noSuggestions": "Vous ne suivez personne et personne ne vous suit encore.",
       "error": "Les suggestions n'ont pas pu être chargées."
     },
-    "close": "Retourner à la pile de cartes"
+    "close": "Retourner à la pile de cartes",
+    "options": {
+      "open": "Options du profil",
+      "follow": "S'abonner",
+      "followBack": "S'abonner en retour",
+      "unfollow": "Se désabonner",
+      "cancelRequest": "Annuler la demande",
+      "like": "Liker",
+      "unlike": "Retirer le like",
+      "report": "Signaler",
+      "reported": "Signalement envoyé"
+    },
+    "report": {
+      "title": "Signaler @{username}",
+      "description": "Votre signalement est transmis à l'équipe. La personne signalée n'est pas prévenue et ne saura pas qui l'a signalée.",
+      "reasons": {
+        "legend": "Raison du signalement",
+        "harassment": "Harcèlement ou comportement abusif",
+        "inappropriate": "Contenu inapproprié (photo, bio, pseudo)",
+        "impersonation": "Usurpation d'identité",
+        "spam": "Spam ou publicité",
+        "cheating": "Activités frauduleuses",
+        "other": "Autre raison"
+      },
+      "details": "Précisions (facultatif)",
+      "detailsRequired": "Votre raison",
+      "detailsPlaceholder": "Ajoutez ce qui peut aider l'équipe à comprendre.",
+      "customPlaceholder": "Décrivez la raison de votre signalement.",
+      "submit": "Envoyer le signalement",
+      "sent": "Signalement envoyé. Merci, l'équipe va l'examiner."
+    }
   },
   "settings": {
     "title": "Paramètres",
@@ -1179,7 +1212,9 @@
       "moderation": "L'équipe a modéré votre profil.",
       "strava_unlinked": "L'équipe a délié votre compte Strava.",
       "role_changed": "Votre rôle dans l'équipe a changé.",
-      "release_note": "Une nouvelle version est disponible."
+      "release_note": "Une nouvelle version est disponible.",
+      "report_received": "Un nouveau signalement est à traiter.",
+      "report_closed": "Votre signalement a été examiné."
     },
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
@@ -1215,7 +1250,9 @@
       "older": "Plus ancien"
     },
     "release_note": "Nouveautés de la version <b>{version}</b> : découvrez ce qui change.",
-    "release": "Nouveautés"
+    "release": "Nouveautés",
+    "report_received": "Nouveau signalement de @{username} à traiter.",
+    "report_closed": "{outcome, select, sanctioned {Votre signalement de @{username} a été examiné : une sanction a été prise. Merci.} other {Votre signalement de @{username} a été examiné : aucune sanction n'a été retenue.}}"
   },
   "footer": {
     "label": "Pied de page",

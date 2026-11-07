@@ -24,6 +24,8 @@ export function notificationHref({ type, actor, details }: AppNotification): str
   if (type === "strava_unlinked") return routes.settings;
   if (type === "role_changed") return routes.dashboard;
   if (type === "release_note") return releaseNoteHref(details?.version);
+  if (type === "report_received") return details?.href ?? routes.dashboard;
+  if (type === "report_closed") return routes.profiles;
   return actor ? userProfileHref(actor.username) : routes.profiles;
 }
 

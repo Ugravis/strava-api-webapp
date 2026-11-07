@@ -1,5 +1,5 @@
 import type { AdminUsersOverview, AdminUserTag } from "@kilotrace/shared/admin";
-import { BanIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
+import { BanIcon, FlagIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { KpiGrid, KpiTile, runningTotal, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
@@ -7,6 +7,7 @@ import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
+import { ReportsTable } from "./reports/reports-table";
 import { UsersTable } from "./users-table";
 
 const number = new Intl.NumberFormat("fr-FR");
@@ -38,6 +39,14 @@ export default async function AdminUsersPage() {
           <KpiTile icon={BanIcon} color="orange" label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} gauge={shareOf(figures.suspended, figures.total)} />
         </KpiGrid>
       )}
+      <Separator />
+      <section id="reports" className="flex scroll-mt-20 flex-col gap-3" aria-labelledby="reports-title">
+        <h2 id="reports-title" className="flex items-center gap-2 text-sm font-medium">
+          <FlagIcon className="size-4 text-muted-foreground" aria-hidden />
+          {t("reports")}
+        </h2>
+        <ReportsTable />
+      </section>
       <Separator />
       <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
     </>

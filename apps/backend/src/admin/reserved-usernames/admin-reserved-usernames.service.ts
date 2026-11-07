@@ -22,6 +22,7 @@ import type {
   ReserveUsernameDto,
   UpdateReservedUsernameDto,
 } from './admin-reserved-usernames.dto';
+import { LAST_DAYS } from '../daily-series';
 
 const DAY_MS = 86_400_000;
 
@@ -86,10 +87,18 @@ export class AdminReservedUsernamesService {
       byCategory[row.category] = Number(row.count);
       recent += Number(row.recent);
     }
+    const days = await this.reserved.query<{ count: number }[]>(
+      `SELECT COUNT(reserved.created_at)::int AS count
+         FROM ${LAST_DAYS}
+         LEFT JOIN reserved_usernames reserved
+           ON reserved.created_at >= day AND reserved.created_at < day + interval '1 day'
+        GROUP BY day ORDER BY day`,
+    );
     return {
       total: Object.values(byCategory).reduce((sum, count) => sum + count, 0),
       recent,
       byCategory,
+      addedByDay: days.map((day) => day.count),
     };
   }
 

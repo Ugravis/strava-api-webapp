@@ -20,6 +20,7 @@ import { toAuditUser } from '../common/audit-user';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 import { AdminAuditLog } from './admin-audit-log.entity';
 import type { AuditLogQueryDto } from './audit-log-query.dto';
+import { LAST_DAYS } from '../daily-series';
 
 const DAY_MS = 86_400_000;
 
@@ -174,12 +175,25 @@ export class AdminAuditLogService {
         week: new Date(now - 7 * DAY_MS),
       })
       .getRawOne<Record<string, string>>();
+    const days = await this.entries.query<
+      { entries: number; actors: number }[]
+    >(
+      `SELECT COUNT(entry.id)::int AS entries,
+              COUNT(DISTINCT entry.actor_id)::int AS actors
+         FROM ${LAST_DAYS}
+         LEFT JOIN admin_audit_log entry
+           ON entry.created_at >= day AND entry.created_at < day + interval '1 day'
+          AND entry.hidden_at IS NULL
+        GROUP BY day ORDER BY day`,
+    );
     return {
       total: Number(row?.total ?? 0),
       today: Number(row?.today ?? 0),
       week: Number(row?.week ?? 0),
       failures: Number(row?.failures ?? 0),
       actors: Number(row?.actors ?? 0),
+      entriesByDay: days.map((day) => day.entries),
+      actorsByDay: days.map((day) => day.actors),
     };
   }
 

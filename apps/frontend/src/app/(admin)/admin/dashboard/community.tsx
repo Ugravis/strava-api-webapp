@@ -6,7 +6,8 @@ import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { cn } from "@/lib/utils";
 import { dashboardData } from "./data";
-import { DashboardCard, DashboardUnavailable, KpiTile } from "./parts";
+import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
+import { DashboardCard, DashboardUnavailable } from "./parts";
 
 /** The totals of each day of the period, from the total today and what was gained each day after. */
 function cumulative(total: number, daily: number[]): number[] {
@@ -37,7 +38,7 @@ export async function DashboardExploration() {
   const days = exploration?.dates.length ?? 0;
   const href = adminRoutes.statistics;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <KpiGrid>
       <KpiTile
         icon={GridIcon}
         label={t("tiles")}
@@ -94,7 +95,7 @@ export async function DashboardExploration() {
         sparkFromMin
         spark={exploration && cumulative(exploration.railwayM.total, exploration.railwayM.daily)}
       />
-    </div>
+    </KpiGrid>
   );
 }
 

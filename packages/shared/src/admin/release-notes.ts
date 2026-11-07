@@ -102,6 +102,8 @@ export interface AdminReleaseNotesOverview {
   upcoming: number;
   /** The latest note shown: its version, those concerned and those who saw it. */
   latest: { version: string; concerned: number; seen: number } | null;
+  /** Versions out at the end of each of the last 12 months, oldest first. */
+  releasesByMonth: number[];
 }
 
 /** Longest link to the release on GitHub. */

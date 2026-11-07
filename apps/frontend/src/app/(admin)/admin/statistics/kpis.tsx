@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { cn } from "@/lib/utils";
-import { KpiTile, KpiTileSkeleton } from "../dashboard/parts";
+import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 import { STRIP, StripFigure } from "../site-activity/kpis";
 import { type BusinessView, businessStatistics, viewHref } from "./data";
 
@@ -20,7 +20,7 @@ export async function BusinessKpis({ view }: { view: BusinessView }) {
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <KpiGrid>
         <KpiTile
           icon={UsersIcon}
           label={t("accounts")}
@@ -61,7 +61,7 @@ export async function BusinessKpis({ view }: { view: BusinessView }) {
           detail={previousOf(distanceM.previous === null ? null : format.km(distanceM.previous))}
           spark={series.distanceM}
         />
-      </div>
+      </KpiGrid>
       <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
         <StripFigure label={t("connectionRate")} value={format.percent(format.ratio(connected, accounts), 0)} detail={t("connectionRateDetail", { connected, accounts })} />
         <StripFigure label={t("perAthlete")} value={perAthlete(activities.current)} detail={t("perAthleteDetail", { distance: format.km(athletes.current > 0 ? distanceM.current / athletes.current : 0) })} />
@@ -76,11 +76,11 @@ export async function BusinessKpis({ view }: { view: BusinessView }) {
 export function BusinessKpisSkeleton() {
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <KpiGrid>
         {Array.from({ length: 4 }, (_, index) => (
           <KpiTileSkeleton key={index} />
         ))}
-      </div>
+      </KpiGrid>
       <Skeleton className="h-22 w-full rounded-xl" />
     </div>
   );

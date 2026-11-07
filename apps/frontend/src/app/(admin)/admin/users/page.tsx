@@ -1,6 +1,6 @@
 import type { AdminUsersOverview, AdminUserTag } from "@kilotrace/shared/admin";
 import { BanIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
-import { StatTile } from "@/components/admin/statistics/stat-tile";
+import { KpiGrid, KpiTile, runningTotal, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -23,17 +23,20 @@ export default async function AdminUsersPage() {
     <>
       <PageHeader title={t("title")} description={t("description")} />
       {figures && (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatTile
+        <KpiGrid>
+          <KpiTile
             icon={UsersIcon}
+            color="blue"
             label={o("accounts")}
             value={number.format(figures.total)}
             detail={o("accountsDetail", { share: percent(figures.stravaConnected, figures.total) })}
+            spark={runningTotal(figures.signupsByDay, figures.total)}
+            sparkFromMin
           />
-          <StatTile icon={UserPlusIcon} label={o("signups")} value={number.format(figures.signups)} detail={o("signupsDetail")} />
-          <StatTile icon={UserCheckIcon} label={o("active")} value={number.format(figures.active)} detail={o("activeDetail", { share: percent(figures.active, figures.total) })} />
-          <StatTile icon={BanIcon} label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} />
-        </div>
+          <KpiTile icon={UserPlusIcon} color="aqua" label={o("signups")} value={number.format(figures.signups)} detail={o("signupsDetail")} spark={figures.signupsByDay} />
+          <KpiTile icon={UserCheckIcon} color="yellow" label={o("active")} value={number.format(figures.active)} detail={o("activeDetail", { share: percent(figures.active, figures.total) })} gauge={shareOf(figures.active, figures.total)} />
+          <KpiTile icon={BanIcon} color="orange" label={o("suspended")} value={number.format(figures.suspended)} detail={o("suspendedDetail", { share: percent(figures.suspended, figures.total) })} gauge={shareOf(figures.suspended, figures.total)} />
+        </KpiGrid>
       )}
       <Separator />
       <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />

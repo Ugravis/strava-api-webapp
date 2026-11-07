@@ -1,6 +1,6 @@
 import type { AdminReleaseNotesOverview } from "@kilotrace/shared/admin";
 import { EyeIcon, FilePenIcon, RadioTowerIcon, ReceiptTextIcon } from "lucide-react";
-import { StatTile } from "@/components/admin/statistics/stat-tile";
+import { KpiGrid, KpiTile, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
@@ -33,22 +33,26 @@ export default async function AdminReleaseNotesPage() {
     <>
       <PageHeader title={t("title")} description={t("description")} />
       {overview && (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatTile icon={RadioTowerIcon} label="En ligne" value={`v${overview.currentVersion}`} detail={`${number.format(overview.releases)} ${overview.releases > 1 ? "versions sorties" : "version sortie"}`} />
-          <StatTile
+        <KpiGrid>
+          <KpiTile icon={RadioTowerIcon} color="blue" label="En ligne" value={`v${overview.currentVersion}`} detail={`${number.format(overview.releases)} ${overview.releases > 1 ? "versions sorties" : "version sortie"} · courbe sur 12 mois`} spark={overview.releasesByMonth} sparkFromMin />
+          <KpiTile
             icon={ReceiptTextIcon}
+            color="aqua"
             label="Notes publiées"
             value={number.format(overview.published)}
             detail={overview.missing > 0 ? `${number.format(overview.missing)} ${overview.missing > 1 ? "versions sorties sans note prête" : "version sortie sans note prête"}` : "Toutes les versions sorties ont leur note"}
+            gauge={shareOf(overview.published, overview.releases)}
           />
-          <StatTile icon={FilePenIcon} label="À venir" value={number.format(overview.upcoming)} detail="Notes écrites à l'avance" />
-          <StatTile
+          <KpiTile icon={FilePenIcon} color="orange" label="À venir" value={number.format(overview.upcoming)} detail="Notes écrites à l'avance" gauge={shareOf(overview.upcoming, overview.releases + overview.upcoming)} />
+          <KpiTile
             icon={EyeIcon}
+            color="yellow"
             label="Lecture"
             value={latest && latest.concerned > 0 ? percent.format(latest.seen / latest.concerned) : "—"}
             detail={latest ? `v${latest.version} : ${number.format(latest.seen)} sur ${number.format(latest.concerned)} concernés` : "Aucune note publiée"}
+            gauge={latest ? shareOf(latest.seen, latest.concerned) : 0}
           />
-        </div>
+        </KpiGrid>
       )}
       <Separator />
       <ReleaseNotesTable rights={rights} currentVersion={overview?.currentVersion ?? "?"} />

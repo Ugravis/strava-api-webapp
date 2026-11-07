@@ -51,6 +51,8 @@ export interface AdminUsersOverview {
   active: number;
   suspended: number;
   stravaConnected: number;
+  /** Sign-ups of each of the last 30 UTC days, oldest first. */
+  signupsByDay: number[];
 }
 
 /** `GET /api/admin/users/:id`: everything the back office shows of a user. */

@@ -1,8 +1,8 @@
 "use client";
 
 import { FileTextIcon, FilterIcon, type LucideIcon, RepeatIcon, RouteIcon, SlidersHorizontalIcon, UsersIcon } from "lucide-react";
+import { UnderlineTabs, type UnderlineTabsProps } from "@/components/ui/underline-tabs";
 import type { SiteActivityTab } from "./tabs";
-import { ViewTabs, type ViewTabsProps } from "./view-tabs";
 
 const ICONS: Record<SiteActivityTab, LucideIcon> = {
   audience: UsersIcon,
@@ -14,6 +14,6 @@ const ICONS: Record<SiteActivityTab, LucideIcon> = {
 };
 
 /** Parts of the site activity. */
-export function SiteActivityTabs(props: ViewTabsProps<SiteActivityTab>) {
-  return <ViewTabs {...props} icons={ICONS} />;
+export function SiteActivityTabs(props: UnderlineTabsProps<SiteActivityTab>) {
+  return <UnderlineTabs {...props} icons={ICONS} />;
 }

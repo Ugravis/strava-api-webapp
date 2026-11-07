@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { cn } from "@/lib/utils";
-import { KpiTile, KpiTileSkeleton } from "../dashboard/parts";
+import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 import { siteActivity, type SiteActivityView, viewHref } from "./data";
 
 /** A figure of the strip under the tiles. */
@@ -43,7 +43,7 @@ export async function SiteActivityKpis({ view }: { view: SiteActivityView }) {
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <KpiGrid>
         <KpiTile
           icon={UserCheckIcon}
           label={t("activeUsers")}
@@ -84,7 +84,7 @@ export async function SiteActivityKpis({ view }: { view: SiteActivityView }) {
           detail={previousOf(format.duration(previous.visibleMs))}
           spark={pages?.daily.map((day) => day.visibleMs)}
         />
-      </div>
+      </KpiGrid>
       <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
         <StripFigure
           label={t("newUsers")}
@@ -107,11 +107,11 @@ export async function SiteActivityKpis({ view }: { view: SiteActivityView }) {
 export function SiteActivityKpisSkeleton() {
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <KpiGrid>
         {Array.from({ length: 4 }, (_, index) => (
           <KpiTileSkeleton key={index} />
         ))}
-      </div>
+      </KpiGrid>
       <Skeleton className="h-22 w-full rounded-xl" />
     </div>
   );

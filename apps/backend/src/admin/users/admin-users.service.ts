@@ -34,6 +34,7 @@ import { UserTagAssignment } from '../../users/user-tag-assignment.entity';
 import { isSuspended, User } from '../../users/user.entity';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 import type { ModerateUserDto, SuspendUserDto } from './admin-users.dto';
+import { LAST_DAYS } from '../daily-series';
 
 const STRAVA = 'strava';
 const ACTIVE = '(user.suspended_at IS NULL OR user.suspended_until <= now())';
@@ -172,12 +173,20 @@ export class AdminUsersService {
       .addSelect(`COUNT(*) FILTER (WHERE ${STRAVA_LINKED})`, 'stravaConnected')
       .setParameter('week', week)
       .getRawOne<Record<string, string>>();
+    const days = await this.users.query<{ count: number }[]>(
+      `SELECT COUNT(account.id)::int AS count
+         FROM ${LAST_DAYS}
+         LEFT JOIN users account
+           ON account.created_at >= day AND account.created_at < day + interval '1 day'
+        GROUP BY day ORDER BY day`,
+    );
     return {
       total: Number(row?.total ?? 0),
       signups: Number(row?.signups ?? 0),
       active: Number(row?.active ?? 0),
       suspended: Number(row?.suspended ?? 0),
       stravaConnected: Number(row?.stravaConnected ?? 0),
+      signupsByDay: days.map((day) => day.count),
     };
   }
 

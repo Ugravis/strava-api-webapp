@@ -80,7 +80,7 @@ function ReportDetail({ data, panel }: { data: ReportDetailData; panel: RowPanel
         </DetailActions>
       )}
       <DetailSection title="Signalement">
-        <DetailColumnFields row={report} columns={columns} ids={["status", "reason", { id: "details", stacked: true }, "reporter", "createdAt", "target"]} />
+        <DetailColumnFields row={report} columns={columns} ids={["status", "reason", { id: "details", stacked: true }, "reporter", "target", "createdAt"]} />
       </DetailSection>
       {!open && (
         <DetailSection title="Décision">

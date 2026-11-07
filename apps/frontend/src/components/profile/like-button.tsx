@@ -48,7 +48,7 @@ export function LikeButton({ like: { liked, count, pending, toggle }, self }: Li
 
   const content = (
     <>
-      <HeartIcon className={cn(liked && "fill-rose-500 text-rose-500")} aria-hidden />
+      <HeartIcon className={cn(liked && "fill-rose-500! stroke-rose-500! text-rose-500!")} aria-hidden />
       <span className="tabular-nums">{format.number(count)}</span>
     </>
   );

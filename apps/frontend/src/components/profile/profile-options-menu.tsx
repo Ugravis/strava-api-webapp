@@ -44,7 +44,7 @@ export function ProfileOptionsMenu({ profile, like, onFollowChange, buttonClassN
           </DropdownMenuItem>
           <DropdownMenuItem disabled={like.pending} onClick={() => void like.toggle()}>
             {/* Pink kept on focus, which recolors the icons of the items. */}
-            <HeartIcon className={cn(like.liked && "fill-rose-500 text-rose-500!")} />
+            <HeartIcon className={cn(like.liked && "fill-rose-500! stroke-rose-500! text-rose-500!")} />
             {t(like.liked ? "unlike" : "like")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />

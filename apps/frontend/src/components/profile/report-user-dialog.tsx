@@ -43,7 +43,6 @@ export function ReportUserDialog({ username, open, onOpenChange, onReported }: R
     setPending(true);
     try {
       await profilesService.report(username, { reason, details: details.trim() || null });
-      toast.success(t("sent"));
       onReported();
       close(false);
     } catch (error) {

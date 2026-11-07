@@ -46,7 +46,13 @@ export default async function AdminUsersPage() {
       <Separator />
       <ReportsSection title={t("reports")} openCount={reports.ok ? reports.data.open : 0} permissions={me.permissions} />
       <Separator />
-      <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
+      <section className="flex flex-col gap-3" aria-labelledby="users-title">
+        <h2 id="users-title" className="flex items-center gap-2 text-sm font-medium">
+          <UsersIcon className="size-4 text-muted-foreground" aria-hidden />
+          {t("title")}
+        </h2>
+        <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
+      </section>
     </>
   );
 }

@@ -10,7 +10,7 @@ import { KpiTile, KpiTileSkeleton } from "../dashboard/parts";
 import { siteActivity, type SiteActivityView, viewHref } from "./data";
 
 /** A figure of the strip under the tiles. */
-function StripFigure({ label, value, detail }: { label: string; value: ReactNode; detail: ReactNode }) {
+export function StripFigure({ label, value, detail }: { label: string; value: ReactNode; detail: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1 px-4 py-3.5">
       <span className="truncate text-xs text-muted-foreground">{label}</span>
@@ -21,7 +21,7 @@ function StripFigure({ label, value, detail }: { label: string; value: ReactNode
 }
 
 /** Cells parted by lines of the border, the last across the row on two columns. */
-const STRIP = "grid grid-cols-2 gap-px bg-border md:grid-cols-5 [&>*]:bg-card [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1";
+export const STRIP = "grid grid-cols-2 gap-px bg-border md:grid-cols-5 [&>*]:bg-card [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1";
 
 /** The headline figures of the period against the one before, each opening its tab; then the ratios. */
 export async function SiteActivityKpis({ view }: { view: SiteActivityView }) {

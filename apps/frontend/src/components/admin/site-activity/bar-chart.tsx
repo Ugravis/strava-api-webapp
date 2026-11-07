@@ -59,7 +59,7 @@ export function BarChart({ labels, titles = labels, series, values, label, total
   const slot = plotWidth / Math.max(labels.length, 1);
   const totals = labels.map((_, index) => series.reduce((sum, item) => sum + (values[item.id]?.[index] ?? 0), 0));
   const sum = totals.reduce((total, value) => total + value, 0);
-  const step = niceStep(Math.max(...totals, 1));
+  const step = Math.max(niceStep(Math.max(...totals, 1)), 1);
   const top = Math.max(Math.ceil(Math.max(...totals, 1) / step) * step, step);
   const x = (index: number) => MARGIN.left + (index + 0.5) * slot;
   const y = (value: number) => MARGIN.top + (1 - value / top) * plotHeight;

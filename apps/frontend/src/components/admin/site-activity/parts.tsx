@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { SERIES_COLORS, type SeriesColorName } from "@/components/admin/statistics/palette";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,28 @@ export function BarList({ items, max, color = "blue", mono = false, empty, maxHe
         </li>
       ))}
     </ol>
+  );
+}
+
+/** A choice of the page, kept in the address, as the team switch of the dashboard. */
+export function ViewSwitch({ label, options }: { label: string; options: { key: string; label: string; href: string; current: boolean }[] }) {
+  return (
+    <div className="inline-flex rounded-lg bg-muted p-0.5 text-xs font-medium" role="group" aria-label={label}>
+      {options.map((option) => (
+        <Link
+          key={option.key}
+          href={option.href}
+          scroll={false}
+          aria-current={option.current ? "true" : undefined}
+          className={cn(
+            "rounded-md px-2.5 py-1 transition-colors",
+            option.current ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {option.label}
+        </Link>
+      ))}
+    </div>
   );
 }
 

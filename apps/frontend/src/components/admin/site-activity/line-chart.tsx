@@ -36,7 +36,7 @@ export function LineChart({ labels, titles = labels, series, values, label, perc
   const plotWidth = Math.max(width - MARGIN.left - MARGIN.right, 1);
   const plotHeight = height - MARGIN.top - MARGIN.bottom;
   const highest = Math.max(...series.flatMap((item) => (values[item.id] ?? []).map((value) => value ?? 0)), percent ? 0.2 : 1);
-  const step = percent ? niceStep(highest * 100) / 100 : niceStep(highest);
+  const step = percent ? niceStep(highest * 100) / 100 : Math.max(niceStep(highest), 1);
   const top = percent ? Math.min(Math.ceil(highest / step) * step, 1) : Math.ceil(highest / step) * step;
   const x = (index: number) => MARGIN.left + (labels.length > 1 ? (index / (labels.length - 1)) * plotWidth : plotWidth / 2);
   const y = (value: number) => MARGIN.top + (1 - value / top) * plotHeight;

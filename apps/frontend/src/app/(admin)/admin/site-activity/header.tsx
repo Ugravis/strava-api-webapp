@@ -1,32 +1,9 @@
 import { ADMIN_SITE_ACTIVITY_PERIODS } from "@kilotrace/shared/admin";
-import Link from "next/link";
+import { ViewSwitch } from "@/components/admin/site-activity/parts";
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
 import { PageHeader } from "@/components/layout/page-header";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
 import { siteActivity, type SiteActivityView, viewHref } from "./data";
-
-/** A choice of the page, kept in the address, as the team switch of the dashboard. */
-function ViewSwitch({ label, options }: { label: string; options: { key: string; label: string; href: string; current: boolean }[] }) {
-  return (
-    <div className="inline-flex rounded-lg bg-muted p-0.5 text-xs font-medium" role="group" aria-label={label}>
-      {options.map((option) => (
-        <Link
-          key={option.key}
-          href={option.href}
-          scroll={false}
-          aria-current={option.current ? "true" : undefined}
-          className={cn(
-            "rounded-md px-2.5 py-1 transition-colors",
-            option.current ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {option.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
 
 /** Title and choices of the page; the facts of the period stream into the description. */
 export function SiteActivityHeader({ view, description }: { view: SiteActivityView; description: React.ReactNode }) {

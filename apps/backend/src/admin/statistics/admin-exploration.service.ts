@@ -28,12 +28,14 @@ interface DailyRow {
 /**
  * Common table expressions: `firsts`, the first visit of each station by
  * each user; `stations`, the first visit of each station by anyone;
- * `links`, when each link was first unlocked by one user.
+ * `links`, when each link was first unlocked by one user. `join` and `where`
+ * restrict the visits `f`.
  */
-const STATION_FIRSTS = `firsts AS (
+export const stationFirsts = (join = '', where = '') => `firsts AS (
     SELECT p.id, f.user_id, min(f.visited_at) AS at FROM places p
     JOIN tile_first_visits f ON f.x = p.x AND f.y = p.y AND f.mask & (1::bigint << p.bit) <> 0
-    WHERE p.kind = 'station' GROUP BY p.id, f.user_id
+    ${join}
+    WHERE p.kind = 'station' ${where} GROUP BY p.id, f.user_id
   ), stations AS (
     SELECT id, min(at) AS at FROM firsts GROUP BY id
   ), links AS (
@@ -66,7 +68,7 @@ export class AdminExplorationService {
          FROM tiles`,
       ),
       this.dataSource.query<{ stations: number; railway_m: number | null }[]>(
-        `WITH ${STATION_FIRSTS}
+        `WITH ${stationFirsts()}
          SELECT (SELECT count(*)::int FROM stations) AS stations,
            (SELECT sum(length_m) FROM links) AS railway_m`,
       ),
@@ -118,7 +120,7 @@ export class AdminExplorationService {
            count(*) FILTER (WHERE before IS NULL)::int AS tiles,
            coalesce(sum(bit_count((mask & ~coalesce(before, 0))::bit(64))), 0)::bigint AS small_tiles
          FROM visits WHERE visited_at >= $1 GROUP BY 1
-       ), ${STATION_FIRSTS},
+       ), ${stationFirsts()},
        station_days AS (
          SELECT to_char(at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date, count(*)::int AS stations
          FROM stations WHERE at >= $1 GROUP BY 1

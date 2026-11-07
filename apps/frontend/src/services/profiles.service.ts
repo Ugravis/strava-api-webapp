@@ -1,3 +1,4 @@
+import type { ReportUserRequest } from "@kilotrace/shared";
 import { apiRequest } from "@/lib/api/client";
 import type { FollowDirection, FollowStatus, FollowsSummary, ProfileSummary, PublicProfile } from "@/lib/api/types";
 
@@ -19,6 +20,8 @@ export const profilesService = {
   unfollow: (username: string) => apiRequest(`${profilePath(username)}/follow`, { method: "DELETE" }),
   like: (username: string) => apiRequest(`${profilePath(username)}/like`, { method: "PUT" }),
   unlike: (username: string) => apiRequest(`${profilePath(username)}/like`, { method: "DELETE" }),
+  /** Reports a profile to the team, which never tells the user who did. */
+  report: (username: string, body: ReportUserRequest) => apiRequest(`${profilePath(username)}/report`, { method: "POST", body: { json: body } }),
   acceptFollower: (username: string) => apiRequest(`${profilePath(username)}/follower`, { method: "PUT" }),
   /** Removes a follower of the current user, or declines their request. */
   removeFollower: (username: string) => apiRequest(`${profilePath(username)}/follower`, { method: "DELETE" }),

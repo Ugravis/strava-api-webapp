@@ -10,42 +10,45 @@ import { errorCodeOf } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { profilesService } from "@/services/profiles.service";
 
-interface LikeButtonProps {
-  username: string;
-  liked: boolean;
-  count: number;
-  /** One's own profile: the count alone, nothing to like. */
-  self: boolean;
-}
-
-/** Heart liking a profile, once per user, with its count; who likes it is never told. */
-export function LikeButton({ username, liked: initiallyLiked, count: initialCount, self }: LikeButtonProps) {
-  const t = useTranslations("profile.likes");
+/** Likes or unlikes a profile at once, back as it was if the server refuses. Reset for another profile. */
+export function useProfileLike(username: string, initiallyLiked: boolean, initialCount: number) {
   const tErrors = useTranslations("errors");
-  const format = useFormatter();
-  const [liked, setLiked] = useState(initiallyLiked);
-  const [count, setCount] = useState(initialCount);
+  const [state, setState] = useState({ username, liked: initiallyLiked, count: initialCount });
   const [pending, setPending] = useState(false);
+  const current = state.username === username ? state : { username, liked: initiallyLiked, count: initialCount };
+  if (current !== state) setState(current);
 
   const toggle = async () => {
-    const next = !liked;
-    setLiked(next);
-    setCount((current) => current + (next ? 1 : -1));
+    const next = !current.liked;
+    const shift = next ? 1 : -1;
+    setState((was) => ({ ...was, liked: next, count: was.count + shift }));
     setPending(true);
     try {
       await (next ? profilesService.like(username) : profilesService.unlike(username));
     } catch (error) {
-      setLiked(!next);
-      setCount((current) => current + (next ? -1 : 1));
+      setState((was) => ({ ...was, liked: !next, count: was.count - shift }));
       toast.error(tErrors(errorCodeOf(error)));
     } finally {
       setPending(false);
     }
   };
+  return { liked: current.liked, count: current.count, pending, toggle };
+}
+
+interface LikeButtonProps {
+  like: ReturnType<typeof useProfileLike>;
+  /** One's own profile: the count alone, nothing to like. */
+  self: boolean;
+}
+
+/** Heart liking a profile, once per user, with its count; who likes it is never told. */
+export function LikeButton({ like: { liked, count, pending, toggle }, self }: LikeButtonProps) {
+  const t = useTranslations("profile.likes");
+  const format = useFormatter();
 
   const content = (
     <>
-      <HeartIcon className={cn(liked && "fill-rose-500 text-rose-500")} aria-hidden />
+      <HeartIcon className={cn(liked && "fill-rose-500! stroke-rose-500! text-rose-500!")} aria-hidden />
       <span className="tabular-nums">{format.number(count)}</span>
     </>
   );

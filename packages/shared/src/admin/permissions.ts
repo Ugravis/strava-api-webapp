@@ -1,7 +1,7 @@
 import { AdminRole } from "./roles";
 
 /** Sections of the back office with actions, in the order of the permissions table. */
-export const ADMIN_PERMISSION_CATEGORIES = ["users", "usernames", "badges", "userTags", "releaseNotes", "audit", "system", "team"] as const;
+export const ADMIN_PERMISSION_CATEGORIES = ["users", "reports", "usernames", "badges", "userTags", "releaseNotes", "audit", "system", "team"] as const;
 
 export type AdminPermissionCategory = (typeof ADMIN_PERMISSION_CATEGORIES)[number];
 
@@ -24,6 +24,7 @@ export const ADMIN_PERMISSIONS = {
   "users.sessions": { category: "users", defaults: ["admin"] },
   "users.strava": { category: "users", defaults: ["admin"] },
   "users.delete": { category: "users", defaults: ["admin"] },
+  "reports.handle": { category: "reports", defaults: ["admin"] },
   "usernames.manage": { category: "usernames", defaults: ["admin"] },
   "badges.create": { category: "badges", defaults: ["admin"] },
   "badges.edit": { category: "badges", defaults: ["admin"] },

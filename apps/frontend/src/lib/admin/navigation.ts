@@ -30,6 +30,8 @@ interface AdminNavItem {
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
   count?: keyof AdminNavigationCounts;
+  /** Figure waiting for the team, in a red pill beside it, shown from 1. */
+  alert?: keyof AdminNavigationCounts;
 }
 
 interface AdminNavGroup {
@@ -50,7 +52,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
   {
     key: "community",
     items: [
-      { key: "users", href: adminRoutes.users, icon: UsersIcon, count: "users" },
+      { key: "users", href: adminRoutes.users, icon: UsersIcon, count: "users", alert: "openReports" },
       { key: "reservedUsernames", href: adminRoutes.reservedUsernames, icon: AtSignIcon, count: "reservedUsernames" },
       { key: "badges", href: adminRoutes.badges, icon: TrophyIcon, count: "badges" },
       { key: "userTags", href: adminRoutes.userTags, icon: TagIcon, count: "userTags" },

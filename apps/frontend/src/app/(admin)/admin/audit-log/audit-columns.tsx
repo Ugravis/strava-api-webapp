@@ -20,6 +20,7 @@ import {
   FolderPenIcon,
   FolderPlusIcon,
   FolderXIcon,
+  FlagOffIcon,
   GavelIcon,
   HashIcon,
   ListIcon,
@@ -62,6 +63,7 @@ export const { useVersion: useAuditVersion, bump: bumpAudit } = createVersion();
 
 export const DOMAINS: Record<string, string> = {
   users: "Utilisateurs",
+  reports: "Signalements",
   usernames: "Pseudos réservés",
   roles: "Rôles",
   badges: "Badges",
@@ -86,6 +88,8 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   "users.sessions.revoke": <LogOutIcon />,
   "users.userTags.grant": <TagPlusIcon />,
   "users.userTags.revoke": <TagXIcon />,
+  "reports.sanction": <GavelIcon />,
+  "reports.dismiss": <FlagOffIcon />,
   "usernames.reserve": <AtSignIcon />,
   "usernames.release": <DoorOpenIcon />,
   "roles.grant": <UserRoundPlusIcon />,

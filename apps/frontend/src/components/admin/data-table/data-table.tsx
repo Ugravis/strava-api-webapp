@@ -107,7 +107,7 @@ export function DataTable<T>({
   const pin = (first: boolean) => (pinned ? cn("sticky left-0 z-10", first && selectable && "left-10", first && SHADOW) : "");
 
   const empty = (
-    <EmptyState error={state.error} filtered={state.filtered} empty={config.empty} onRetry={state.retry} onClear={state.clearFilters} />
+    <EmptyState error={state.error} filtered={state.filtered && !state.emptyOwn} empty={state.emptyOwn ?? config.empty} onRetry={state.retry} onClear={state.clearFilters} />
   );
 
   function renderBody() {

@@ -12,6 +12,7 @@ import { CountriesModule } from './countries/countries.module';
 import { DevModule } from './dev/dev.module';
 import { DistancesModule } from './distances/distances.module';
 import { FollowsModule } from './follows/follows.module';
+import { ReportsModule } from './reports/reports.module';
 import adminConfig from './config/admin.config';
 import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
@@ -61,6 +62,7 @@ import { UsersModule } from './users/users.module';
     CountriesModule,
     StationsModule,
     FollowsModule,
+    ReportsModule,
     NotificationsModule,
     SystemModule,
     ReleaseNotesModule,

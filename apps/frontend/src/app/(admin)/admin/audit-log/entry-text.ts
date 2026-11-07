@@ -20,8 +20,10 @@ function detailsOf(entry: AuditLogEntry): string[] {
   const kinds = getAdminTranslations("user.userTags");
   const titles = getAdminTranslations("system.maintenance.titles");
   const categories = getAdminTranslations("reservedUsernames.categories");
-  const { until, fields: reset, kind, name, active, title, description, enabled, username, category } = entry.details ?? {};
+  const sanctions = getAdminTranslations("auditLog.sanctions");
+  const { until, fields: reset, kind, name, active, title, description, enabled, username, category, sanction } = entry.details ?? {};
   return [
+    typeof sanction === "string" && t("sanction", { sanction: sanctions.has(sanction as never) ? sanctions(sanction as never) : sanction }),
     typeof until === "string" && t("until", { date: formatDateTime(until) }),
     Array.isArray(reset) &&
       t("fields", {

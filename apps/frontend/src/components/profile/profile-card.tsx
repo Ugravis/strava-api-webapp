@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { type CSSProperties, type ReactNode, useRef, useState } from "react";
+import type { FollowState } from "@/components/community/follow-button";
 import { FollowCounts } from "@/components/community/follow-counts";
 import { AppWordmark } from "@/components/brand/app-logo";
 import { BadgeMedal } from "@/components/distances/badge-medal";
@@ -29,7 +30,8 @@ import { publicNameOf } from "@/lib/user";
 import { cn } from "@/lib/utils";
 import { UserTags } from "./user-tags";
 import { EXPORT_IGNORE } from "./card-image";
-import { LikeButton } from "./like-button";
+import { LikeButton, useProfileLike } from "./like-button";
+import { ProfileOptionsMenu } from "./profile-options-menu";
 import { CardImageDialog } from "./card-image-dialog";
 import { ProfileBanner } from "./profile-banner";
 import { DEFAULT_PROFILE_COLOR, type ProfileColorStyles, profileColorStyles } from "./profile-color";
@@ -42,6 +44,8 @@ interface ProfileCardProps {
   action: ReactNode;
   /** Called once the dialog of the follows closes: they may have changed meanwhile. */
   onFollowsClosed?: () => void;
+  /** Called with the new state once followed or unfollowed from the options of the card. */
+  onFollowChange?: (state: FollowState) => void;
   /** Outside of the follows of the current user: drawn with a dashed border. */
   outside?: boolean;
   /** Shows a button closing the card, e.g. back to the deck. */
@@ -66,7 +70,7 @@ const BANNER_BUTTON =
   "bg-black/25 text-white backdrop-blur-sm hover:bg-black/40 hover:text-white dark:hover:bg-black/40";
 
 /** A profile as every user sees it: who they are, who follows whom, and their showcase unless private. */
-export function ProfileCard({ profile, action, onFollowsClosed, outside = false, onClose }: ProfileCardProps) {
+export function ProfileCard({ profile, action, onFollowsClosed, onFollowChange, outside = false, onClose }: ProfileCardProps) {
   const t = useTranslations("profile");
   const tCommunity = useTranslations("community");
   const tFamilies = useTranslations("distances.families");
@@ -77,6 +81,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false,
   const card = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [picturing, setPicturing] = useState(false);
+  const like = useProfileLike(profile.username, profile.liked, profile.likesCount);
   const name = publicNameOf(profile);
   const colors = profileColorStyles(profile.color);
 
@@ -110,6 +115,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false,
         >
           <Share2Icon />
         </Button>
+        {!profile.self && <ProfileOptionsMenu profile={profile} like={like} onFollowChange={onFollowChange} buttonClassName={BANNER_BUTTON} />}
         {profile.self && (
           <Button
             variant="ghost"
@@ -143,13 +149,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, outside = false,
             fallbackClassName="text-2xl"
           />
           <div className="flex min-w-0 items-center gap-2" {...EXPORT_IGNORE}>
-            <LikeButton
-              key={profile.username}
-              username={profile.username}
-              liked={profile.liked}
-              count={profile.likesCount}
-              self={profile.self}
-            />
+            <LikeButton like={like} self={profile.self} />
             {action}
           </div>
         </div>

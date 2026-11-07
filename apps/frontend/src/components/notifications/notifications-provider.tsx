@@ -24,6 +24,8 @@ export function notificationHref({ type, actor, details }: AppNotification): str
   if (type === "strava_unlinked") return routes.settings;
   if (type === "role_changed") return routes.dashboard;
   if (type === "release_note") return releaseNoteHref(details?.version);
+  if (type === "report_received") return details?.href ?? routes.dashboard;
+  if (type === "report_sent" || type === "report_closed") return routes.profiles;
   return actor ? userProfileHref(actor.username) : routes.profiles;
 }
 
@@ -172,7 +174,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           ),
         );
         const { actor } = added;
-        toast(t(`toast.${added.type}`, { name: actor ? publicNameOf(actor) : "" }), {
+        // Already told by the dialog that sent it.
+        if (added.type !== "report_sent") toast(t(`toast.${added.type}`, { name: actor ? publicNameOf(actor) : "" }), {
           action: {
             label: t("view"),
             onClick: () => router.push(notificationHref(added)),

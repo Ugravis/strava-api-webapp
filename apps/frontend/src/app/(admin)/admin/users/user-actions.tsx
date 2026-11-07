@@ -103,7 +103,7 @@ const reason = (presets: string[], required = true): ActionDialogProps["reason"]
 type DialogTexts = Omit<ActionDialogProps, "action" | "open" | "onOpenChange" | "onSuccess" | "cancelLabel">;
 
 /** The dialog of `key`; `fields` checked on opening a moderation. */
-function dialogOf(key: UserActionKey, user: AdminUserSummary, fields?: ModeratableField[]): DialogTexts & { action: ActionDialogProps["action"] } {
+export function dialogOf(key: UserActionKey, user: AdminUserSummary, fields?: ModeratableField[]): DialogTexts & { action: ActionDialogProps["action"] } {
   switch (key) {
     case "moderate":
       return {

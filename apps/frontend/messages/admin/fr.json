@@ -55,7 +55,9 @@
       "undeployed": "{count, plural, one {# commit de main non déployé} other {# commits de main non déployés}}",
       "undeployedDetail": "La production a du retard sur main.",
       "suspended": "{count, plural, one {# compte suspendu} other {# comptes suspendus}}",
-      "suspendedDetail": "Masqués du site le temps de leur suspension."
+      "suspendedDetail": "Masqués du site le temps de leur suspension.",
+      "reports": "{count, plural, one {# signalement à traiter} other {# signalements à traiter}}",
+      "reportsDetail": "{today, plural, =0 {Aucun nouveau depuis 24 h.} one {# nouveau depuis 24 h.} other {# nouveaux depuis 24 h.}}"
     },
     "kpis": {
       "unavailable": "–",
@@ -222,7 +224,8 @@
       "activeDetail": "{share} des comptes, ces 7 derniers jours",
       "suspended": "Suspendus",
       "suspendedDetail": "{share} des comptes"
-    }
+    },
+    "reports": "Signalements"
   },
   "user": {
     "moderatedFields": {
@@ -256,7 +259,8 @@
       "description": "Description : {description}",
       "signups": "{enabled, select, true {Inscriptions ouvertes} other {Inscriptions fermées}}",
       "username": "Pseudo : @{username}",
-      "category": "Catégorie : {category}"
+      "category": "Catégorie : {category}",
+      "sanction": "Sanction : {sanction}"
     },
     "actions": {
       "users": {
@@ -323,6 +327,10 @@
         "delete": "Note de release supprimée",
         "active": "Note de release activée ou désactivée",
         "banner": "Bannière d'une note de release changée"
+      },
+      "reports": {
+        "sanction": "Signalement sanctionné",
+        "dismiss": "Signalement rejeté"
       }
     },
     "overview": {
@@ -334,6 +342,12 @@
       "failuresDetail": "{share} des actions des 7 derniers jours",
       "actors": "Membres actifs",
       "actorsDetail": "Ont agi ces 7 derniers jours · courbe sur 30"
+    },
+    "sanctions": {
+      "moderation": "modération",
+      "suspension": "suspension",
+      "deletion": "suppression du compte",
+      "other": "déjà prise"
     }
   },
   "businessStatistics": {
@@ -617,7 +631,10 @@
           "moderation": "Modération",
           "role_changed": "Changement de rôle",
           "strava_unlinked": "Strava délié",
-          "release_note": "Note de mise à jour"
+          "release_note": "Note de mise à jour",
+          "report_received": "Signalement à traiter",
+          "report_closed": "Signalement traité",
+          "report_sent": "Signalement envoyé"
         }
       },
       "profiles": {
@@ -804,6 +821,7 @@
       "invalid": "Une permission est réservée aux super-admins.",
       "categories": {
         "users": "Utilisateurs",
+        "reports": "Signalements",
         "usernames": "Pseudos réservés",
         "badges": "Badges",
         "userTags": "Tags",
@@ -921,6 +939,12 @@
           "delete": {
             "label": "Supprimer",
             "description": "Supprimer la note d'une version pas encore sortie."
+          }
+        },
+        "reports": {
+          "handle": {
+            "label": "Traiter les signalements",
+            "description": "Sanctionner ou rejeter un signalement. Une sanction demande aussi la permission de son action."
           }
         }
       }

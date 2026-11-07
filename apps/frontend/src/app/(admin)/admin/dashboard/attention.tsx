@@ -3,6 +3,7 @@ import {
   BanIcon,
   CircleCheckIcon,
   DatabaseIcon,
+  FlagIcon,
   GaugeIcon,
   GitBranchIcon,
   type LucideIcon,
@@ -43,7 +44,7 @@ const TONES: Record<Severity, string> = {
 /** What the team has to look at, the most urgent first; a calm line when nothing. */
 export async function DashboardAttention() {
   const t = getAdminTranslations("dashboard.attention");
-  const [format, system, dev, commits, releaseNotes, audit, users, statistics] = await Promise.all([
+  const [format, system, dev, commits, releaseNotes, audit, users, statistics, reports] = await Promise.all([
     getFormatter(),
     dashboardData.system(),
     dashboardData.dev(),
@@ -52,6 +53,7 @@ export async function DashboardAttention() {
     dashboardData.audit(),
     dashboardData.users(),
     dashboardData.statistics(),
+    dashboardData.reports(),
   ]);
   const today = statistics?.stravaUsage.days.at(-1);
   const quota = today?.read != null && today.readLimit ? today.read / today.readLimit : 0;
@@ -72,6 +74,14 @@ export async function DashboardAttention() {
       title: t("failures", { count: audit.failures }),
       detail: t("failuresDetail", { week: audit.week }),
       href: adminRoutes.auditLog,
+    },
+    reports && reports.open > 0 && {
+      key: "reports",
+      severity: "warning",
+      icon: FlagIcon,
+      title: t("reports", { count: reports.open }),
+      detail: t("reportsDetail", { today: reports.openToday }),
+      href: `${adminRoutes.users}#reports`,
     },
     quota >= QUOTA_WARNING && today?.read != null && today.readLimit && {
       key: "quota",

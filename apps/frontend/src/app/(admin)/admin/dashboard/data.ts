@@ -9,6 +9,7 @@ import type {
   AdminSiteActivityPages,
   AdminSiteActivityUsers,
   AdminStatisticsResponse,
+  AdminUserReportsOverview,
   AdminUserSummary,
   AdminUsersOverview,
   AuditLogEntry,
@@ -37,6 +38,7 @@ const load = <T>(path: string) =>
 export const dashboardData = {
   statistics: load<AdminStatisticsResponse>("/statistics"),
   users: load<AdminUsersOverview>("/users/overview"),
+  reports: load<AdminUserReportsOverview>("/user-reports/overview"),
   week: load<AdminSiteActivityOverview>("/site-activity/overview?days=7&team=false"),
   /** The site activity, the team counted or not. */
   activeUsers: cache((team: boolean) => load<AdminSiteActivityUsers>(`/site-activity/users?days=${DASHBOARD_ACTIVITY_DAYS}&team=${team}`)()),

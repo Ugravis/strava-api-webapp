@@ -123,6 +123,7 @@ export function ProfilesView() {
       outside={isOutside}
       onClose={isOutside ? () => showCard(0) : undefined}
       onFollowsClosed={() => others.reload(other.username)}
+      onFollowChange={onFollowChange}
       action={
         <FollowButton
           username={other.username}

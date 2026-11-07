@@ -26,6 +26,8 @@ export interface NavLink {
   exact?: boolean;
   /** Figure shown in a pill at the end of the entry. */
   badge?: number;
+  /** Figure waiting for action, in a red pill before the badge, shown from 1. */
+  alert?: number;
 }
 
 /**
@@ -59,8 +61,11 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
               {item.icon}
               <span>{item.label}</span>
             </SidebarMenuButton>
-            {item.badge === undefined ? null : (
-              <SidebarMenuBadge className="rounded-full bg-sidebar-accent px-1.5">{item.badge.toLocaleString("fr-FR")}</SidebarMenuBadge>
+            {item.badge === undefined && !item.alert ? null : (
+              <SidebarMenuBadge className="gap-1 px-0">
+                {!!item.alert && <span className="rounded-full bg-destructive px-1.5 text-white">{item.alert.toLocaleString("fr-FR")}</span>}
+                {item.badge !== undefined && <span className="rounded-full bg-sidebar-accent px-1.5">{item.badge.toLocaleString("fr-FR")}</span>}
+              </SidebarMenuBadge>
             )}
           </SidebarMenuItem>
         );

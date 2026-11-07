@@ -22,7 +22,8 @@ const TOP_PAGES = 15;
 const TOP_TRANSITIONS = 30;
 
 /** The sessions since `$1`, `$2` the team. */
-const sessionsWith = (admin: boolean) => `WITH ${sessionsSql('$1', '$2', admin)}`;
+const sessionsWith = (admin: boolean) =>
+  `WITH ${sessionsSql('$1', '$2', admin)}`;
 
 export async function siteActivitySessions(
   query: SqlQuery,

@@ -19,8 +19,8 @@ interface TotalsRow extends AdminSiteActivityTotals {
 }
 
 /** Figures of `[$1, $2)`, `$3` the team. */
-const totalsSql = `
-  WITH ${sessionsSql('$1', '$3')}
+const totalsSql = (admin: boolean) => `
+  WITH ${sessionsSql('$1', '$3', admin)}
   SELECT
     (SELECT count(DISTINCT "a"."user_id")::int FROM "user_activity" "a" JOIN "users" "u" ON "u"."id" = "a"."user_id"
        WHERE "a"."day" >= $1::date AND "a"."day" < $2::date AND ${counted('$3')}) AS "activeUsers",
@@ -36,14 +36,14 @@ export async function siteActivityOverview(
   query: SqlQuery,
   context: SiteActivityContext,
 ): Promise<Overview> {
-  const { from, previousFrom, today, until, team } = context;
+  const { from, previousFrom, today, until, team, admin } = context;
   const [[users], [current], [previous], [stickiness]] = await Promise.all([
     query<{ users: number }>(
       `SELECT count(*)::int AS "users" FROM "users" "u" WHERE ${counted('$1')}`,
       [team],
     ),
-    query<TotalsRow>(totalsSql, [from, until, team]),
-    query<TotalsRow>(totalsSql, [previousFrom, from, team]),
+    query<TotalsRow>(totalsSql(admin), [from, until, team]),
+    query<TotalsRow>(totalsSql(admin), [previousFrom, from, team]),
     // Average over the days of the period of DAU / MAU.
     query<{ value: number | null }>(
       `WITH "active" AS (

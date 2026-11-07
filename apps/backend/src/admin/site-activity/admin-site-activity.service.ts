@@ -47,6 +47,7 @@ export class AdminSiteActivityService {
     section: AdminSiteActivitySection,
     days: AdminSiteActivityPeriod,
     team: boolean,
+    admin = true,
     now = new Date(),
   ): Promise<AdminSiteActivityResponses[AdminSiteActivitySection]> {
     const period = periodDays(now, days);
@@ -58,6 +59,7 @@ export class AdminSiteActivityService {
       today: dates[dates.length - 1],
       until: utcDate(new Date(period[period.length - 1].getTime() + DAY_MS)),
       team,
+      admin,
       dates,
     };
     const query: SqlQuery = (sql, params) => this.dataSource.query(sql, params);
@@ -72,6 +74,7 @@ export class AdminSiteActivityService {
       generatedAt: now.toISOString(),
       days,
       team,
+      admin,
       trackedSince: tracked.day,
       dates,
       ...figures,

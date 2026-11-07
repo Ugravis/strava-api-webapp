@@ -29,6 +29,11 @@ export class AdminSiteActivityController {
     if (!isSection(section)) {
       throw adminNotFound(request);
     }
-    return this.siteActivity.section(section, query.days, query.team);
+    return this.siteActivity.section(
+      section,
+      query.days,
+      query.team,
+      query.admin,
+    );
   }
 }

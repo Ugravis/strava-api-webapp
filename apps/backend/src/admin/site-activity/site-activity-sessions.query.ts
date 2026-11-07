@@ -22,12 +22,14 @@ const TOP_PAGES = 15;
 const TOP_TRANSITIONS = 30;
 
 /** The sessions since `$1`, `$2` the team. */
-const SESSIONS = `WITH ${sessionsSql('$1', '$2')}`;
+const sessionsWith = (admin: boolean) =>
+  `WITH ${sessionsSql('$1', '$2', admin)}`;
 
 export async function siteActivitySessions(
   query: SqlQuery,
-  { from, team, dates }: SiteActivityContext,
+  { from, team, admin, dates }: SiteActivityContext,
 ): Promise<Sessions> {
+  const SESSIONS = sessionsWith(admin);
   const params = [from, team];
   const [daily, lengths, pages, perUser, entries, exits, transitions] =
     await Promise.all([

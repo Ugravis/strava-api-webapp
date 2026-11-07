@@ -43,6 +43,8 @@ export interface AdminSiteActivityMeta {
   days: AdminSiteActivityPeriod;
   /** Whether the members of the back-office team are counted. */
   team: boolean;
+  /** Whether the views of the back-office pages are counted: the figures of the users never filter them. */
+  admin: boolean;
   /** First day with an activity recorded, `YYYY-MM-DD`; null before any. */
   trackedSince: string | null;
   /** Each day of the period, `YYYY-MM-DD`, oldest first: the axis of the daily series. */

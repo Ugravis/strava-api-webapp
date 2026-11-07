@@ -62,6 +62,9 @@ import { AdminSystemController } from './system/admin-system.controller';
 import { AdminTeamController } from './team/admin-team.controller';
 import { AdminTeamService } from './team/admin-team.service';
 import { AdminUploadsService } from './system/admin-uploads.service';
+import { UserReport } from '../reports/user-report.entity';
+import { AdminUserReportsController } from './user-reports/admin-user-reports.controller';
+import { AdminUserReportsService } from './user-reports/admin-user-reports.service';
 import { AdminUsersController } from './users/admin-users.controller';
 import { AdminUsersService } from './users/admin-users.service';
 
@@ -92,6 +95,7 @@ export const ADMIN_ROUTES = [
       ReservedUsername,
       AdminRolePermission,
       ReleaseNote,
+      UserReport,
     ]),
     AuthModule,
     UsersModule,
@@ -108,6 +112,7 @@ export const ADMIN_ROUTES = [
     AdminSiteActivityController,
     AdminBusinessStatisticsController,
     AdminUsersController,
+    AdminUserReportsController,
     AdminAuditLogController,
     AdminBadgesController,
     AdminBadgeThemesController,
@@ -122,6 +127,7 @@ export const ADMIN_ROUTES = [
   providers: [
     AdminAuditLogService,
     AdminUsersService,
+    AdminUserReportsService,
     AdminBootstrapService,
     AdminStatisticsService,
     AdminExplorationService,
@@ -139,6 +145,7 @@ export const ADMIN_ROUTES = [
     { provide: APP_GUARD, useClass: AdminRolesGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
+  exports: [AdminPermissionsService],
 })
 export class AdminModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

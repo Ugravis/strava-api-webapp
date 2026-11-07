@@ -9,6 +9,7 @@ import type { ProfileShowcaseService } from './profile-showcase.service';
 import type { UserTagAssignment } from '../users/user-tag-assignment.entity';
 import type { User } from '../users/user.entity';
 import type { Follow } from './follow.entity';
+import type { UserReport } from '../reports/user-report.entity';
 import type { ProfileLike } from './profile-like.entity';
 import { FollowsService } from './follows.service';
 
@@ -88,6 +89,7 @@ describe('FollowsService', () => {
       users as unknown as Repository<User>,
       {} as Repository<UserTagAssignment>,
       {} as Repository<ProfileLike>,
+      {} as Repository<UserReport>,
       notifications as unknown as NotificationsService,
       {} as ProfileShowcaseService,
     );

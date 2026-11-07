@@ -177,7 +177,11 @@ export class NotificationsService {
     userId: string,
     type: Extract<
       NotificationType,
-      'moderation' | 'strava_unlinked' | 'role_changed'
+      | 'moderation'
+      | 'strava_unlinked'
+      | 'role_changed'
+      | 'report_received'
+      | 'report_closed'
     >,
     details: NotificationDetails,
   ): Promise<void> {

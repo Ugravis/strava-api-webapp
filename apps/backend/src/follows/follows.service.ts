@@ -9,6 +9,7 @@ import type { FavoriteSport } from '../users/favorite-sports';
 import { UserTagAssignment } from '../users/user-tag-assignment.entity';
 import { isSuspended, User } from '../users/user.entity';
 import { Follow } from './follow.entity';
+import { UserReport } from '../reports/user-report.entity';
 import { ProfileLike } from './profile-like.entity';
 import {
   type ProfileShowcase,
@@ -55,6 +56,8 @@ export interface PublicProfile extends ProfileSummary {
   likesCount: number;
   /** Whether the viewer likes the profile; who likes it is never told. */
   liked: boolean;
+  /** Whether a report of the viewer on this profile is still open. */
+  reported: boolean;
   /** Whether they follow the viewer. */
   followsViewer: boolean;
   /** Whether they asked to follow the private profile of the viewer, not accepted yet. */
@@ -98,6 +101,8 @@ export class FollowsService {
     private readonly userTags: Repository<UserTagAssignment>,
     @InjectRepository(ProfileLike)
     private readonly likes: Repository<ProfileLike>,
+    @InjectRepository(UserReport)
+    private readonly reports: Repository<UserReport>,
     private readonly notifications: NotificationsService,
     private readonly showcases: ProfileShowcaseService,
   ) {}
@@ -148,6 +153,7 @@ export class FollowsService {
       userTags,
       likesCount,
       liked,
+      reported,
     ] = await Promise.all([
       this.follows.countBy({ followedId: user.id, pending: false }),
       this.follows.countBy({ followerId: user.id, pending: false }),
@@ -160,6 +166,11 @@ export class FollowsService {
       }),
       this.likes.countBy({ profileId: user.id }),
       this.likes.existsBy({ userId: viewer.id, profileId: user.id }),
+      this.reports.existsBy({
+        reporterId: viewer.id,
+        targetId: user.id,
+        status: 'open',
+      }),
     ]);
     const followed = viewerFollow?.pending === false;
     const visible = self || !user.profilePrivate || followed;
@@ -188,6 +199,7 @@ export class FollowsService {
       followingCount,
       likesCount,
       liked,
+      reported,
       followsViewer: followOfViewer?.pending === false,
       requestedViewer: followOfViewer?.pending === true,
       self,

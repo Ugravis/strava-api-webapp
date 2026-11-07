@@ -18,8 +18,9 @@ import { User } from '../users/user.entity';
  * Strava account. `role_changed`: the team changed the back-office role of
  * the user, null once out of the team. `release_note`: a new version of the
  * site has a note to read. `report_received`: a user was reported, told to
- * the members processing reports. `report_closed`: the team decided on a
- * report of the user. The last six have no actor.
+ * the members processing reports. `report_sent`: the report of the user was
+ * filed. `report_closed`: the team decided on a report of the user. The last
+ * seven have no actor.
  */
 export const NOTIFICATION_TYPES = [
   'follow',
@@ -31,6 +32,7 @@ export const NOTIFICATION_TYPES = [
   'role_changed',
   'release_note',
   'report_received',
+  'report_sent',
   'report_closed',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

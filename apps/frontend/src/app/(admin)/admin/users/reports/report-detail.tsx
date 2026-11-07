@@ -1,10 +1,8 @@
 "use client";
 
-import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH, type AdminUserSummary, type UserReportSanction } from "@kilotrace/shared/admin";
 import { CheckCheckIcon, CircleCheckIcon, CircleXIcon, ExternalLinkIcon, FlagIcon, FlagOffIcon } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { ActionDialog } from "@/components/admin/action-dialog";
+import { useMemo } from "react";
 import { formatDateTime } from "@/components/admin/data-table";
 import {
   DetailAction,
@@ -23,31 +21,19 @@ import { UserAvatar } from "@/components/user/user-avatar";
 import { userProfileHref } from "@/config/routes";
 import { loadUserHistory } from "../actions";
 import { useOpenUser } from "../use-user-panel";
-import { dialogOf, userActionsOf, type UserActionKey } from "../user-actions";
-import { bumpUsers, useUsersVersion } from "../users-store";
-import { closeReportAsSanctioned, dismissReport, loadRelatedReports, loadReportDetail, type ReportDetailData, sanctionReport } from "./actions";
-import { bumpReports, REPORT_REASONS, REPORT_STATUSES, reportColumns, useReportsVersion } from "./report-bits";
-
-const NOT_GRANTED = "Votre rôle n'a pas la permission de traiter les signalements.";
-
-/** The actions on the account taken as a sanction, by the sanction they record. */
-const SANCTIONS: Partial<Record<UserActionKey, UserReportSanction>> = { moderate: "moderation", suspend: "suspension", delete: "deletion" };
-
-const reasonOptions = (presets: string[]) => ({
-  label: "Raison",
-  placeholder: "Expliquez la décision, elle est consignée dans le journal.",
-  required: true,
-  minLength: ADMIN_REASON_MIN_LENGTH,
-  maxLength: ADMIN_REASON_MAX_LENGTH,
-  presets,
-});
+import { userActionsOf, useUserActionDialog } from "../user-actions";
+import { UserProfileSection } from "../user-detail";
+import { useUsersVersion } from "../users-store";
+import { loadRelatedReports, loadReportDetail, type ReportDetailData } from "./actions";
+import { REPORT_REASONS, REPORT_STATUSES, reportColumns, useReportsVersion } from "./report-bits";
+import { closingOf, REPORTS_NOT_GRANTED, SANCTIONS, useSanctionDialog } from "./report-decisions";
 
 /** The report loaded by the panel, its skeleton meanwhile; loaded again after every change. */
 export function ReportRowPanel({ id, panel }: { id: string; panel: RowPanelControls }) {
   const reports = useReportsVersion();
   const users = useUsersVersion();
   return (
-    <DetailLoader id={id} load={loadReportDetail} refreshKey={`${reports}:${users}`} skeleton={<DetailSkeleton media actions={3} sections={[5, 3, 2]} />}>
+    <DetailLoader id={id} load={loadReportDetail} refreshKey={`${reports}:${users}`} skeleton={<DetailSkeleton media actions={5} sections={[6, 7, 2]} />}>
       {(data) => <ReportDetail data={data} panel={panel} />}
     </DetailLoader>
   );
@@ -59,21 +45,15 @@ function ReportDetail({ data, panel }: { data: ReportDetailData; panel: RowPanel
   const openUser = useOpenUser();
   const version = useReportsVersion();
   const columns = useMemo(() => reportColumns(openUser), [openUser]);
-  // Kept once closed, so that the texts stay while the dialog fades out.
-  const [dialog, setDialog] = useState<{ user: AdminUserSummary; key: UserActionKey; open: boolean } | null>(null);
+  const { openSanction, dialog } = useSanctionDialog();
+  // A closed report, or a member who may not decide: the gavels moderate the account alone.
+  const plain = useUserActionDialog(() => {});
   const open = report.status === "open";
-  const done = () => {
-    bumpReports();
-    bumpUsers();
-  };
+  const deciding = open && canHandle;
   const sanctions = target ? userActionsOf(target.user, target.permissions, target.refusal).filter((action) => SANCTIONS[action.key]) : [];
-  const decide = (run: (reason: string) => ReturnType<typeof dismissReport>) => async (reason: string | undefined) => {
-    const result = await run(reason ?? "");
-    if (result.ok) done();
-    return result;
-  };
-  const handleLock = canHandle ? null : NOT_GRANTED;
-  const sanction = dialog && SANCTIONS[dialog.key];
+  const handleLock = canHandle ? null : REPORTS_NOT_GRANTED;
+  const mark = closingOf(report, "mark");
+  const dismiss = closingOf(report, "dismiss");
 
   return (
     <>
@@ -84,50 +64,20 @@ function ReportDetail({ data, panel }: { data: ReportDetailData; panel: RowPanel
         actions={target && <DetailAction label="Voir le profil public" icon={<ExternalLinkIcon aria-hidden />} href={userProfileHref(target.user.username)} />}
       />
       {open && (
-        <>
-          {sanctions.length > 0 && (
-            <DetailActions>
-              {sanctions.map((action) => (
-                <DetailAction
-                  key={action.key}
-                  label={action.label}
-                  icon={action.icon}
-                  variant={action.destructive ? "destructive" : "outline"}
-                  locked={handleLock ?? action.locked}
-                  onClick={() => setDialog({ user: target!.user, key: action.key, open: true })}
-                />
-              ))}
-            </DetailActions>
-          )}
-          <DetailActions>
+        <DetailActions>
+          {sanctions.map((action) => (
             <DetailAction
-              label="Marquer sanctionné"
-              icon={<CheckCheckIcon aria-hidden />}
-              locked={handleLock}
-              confirm={{
-                title: "Clore comme sanctionné ?",
-                description: "Le compte reste tel quel : à utiliser pour une sanction déjà prise. Tous les signalements ouverts sur ce compte sont clos et leurs auteurs prévenus.",
-                confirmLabel: "Clore",
-                destructive: false,
-                reason: reasonOptions(["Déjà suspendu", "Avertissement envoyé", "Déjà modéré"]),
-              }}
-              onClick={decide((reason) => closeReportAsSanctioned(report.id, reason))}
+              key={action.key}
+              label={action.label}
+              icon={action.icon}
+              variant={action.destructive ? "destructive" : "outline"}
+              locked={handleLock ?? action.locked}
+              onClick={() => openSanction(report.id, target!.user, action.key)}
             />
-            <DetailAction
-              label="Rejeter"
-              icon={<FlagOffIcon aria-hidden />}
-              locked={handleLock}
-              confirm={{
-                title: "Rejeter ce signalement ?",
-                description: "Aucune sanction n'est prise. Seul ce signalement est clos, son auteur en est prévenu et pourra en envoyer un autre.",
-                confirmLabel: "Rejeter",
-                destructive: false,
-                reason: reasonOptions(["Aucune infraction constatée", "Signalement abusif", "Doublon"]),
-              }}
-              onClick={decide((reason) => dismissReport(report.id, reason))}
-            />
-          </DetailActions>
-        </>
+          ))}
+          <DetailAction label="Marquer sanctionné" icon={<CheckCheckIcon aria-hidden />} locked={handleLock} confirm={mark.confirm} onClick={mark.run} />
+          <DetailAction label="Rejeter" icon={<FlagOffIcon aria-hidden />} locked={handleLock} confirm={dismiss.confirm} onClick={dismiss.run} />
+        </DetailActions>
       )}
       <DetailSection title="Signalement">
         <DetailColumnFields row={report} columns={columns} ids={["status", "reason", { id: "details", stacked: true }, "reporter", "createdAt", "target"]} />
@@ -136,6 +86,14 @@ function ReportDetail({ data, panel }: { data: ReportDetailData; panel: RowPanel
         <DetailSection title="Décision">
           <DetailColumnFields row={report} columns={columns} ids={["sanction", "resolver", "resolvedAt", { id: "note", stacked: true }]} />
         </DetailSection>
+      )}
+      {target && (
+        <UserProfileSection
+          user={target.user}
+          permissions={target.permissions}
+          refusal={target.refusal}
+          openAction={(user, key, fields) => (deciding && SANCTIONS[key] ? openSanction(report.id, user, key, fields) : plain.openAction(user, key, fields))}
+        />
       )}
       {report.target && (
         <DetailSection title="Autres signalements sur ce compte">
@@ -190,16 +148,8 @@ function ReportDetail({ data, panel }: { data: ReportDetailData; panel: RowPanel
           }
         />
       </DetailSection>
-      {dialog && sanction && (
-        <ActionDialog
-          {...dialogOf(dialog.key, dialog.user)}
-          action={sanctionReport.bind(null, report.id, sanction)}
-          cancelLabel="Annuler"
-          open={dialog.open}
-          onOpenChange={(next) => setDialog({ ...dialog, open: next })}
-          onSuccess={done}
-        />
-      )}
+      {dialog}
+      {plain.dialog}
     </>
   );
 }

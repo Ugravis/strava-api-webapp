@@ -633,7 +633,8 @@
           "strava_unlinked": "Strava délié",
           "release_note": "Note de mise à jour",
           "report_received": "Signalement à traiter",
-          "report_closed": "Signalement traité"
+          "report_closed": "Signalement traité",
+          "report_sent": "Signalement envoyé"
         }
       },
       "profiles": {

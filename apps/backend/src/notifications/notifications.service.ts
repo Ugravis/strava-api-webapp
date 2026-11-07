@@ -181,6 +181,7 @@ export class NotificationsService {
       | 'strava_unlinked'
       | 'role_changed'
       | 'report_received'
+      | 'report_sent'
       | 'report_closed'
     >,
     details: NotificationDetails,

@@ -488,7 +488,8 @@
       "detailsPlaceholder": "Ajoutez ce qui peut aider l'équipe à comprendre.",
       "customPlaceholder": "Décrivez la raison de votre signalement.",
       "submit": "Envoyer le signalement",
-      "sent": "Signalement envoyé. Merci, l'équipe va l'examiner."
+      "sent": "Signalement envoyé. Merci, l'équipe va l'examiner.",
+      "warning": "Les signalements abusifs peuvent eux-mêmes être sanctionnés."
     }
   },
   "settings": {
@@ -1214,7 +1215,8 @@
       "role_changed": "Votre rôle dans l'équipe a changé.",
       "release_note": "Une nouvelle version est disponible.",
       "report_received": "Un nouveau signalement est à traiter.",
-      "report_closed": "Votre signalement a été examiné."
+      "report_closed": "Votre signalement a été examiné.",
+      "report_sent": "Votre signalement a bien été envoyé."
     },
     "view": "Voir",
     "follow_request": "<b>{name}</b> demande à s'abonner à vous.",
@@ -1252,7 +1254,8 @@
     "release_note": "Nouveautés de la version <b>{version}</b> : découvrez ce qui change.",
     "release": "Nouveautés",
     "report_received": "Nouveau signalement de @{username} à traiter.",
-    "report_closed": "{outcome, select, sanctioned {Votre signalement de @{username} a été examiné : une sanction a été prise. Merci.} other {Votre signalement de @{username} a été examiné : aucune sanction n'a été retenue.}}"
+    "report_closed": "{outcome, select, sanctioned {Votre signalement de @{username} a été examiné : une sanction a été prise. Merci.} other {Votre signalement de @{username} a été examiné : aucune sanction n'a été retenue.}}",
+    "report_sent": "Votre signalement de @{username} a bien été envoyé. Vous serez prévenu·e dès que l'équipe l'aura examiné."
   },
   "footer": {
     "label": "Pied de page",

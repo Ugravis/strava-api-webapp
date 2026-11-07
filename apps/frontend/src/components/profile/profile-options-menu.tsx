@@ -37,13 +37,14 @@ export function ProfileOptionsMenu({ profile, like, onFollowChange, buttonClassN
         >
           <EllipsisIcon />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuContent align="center" className="w-52">
           <DropdownMenuItem disabled={follow.pending} onClick={follow.request}>
             {state === "none" ? <UserPlusIcon /> : state === "following" ? <UserMinusIcon /> : <ClockIcon />}
             {state === "none" ? t(profile.followsViewer ? "followBack" : "follow") : t(state === "following" ? "unfollow" : "cancelRequest")}
           </DropdownMenuItem>
           <DropdownMenuItem disabled={like.pending} onClick={() => void like.toggle()}>
-            <HeartIcon className={cn(like.liked && "fill-rose-500 text-rose-500")} />
+            {/* Pink kept on focus, which recolors the icons of the items. */}
+            <HeartIcon className={cn(like.liked && "fill-rose-500 text-rose-500!")} />
             {t(like.liked ? "unlike" : "like")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />

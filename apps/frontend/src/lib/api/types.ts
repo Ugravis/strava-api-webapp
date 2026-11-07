@@ -611,6 +611,7 @@ export type NotificationType =
   | "role_changed"
   | "release_note"
   | "report_received"
+  | "report_sent"
   | "report_closed";
 
 /** Back-office role told by a `role_changed` notification. */

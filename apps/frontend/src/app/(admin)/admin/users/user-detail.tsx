@@ -1,6 +1,6 @@
 "use client";
 
-import type { ModeratableField } from "@kilotrace/shared/admin";
+import type { AdminPermission, AdminUserDetail, AdminUserSummary, ModeratableField } from "@kilotrace/shared/admin";
 import {
   AtSignIcon,
   CalendarIcon,
@@ -47,7 +47,8 @@ import { userProfileHref } from "@/config/routes";
 import { countryName } from "@/lib/countries/country-format";
 import { publicNameOf } from "@/lib/user";
 import { loadUserDetail, loadUserHistory, type UserDetailData } from "./actions";
-import { moderateTool, NOT_GRANTED, useUserActionDialog, userActionsOf } from "./user-actions";
+import type { ActRefusal } from "@/lib/admin/permissions";
+import { moderateTool, NOT_GRANTED, type UserActionKey, useUserActionDialog, userActionsOf } from "./user-actions";
 import { useOpenTag } from "./use-user-panel";
 import { tagsEdit, userColumns, UserMarks, UserTagIcon } from "./user-columns";
 import { useUsersVersion } from "./users-store";
@@ -67,8 +68,6 @@ function UserDetail({ data: { user, permissions, refusal, catalog, historyHref }
   const { close } = useSplitPanel();
   const openTag = useOpenTag();
   const { openAction, dialog } = useUserActionDialog((id) => (panel ? panel.removed(id) : close()));
-  /** The gavel of a field holding a value, opening the moderation with it checked; none when the member may not. */
-  const moderate = (target: ModeratableField, shown: unknown) => !!shown && moderateTool(user, target, permissions, refusal, openAction);
   const tags = tagsEdit(user, catalog, permissions.includes("users.userTags") ? null : NOT_GRANTED);
   const columns = userColumns({ moderate: (each, target) => moderateTool(each, target, permissions, refusal, openAction) });
   const field = (id: string) => <DetailColumnField row={user} columns={columns} id={id} />;
@@ -114,28 +113,7 @@ function UserDetail({ data: { user, permissions, refusal, catalog, historyHref }
         </DetailSection>
       )}
 
-      {/* The only free texts of the account: what moderation is about. */}
-      <DetailSection title="Profil" pill={{ icon: <GavelIcon />, label: "Modération", tone: "amber" }}>
-        <DetailFields>
-          {field("avatar")}
-          {field("displayName")}
-          <DetailField label="Pseudo" icon={<AtSignIcon />} copy={user.username} tools={moderate("username", user.username)}>
-            @{user.username}
-          </DetailField>
-          <DetailField label="Bio" icon={<FileTextIcon />} copy={user.bio} stacked={!!user.bio} tools={moderate("bio", user.bio)}>
-            {user.bio && <span className="whitespace-pre-line">{user.bio}</span>}
-          </DetailField>
-          <DetailField label="Ville" icon={<MapPinIcon />} tools={moderate("city", user.city)}>
-            {user.city}
-          </DetailField>
-          <DetailField label="Pays" icon={<GlobeIcon />} tools={moderate("city", user.countryCode)}>
-            {user.countryCode && countryName(user.countryCode, "fr")}
-          </DetailField>
-          <DetailField label="Visibilité" icon={<EyeIcon />}>
-            {user.profilePrivate ? "Privé" : "Public"}
-          </DetailField>
-        </DetailFields>
-      </DetailSection>
+      <UserProfileSection user={user} permissions={permissions} refusal={refusal} openAction={openAction} />
 
       <DetailSection title="Compte">
         <DetailFields>
@@ -240,5 +218,49 @@ function UserDetail({ data: { user, permissions, refusal, catalog, historyHref }
         />
       </DetailSection>
     </>
+  );
+}
+
+/**
+ * The only free texts of an account, what moderation is about: each holding a
+ * value has a gavel opening the moderation with it checked, none when the
+ * member may not. In the detail of an account and of a report on it.
+ */
+export function UserProfileSection({
+  user,
+  permissions,
+  refusal,
+  openAction,
+}: {
+  user: AdminUserDetail;
+  permissions: AdminPermission[];
+  refusal: ActRefusal | null;
+  openAction: (user: AdminUserSummary, action: UserActionKey, fields?: ModeratableField[]) => void;
+}) {
+  const moderate = (target: ModeratableField, shown: unknown) => !!shown && moderateTool(user, target, permissions, refusal, openAction);
+  const columns = userColumns({ moderate: (each, target) => moderateTool(each, target, permissions, refusal, openAction) });
+  const field = (id: string) => <DetailColumnField row={user} columns={columns} id={id} />;
+  return (
+    <DetailSection title="Profil" pill={{ icon: <GavelIcon />, label: "Modération", tone: "amber" }}>
+      <DetailFields>
+        {field("avatar")}
+        {field("displayName")}
+        <DetailField label="Pseudo" icon={<AtSignIcon />} copy={user.username} tools={moderate("username", user.username)}>
+          @{user.username}
+        </DetailField>
+        <DetailField label="Bio" icon={<FileTextIcon />} copy={user.bio} stacked={!!user.bio} tools={moderate("bio", user.bio)}>
+          {user.bio && <span className="whitespace-pre-line">{user.bio}</span>}
+        </DetailField>
+        <DetailField label="Ville" icon={<MapPinIcon />} tools={moderate("city", user.city)}>
+          {user.city}
+        </DetailField>
+        <DetailField label="Pays" icon={<GlobeIcon />} tools={moderate("city", user.countryCode)}>
+          {user.countryCode && countryName(user.countryCode, "fr")}
+        </DetailField>
+        <DetailField label="Visibilité" icon={<EyeIcon />}>
+          {user.profilePrivate ? "Privé" : "Public"}
+        </DetailField>
+      </DetailFields>
+    </DetailSection>
   );
 }

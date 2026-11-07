@@ -65,20 +65,20 @@ export function ReportUserDialog({ username, open, onOpenChange, onReported }: R
           <DialogTitle>{t("title", { username })}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
-          <fieldset className="flex flex-col gap-1">
+        <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-5">
+          <fieldset className="-mx-2 flex flex-col">
             <legend className="sr-only">{t("reasons.legend")}</legend>
             {USER_REPORT_REASONS.map((value) => (
               <label
                 key={value}
-                className="flex min-h-10 cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-ring"
+                className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-ring"
               >
                 <input type="radio" name="reason" value={value} checked={reason === value} onChange={() => setReason(value)} className="size-4 shrink-0 accent-primary" />
                 {t(`reasons.${value}`)}
               </label>
             ))}
           </fieldset>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="report-details">{t(custom ? "detailsRequired" : "details")}</Label>
             <Textarea
               id="report-details"
@@ -90,6 +90,7 @@ export function ReportUserDialog({ username, open, onOpenChange, onReported }: R
               rows={3}
             />
           </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("warning")}</p>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => close(false)}>
               {tCommon("cancel")}

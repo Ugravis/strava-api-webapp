@@ -254,6 +254,8 @@ export function useDataTable<T>(config: DataTableConfig<T>) {
     retry: () => setAttempt((count) => count + 1),
     refresh,
     filtered,
+    /** The message of these filters, when the config has one. */
+    emptyOwn: filtered ? (config.emptyFiltered?.({ filters, search: searched.trim() }) ?? null) : null,
     movable,
     blocked,
     move,

@@ -144,6 +144,11 @@ export interface DataTableConfig<T> {
   /** A click on the row, e.g. to open its panel. */
   onOpen?: (row: T) => void;
   empty: { title: string; description: string };
+  /**
+   * A message of its own for no row under some filters, e.g. the default ones
+   * (« nothing open »): `null` keeps « Aucun résultat » and its button.
+   */
+  emptyFiltered?: (query: { filters: Record<string, string[]>; search: string }) => { title: string; description: string } | null;
   /** The rows counted, e.g. `(count) => (count > 1 ? "comptes" : "compte")`. */
   noun: (count: number) => string;
 }

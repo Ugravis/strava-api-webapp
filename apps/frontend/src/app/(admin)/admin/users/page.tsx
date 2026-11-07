@@ -1,5 +1,5 @@
-import type { AdminUsersOverview, AdminUserTag } from "@kilotrace/shared/admin";
-import { BanIcon, FlagIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
+import type { AdminUserReportsOverview, AdminUsersOverview, AdminUserTag } from "@kilotrace/shared/admin";
+import { BanIcon, UserCheckIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { KpiGrid, KpiTile, runningTotal, shareOf } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/separator";
@@ -7,7 +7,7 @@ import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { ReportsTable } from "./reports/reports-table";
+import { ReportsSection } from "./reports/reports-table";
 import { UsersTable } from "./users-table";
 
 const number = new Intl.NumberFormat("fr-FR");
@@ -18,7 +18,11 @@ export default async function AdminUsersPage() {
   const me = await requireAdminMember();
   const t = getAdminTranslations("users");
   const o = getAdminTranslations("users.overview");
-  const [overview, tags] = await Promise.all([adminApi<AdminUsersOverview>("/users/overview"), adminApi<AdminUserTag[]>("/user-tags")]);
+  const [overview, tags, reports] = await Promise.all([
+    adminApi<AdminUsersOverview>("/users/overview"),
+    adminApi<AdminUserTag[]>("/user-tags"),
+    adminApi<AdminUserReportsOverview>("/user-reports/overview"),
+  ]);
   const figures = overview.ok ? overview.data : null;
   return (
     <>
@@ -40,13 +44,7 @@ export default async function AdminUsersPage() {
         </KpiGrid>
       )}
       <Separator />
-      <section id="reports" className="flex scroll-mt-20 flex-col gap-3" aria-labelledby="reports-title">
-        <h2 id="reports-title" className="flex items-center gap-2 text-sm font-medium">
-          <FlagIcon className="size-4 text-muted-foreground" aria-hidden />
-          {t("reports")}
-        </h2>
-        <ReportsTable />
-      </section>
+      <ReportsSection title={t("reports")} openCount={reports.ok ? reports.data.open : 0} permissions={me.permissions} />
       <Separator />
       <UsersTable me={me} auditLogPath={adminRoutes.auditLog} tags={tags.ok ? tags.data : []} />
     </>

@@ -66,6 +66,9 @@ export class ReportsService {
         }
         throw error;
       });
+    await this.notifications.notifyFromTeam(reporter.id, 'report_sent', {
+      username: target.username,
+    });
     await this.notifyTeam(report, [reporter.id, target.id]);
   }
 

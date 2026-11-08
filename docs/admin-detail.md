@@ -1,13 +1,13 @@
 # Admin detail content
 
-The content of a detail of the back office: what the split panel (`docs/split-panel.md`) shows of a row, and the same blocks in a dialog or a page. The panel draws its own header (back, forward, title, fold, mode, close); these blocks are what goes inside. Showcase: `/admin/development/admin-table`, a click on a row of either table (`poc-detail.tsx`, `poc-badge-detail.tsx`); « Nouveau badge » or « Dupliquer » for a draft (`poc-badge-create.tsx`), the pencil of « Période » for a section edited as a whole; rows checked for the bulk edit; the bar above the tables simulates a moderator (locks) and what follows a removal.
+The content of a detail of the back office: what the split panel (`docs/split-panel.md`) shows of a row, and the same blocks in a dialog or a page. The panel draws its own header (back, forward, title, fold, mode, close); these blocks are what goes inside. Showcase: `/development/admin-table` of the admin app, a click on a row of either table (`poc-detail.tsx`, `poc-badge-detail.tsx`); « Nouveau badge » or « Dupliquer » for a draft (`poc-badge-create.tsx`), the pencil of « Période » for a section edited as a whole; rows checked for the bulk edit; the bar above the tables simulates a moderator (locks) and what follows a removal.
 
 ## Where things are
 
 | Path | Role |
 | --- | --- |
-| `apps/frontend/src/components/admin/detail/` (import from `@/components/admin/detail`) | The blocks below. Client side. |
-| `apps/frontend/src/components/admin/data-table/` | The cells drawing the values: the detail depends on the table kit, never the other way. |
+| `packages/ui/src/components/admin/detail/` (import from `@kilotrace/ui/components/admin/detail`) | The blocks below. Client side. |
+| `packages/ui/src/components/admin/data-table/` | The cells drawing the values: the detail depends on the table kit, never the other way. |
 
 ## Blocks
 

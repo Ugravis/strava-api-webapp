@@ -6,7 +6,7 @@ description: Open content in the side panel of a section with the split panel ki
 # Split panel
 
 1. Read `docs/split-panel.md`. It holds the behaviour, the API and the rules. Follow the rules as written.
-2. Read `apps/frontend/src/app/(admin)/admin/development/admin-table/poc-view.tsx`: a table opening its rows in the panel.
+2. Read `apps/admin/src/app/(shell)/development/admin-table/poc-view.tsx`: a table opening its rows in the panel.
 3. Keep the kit generic: it knows nothing of tables nor of the admin, and the data table kit knows nothing of it. What a row shows is built by the page (back office: skill `admin-detail`).
 4. A section without a panel yet: one `SplitPanelProvider` in its layout, under a `Suspense`; `SplitPanelArea` around the pages, the footer outside it.
 5. In a page:

@@ -1,6 +1,6 @@
 # Admin data tables
 
-Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on a POC (#133): its original code is the git tag `admin-table-poc-v1`, its card is on the page Développement (`/admin/development`), and its demo, rebuilt on the kit, stays at `/admin/development/admin-table` as the live showcase on fake rows, its original captures below it.
+Every list of the back office is a `DataTable`: one header of search, filters and tools, rows served page by page by the API, a pagination. The design was settled on a POC (#133): its original code is the git tag `admin-table-poc-v1`, its card is on the page Développement (`/development` of the admin app), and its demo, rebuilt on the kit, stays at `/development/admin-table` of the admin app as the live showcase on fake rows, its original captures below it.
 
 ## Where things are
 
@@ -8,10 +8,10 @@ Every list of the back office is a `DataTable`: one header of search, filters an
 | --- | --- | --- |
 | Contract | `packages/shared/src/table/index.ts` (`@kilotrace/shared/table`) | `TableQuery`, `TablePage`, wire format, page layout. Browser-safe. |
 | Backend engine | `apps/backend/src/admin/common/table-query.ts` | `runTableQuery`, `TableSpec`, `@TableQueryParam()`. Rows held in memory (e.g. from an outside API): `serveTablePage` of the contract. |
-| Server Action helper | `apps/frontend/src/lib/admin/table.ts` | `fetchAdminTable(path, query)`. |
-| Frontend kit | `apps/frontend/src/components/admin/data-table/` (import from `@/components/admin/data-table`) | `DataTable`, column builders, cells, `localTableSource`. |
-| Showcase | `apps/frontend/src/app/(admin)/admin/development/admin-table/` | Every feature on fake accounts: copy it. |
-| Visual tests | `apps/frontend/e2e/admin-table.spec.ts` | Captures of every state of the showcase. |
+| Server Action helper | `apps/admin/src/lib/admin/table.ts` | `fetchAdminTable(path, query)`. |
+| Frontend kit | `packages/ui/src/components/admin/data-table/` (import from `@kilotrace/ui/components/admin/data-table`) | `DataTable`, column builders, cells, `localTableSource`. |
+| Showcase | `apps/admin/src/app/(shell)/development/admin-table/` | Every feature on fake accounts: copy it. |
+| Visual tests | `apps/admin/e2e/admin-table.spec.ts` | Captures of every state of the showcase. |
 
 ## Recipe: a new table
 
@@ -211,7 +211,7 @@ Short lists reordered by drag and drop without a table keep `components/admin/so
 
 ## Visual tests
 
-`apps/frontend/e2e/admin-table.spec.ts` photographs every state of the showcase:
+`apps/admin/e2e/admin-table.spec.ts` photographs every state of the showcase:
 - table;
 - grouped, filtered and sorted;
 - overview;

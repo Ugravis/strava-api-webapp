@@ -12,6 +12,70 @@ importers:
         specifier: 2.11.8
         version: 2.11.8
 
+  apps/admin:
+    dependencies:
+      '@kilotrace/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@kilotrace/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: ^1.56.0
+        version: 1.56.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: 16.4.2
+        version: 16.4.2(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      next-intl:
+        specifier: ^4.14.9
+        version: 4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+      sonner:
+        specifier: ^2.0.8
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@kilotrace/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@kilotrace/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@playwright/test':
+        specifier: ^1.64.1
+        version: 1.64.1
+      '@tailwindcss/turbopack':
+        specifier: ^4
+        version: 4.3.3
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.3.0(@types/react@19.3.0)
+      eslint:
+        specifier: ^9
+        version: 9.39.5(jiti@2.7.0)
+      tailwindcss:
+        specifier: ^4
+        version: 4.3.3
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   apps/backend:
     dependencies:
       '@aws-sdk/client-s3':
@@ -188,10 +252,10 @@ importers:
         version: 6.14.0
       next:
         specifier: 16.4.2
-        version: 16.4.2(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 16.4.2(@babel/core@7.29.7)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       next-intl:
         specifier: ^4.14.9
-        version: 4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+        version: 4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@babel/core@7.29.7)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -360,10 +424,10 @@ importers:
         version: 9.39.5(jiti@2.7.0)
       next:
         specifier: 16.4.2
-        version: 16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 16.4.2(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       next-intl:
         specifier: ^4.14.9
-        version: 4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+        version: 4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -11760,7 +11824,7 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.14.9: {}
 
-  next-intl@4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0):
+  next-intl@4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@babel/core@7.29.7)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0):
     dependencies:
       '@eloqnt/config': 0.1.1
       '@eloqnt/format-json': 0.1.0
@@ -11770,7 +11834,7 @@ snapshots:
       '@swc/core': 1.16.18(@swc/helpers@0.5.23)
       icu-minify: 4.14.9
       negotiator: 1.1.0
-      next: 16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      next: 16.4.2(@babel/core@7.29.7)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       next-intl-swc-plugin-extractor: 4.14.9
       react: 19.3.0
       use-intl: 4.14.9(@types/react@19.3.0)(react@19.3.0)
@@ -11779,7 +11843,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  next-intl@4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0):
+  next-intl@4.14.9(@swc/helpers@0.5.23)(@types/react@19.3.0)(next@16.4.2(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0):
     dependencies:
       '@eloqnt/config': 0.1.1
       '@eloqnt/format-json': 0.1.0
@@ -11803,7 +11867,7 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
-  next@16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+  next@16.4.2(@babel/core@7.29.7)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
       '@next/env': 16.4.2
       '@swc/helpers': 0.5.23
@@ -11822,6 +11886,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.4.2
       '@next/swc-win32-arm64-msvc': 16.4.2
       '@next/swc-win32-x64-msvc': 16.4.2
+      '@playwright/test': 1.64.1
       sharp: 0.35.5(@types/node@20.19.43)
     transitivePeerDependencies:
       - '@babel/core'

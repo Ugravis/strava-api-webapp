@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
-import { AuthCard } from "@/components/auth/auth-card";
+import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
 import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { LoginForm } from "@/components/auth/login-form";
 import { routes } from "@/config/routes";

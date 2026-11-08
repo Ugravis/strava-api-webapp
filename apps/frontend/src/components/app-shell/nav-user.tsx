@@ -18,7 +18,7 @@ import { routes } from "@/config/routes";
 import type { User } from "@kilotrace/ui/lib/api/types";
 import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { SoundSubmenu } from "./sound-submenu";
-import { ThemeMenuItem } from "./theme-menu-item";
+import { ThemeMenuItem } from "@kilotrace/ui/components/app-shell/theme-menu-item";
 import { useLogout } from "./use-logout";
 
 function UserSummary({ user }: { user: User }) {

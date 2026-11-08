@@ -6,20 +6,15 @@ import {
   SESSION_COOKIE,
 } from "@/config/routes";
 
-const API_URL = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
-
 /**
  * Optimistic redirects based on the presence of the session cookie only.
  * The session itself is validated by the backend when the page renders.
  */
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (isUnder(pathname, "/api/admin")) {
-    return withoutCookies(request);
-  }
-  if (isUnder(pathname, "/admin")) {
-    return (await isAdmin(request)) ? NextResponse.next() : notFound(request);
+    return backOfficeNotFound(request);
   }
 
   const hasSession = request.cookies.has(SESSION_COOKIE);
@@ -52,38 +47,16 @@ function isUnder(pathname: string, prefix: string): boolean {
 }
 
 /**
- * The back-office API is called by the Next.js server only: from the
- * browser, it goes through without the session, so the backend answers the
- * 404 of an unknown route, even to an admin.
+ * The back office lives in its own app, on its own host: its API is never
+ * relayed from here, whatever the cookies. Answered as the backend answers
+ * an unknown route, so that nothing tells it apart.
  */
-function withoutCookies(request: NextRequest) {
-  const headers = new Headers(request.headers);
-  headers.delete("cookie");
-  return NextResponse.next({ request: { headers } });
-}
-
-/**
- * Checked here, before rendering starts, so that the 404 keeps its status
- * code: a page already streaming can no longer change it.
- */
-async function isAdmin(request: NextRequest): Promise<boolean> {
-  if (!request.cookies.has(SESSION_COOKIE)) {
-    return false;
-  }
-  const response = await fetch(`${API_URL}/api/admin/me`, {
-    headers: { Accept: "application/json", Cookie: request.headers.get("cookie") ?? "" },
-    cache: "no-store",
-  }).catch(() => null);
-  return response?.ok ?? false;
-}
-
-/**
- * The very page of an unknown route, with its status. Next.js discloses the
- * rewrite in an `x-middleware-rewrite` response header, which the public web
- * server removes (docker/Caddyfile): it is the only rewrite of the proxy.
- */
-function notFound(request: NextRequest) {
-  return NextResponse.rewrite(new URL("/_not-found", request.url), { status: 404 });
+function backOfficeNotFound(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+  return NextResponse.json(
+    { message: `Cannot ${request.method} ${pathname}${search}`, error: "Not Found", statusCode: 404 },
+    { status: 404 },
+  );
 }
 
 export const config = {
@@ -94,7 +67,6 @@ export const config = {
     "/map/:path*",
     "/profile/:path*",
     "/settings/:path*",
-    "/admin/:path*",
     "/api/:path*",
   ],
 };

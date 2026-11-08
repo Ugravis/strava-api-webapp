@@ -17,7 +17,7 @@ import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 import type { User } from "@kilotrace/ui/lib/api/types";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-import { SidebarBrand } from "./sidebar-brand";
+import { SidebarBrand } from "@kilotrace/ui/components/app-shell/sidebar-brand";
 
 export interface AppSidebarSlots {
   /** Entries of the sidebar; the main navigation of the site by default. */

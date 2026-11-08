@@ -17,7 +17,7 @@ import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
 import type { PendingGoogleSignup } from "@kilotrace/ui/lib/api/types";
 import { googleSignupSchema, type GoogleSignupValues } from "@/lib/validation/schemas";
 import { authService } from "@/services/auth.service";
-import { AuthCard } from "./auth-card";
+import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
 import { applyUsernameError } from "./username-errors";
 
 type PendingState =

@@ -30,6 +30,8 @@ interface BarChartProps {
   shareLabel?: string;
   notes?: BarNote[];
   height?: number;
+  /** A logarithmic axis, by powers of ten, for values far apart. */
+  log?: boolean;
 }
 
 const MARGIN = { top: 12, right: 8, bottom: 24, left: 36 };
@@ -48,7 +50,7 @@ function barPath(x: number, y: number, width: number, height: number, radius: nu
  * Bars over categories (buckets, weeks, months, whole numbers), every series
  * stacked; pointed at, the figures of a bar. Labels come from the server.
  */
-export function BarChart({ labels, titles = labels, series, values, label, totalLabel, shareLabel, notes = [], height = 200 }: BarChartProps) {
+export function BarChart({ labels, titles = labels, series, values, label, totalLabel, shareLabel, notes = [], height = 200, log = false }: BarChartProps) {
   const format = useFormatter();
   const chart = useRef<HTMLDivElement>(null);
   const { container, width } = useChartWidth();
@@ -59,10 +61,16 @@ export function BarChart({ labels, titles = labels, series, values, label, total
   const slot = plotWidth / Math.max(labels.length, 1);
   const totals = labels.map((_, index) => series.reduce((sum, item) => sum + (values[item.id]?.[index] ?? 0), 0));
   const sum = totals.reduce((total, value) => total + value, 0);
-  const step = Math.max(niceStep(Math.max(...totals, 1)), 1);
-  const top = Math.max(Math.ceil(Math.max(...totals, 1) / step) * step, step);
+  const highest = Math.max(...totals, 1);
+  const step = Math.max(niceStep(highest), 1);
+  // On a logarithmic axis, the next power of ten; one more than the value, so that zero stays at the bottom.
+  const top = log ? 10 ** Math.max(Math.ceil(Math.log10(highest)), 1) : Math.max(Math.ceil(highest / step) * step, step);
+  const ticks = log
+    ? // From ten: the line of one would crowd the bottom.
+      [0, ...Array.from({ length: Math.round(Math.log10(top)) }, (_, power) => 10 ** (power + 1))]
+    : Array.from({ length: Math.round(top / step) + 1 }, (_, index) => index * step);
   const x = (index: number) => MARGIN.left + (index + 0.5) * slot;
-  const y = (value: number) => MARGIN.top + (1 - value / top) * plotHeight;
+  const y = (value: number) => MARGIN.top + (1 - (log ? Math.log10(1 + value) / Math.log10(1 + top) : value / top)) * plotHeight;
   const count = (value: number) => format.number(value, { notation: value >= 10_000 ? "compact" : "standard" });
   const every = Math.max(1, Math.ceil((labels.length * TICK_WIDTH) / plotWidth));
   const barWidth = Math.min(Math.max(slot - Math.min(slot * 0.3, 10), 1), BAR_MAX);
@@ -78,7 +86,7 @@ export function BarChart({ labels, titles = labels, series, values, label, total
       <div ref={container} style={{ height }}>
         {width > 0 && (
           <svg role="img" aria-label={label} width={width} height={height} className="block touch-pan-y" onPointerDown={pointSlot} onPointerMove={pointSlot} onPointerLeave={leave}>
-            {Array.from({ length: Math.round(top / step) + 1 }, (_, index) => index * step).map((value) => (
+            {ticks.map((value) => (
               <g key={value}>
                 <line x1={MARGIN.left} x2={MARGIN.left + plotWidth} y1={y(value)} y2={y(value)} className="stroke-border" strokeDasharray={value === 0 ? undefined : "2 4"} />
                 <text x={MARGIN.left - 8} y={y(value)} textAnchor="end" dominantBaseline="middle" className="fill-muted-foreground text-[10px] tabular-nums">

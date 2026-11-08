@@ -78,7 +78,7 @@ export async function DashboardHero({ memberId, roles }: DashboardHeroProps) {
   const greeting = hour < 5 || hour >= 18 ? "evening" : "morning";
   return (
     <section className={FRAME}>
-      <HeroBackdrop id="admin-hero-tiles" tone="text-blue-500 opacity-50" />
+      <HeroBackdrop id="admin-hero-tiles" tone="text-blue-500" tiles="opacity-50" station="fill-card" />
       <div className="flex flex-col gap-6">
         <div className="flex min-w-0 items-center gap-4">
           {user && <UserAvatar user={user} className="size-14 shrink-0 ring-2 ring-blue-200 sm:size-16 dark:ring-blue-900" fallbackClassName="text-lg" />}

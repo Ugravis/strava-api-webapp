@@ -1209,12 +1209,12 @@
       },
       "activeDays": {
         "title": "Jours actifs par mois",
-        "description": "Utilisateurs selon leur nombre de jours actifs, sur chacun des 3 derniers mois"
+        "description": "Utilisateurs selon leur nombre de jours actifs, sur l’un des 3 derniers mois"
       },
       "atLeast": {
         "title": "Actifs au moins N jours",
         "description": "Utilisateurs actifs au moins N jours sur les {days} jours",
-        "regular": "{share} actifs {count} jours ou plus",
+        "regular": "Actifs {count} jours ou plus",
         "bin": "{count, plural, one {Au moins # jour actif} other {Au moins # jours actifs}}",
         "share": "Part des actifs"
       }

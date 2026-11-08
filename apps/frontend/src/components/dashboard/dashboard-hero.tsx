@@ -142,9 +142,20 @@ export function DashboardHero({ stats, overview, welcome }: DashboardHeroProps) 
 
 /**
  * A grid of tiles crossed by a railway, fading toward the left: a nod to the
- * map. `tone` colors the tiles, green as on the map by default.
+ * map. `tone` colors the tiles, green as on the map by default; `tiles` styles
+ * the tiles only, `station` the inside of the stations, dark for a dark hero.
  */
-export function HeroBackdrop({ id = "dashboard-hero-tiles", tone = "text-green-500" }: { id?: string; tone?: string }) {
+export function HeroBackdrop({
+  id = "dashboard-hero-tiles",
+  tone = "text-green-500",
+  tiles,
+  station = "fill-zinc-900",
+}: {
+  id?: string;
+  tone?: string;
+  tiles?: string;
+  station?: string;
+}) {
   return (
     <svg
       aria-hidden
@@ -155,15 +166,17 @@ export function HeroBackdrop({ id = "dashboard-hero-tiles", tone = "text-green-5
           <rect x="1" y="1" width="26" height="26" rx="3" fill="none" stroke="currentColor" strokeOpacity="0.14" />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill={`url(#${id})`} />
-      {HIGHLIGHTED.map(([x, y]) => (
-        <rect key={`${x}-${y}`} x={x * 28 + 1} y={y * 28 + 1} width="26" height="26" rx="3" fill="currentColor" fillOpacity="0.16" />
-      ))}
+      <g className={tiles}>
+        <rect width="100%" height="100%" fill={`url(#${id})`} />
+        {HIGHLIGHTED.map(([x, y]) => (
+          <rect key={`${x}-${y}`} x={x * 28 + 1} y={y * 28 + 1} width="26" height="26" rx="3" fill="currentColor" fillOpacity="0.16" />
+        ))}
+      </g>
       <g className="text-pink-500">
         <path d={RAILWAY} fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="9" strokeLinecap="round" />
         <path d={RAILWAY} fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round" />
         {STATIONS.map(([x, y]) => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="5" className="fill-zinc-900" stroke="currentColor" strokeWidth="2.5" />
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="5" className={station} stroke="currentColor" strokeWidth="2.5" />
         ))}
       </g>
     </svg>

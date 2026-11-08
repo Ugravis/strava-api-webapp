@@ -2,6 +2,7 @@ import type { AdminHistogramBin, AdminRetention } from "@kilotrace/shared/admin"
 import { Fragment } from "react";
 import { BarChart } from "@/components/admin/site-activity/bar-chart";
 import { LineChart } from "@/components/admin/site-activity/line-chart";
+import { MonthHistogram } from "@/components/admin/site-activity/month-histogram";
 import { CardFigure, ChartHead, RateCell, THIN_SCROLL } from "@/components/admin/site-activity/parts";
 import { getSiteActivityFormat, type SiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
@@ -12,6 +13,9 @@ import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
 import { siteActivity, type SiteActivityView } from "./data";
 
 const HEIGHT = 220;
+
+/** A card content pushed to the bottom, so that the charts of a row share their axis. */
+const BOTTOM = "flex h-full flex-col justify-end gap-4";
 
 /** Active days from which a user counts as regular, in the figure of the card « at least ». */
 const REGULAR_DAYS = 4;
@@ -158,9 +162,10 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
         )}
       </DashboardCard>
 
+      {/* The four charts of the active days in one grid, of one size, their axes on one line per row. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DashboardCard title={t("activeDaysInPeriod.title")} description={t("activeDaysInPeriod.description", { days: view.days })}>
-          <div className="flex flex-col gap-4">
+          <div className={BOTTOM}>
             <ChartHead
               figures={
                 <CardFigure
@@ -176,32 +181,35 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
           </div>
         </DashboardCard>
         <DashboardCard title={t("streaks.title")} description={t("streaks.description")}>
-          <div className="flex flex-col gap-4">
+          <div className={BOTTOM}>
             <ChartHead
               figures={<CardFigure value={days(Math.max(0, ...users.streaks.filter((bin) => bin.count > 0).map((bin) => bin.value)))} label={t("streaks.longest")} />}
             />
             <Histogram bins={users.streaks} label={t("streaks.title")} unit={days} series={t("users")} color="orange" format={format} />
           </div>
         </DashboardCard>
-      </div>
-
-      {/* Four charts of one size: the months part by the room between two cards (padding twice and the gap). */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <DashboardCard title={t("activeDays.title")} description={t("activeDays.description")} className="lg:col-span-3">
-          <div className="grid h-full grid-cols-1 gap-6 md:grid-cols-3 lg:gap-16">
-            {users.activeDays.map((month) => (
-              <div key={month.month} className="flex flex-col justify-end gap-2">
-                <span className="text-sm font-medium first-letter:uppercase">{format.longMonth(month.month)}</span>
-                <Histogram bins={month.distribution} label={format.longMonth(month.month)} unit={days} series={t("users")} color="aqua" format={format} height={160} />
-              </div>
-            ))}
+        <DashboardCard title={t("activeDays.title")} description={t("activeDays.description")}>
+          <div className={BOTTOM}>
+            <MonthHistogram
+              months={users.activeDays.map((month) => ({
+                key: month.month,
+                label: format.longMonth(month.month),
+                labels: month.distribution.map((bin) => format.number(bin.value)),
+                titles: month.distribution.map((bin) => days(bin.value)),
+                counts: month.distribution.map((bin) => bin.count),
+              }))}
+              series={t("users")}
+              shareLabel={getAdminTranslations("siteActivity")("share")}
+              label={t("activeDays.title")}
+              height={HEIGHT}
+            />
           </div>
         </DashboardCard>
         <DashboardCard title={t("atLeast.title")} description={t("atLeast.description", { days: view.days })}>
-          <div className="flex h-full flex-col justify-end gap-2">
-            <span className="text-sm font-medium">
-              {t("atLeast.regular", { count: REGULAR_DAYS, share: format.percent(format.ratio(activeOn(REGULAR_DAYS), activeInPeriod), 0) })}
-            </span>
+          <div className={BOTTOM}>
+            <ChartHead
+              figures={<CardFigure value={format.percent(format.ratio(activeOn(REGULAR_DAYS), activeInPeriod), 0)} label={t("atLeast.regular", { count: REGULAR_DAYS })} />}
+            />
             <BarChart
               labels={atLeast.map((bin) => format.number(bin.value))}
               titles={atLeast.map((bin) => t("atLeast.bin", { count: bin.value }))}
@@ -209,7 +217,7 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
               values={{ count: atLeast.map((bin) => bin.count) }}
               notes={[{ label: t("atLeast.share"), values: atLeast.map((bin) => format.percent(format.ratio(bin.count, activeInPeriod), 0)) }]}
               label={t("atLeast.title")}
-              height={160}
+              height={HEIGHT}
             />
           </div>
         </DashboardCard>

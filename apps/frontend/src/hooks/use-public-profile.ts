@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FollowState } from "@/components/community/follow-button";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
-import type { PublicProfile } from "@/lib/api/types";
+import type { PublicProfile } from "@kilotrace/ui/lib/api/types";
 import { profilesService } from "@/services/profiles.service";
 
 export interface PublicProfileState {

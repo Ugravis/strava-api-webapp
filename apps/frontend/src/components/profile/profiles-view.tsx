@@ -8,14 +8,14 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { FollowButton, type FollowState, followStateOf } from "@/components/community/follow-button";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { useNotifications } from "@/components/notifications/notifications-provider";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Card } from "@kilotrace/ui/components/ui/card";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { PROFILE_PARAM, routes, userProfileHref } from "@/config/routes";
 import { usePublicProfile } from "@/hooks/use-public-profile";
 import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
-import type { ProfileSummary, PublicProfile } from "@/lib/api/types";
-import { publicNameOf } from "@/lib/user";
+import type { ProfileSummary, PublicProfile } from "@kilotrace/ui/lib/api/types";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { profilesService } from "@/services/profiles.service";
 import { FollowRequestBox } from "./follow-request-box";
 import { FollowRequestsDialog } from "./follow-requests-dialog";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sharedRequest } from "@/lib/api/shared-request";
-import type { CountrySector } from "@/lib/api/types";
+import type { CountrySector } from "@kilotrace/ui/lib/api/types";
 import { countriesService } from "@/services/countries.service";
 
 /** The backend computes the shape of a country not visited yet in the background. */

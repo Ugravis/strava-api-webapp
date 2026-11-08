@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { UnderlineTabs } from "@/components/ui/underline-tabs";
+import { UnderlineTabs } from "@kilotrace/ui/components/ui/underline-tabs";
 import {
   ACHIEVEMENT_TAB_ICONS,
   ACHIEVEMENT_TABS,

@@ -2,10 +2,10 @@
 
 import { useFormatter } from "next-intl";
 import { type PointerEvent, useRef } from "react";
-import { niceStep } from "@/components/dashboard/evolution-chart";
+import { niceStep } from "@kilotrace/ui/components/dashboard/evolution-chart";
 import type { ChartSeries } from "@/components/admin/statistics/time-series-chart";
-import { usePointed } from "@/hooks/use-pointed";
-import { cn } from "@/lib/utils";
+import { usePointed } from "@kilotrace/ui/hooks/use-pointed";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { SERIES_COLORS } from "@/components/admin/statistics/palette";
 import { useChartWidth } from "./use-chart-width";
 

@@ -3,11 +3,11 @@
 import { ChevronRightIcon, HistoryIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { useActivityFormat } from "@/hooks/use-activity-format";
-import type { RecentActivity } from "@/lib/api/types";
+import type { RecentActivity } from "@kilotrace/ui/lib/api/types";
 import { addDays, dateOf, dayKey } from "./calendar";
 import { SportIcon } from "./sport-icon";
 

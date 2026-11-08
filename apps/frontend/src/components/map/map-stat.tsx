@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { AccentBar, type MapColor } from "./map-keys";
 
 /**

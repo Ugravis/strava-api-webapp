@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sharedRequest } from "@/lib/api/shared-request";
-import type { CountriesCompletion } from "@/lib/api/types";
+import type { CountriesCompletion } from "@kilotrace/ui/lib/api/types";
 import { countriesService } from "@/services/countries.service";
 
 /** The backend locates the new tiles and computes the totals in the background. */

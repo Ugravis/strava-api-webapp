@@ -3,7 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Barlow, Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@kilotrace/ui/config/site";
 import { DEFAULT_LOCALE } from "@/i18n/request";
 import "./globals.css";
 

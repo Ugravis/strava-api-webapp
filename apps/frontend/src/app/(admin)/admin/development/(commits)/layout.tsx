@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { PageHeader } from "@/components/layout/page-header";
-import { Separator } from "@/components/ui/separator";
+import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { CommitsSkeleton } from "./commits-bits";

@@ -67,9 +67,9 @@ import {
   type Tone,
   UserCell,
   userColumn,
-} from "@/components/admin/data-table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DetailFieldButton } from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/data-table";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { DetailFieldButton } from "@kilotrace/ui/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
 import type { OpenUser } from "../users/use-user-panel";
 import type { AuditRow } from "./audit-row";

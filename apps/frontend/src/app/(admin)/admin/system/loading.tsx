@@ -1,7 +1,7 @@
 import { SectionTitleSkeleton } from "@/components/admin/page-skeleton";
-import { PageHeaderSkeleton } from "@/components/layout/page-header";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeaderSkeleton } from "@kilotrace/ui/components/layout/page-header";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { DatabaseSkeleton, UploadsSkeleton } from "./system-bits";
 
 /** Placeholder of the maintenance page, in its layout: header, the two cards, the uploads, then the database. */

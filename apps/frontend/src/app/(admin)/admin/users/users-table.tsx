@@ -6,9 +6,9 @@ import { CopyIcon, ExternalLinkIcon, ListClockIcon, PanelRightOpenIcon } from "l
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { type DataTableConfig, DataTable, RowActions } from "@/components/admin/data-table";
-import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { type DataTableConfig, DataTable, RowActions } from "@kilotrace/ui/components/admin/data-table";
+import { type RowPanelControls, useRowPanel } from "@kilotrace/ui/components/admin/detail";
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kilotrace/ui/components/ui/dropdown-menu";
 import { userProfileHref } from "@/config/routes";
 import { actRefusal } from "@/lib/admin/permissions";
 import { fetchUsersTable, loadUserDetail } from "./actions";

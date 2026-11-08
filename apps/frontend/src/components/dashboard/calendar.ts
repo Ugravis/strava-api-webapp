@@ -1,4 +1,4 @@
-import type { ActivityDay } from "@/lib/api/types";
+import type { ActivityDay } from "@kilotrace/ui/lib/api/types";
 
 /** Weeks shown by the calendar of the year, the current one last. */
 export const CALENDAR_WEEKS = 53;

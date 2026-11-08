@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { DetailEmpty, DetailSkeleton, type RowPanelControls } from "@/components/admin/detail";
-import { useSplitPanel } from "@/components/split-panel";
+import { DetailEmpty, DetailSkeleton, type RowPanelControls } from "@kilotrace/ui/components/admin/detail";
+import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
 import { loadUserTag, loadUserTagContext } from "../user-tags/actions";
 import { UserTagRowPanel } from "../user-tags/user-tag-detail";
 import { loadUserDetail } from "./actions";

@@ -3,7 +3,7 @@
 import { CheckCheckIcon, CircleCheckIcon, CircleXIcon, ExternalLinkIcon, FlagIcon, FlagOffIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { formatDateTime } from "@/components/admin/data-table";
+import { formatDateTime } from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailAction,
   DetailActions,
@@ -16,8 +16,8 @@ import {
   DetailSection,
   DetailSkeleton,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { UserAvatar } from "@/components/user/user-avatar";
+} from "@kilotrace/ui/components/admin/detail";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import { userProfileHref } from "@/config/routes";
 import { loadUserHistory } from "../actions";
 import { useOpenUser } from "../use-user-panel";

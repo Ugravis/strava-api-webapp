@@ -9,8 +9,8 @@ import {
 } from "@kilotrace/shared/admin";
 import { FlagIcon, AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { KpiGrid } from "@/components/admin/kpi-tile";
-import { PageHeader } from "@/components/layout/page-header";
-import { Separator } from "@/components/ui/separator";
+import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { getAdminMe, requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";

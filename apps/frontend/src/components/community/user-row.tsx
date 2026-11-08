@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/user/user-avatar";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { userProfileHref } from "@/config/routes";
-import type { ProfileSummary } from "@/lib/api/types";
-import { publicNameOf } from "@/lib/user";
+import type { ProfileSummary } from "@kilotrace/ui/lib/api/types";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { FollowButton, followStateOf } from "./follow-button";
 
 /**

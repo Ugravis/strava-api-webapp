@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 /** Faint tile grid fading out from the top, as a nod to the map. Place it in a `relative isolate` parent. */
 export function GridBackdrop({ className }: { className?: string }) {

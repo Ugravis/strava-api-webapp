@@ -35,8 +35,8 @@ import {
   textColumn,
   type Tone,
   userColumn,
-} from "@/components/admin/data-table";
-import { fromRule } from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/data-table";
+import { fromRule } from "@kilotrace/ui/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
 import type { ReactNode } from "react";
 import { deleteReleaseNote, saveReleaseNote, setReleaseNoteActive, setReleaseNoteStatus, uploadReleaseNoteBanner } from "./actions";

@@ -1,9 +1,9 @@
 import { CheckIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
 import type { StravaConnectOrigin } from "@/services/strava.service";
 import { StravaConnectButton } from "./strava-connect-button";
-import { StravaIcon } from "./strava-icon";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
 
 /** Invitation to connect Strava, stating what is imported (consent). */
 export function StravaConnectCard({ from }: { from: StravaConnectOrigin }) {

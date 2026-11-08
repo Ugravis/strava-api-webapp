@@ -6,10 +6,10 @@ import { CopyIcon, ListClockIcon, PanelRightOpenIcon, UserMinusIcon, UsersIcon }
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { type DataTableConfig, DataTable, RowActions, useConfirmDialog } from "@/components/admin/data-table";
-import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { publicNameOf } from "@/lib/user";
+import { type DataTableConfig, DataTable, RowActions, useConfirmDialog } from "@kilotrace/ui/components/admin/data-table";
+import { type RowPanelControls, useRowPanel } from "@kilotrace/ui/components/admin/detail";
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kilotrace/ui/components/ui/dropdown-menu";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { fetchTeamTable, loadTeamMember } from "./actions";
 import { lockOf, removalOf, ROLES, teamColumns, useTeamVersion } from "./team-columns";
 import { MemberCreate, MemberRowPanel, type TeamPaths } from "./team-detail";

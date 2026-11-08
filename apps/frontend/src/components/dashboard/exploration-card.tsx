@@ -6,15 +6,15 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { searchOfModule } from "@/components/map/map-address";
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { useCountries } from "@/hooks/use-countries";
 import { useStations } from "@/hooks/use-stations";
 import { useTileStats } from "@/hooks/use-tile-stats";
-import type { CountryCompletion, TileLevelStats, VisitedStations } from "@/lib/api/types";
-import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
+import type { CountryCompletion, TileLevelStats, VisitedStations } from "@kilotrace/ui/lib/api/types";
+import { countryFlag, countryName, percentDecimals } from "@kilotrace/ui/lib/countries/country-format";
 
 /** Countries listed, the most visited first. */
 const SHOWN_COUNTRIES = 6;

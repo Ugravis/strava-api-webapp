@@ -1,7 +1,7 @@
 "use client";
 
 import { ActivityIcon, GridIcon, HeartHandshakeIcon, type LucideIcon, RefreshCwIcon, UsersIcon } from "lucide-react";
-import { UnderlineTabs, type UnderlineTabsProps } from "@/components/ui/underline-tabs";
+import { UnderlineTabs, type UnderlineTabsProps } from "@kilotrace/ui/components/ui/underline-tabs";
 import type { BusinessTab } from "./tabs";
 
 const ICONS: Record<BusinessTab, LucideIcon> = {

@@ -18,8 +18,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
-import type { DistanceBadge } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { BADGE_CARD_LAYOUT_CLASS, type BadgeCardLayout, BadgeCardContent, badgeCardSurface } from "./badge-card";
 import { BADGE_GRID_CLASS } from "./badge-grid";
 

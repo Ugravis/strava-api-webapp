@@ -10,8 +10,8 @@ import {
   type SetTeamRoleRequest,
 } from "@kilotrace/shared/admin";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
-import type { ActionResult } from "@/components/admin/action-state";
-import type { DetailEditOption } from "@/components/admin/detail";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
+import type { DetailEditOption } from "@kilotrace/ui/components/admin/detail";
 import { type AdminActionResult, checkedId, runAdminAction } from "@/lib/admin/actions";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";

@@ -11,9 +11,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "@kilotrace/ui/components/ui/sidebar";
 import type { NavigationItem } from "@/config/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);

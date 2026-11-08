@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 interface SettingsSectionProps {
   /** Anchor of the section, to link to it. */

@@ -4,7 +4,7 @@ import { getFormatter } from "next-intl/server";
 import { SERIES_COLORS } from "@/components/admin/statistics/palette";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { dashboardData } from "./data";
 import { KpiGrid, KpiTile } from "@/components/admin/kpi-tile";
 import { DashboardCard, DashboardUnavailable } from "./parts";

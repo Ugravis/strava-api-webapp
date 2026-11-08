@@ -40,7 +40,7 @@ import {
   lookColumn,
   numberColumn,
   textColumn,
-} from "@/components/admin/data-table";
+} from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailColumnFields,
   DetailHeader,
@@ -53,7 +53,7 @@ import {
   DetailSkeleton,
   type RowPanelControls,
   useRowPanel,
-} from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/detail";
 import { tableIcon } from "./table-icons";
 
 /** The tables shown by a table of another page of the back office (`adminRoutes` is server-only). */

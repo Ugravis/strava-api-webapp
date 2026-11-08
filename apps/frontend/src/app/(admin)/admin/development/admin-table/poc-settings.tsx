@@ -1,6 +1,6 @@
 "use client";
 
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@kilotrace/ui/components/ui/toggle-group";
 import { type PocSettings, setPocSettings, usePocSettings } from "./poc-store";
 
 const ROLES: Record<PocSettings["role"], string> = { "super-admin": "Super-admin", moderator: "Modérateur" };

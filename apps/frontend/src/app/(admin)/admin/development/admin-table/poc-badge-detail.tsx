@@ -19,9 +19,9 @@ import {
   fromRule,
   LucideIconByName,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { useSplitPanel } from "@/components/split-panel";
-import { UserAvatar } from "@/components/user/user-avatar";
+} from "@kilotrace/ui/components/admin/detail";
+import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import { PocUserPanel } from "./poc-detail";
 import { BADGES_TABLE, COLLECTIONS, KEYWORDS, type PocBadge, SPORTS } from "./poc-order";
 import { BADGE_RULES } from "./poc-rules";

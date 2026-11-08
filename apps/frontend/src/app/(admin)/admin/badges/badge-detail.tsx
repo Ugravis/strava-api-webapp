@@ -17,8 +17,8 @@ import {
   DetailSkeleton,
   fromRule,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { BADGE_ICON_KEYS } from "@/components/distances/badge-icon";
+} from "@kilotrace/ui/components/admin/detail";
+import { BADGE_ICON_KEYS } from "@kilotrace/ui/components/distances/badge-icon";
 import { createBadge, loadBadge } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteBadgeOf, FAMILY_OPTIONS, LOCKS, METRIC_OPTIONS, METRICS, saveBadgeWith, themeOptions, useCatalogVersion } from "./badge-bits";
 import { AdminBadgeBanner, badgeColumns } from "./badge-columns";

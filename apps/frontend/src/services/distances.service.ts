@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { BadgeCompletion, DistanceBadgeDetails, DistancesOverview } from "@/lib/api/types";
+import type { BadgeCompletion, DistanceBadgeDetails, DistancesOverview } from "@kilotrace/ui/lib/api/types";
 
 const badgePath = (id: string) => `/distances/badges/${encodeURIComponent(id)}`;
 

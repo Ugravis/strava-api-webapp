@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { DashboardAttentionSkeleton } from "./attention";
 import { DashboardHeroSkeleton } from "./hero";
 import { DashboardKpisSkeleton } from "./kpis";

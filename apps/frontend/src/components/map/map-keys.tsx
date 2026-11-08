@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { MAP_PALETTES, type MapPalette } from "./map-style";
 
 /** A color of the map, in both themes. */

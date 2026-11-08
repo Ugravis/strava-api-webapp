@@ -2,7 +2,7 @@ import type { AdminSiteActivityParams } from "@kilotrace/shared/admin";
 import { BarList, CardFigure, ChartHead, THIN_SCROLL } from "@/components/admin/site-activity/parts";
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
 import { siteActivity, type SiteActivityView } from "./data";
 

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { routes } from "@/config/routes";
 import { serverApiGet } from "@/lib/api/server";
-import type { User } from "@/lib/api/types";
+import type { User } from "@kilotrace/ui/lib/api/types";
 
 /** Current user, or null. Deduplicated within a request. */
 export const getCurrentUser = cache(async (): Promise<User | null> => {

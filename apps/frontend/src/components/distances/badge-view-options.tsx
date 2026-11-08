@@ -3,7 +3,7 @@
 import { ArrowDownUpIcon, LayoutGridIcon, Rows3Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,9 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { BADGE_SORTS, type BadgeSort } from "@/lib/badge-sort";
-import { cn } from "@/lib/utils";
+} from "@kilotrace/ui/components/ui/dropdown-menu";
+import { BADGE_SORTS, type BadgeSort } from "@kilotrace/ui/lib/badge-sort";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 const VIEW_STORAGE_KEY = "badges-compact-view";
 

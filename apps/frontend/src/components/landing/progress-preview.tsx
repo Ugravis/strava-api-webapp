@@ -1,6 +1,6 @@
 import { CheckIcon, FlameIcon, FlagIcon, Grid3x3Icon, SquareIcon, TrainFrontIcon, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { MAP_COLORS, TileGrid } from "./tile-grid";
 
 const POINTS = ["tiles", "countries", "streak"] as const;

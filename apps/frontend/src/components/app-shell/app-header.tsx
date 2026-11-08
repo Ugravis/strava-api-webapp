@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AppLogo } from "@/components/brand/app-logo";
+import { AppLogo } from "@kilotrace/ui/components/brand/app-logo";
 import { HeaderNotificationsButton } from "@/components/notifications/notifications-bell";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@kilotrace/ui/components/ui/sidebar";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 
 /**

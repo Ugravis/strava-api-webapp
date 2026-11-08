@@ -8,7 +8,7 @@ import { getSiteActivityFormat, type SiteActivityFormat } from "@/components/adm
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
 import type { SeriesColorName } from "@/components/admin/statistics/palette";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
 import { siteActivity, type SiteActivityView } from "./data";
 

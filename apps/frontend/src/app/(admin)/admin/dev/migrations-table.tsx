@@ -13,8 +13,8 @@ import {
   numberColumn,
   statusColumn,
   type Tone,
-} from "@/components/admin/data-table";
-import { DetailColumnFields, DetailHeader, DetailLoader, DetailMedia, DetailSection, DetailSkeleton, useRowPanel } from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/data-table";
+import { DetailColumnFields, DetailHeader, DetailLoader, DetailMedia, DetailSection, DetailSkeleton, useRowPanel } from "@kilotrace/ui/components/admin/detail";
 
 type Status = "applied" | "pending";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { FollowDirection, ProfileSummary } from "@/lib/api/types";
+import type { FollowDirection, ProfileSummary } from "@kilotrace/ui/lib/api/types";
 import { FOLLOWS_PAGE_SIZE, profilesService } from "@/services/profiles.service";
 
 export interface FollowsListState {

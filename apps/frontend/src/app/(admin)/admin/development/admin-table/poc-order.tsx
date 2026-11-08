@@ -16,8 +16,8 @@ import {
   type TableMove,
   textColumn,
   type Tone,
-} from "@/components/admin/data-table";
-import { BulkEditAction, useRowPanel } from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/data-table";
+import { BulkEditAction, useRowPanel } from "@kilotrace/ui/components/admin/detail";
 import { landscape } from "./poc-data";
 import { PocBadgeCreate } from "./poc-badge-create";
 import { PocBadgePanel } from "./poc-badge-detail";

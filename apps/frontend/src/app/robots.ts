@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { PROTECTED_PREFIXES } from "@/config/routes";
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@kilotrace/ui/config/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {

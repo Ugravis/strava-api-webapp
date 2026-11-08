@@ -3,7 +3,7 @@
 import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH, type AdminUserReport, type AdminUserSummary, type ModeratableField, type UserReportSanction } from "@kilotrace/shared/admin";
 import { useCallback, useState } from "react";
 import { ActionDialog } from "@/components/admin/action-dialog";
-import type { ConfirmOptions } from "@/components/admin/data-table";
+import type { ConfirmOptions } from "@kilotrace/ui/components/admin/data-table";
 import { dialogOf, type UserActionKey } from "../user-actions";
 import { bumpUsers } from "../users-store";
 import { closeReportAsSanctioned, dismissReport, sanctionReport } from "./actions";

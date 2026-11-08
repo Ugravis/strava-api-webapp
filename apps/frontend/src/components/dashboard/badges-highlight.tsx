@@ -6,12 +6,12 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { BadgeCard } from "@/components/distances/badge-card";
 import { BadgeDialog } from "@/components/distances/badge-dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { favoriteBadges, useDistances } from "@/hooks/use-distances";
-import { closestBadges } from "@/lib/badge-sort";
+import { closestBadges } from "@kilotrace/ui/lib/badge-sort";
 
 /** Badges closest to completion shown without favorites. */
 const CLOSEST_COUNT = 4;

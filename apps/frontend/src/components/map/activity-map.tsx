@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { usePanelHistory } from "@/hooks/use-panel-history";
-import type { TilesSummary, VisitedStations } from "@/lib/api/types";
+import type { TilesSummary, VisitedStations } from "@kilotrace/ui/lib/api/types";
 import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
 import { ActivityPanel } from "./activity-panel";
 import {

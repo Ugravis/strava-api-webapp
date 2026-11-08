@@ -3,10 +3,10 @@
 import { CrownIcon, KeyRoundIcon, KeySquareIcon, LockIcon, ShapesIcon, ShieldCheckIcon, ShieldIcon, TextIcon } from "lucide-react";
 import { type MemoryTableSpec, serveTablePage, type TableQuery } from "@kilotrace/shared/table";
 import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
-import type { ActionResult } from "@/components/admin/action-state";
-import { customColumn, type DataTableColumn, type DataTableConfig, DataTable, editColumn } from "@/components/admin/data-table";
-import { DetailColumnFields, DetailField, DetailFields, DetailHeader, DetailLoader, DetailMedia, DetailSection, DetailSkeleton, useRowPanel } from "@/components/admin/detail";
-import { Skeleton } from "@/components/ui/skeleton";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
+import { customColumn, type DataTableColumn, type DataTableConfig, DataTable, editColumn } from "@kilotrace/ui/components/admin/data-table";
+import { DetailColumnFields, DetailField, DetailFields, DetailHeader, DetailLoader, DetailMedia, DetailSection, DetailSkeleton, useRowPanel } from "@kilotrace/ui/components/admin/detail";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { createVersion } from "@/lib/admin/version";
 
 /** Stored roles, mirrored here: the admin contracts never reach the browser. */

@@ -1,8 +1,8 @@
 import "server-only";
 import { type AdminNavigationCounts, type AdminRole, highestAdminRole } from "@kilotrace/shared/admin";
 import { GlobeIcon, ShieldIcon } from "lucide-react";
-import { NavLinks } from "@/components/app-shell/nav-links";
-import { NavSwitchLink } from "@/components/app-shell/nav-switch-link";
+import { NavLinks } from "@kilotrace/ui/components/app-shell/nav-links";
+import { NavSwitchLink } from "@kilotrace/ui/components/app-shell/nav-switch-link";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 import { getAdminRoles } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";

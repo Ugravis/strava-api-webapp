@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { dashboardData } from "./data";
 import { DashboardCard, DashboardUnavailable } from "./parts";
 

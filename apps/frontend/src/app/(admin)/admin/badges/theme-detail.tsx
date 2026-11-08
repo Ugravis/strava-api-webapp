@@ -19,9 +19,9 @@ import {
   DetailSection,
   DetailSkeleton,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { BadgeIcon } from "@/components/distances/badge-icon";
-import { cn } from "@/lib/utils";
+} from "@kilotrace/ui/components/admin/detail";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { createTheme, loadTheme } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteThemeOf, LOCKS, THEME_ROW, useCatalogVersion } from "./badge-bits";
 import { themeColumns } from "./badge-columns";

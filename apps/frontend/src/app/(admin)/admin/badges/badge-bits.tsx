@@ -12,8 +12,8 @@ import {
   type UpdateBadgeRequest,
 } from "@kilotrace/shared/admin";
 import { toast } from "sonner";
-import type { ConfirmOptions, Tone } from "@/components/admin/data-table";
-import type { DetailEditOption } from "@/components/admin/detail";
+import type { ConfirmOptions, Tone } from "@kilotrace/ui/components/admin/data-table";
+import type { DetailEditOption } from "@kilotrace/ui/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
 import { deleteBadge, deleteTheme, saveBadge, setBadgeActive, setBadgesActive } from "./actions";
 import { shownAmount } from "./units";

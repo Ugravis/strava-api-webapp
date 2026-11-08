@@ -2,13 +2,13 @@
 
 import { CircleAlertIcon, ContrastIcon, FocusIcon, LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { CountryLevelCompletion, CountrySector } from "@/lib/api/types";
-import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
-import { cn } from "@/lib/utils";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Progress } from "@kilotrace/ui/components/ui/progress";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
+import type { CountryLevelCompletion, CountrySector } from "@kilotrace/ui/lib/api/types";
+import { countryFlag, countryName, percentDecimals } from "@kilotrace/ui/lib/countries/country-format";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { accentStyle, type MapColor } from "./map-keys";
 import { ValueSkeleton } from "./map-stat";
 

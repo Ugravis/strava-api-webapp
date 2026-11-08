@@ -1,4 +1,4 @@
-import type { ActivityTracksPage, MappableActivity } from "@/lib/api/types";
+import type { ActivityTracksPage, MappableActivity } from "@kilotrace/ui/lib/api/types";
 import type { TrackStore } from "./track-store";
 
 export interface TrackSource {

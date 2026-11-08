@@ -20,14 +20,14 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/user/user-avatar";
-import type { AppNotification, NotificationCategory } from "@/lib/api/types";
-import { publicNameOf } from "@/lib/user";
-import { cn } from "@/lib/utils";
+} from "@kilotrace/ui/components/ui/dropdown-menu";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/ui/sidebar";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
+import type { AppNotification, NotificationCategory } from "@kilotrace/ui/lib/api/types";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { NOTIFICATION_CATEGORIES, notificationHref, useNotifications } from "./notifications-provider";
 
 /** A wavy line, drawn with the background color of the element. */

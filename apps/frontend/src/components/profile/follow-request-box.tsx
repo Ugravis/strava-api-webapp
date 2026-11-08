@@ -4,8 +4,8 @@ import { ChevronDownIcon, ChevronUpIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { RequestAnswerButtons } from "@/components/community/request-answer-buttons";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 interface FollowRequestBoxProps {
   username: string;

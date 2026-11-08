@@ -33,12 +33,12 @@ import {
   textColumn,
   type Tone,
   userColumn,
-} from "@/components/admin/data-table";
-import type { DetailFieldEdit } from "@/components/admin/detail";
-import { GoogleIcon } from "@/components/auth/google-icon";
-import { BadgeIcon } from "@/components/distances/badge-icon";
-import { StravaIcon } from "@/components/strava/strava-icon";
-import { cn } from "@/lib/utils";
+} from "@kilotrace/ui/components/admin/data-table";
+import type { DetailFieldEdit } from "@kilotrace/ui/components/admin/detail";
+import { GoogleIcon } from "@kilotrace/ui/components/auth/google-icon";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { setUserTags } from "./actions";
 import { bumpUsers } from "./users-store";
 

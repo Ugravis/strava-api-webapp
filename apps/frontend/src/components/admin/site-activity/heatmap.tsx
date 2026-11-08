@@ -1,5 +1,5 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 interface WeekHeatmapProps {
   /** Every cell of the week: ISO weekday (1 Monday) and hour. */

@@ -14,10 +14,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getFormatter } from "next-intl/server";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { dashboardData } from "./data";
 import { QUOTA_WARNING } from "./kpis";
 

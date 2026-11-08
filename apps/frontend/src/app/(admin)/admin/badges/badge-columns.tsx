@@ -29,11 +29,11 @@ import {
   pillsColumn,
   statusColumn,
   textColumn,
-} from "@/components/admin/data-table";
-import { BadgeBanner } from "@/components/distances/badge-banner";
-import { BadgeIcon } from "@/components/distances/badge-icon";
-import { Skeleton } from "@/components/ui/skeleton";
-import { fromRule } from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/data-table";
+import { BadgeBanner } from "@kilotrace/ui/components/distances/badge-banner";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { fromRule } from "@kilotrace/ui/components/admin/detail";
 import { saveTheme, setBadgeActive } from "./actions";
 import { bumpCatalog, FAMILIES, goalOf, LOCKS, METRICS, saveBadgeWith, themeOptions } from "./badge-bits";
 

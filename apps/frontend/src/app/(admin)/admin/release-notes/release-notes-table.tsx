@@ -6,12 +6,12 @@ import type { TableQuery } from "@kilotrace/shared/table";
 import { CopyIcon, EyeIcon, FileDownIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { DataTable, type DataTableConfig, RowActions, useConfirmDialog } from "@/components/admin/data-table";
-import { type RowPanelControls, useRowPanel } from "@/components/admin/detail";
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DataTable, type DataTableConfig, RowActions, useConfirmDialog } from "@kilotrace/ui/components/admin/data-table";
+import { type RowPanelControls, useRowPanel } from "@kilotrace/ui/components/admin/detail";
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kilotrace/ui/components/ui/dropdown-menu";
 import { fetchReleaseNotesTable, loadReleaseNote } from "./actions";
 import { deleteOf, DISPLAYS, stepOf, STEP_ICONS, RELEASES, releaseNoteColumns, type ReleaseNoteRights, STATES, useReleaseNotesVersion } from "./release-note-bits";
-import { useReleaseNotePdf } from "@/components/release-notes/download-release-note-pdf";
+import { useReleaseNotePdf } from "@kilotrace/ui/components/release-notes/download-release-note-pdf";
 import { pdfOf, publicOf, ReleaseNoteCreate, ReleaseNoteRowPanel } from "./release-note-detail";
 import { ReleaseNotePreview } from "./release-note-preview";
 

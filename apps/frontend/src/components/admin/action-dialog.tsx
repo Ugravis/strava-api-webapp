@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useEffectEvent, useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Checkbox } from "@kilotrace/ui/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -13,12 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import type { Action } from "./action-state";
+} from "@kilotrace/ui/components/ui/dialog";
+import { Input } from "@kilotrace/ui/components/ui/input";
+import { Label } from "@kilotrace/ui/components/ui/label";
+import { Textarea } from "@kilotrace/ui/components/ui/textarea";
+import { cn } from "@kilotrace/ui/lib/utils";
+import type { Action } from "@kilotrace/ui/components/admin/action-state";
 import { SubmitButton } from "./submit-button";
 
 const DAY_MS = 86_400_000;

@@ -1,8 +1,8 @@
 import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
 
 interface DashboardCardProps {

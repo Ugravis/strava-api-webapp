@@ -4,7 +4,7 @@ import { LineChart } from "@/components/admin/site-activity/line-chart";
 import { BarList, ChartHead, CardFigure } from "@/components/admin/site-activity/parts";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
 import { DonutChart } from "@/components/admin/statistics/donut-chart";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kilotrace/ui/components/ui/table";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
 import { type BusinessView, businessStatistics } from "./data";

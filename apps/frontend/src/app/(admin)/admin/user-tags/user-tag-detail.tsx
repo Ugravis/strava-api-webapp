@@ -19,10 +19,10 @@ import {
   DetailSkeleton,
   fromRule,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { BADGE_ICON_KEYS, BadgeIcon } from "@/components/distances/badge-icon";
-import { UserAvatar } from "@/components/user/user-avatar";
-import { publicNameOf } from "@/lib/user";
+} from "@kilotrace/ui/components/admin/detail";
+import { BADGE_ICON_KEYS, BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { createUserTag, loadUserTag, loadUserTagHolders, type UserTagDraft } from "./actions";
 import { bumpUserTags, deleteLock, deleteOf, LOCKS, saveTag, SystemMark, userTagColumns, type UserTagRights, useUserTagsVersion } from "./user-tag-bits";
 

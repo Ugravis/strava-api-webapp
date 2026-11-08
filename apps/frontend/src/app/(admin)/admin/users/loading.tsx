@@ -1,7 +1,7 @@
-import { DataTableSkeleton } from "@/components/admin/data-table";
+import { DataTableSkeleton } from "@kilotrace/ui/components/admin/data-table";
 import { KpiGridSkeleton, SectionTitleSkeleton } from "@/components/admin/page-skeleton";
-import { PageHeaderSkeleton } from "@/components/layout/page-header";
-import { Separator } from "@/components/ui/separator";
+import { PageHeaderSkeleton } from "@kilotrace/ui/components/layout/page-header";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
 
 /** Placeholder of the users, in the layout of the page: header, figures, the reports folded, then the accounts. */
 export default function AdminUsersLoading() {

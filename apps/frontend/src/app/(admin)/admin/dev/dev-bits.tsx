@@ -2,9 +2,9 @@ import type { AdminDependencyVersion, AdminDevResponse, AdminMigration } from "@
 import { TriangleAlertIcon } from "lucide-react";
 import nextPackage from "next/package.json";
 import { version as reactVersion } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeaderSkeleton } from "@/components/layout/page-header";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { PageHeaderSkeleton } from "@kilotrace/ui/components/layout/page-header";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { MigrationsTable } from "./migrations-table";

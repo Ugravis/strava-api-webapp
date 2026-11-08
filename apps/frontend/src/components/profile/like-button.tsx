@@ -4,10 +4,10 @@ import { HeartIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
 import { errorCodeOf } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { profilesService } from "@/services/profiles.service";
 
 /** Likes or unlikes a profile at once, back as it was if the server refuses. Reset for another profile. */

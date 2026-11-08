@@ -3,7 +3,7 @@
 import type { AdminCommit } from "@kilotrace/shared/admin";
 import { ExternalLinkIcon, GitPullRequestIcon, HashIcon, RocketIcon, UserIcon } from "lucide-react";
 import { useMemo } from "react";
-import { formatDateTime, Mark } from "@/components/admin/data-table";
+import { formatDateTime, Mark } from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailAction,
   DetailActions,
@@ -15,7 +15,7 @@ import {
   DetailMedia,
   DetailSection,
   DetailSkeleton,
-} from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/detail";
 import { loadCommit } from "./actions";
 import { commitColumns, commitIcon, ICON_COLORS, isDeployedOf, pullRequestHref } from "./commits-columns";
 

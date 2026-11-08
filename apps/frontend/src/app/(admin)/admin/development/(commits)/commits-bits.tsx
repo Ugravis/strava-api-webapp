@@ -1,6 +1,6 @@
 import type { AdminCommitsResponse } from "@kilotrace/shared/admin";
-import { DataTableSkeleton } from "@/components/admin/data-table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DataTableSkeleton } from "@kilotrace/ui/components/admin/data-table";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { CommitsTable } from "./commits-table";

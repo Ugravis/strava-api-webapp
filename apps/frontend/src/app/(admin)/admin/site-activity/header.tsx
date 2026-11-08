@@ -1,7 +1,7 @@
 import { ADMIN_SITE_ACTIVITY_PERIODS } from "@kilotrace/shared/admin";
 import { ViewSelect, ViewToggle } from "@/components/admin/site-activity/view-controls";
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
-import { PageHeader } from "@/components/layout/page-header";
+import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { siteActivity, type SiteActivityView, viewHref } from "./data";
 

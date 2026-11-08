@@ -2,7 +2,7 @@
 
 import type { AdminCommit, AdminCommitKind } from "@kilotrace/shared/admin";
 import { CircleDotIcon, ClockIcon, GitCommitHorizontalIcon, GitMergeIcon, GitPullRequestIcon, HashIcon, RocketIcon, UserPenIcon } from "lucide-react";
-import { codeColumn, customColumn, type DataTableColumn, dateColumn, LinkCell, lookColumn, Mark, statusColumn, type Tone, userColumn } from "@/components/admin/data-table";
+import { codeColumn, customColumn, type DataTableColumn, dateColumn, LinkCell, lookColumn, Mark, statusColumn, type Tone, userColumn } from "@kilotrace/ui/components/admin/data-table";
 
 /*
  * How a commit is drawn, shared by its table and its detail.

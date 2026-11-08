@@ -2,8 +2,8 @@
 
 import { ADMIN_COMMIT_KINDS, type AdminCommit } from "@kilotrace/shared/admin";
 import { useMemo } from "react";
-import { type DataTableConfig, DataTable } from "@/components/admin/data-table";
-import { useRowPanel } from "@/components/admin/detail";
+import { type DataTableConfig, DataTable } from "@kilotrace/ui/components/admin/data-table";
+import { useRowPanel } from "@kilotrace/ui/components/admin/detail";
 import { fetchCommitsTable, loadCommit } from "./actions";
 import { commitColumns, KINDS } from "./commits-columns";
 import { CommitRowPanel } from "./commits-detail";

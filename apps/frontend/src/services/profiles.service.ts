@@ -1,6 +1,6 @@
 import type { ReportUserRequest } from "@kilotrace/shared";
 import { apiRequest } from "@/lib/api/client";
-import type { FollowDirection, FollowStatus, FollowsSummary, ProfileSummary, PublicProfile } from "@/lib/api/types";
+import type { FollowDirection, FollowStatus, FollowsSummary, ProfileSummary, PublicProfile } from "@kilotrace/ui/lib/api/types";
 
 const profilePath = (username: string) => `/profiles/${encodeURIComponent(username)}`;
 

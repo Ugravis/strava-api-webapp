@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { errorCodeOf } from "@/lib/api/errors";
-import type { StravaConnectionStatus } from "@/lib/api/types";
+import type { StravaConnectionStatus } from "@kilotrace/ui/lib/api/types";
 import { stravaService } from "@/services/strava.service";
 
 /** Asks for a synchronization now and hands the new status over. */

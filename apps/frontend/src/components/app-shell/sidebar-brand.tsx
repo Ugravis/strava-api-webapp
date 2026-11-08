@@ -3,9 +3,9 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AppLogoMark, AppWordmark } from "@/components/brand/app-logo";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AppLogoMark, AppWordmark } from "@kilotrace/ui/components/brand/app-logo";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
 
 /**
  * Logo and name of the app, with the button collapsing the sidebar beside

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { SERIES_COLORS, type SeriesColorName } from "@/components/admin/statistics/palette";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 /** The thin scrollbar of the tables and of the split panel. */
 export const THIN_SCROLL =

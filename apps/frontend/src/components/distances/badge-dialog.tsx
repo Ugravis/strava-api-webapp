@@ -5,8 +5,8 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { errorCodeOf } from "@/lib/api/errors";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@kilotrace/ui/components/ui/badge";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -15,10 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@kilotrace/ui/components/ui/dialog";
 import { useBadgeDetails } from "@/hooks/use-badge-details";
-import type { BadgeTheme, DistanceBadge } from "@/lib/api/types";
-import { BadgeBanner } from "./badge-banner";
+import type { BadgeTheme, DistanceBadge } from "@kilotrace/ui/lib/api/types";
+import { BadgeBanner } from "@kilotrace/ui/components/distances/badge-banner";
 import { BadgeFacts } from "./badge-facts";
 import { BadgeHistory } from "./badge-history";
 import { useAmount } from "./use-amount";

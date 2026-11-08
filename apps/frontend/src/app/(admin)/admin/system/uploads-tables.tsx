@@ -14,7 +14,7 @@ import {
   imageColumn,
   localTableSource,
   userColumn,
-} from "@/components/admin/data-table";
+} from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailAction,
   DetailActions,
@@ -27,7 +27,7 @@ import {
   DetailSection,
   DetailSkeleton,
   useRowPanel,
-} from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/detail";
 import { type OpenUser, useUserPanel } from "../users/use-user-panel";
 
 /** Read from the storage on each visit, the files come whole: served in pages by the browser. */

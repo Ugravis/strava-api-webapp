@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
-import type { Action } from "./action-state";
+import type { Action } from "@kilotrace/ui/components/admin/action-state";
 
 /**
  * Form posting to a Server Action without confirmation, e.g. a toggle; the

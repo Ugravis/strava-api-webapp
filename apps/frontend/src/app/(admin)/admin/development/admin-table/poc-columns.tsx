@@ -52,12 +52,12 @@ import {
   textColumn,
   Truncate,
   userColumn,
-} from "@/components/admin/data-table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+} from "@kilotrace/ui/components/admin/data-table";
+import { Badge } from "@kilotrace/ui/components/ui/badge";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kilotrace/ui/components/ui/dropdown-menu";
 import { type PocActionKind, POC_NOW, POC_USERS, type PocUser } from "./poc-data";
-import { BulkEditAction, fromRule } from "@/components/admin/detail";
+import { BulkEditAction, fromRule } from "@kilotrace/ui/components/admin/detail";
 import { USER_RULES } from "./poc-rules";
 import { bulkEditPocUsers, removePocUsers, savePocUser, suspendPocUsers } from "./poc-store";
 import { CATEGORY_OPTIONS, CONNECTIONS, categoryPills, connectionItems, connectionsOf, ROLES, STATUSES, tagItems, UserMarks } from "./poc-marks";

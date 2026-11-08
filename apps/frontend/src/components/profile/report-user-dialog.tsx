@@ -4,10 +4,10 @@ import { USER_REPORT_CUSTOM_REASON, USER_REPORT_DETAILS_MAX_LENGTH, USER_REPORT_
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@kilotrace/ui/components/ui/dialog";
+import { Label } from "@kilotrace/ui/components/ui/label";
+import { Textarea } from "@kilotrace/ui/components/ui/textarea";
 import { errorCodeOf } from "@/lib/api/errors";
 import { profilesService } from "@/services/profiles.service";
 

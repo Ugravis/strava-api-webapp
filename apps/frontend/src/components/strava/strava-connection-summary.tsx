@@ -2,10 +2,10 @@
 
 import { InfoIcon, RefreshCwIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import type { StravaConnectionStatus } from "@/lib/api/types";
-import { StravaIcon } from "./strava-icon";
+import { Alert, AlertDescription } from "@kilotrace/ui/components/ui/alert";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import type { StravaConnectionStatus } from "@kilotrace/ui/lib/api/types";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
 
 type Connection = NonNullable<StravaConnectionStatus["connection"]>;
 

@@ -11,8 +11,8 @@ import {
   type UpdateBadgeThemeRequest,
 } from "@kilotrace/shared/admin";
 import { TABLE_MAX_PAGE_SIZE, type TablePage, type TableQuery } from "@kilotrace/shared/table";
-import type { ActionResult } from "@/components/admin/action-state";
-import type { TableMove } from "@/components/admin/data-table";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
+import type { TableMove } from "@kilotrace/ui/components/admin/data-table";
 import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
 

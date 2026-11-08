@@ -3,7 +3,7 @@ import { getBusinessFormat, regionName } from "@/components/admin/business-stati
 import { LineChart } from "@/components/admin/site-activity/line-chart";
 import { BarList, CardFigure, ChartHead } from "@/components/admin/site-activity/parts";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kilotrace/ui/components/ui/table";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
 import { type BusinessView, businessStatistics } from "./data";

@@ -1,7 +1,7 @@
 "use client";
 
 import { FileTextIcon, FilterIcon, type LucideIcon, RepeatIcon, RouteIcon, SlidersHorizontalIcon, UsersIcon } from "lucide-react";
-import { UnderlineTabs, type UnderlineTabsProps } from "@/components/ui/underline-tabs";
+import { UnderlineTabs, type UnderlineTabsProps } from "@kilotrace/ui/components/ui/underline-tabs";
 import type { SiteActivityTab } from "./tabs";
 
 const ICONS: Record<SiteActivityTab, LucideIcon> = {

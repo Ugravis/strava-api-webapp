@@ -2,8 +2,8 @@
 
 import { useId, useState } from "react";
 import { ActionDialog } from "@/components/admin/action-dialog";
-import type { Action } from "@/components/admin/action-state";
-import { Switch } from "@/components/ui/switch";
+import type { Action } from "@kilotrace/ui/components/admin/action-state";
+import { Switch } from "@kilotrace/ui/components/ui/switch";
 
 export interface SiteSwitchTexts {
   label: string;

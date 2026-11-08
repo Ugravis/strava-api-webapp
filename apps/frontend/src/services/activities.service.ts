@@ -5,7 +5,7 @@ import type {
   ActivityDetails,
   ActivityStats,
   MonthDistance,
-} from "@/lib/api/types";
+} from "@kilotrace/ui/lib/api/types";
 
 export const activitiesService = {
   getStats: () => apiRequest<ActivityStats>("/activities/stats"),

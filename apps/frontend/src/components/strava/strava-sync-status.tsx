@@ -2,12 +2,12 @@
 
 import { CircleAlertIcon, ClockIcon, RefreshCwIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress, ProgressLabel } from "@/components/ui/progress";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@kilotrace/ui/components/ui/alert";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Card, CardContent } from "@kilotrace/ui/components/ui/card";
+import { Progress, ProgressLabel } from "@kilotrace/ui/components/ui/progress";
 import { isSyncActive, isTileWorkPending } from "@/hooks/use-strava-connection";
-import type { SyncJob, TileProgress } from "@/lib/api/types";
+import type { SyncJob, TileProgress } from "@kilotrace/ui/lib/api/types";
 
 interface StravaSyncStatusProps {
   sync: SyncJob | null;

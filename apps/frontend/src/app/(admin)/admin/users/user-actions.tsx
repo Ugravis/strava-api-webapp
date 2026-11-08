@@ -11,7 +11,7 @@ import {
 import { BanIcon, GavelIcon, LogOutIcon, ShieldCheckIcon, Trash2Icon, UnlinkIcon } from "lucide-react";
 import { type ReactNode, useCallback, useState } from "react";
 import { ActionDialog, type ActionDialogProps } from "@/components/admin/action-dialog";
-import { DetailFieldButton } from "@/components/admin/detail";
+import { DetailFieldButton } from "@kilotrace/ui/components/admin/detail";
 import type { ActRefusal } from "@/lib/admin/permissions";
 import { deleteUser, liftSuspension, moderateUser, revokeSessions, suspendUser, unlinkStrava } from "./actions";
 import { bumpUsers } from "./users-store";

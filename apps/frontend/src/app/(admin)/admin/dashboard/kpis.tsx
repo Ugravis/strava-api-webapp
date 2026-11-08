@@ -1,9 +1,9 @@
 import { ActivityIcon, GaugeIcon, UsersIcon, UserCheckIcon } from "lucide-react";
 import { getFormatter } from "next-intl/server";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "@kilotrace/ui/components/ui/progress";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { dashboardData } from "./data";
 import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 

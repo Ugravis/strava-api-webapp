@@ -6,11 +6,11 @@ import { type ReactNode, useState } from "react";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { RequestAnswerButtons } from "@/components/community/request-answer-buttons";
 import { UserRow, UserRowsSkeleton } from "@/components/community/user-row";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@kilotrace/ui/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@kilotrace/ui/components/ui/tabs";
 import { type FollowsListState, usePagedUsers } from "@/hooks/use-follows-list";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { notificationsService } from "@/services/notifications.service";
 import { profilesService } from "@/services/profiles.service";
 

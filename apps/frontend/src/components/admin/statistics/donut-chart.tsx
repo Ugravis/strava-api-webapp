@@ -2,8 +2,8 @@
 
 import { useFormatter } from "next-intl";
 import { useRef } from "react";
-import { usePointed } from "@/hooks/use-pointed";
-import { cn } from "@/lib/utils";
+import { usePointed } from "@kilotrace/ui/hooks/use-pointed";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { SERIES_COLORS, type SeriesColorName } from "./palette";
 
 export interface DonutSegment {

@@ -8,9 +8,9 @@ import {
   type UpdateReservedUsernameRequest,
 } from "@kilotrace/shared/admin";
 import { AtSignIcon, CalendarPlusIcon, ShapesIcon, StickyNoteIcon, UserPenIcon } from "lucide-react";
-import { type ConfirmOptions, customColumn, type DataTableColumn, dateColumn, pillsColumn, textColumn, type Tone, UserCell } from "@/components/admin/data-table";
-import { type DetailEditOption, fromRule } from "@/components/admin/detail";
-import { Skeleton } from "@/components/ui/skeleton";
+import { type ConfirmOptions, customColumn, type DataTableColumn, dateColumn, pillsColumn, textColumn, type Tone, UserCell } from "@kilotrace/ui/components/admin/data-table";
+import { type DetailEditOption, fromRule } from "@kilotrace/ui/components/admin/detail";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { createVersion } from "@/lib/admin/version";
 import { releaseUsername, saveReservedUsername } from "./actions";
 

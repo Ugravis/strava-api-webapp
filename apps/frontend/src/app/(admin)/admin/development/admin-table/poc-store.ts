@@ -1,7 +1,7 @@
 import { checkField, checkRules } from "@kilotrace/shared/rules";
 import { useSyncExternalStore } from "react";
-import type { ActionResult } from "@/components/admin/action-state";
-import type { BulkEditChange, DetailDraftResult, DetailEditOption } from "@/components/admin/detail";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
+import type { BulkEditChange, DetailDraftResult, DetailEditOption } from "@kilotrace/ui/components/admin/detail";
 import type { PocBadgeDraft } from "./poc-badge-create";
 import { POC_NOW, POC_USERS, type PocUser } from "./poc-data";
 import { BADGES, type PocBadge } from "./poc-order";

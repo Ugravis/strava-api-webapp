@@ -14,9 +14,9 @@ import {
   orderColumn,
   statusColumn,
   textColumn,
-} from "@/components/admin/data-table";
-import { fromRule } from "@/components/admin/detail";
-import { BadgeIcon } from "@/components/distances/badge-icon";
+} from "@kilotrace/ui/components/admin/data-table";
+import { fromRule } from "@kilotrace/ui/components/admin/detail";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
 import { createVersion } from "@/lib/admin/version";
 import { deleteUserTag, saveUserTag } from "./actions";
 

@@ -15,7 +15,7 @@ import {
   type SuspendUserRequest,
 } from "@kilotrace/shared/admin";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
-import type { ActionResult } from "@/components/admin/action-state";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { getAdminMe } from "@/lib/admin/access";
 import { checkedId, reasonOf, runAdminAction } from "@/lib/admin/actions";
 import { adminApi } from "@/lib/admin/api";

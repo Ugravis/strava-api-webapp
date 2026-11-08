@@ -2,10 +2,10 @@ import { ArrowDownRightIcon, ArrowRightIcon, ArrowUpRightIcon, type LucideIcon }
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { SERIES_COLORS, type SeriesColorName } from "@/components/admin/statistics/palette";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { Card } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 const COLUMNS = { 3: "@xl:grid-cols-3", 4: "@2xl:grid-cols-4" } as const;
 

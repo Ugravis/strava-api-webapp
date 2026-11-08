@@ -3,9 +3,9 @@
 import { DownloadIcon, Share2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type RefObject, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kilotrace/ui/components/ui/dialog";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { cardImage } from "./card-image";
 
 interface CardImageDialogProps {

@@ -3,8 +3,8 @@
 import { PipetteIcon, RotateCcwIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { DEFAULT_PROFILE_COLOR, PROFILE_COLOR_PRESETS } from "./profile-color";
 
 interface ProfileColorPickerProps {

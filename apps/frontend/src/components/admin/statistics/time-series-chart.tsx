@@ -2,9 +2,9 @@
 
 import { useFormatter } from "next-intl";
 import { type PointerEvent, useLayoutEffect, useRef, useState } from "react";
-import { niceStep } from "@/components/dashboard/evolution-chart";
-import { usePointed } from "@/hooks/use-pointed";
-import { cn } from "@/lib/utils";
+import { niceStep } from "@kilotrace/ui/components/dashboard/evolution-chart";
+import { usePointed } from "@kilotrace/ui/hooks/use-pointed";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { SERIES_COLORS, type SeriesColorName } from "./palette";
 
 export interface ChartSeries {

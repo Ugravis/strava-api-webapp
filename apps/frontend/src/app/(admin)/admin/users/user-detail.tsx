@@ -23,7 +23,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { formatDateTime, formatRelative } from "@/components/admin/data-table";
+import { formatDateTime, formatRelative } from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailAction,
   DetailActions,
@@ -40,12 +40,12 @@ import {
   DetailItems,
   DetailSkeleton,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { useSplitPanel } from "@/components/split-panel";
-import { UserAvatar } from "@/components/user/user-avatar";
+} from "@kilotrace/ui/components/admin/detail";
+import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import { userProfileHref } from "@/config/routes";
-import { countryName } from "@/lib/countries/country-format";
-import { publicNameOf } from "@/lib/user";
+import { countryName } from "@kilotrace/ui/lib/countries/country-format";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { loadUserDetail, loadUserHistory, type UserDetailData } from "./actions";
 import type { ActRefusal } from "@/lib/admin/permissions";
 import { moderateTool, NOT_GRANTED, type UserActionKey, useUserActionDialog, userActionsOf } from "./user-actions";

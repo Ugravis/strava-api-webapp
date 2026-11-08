@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kilotrace/ui/components/ui/dialog";
 
 interface ShowcaseDialogProps {
   open: boolean;

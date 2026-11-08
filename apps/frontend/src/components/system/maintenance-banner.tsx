@@ -3,7 +3,7 @@
 import { TriangleAlertIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 
 /**
  * Maintenance notice above the pages. Closed for the visit only: kept by

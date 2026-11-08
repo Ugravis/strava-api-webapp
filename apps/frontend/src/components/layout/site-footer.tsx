@@ -1,10 +1,10 @@
 import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AppLogo } from "@/components/brand/app-logo";
-import { StravaIcon } from "@/components/strava/strava-icon";
+import { AppLogo } from "@kilotrace/ui/components/brand/app-logo";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
 import { routes } from "@/config/routes";
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@kilotrace/ui/config/site";
 import packageJson from "../../../package.json";
 
 const STRAVA_API_POLICY = "https://www.strava.com/legal/api_policy";

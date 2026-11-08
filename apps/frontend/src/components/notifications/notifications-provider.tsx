@@ -11,8 +11,8 @@ import type {
   NotificationEvent,
   NotificationType,
   NotificationsPage,
-} from "@/lib/api/types";
-import { publicNameOf } from "@/lib/user";
+} from "@kilotrace/ui/lib/api/types";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { NOTIFICATIONS_STREAM_URL, notificationsService } from "@/services/notifications.service";
 
 /**

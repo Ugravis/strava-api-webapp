@@ -2,8 +2,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { GridBackdrop } from "@/components/layout/grid-backdrop";
-import { StravaIcon } from "@/components/strava/strava-icon";
-import { Button } from "@/components/ui/button";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { routes } from "@/config/routes";
 import { HeroIllustration } from "./hero-illustration";
 

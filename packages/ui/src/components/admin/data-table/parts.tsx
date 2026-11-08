@@ -1,0 +1,217 @@
+"use client";
+
+import type { TablePage } from "@kilotrace/shared/table";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon, InboxIcon, SearchXIcon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { createContext, memo, type ReactNode, useContext, useLayoutEffect, useRef, useState } from "react";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { TableCheckbox } from "./cells/checkbox";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { TableCell } from "@kilotrace/ui/components/ui/table";
+import { cn } from "@kilotrace/ui/lib/utils";
+import { CellValue, keepsItsClick } from "./cells/value";
+import { MovableRow } from "./reorder";
+import type { DataTableColumn, DataTableConfig } from "./types";
+
+interface RowProps<T> {
+  config: DataTableConfig<T>;
+  row: T;
+  id: string;
+  columns: DataTableColumn<T>[];
+  selected: boolean;
+  /** The row opened, e.g. in the detail panel. */
+  active: boolean;
+  onOpen?: (row: T) => void;
+  pinBox: string;
+  pinFirst: string;
+  onToggle: (ids: string[], on: boolean) => void;
+  /** Dragged by its handle, unless `blocked` says why not. */
+  movable?: boolean;
+  blocked?: string | null;
+}
+
+/*
+ * Rows checked and the one opened, tinted blue alike, a bar along the first
+ * cell of the latter:
+ * opaque, so that pinned cells, which inherit it, still hide what slides under.
+ */
+const ACTIVE = cn(
+  "data-[state=selected]:bg-[color-mix(in_oklab,var(--color-blue-500)_7%,var(--color-background))] data-[state=selected]:hover:bg-[color-mix(in_oklab,var(--color-blue-500)_10%,var(--color-background))]",
+  "data-active:bg-[color-mix(in_oklab,var(--color-blue-500)_7%,var(--color-background))] data-active:hover:bg-[color-mix(in_oklab,var(--color-blue-500)_10%,var(--color-background))] data-active:[&>td:first-child]:shadow-[inset_2px_0_0_var(--color-blue-500)]",
+);
+
+/** A row, drawn again only when its own props change, not on every change of the table. */
+export const DataTableRow = memo(function DataTableRow<T>({ config, row, id, columns, selected, active, onOpen, pinBox, pinFirst, onToggle, movable, blocked = null }: RowProps<T>) {
+  return (
+    <MovableRow
+      move={movable ? { id, blocked } : undefined}
+      data-state={selected ? "selected" : undefined}
+      data-row-id={id}
+      data-active={active || undefined}
+      aria-current={active || undefined}
+      onClick={(event) => {
+        if (keepsItsClick(event)) return;
+        onOpen?.(row);
+      }}
+      className={cn("group/row", onOpen && "cursor-pointer", ACTIVE, config.muted?.(row) && "text-muted-foreground")}
+    >
+      {config.bulkActions && (
+        <TableCell className={cn(pinBox, "w-10")}>
+          <TableCheckbox checked={selected} onCheckedChange={(on) => onToggle([id], on)} aria-label="Sélectionner la ligne" />
+        </TableCell>
+      )}
+      {columns.map((column, index) => (
+        <TableCell key={column.id} className={cn("group/cell relative", index === 0 && pinFirst, column.className)}>
+          <CellValue column={column} row={row} onOpen={onOpen && (() => onOpen(row))} />
+        </TableCell>
+      ))}
+      {config.actions && <TableCell className="w-px text-center">{config.actions(row)}</TableCell>}
+    </MovableRow>
+  );
+}) as <T>(props: RowProps<T>) => ReactNode;
+
+/** Nothing to show: an empty table, filters matching nothing, or a failed call. */
+export function EmptyState({
+  error,
+  filtered,
+  empty,
+  onRetry,
+  onClear,
+}: {
+  error: boolean;
+  filtered: boolean;
+  empty: { title: string; description: string };
+  onRetry: () => void;
+  onClear: () => void;
+}) {
+  const Icon = error ? TriangleAlertIcon : filtered ? SearchXIcon : InboxIcon;
+  return (
+    <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
+      <span className={cn("flex size-10 items-center justify-center rounded-full bg-muted", error && "bg-destructive/10 text-destructive")}>
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <p className="font-medium">{error ? "Chargement impossible" : filtered ? "Aucun résultat" : empty.title}</p>
+      <p className="text-sm text-muted-foreground">
+        {error ? "L'API n'a pas répondu. Réessaie dans un instant." : filtered ? "Aucune ligne ne correspond à ces filtres." : empty.description}
+      </p>
+      {(error || filtered) && (
+        <Button variant="outline" size="sm" className="mt-1" onClick={error ? onRetry : onClear}>
+          {error ? "Réessayer" : "Effacer les filtres"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** « 31–60 sur 412 comptes », and the pages: first, previous, typed, next, last. */
+export function Pagination({ pager, loading, noun, onPage }: { pager: TablePage<unknown>; loading: boolean; noun: (count: number) => string; onPage: (value: number) => void }) {
+  return (
+    <nav aria-label="Pagination" className={cn("flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground", loading && "pointer-events-none opacity-60")}>
+      <p>
+        {pager.before + 1}–{pager.before + pager.entries.filter((entry) => "row" in entry).length} sur {pager.visible} {noun(pager.visible)}
+        {pager.visible < pager.total && ` (${pager.total - pager.visible} repliés)`}
+      </p>
+      <div className="flex items-center gap-1">
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === 1} onClick={() => onPage(1)} aria-label="Première page">
+          <ChevronsLeftIcon />
+        </Button>
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === 1} onClick={() => onPage(pager.page - 1)} aria-label="Page précédente">
+          <ChevronLeftIcon />
+        </Button>
+        <span className="flex items-center gap-1.5 px-1">
+          Page
+          <PageInput key={pager.page} disabled={loading} page={pager.page} pages={pager.pages} onPage={onPage} />
+          sur {pager.pages}
+        </span>
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === pager.pages} onClick={() => onPage(pager.page + 1)} aria-label="Page suivante">
+          <ChevronRightIcon />
+        </Button>
+        <Button size="icon-xs" variant="ghost" disabled={loading || pager.page === pager.pages} onClick={() => onPage(pager.pages)} aria-label="Dernière page">
+          <ChevronsRightIcon />
+        </Button>
+      </div>
+    </nav>
+  );
+}
+
+/** The page typed in, applied on Enter or on leaving, kept within bounds. */
+function PageInput({ page, pages, disabled, onPage }: { page: number; disabled: boolean; pages: number; onPage: (value: number) => void }) {
+  const [text, setText] = useState(String(page));
+  function apply() {
+    const value = Math.min(Math.max(Math.round(Number(text)) || page, 1), pages);
+    setText(String(value));
+    onPage(value);
+  }
+  return (
+    <input
+      inputMode="numeric"
+      disabled={disabled}
+      value={text}
+      onChange={(event) => setText(event.target.value.replace(/\D/g, ""))}
+      onBlur={apply}
+      onKeyDown={(event) => event.key === "Enter" && apply()}
+      onFocus={(event) => event.target.select()}
+      aria-label="Page"
+      className="h-6 w-9 rounded-md border bg-background text-center text-xs text-foreground tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+    />
+  );
+}
+
+/** Floats at the bottom of the screen while rows are selected, with the bulk actions. */
+/** Inside the bar of a selection: whether its buttons show their icon only, the bar being too narrow for their names. */
+const SelectionIconsOnly = createContext(false);
+export const useSelectionIconsOnly = () => useContext(SelectionIconsOnly);
+
+/**
+ * The bar of a selection, at the bottom of the screen, never wider than it:
+ * when its buttons no longer fit with their names, they show their icon only
+ * (`SelectionAction` and `BulkEditAction` named in a bubble then, any other
+ * button by its hidden name), the count without its word.
+ */
+export function SelectionBar({ count, onClear, children }: { count: number; onClear: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [iconsOnly, setIconsOnly] = useState(false);
+  // The width the names asked for when they stopped fitting.
+  const needed = useRef(0);
+  useLayoutEffect(() => {
+    const bar = ref.current;
+    if (!bar) return;
+    const fit = () => {
+      if (!iconsOnly && bar.scrollWidth > bar.clientWidth) {
+        needed.current = bar.scrollWidth;
+        setIconsOnly(true);
+      } else if (iconsOnly && bar.parentElement!.clientWidth - 32 >= needed.current) {
+        setIconsOnly(false);
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(bar.parentElement!);
+    return () => observer.disconnect();
+  }, [iconsOnly, children, count]);
+  if (count === 0) return null;
+  return (
+    <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+      <div
+        ref={ref}
+        role="toolbar"
+        aria-label="Sélection"
+        data-iconic={iconsOnly || undefined}
+        className={cn(
+          "flex max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-xl border bg-popover p-1.5 pl-3 text-sm shadow-lg",
+          // Any other button of the page: its name kept for screen readers, out of sight.
+          "data-iconic:[&_[data-slot=button]]:gap-0 data-iconic:[&_[data-slot=button]]:px-2 data-iconic:[&_[data-slot=button]]:text-[0px]",
+        )}
+      >
+        <span className="shrink-0 font-medium whitespace-nowrap tabular-nums">
+          {count}
+          {!iconsOnly && ` sélectionné${count > 1 ? "s" : ""}`}
+        </span>
+        <Separator orientation="vertical" className="mx-1.5 h-5" />
+        <SelectionIconsOnly.Provider value={iconsOnly}>{children}</SelectionIconsOnly.Provider>
+        <Button size="icon-sm" variant="ghost" onClick={onClear} aria-label="Tout désélectionner" className="shrink-0">
+          <XIcon />
+        </Button>
+      </div>
+    </div>
+  );
+}

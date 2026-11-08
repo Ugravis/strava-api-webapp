@@ -2,11 +2,11 @@
 
 import { highestAdminRole } from "@kilotrace/shared/admin";
 import { BanIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
-import { GoogleIcon } from "@/components/auth/google-icon";
-import { type IconItem, Mark, type Pill, type Tone } from "@/components/admin/data-table";
-import { BadgeIcon } from "@/components/distances/badge-icon";
-import { StravaIcon } from "@/components/strava/strava-icon";
-import { cn } from "@/lib/utils";
+import { GoogleIcon } from "@kilotrace/ui/components/auth/google-icon";
+import { type IconItem, Mark, type Pill, type Tone } from "@kilotrace/ui/components/admin/data-table";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
+import { cn } from "@kilotrace/ui/lib/utils";
 import type { PocCategory, PocUser } from "./poc-data";
 
 /** What the cells of the kit need from the accounts of the demo. */

@@ -3,8 +3,8 @@
 import { type ReactNode, useState } from "react";
 import { BarChart } from "@/components/admin/site-activity/bar-chart";
 import { ChartHead } from "@/components/admin/site-activity/parts";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Switch } from "@kilotrace/ui/components/ui/switch";
 
 type BarChartProps = Parameters<typeof BarChart>[0];
 

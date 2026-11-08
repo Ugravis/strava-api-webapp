@@ -2,8 +2,8 @@
 
 import type { AdminBadgeTheme } from "@kilotrace/shared/admin";
 import { useCallback, useMemo, useRef } from "react";
-import type { RowPanelControls } from "@/components/admin/detail";
-import { Separator } from "@/components/ui/separator";
+import type { RowPanelControls } from "@kilotrace/ui/components/admin/detail";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
 import type { BadgeRights } from "./badge-bits";
 import { BadgesTable } from "./badges-table";
 import { ThemesTable } from "./themes-table";

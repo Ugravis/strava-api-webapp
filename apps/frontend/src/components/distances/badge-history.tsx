@@ -3,10 +3,10 @@ import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { routes } from "@/config/routes";
-import type { BadgeCompletion, DistanceBadge, DistanceBadgeDetails } from "@/lib/api/types";
+import type { BadgeCompletion, DistanceBadge, DistanceBadgeDetails } from "@kilotrace/ui/lib/api/types";
 import { distancesService } from "@/services/distances.service";
 
 interface BadgeHistoryProps {

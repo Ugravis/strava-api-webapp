@@ -2,7 +2,7 @@
 
 import type { AdminStravaUsagePoint } from "@kilotrace/shared/admin";
 import { useState } from "react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@kilotrace/ui/components/ui/toggle-group";
 import { TimeSeriesChart } from "./time-series-chart";
 
 type Period = "days" | "quarters";

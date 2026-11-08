@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sharedRequest } from "@/lib/api/shared-request";
-import type { TileVisits } from "@/lib/api/types";
+import type { TileVisits } from "@kilotrace/ui/lib/api/types";
 import type { TileZoom } from "@/lib/tiles/tile-geometry";
 import { tilesService } from "@/services/tiles.service";
 

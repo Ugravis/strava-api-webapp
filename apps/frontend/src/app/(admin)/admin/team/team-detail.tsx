@@ -4,7 +4,7 @@ import type { AdminTeamMember } from "@kilotrace/shared/admin";
 import { ListClockIcon, UserMinusIcon, UserPlusIcon, UserRoundIcon, UsersIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { Mark } from "@/components/admin/data-table";
+import { Mark } from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailAction,
   DetailActions,
@@ -18,9 +18,9 @@ import {
   DetailSection,
   DetailSkeleton,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { UserAvatar } from "@/components/user/user-avatar";
-import { publicNameOf } from "@/lib/user";
+} from "@kilotrace/ui/components/admin/detail";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { addMember, loadTeamMember, type MemberDraft, searchCandidates } from "./actions";
 import { bumpTeam, lockOf, removalOf, ROLE_OPTIONS, teamColumns, useTeamVersion } from "./team-columns";
 

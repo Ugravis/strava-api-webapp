@@ -8,8 +8,8 @@ import {
   type UpdateUserTagRequest,
 } from "@kilotrace/shared/admin";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
-import type { ActionResult } from "@/components/admin/action-state";
-import type { TableMove } from "@/components/admin/data-table";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
+import type { TableMove } from "@kilotrace/ui/components/admin/data-table";
 import { getAdminMe } from "@/lib/admin/access";
 import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { adminRoutes } from "@/lib/admin/navigation";

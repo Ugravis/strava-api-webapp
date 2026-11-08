@@ -17,7 +17,7 @@ import {
   DetailSection,
   DetailSkeleton,
   type RowPanelControls,
-} from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/detail";
 import { createReservedUsername, loadReservedUsername, type ReservedDraft } from "./actions";
 import { bumpReserved, CATEGORIES, CATEGORY_OPTIONS, releaseOf, RESERVED_LOCK, reservedColumns, useReservedVersion } from "./reserved-bits";
 

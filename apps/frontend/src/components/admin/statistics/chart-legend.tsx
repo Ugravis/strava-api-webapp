@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { SERIES_COLORS, type SeriesColorName } from "./palette";
 
 /** Swatches naming the series of a chart, so that color is never alone. */

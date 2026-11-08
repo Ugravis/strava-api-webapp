@@ -3,7 +3,7 @@
 import { EyeIcon, EyeOffIcon, KeyIcon, ListIcon, ShieldIcon } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { formatDateTime, Mark } from "@/components/admin/data-table";
+import { formatDateTime, Mark } from "@kilotrace/ui/components/admin/data-table";
 import {
   DetailAction,
   DetailActions,
@@ -18,7 +18,7 @@ import {
   DetailMedia,
   DetailSection,
   DetailSkeleton,
-} from "@/components/admin/detail";
+} from "@kilotrace/ui/components/admin/detail";
 import { loadAuditEntry, setEntryHidden } from "./actions";
 import type { OpenUser } from "../users/use-user-panel";
 import { actionIcon, auditColumns, bumpAudit, useAuditVersion } from "./audit-columns";

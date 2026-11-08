@@ -11,11 +11,11 @@ import { DatabaseIcon, FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
-import { DataTableSkeleton } from "@/components/admin/data-table";
+import { DataTableSkeleton } from "@kilotrace/ui/components/admin/data-table";
 import { KpiGrid, KpiTile, KpiTileSkeleton, shareOf } from "@/components/admin/kpi-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { adminApi } from "@/lib/admin/api";
 import { formatBytes, formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";

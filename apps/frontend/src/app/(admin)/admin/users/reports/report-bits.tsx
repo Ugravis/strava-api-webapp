@@ -3,8 +3,8 @@
 import type { AdminUserReport, UserReportSanction, UserReportStatus } from "@kilotrace/shared/admin";
 import type { UserReportReason } from "@kilotrace/shared";
 import { CalendarCheckIcon, CalendarPlusIcon, CircleDotIcon, FlagIcon, GavelIcon, MessageSquareTextIcon, PanelRightOpenIcon, ShieldUserIcon, StickyNoteIcon, UserRoundIcon, UserRoundSearchIcon } from "lucide-react";
-import { type DataTableColumn, dateColumn, pillsColumn, statusColumn, textColumn, type Tone, userColumn } from "@/components/admin/data-table";
-import { DetailFieldButton } from "@/components/admin/detail";
+import { type DataTableColumn, dateColumn, pillsColumn, statusColumn, textColumn, type Tone, userColumn } from "@kilotrace/ui/components/admin/data-table";
+import { DetailFieldButton } from "@kilotrace/ui/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
 import type { OpenUser } from "../use-user-panel";
 

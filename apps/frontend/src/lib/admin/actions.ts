@@ -1,7 +1,7 @@
 import "server-only";
 import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH } from "@kilotrace/shared/admin";
 import { refresh } from "next/cache";
-import type { ActionResult } from "@/components/admin/action-state";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { type AdminApiResult, adminApi } from "./api";
 import { getAdminTranslations } from "./messages";
 

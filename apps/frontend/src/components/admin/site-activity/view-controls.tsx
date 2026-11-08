@@ -3,7 +3,7 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, type TransitionStartFunction, useContext, useOptimistic, useTransition } from "react";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@kilotrace/ui/components/ui/switch";
 
 /** The transition of the view controls inside, shared so that the parts they change can show their skeletons. */
 const ViewPendingContext = createContext<{ pending: boolean; startTransition: TransitionStartFunction } | null>(null);

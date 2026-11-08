@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { TileStats } from "@/lib/api/types";
+import type { TileStats } from "@kilotrace/ui/lib/api/types";
 import { tilesService } from "@/services/tiles.service";
 
 /** Tile counters of the current user, fetched again whenever `version` changes. */

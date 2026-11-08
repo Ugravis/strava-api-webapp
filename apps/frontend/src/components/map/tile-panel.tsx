@@ -1,8 +1,8 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@kilotrace/ui/components/ui/badge";
+import { Progress } from "@kilotrace/ui/components/ui/progress";
 import { useTileVisits } from "@/hooks/use-tile-visits";
 import { TILE_ZOOM } from "@/lib/tiles/tile-geometry";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";

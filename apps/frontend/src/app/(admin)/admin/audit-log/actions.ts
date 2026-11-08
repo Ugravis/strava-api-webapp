@@ -2,7 +2,7 @@
 
 import type { AuditLogEntry } from "@kilotrace/shared/admin";
 import { mapTablePage, type TablePage, type TableQuery } from "@kilotrace/shared/table";
-import type { ActionResult } from "@/components/admin/action-state";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { checkedId, runAdminAction } from "@/lib/admin/actions";
 import { adminApi } from "@/lib/admin/api";
 import { fetchAdminTable } from "@/lib/admin/table";

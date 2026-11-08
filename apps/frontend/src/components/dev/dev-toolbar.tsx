@@ -1,7 +1,7 @@
 "use client";
 
 import { BugIcon } from "lucide-react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@kilotrace/ui/components/ui/sheet";
 import { DevOverviewContent } from "./dev-overview-content";
 
 /**

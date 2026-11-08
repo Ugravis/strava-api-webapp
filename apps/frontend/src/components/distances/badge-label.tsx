@@ -1,8 +1,8 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { achievementKindOf } from "@/config/achievement-tabs";
 import { useAmount } from "./use-amount";
-import type { DistanceBadge } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { BadgeKindIcon } from "./badge-kind-icon";
 import { progressTier } from "./progress-tier";
 

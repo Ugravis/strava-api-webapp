@@ -2,7 +2,7 @@
 
 import { checkField } from "@kilotrace/shared/rules";
 import { FootprintsIcon, KeyRoundIcon, StickyNoteIcon, TypeIcon } from "lucide-react";
-import { DetailColumnFields, DetailCover, DetailField, DetailFields, DetailForm, DetailHeader, DetailMedia, DetailSection, LucideIconByName } from "@/components/admin/detail";
+import { DetailColumnFields, DetailCover, DetailField, DetailFields, DetailForm, DetailHeader, DetailMedia, DetailSection, LucideIconByName } from "@kilotrace/ui/components/admin/detail";
 import { BADGES_TABLE, COLLECTION_OPTIONS, COLLECTIONS, type PocCollection, SPORTS } from "./poc-order";
 import { BADGE_RULES } from "./poc-rules";
 import { createPocBadge } from "./poc-store";

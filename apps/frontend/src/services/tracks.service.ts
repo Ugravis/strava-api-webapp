@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { ActivityTracksPage, MappableActivity } from "@/lib/api/types";
+import type { ActivityTracksPage, MappableActivity } from "@kilotrace/ui/lib/api/types";
 
 export const tracksService = {
   getMappableActivities: () => apiRequest<MappableActivity[]>("/activities/mappable"),

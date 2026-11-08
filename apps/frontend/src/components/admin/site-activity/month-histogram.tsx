@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { SeriesColorName } from "@/components/admin/statistics/palette";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@kilotrace/ui/components/ui/toggle-group";
 import { BarChart } from "./bar-chart";
 
 export interface MonthBars {

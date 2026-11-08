@@ -5,7 +5,7 @@ import { BarList, CardFigure, ChartHead } from "@/components/admin/site-activity
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
 import { TimeSeriesChart } from "@/components/admin/statistics/time-series-chart";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kilotrace/ui/components/ui/table";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
 import { siteActivity, type SiteActivityView } from "./data";

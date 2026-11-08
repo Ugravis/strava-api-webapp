@@ -13,11 +13,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+} from "@kilotrace/ui/components/ui/alert-dialog";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { errorCodeOf } from "@/lib/api/errors";
-import type { ProfileSummary } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { ProfileSummary } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { profilesService } from "@/services/profiles.service";
 import { useFollowsSummary } from "./follows-summary-provider";
 

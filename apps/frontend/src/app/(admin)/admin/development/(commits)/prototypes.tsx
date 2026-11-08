@@ -1,7 +1,7 @@
 import { ArrowUpRightIcon, TableIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { POC_SHOTS, POC_TAG, pocShotSrc } from "../admin-table/poc-shots";

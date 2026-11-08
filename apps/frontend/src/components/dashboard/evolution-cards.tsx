@@ -4,13 +4,13 @@ import { Grid2x2Icon, TrainFrontIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { type ReactNode, useMemo, useState } from "react";
 import { PILL } from "@/components/distances/theme-tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@kilotrace/ui/components/ui/tabs";
 import { useStations } from "@/hooks/use-stations";
 import { useTileTimeline } from "@/hooks/use-tile-timeline";
-import type { TileTimelineDay, VisitedStations } from "@/lib/api/types";
-import { type EvolutionPoint, EvolutionChart, type EvolutionTone } from "./evolution-chart";
+import type { TileTimelineDay, VisitedStations } from "@kilotrace/ui/lib/api/types";
+import { type EvolutionPoint, EvolutionChart, type EvolutionTone } from "@kilotrace/ui/components/dashboard/evolution-chart";
 
 /** Counters of the tiles followed over time, each the running sum of a gain of the timeline. */
 const TILE_MODES = [

@@ -4,11 +4,11 @@ import { hasReleaseNoteContent, type PublicReleaseNote, type ReleaseNoteDisplay 
 import { BellIcon, HistoryIcon, type LucideIcon, MegaphoneIcon, PanelTopIcon, SquareStackIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { ReleaseNoteArticle } from "@/components/release-notes/release-note-article";
-import { ReleaseNoteBanner } from "@/components/release-notes/release-note-banner";
-import { ReleaseNoteCard, ReleaseNoteFooter } from "@/components/release-notes/release-note-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UnderlineTabs } from "@/components/ui/underline-tabs";
+import { ReleaseNoteArticle } from "@kilotrace/ui/components/release-notes/release-note-article";
+import { ReleaseNoteBanner } from "@kilotrace/ui/components/release-notes/release-note-banner";
+import { ReleaseNoteCard, ReleaseNoteFooter } from "@kilotrace/ui/components/release-notes/release-note-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@kilotrace/ui/components/ui/dialog";
+import { UnderlineTabs } from "@kilotrace/ui/components/ui/underline-tabs";
 import { DISPLAYS } from "./release-note-bits";
 
 type Surface = "popup" | "banner" | "notification" | "history";

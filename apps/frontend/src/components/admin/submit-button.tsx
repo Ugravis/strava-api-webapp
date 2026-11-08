@@ -3,7 +3,7 @@
 import { Loader2Icon } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 
 /** Submit button of a form, disabled with a spinner while it posts. */
 export function SubmitButton({ children, disabled, ...props }: ComponentProps<typeof Button>) {

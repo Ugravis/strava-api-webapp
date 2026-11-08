@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { CountriesCompletion, CountrySector } from "@/lib/api/types";
+import type { CountriesCompletion, CountrySector } from "@kilotrace/ui/lib/api/types";
 
 export const countriesService = {
   getCompletion: () => apiRequest<CountriesCompletion>("/countries"),

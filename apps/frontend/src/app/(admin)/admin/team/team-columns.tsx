@@ -2,10 +2,10 @@
 
 import { ADMIN_ROLES, type AdminRole, type AdminTeamMember } from "@kilotrace/shared/admin";
 import { AtSignIcon, CalendarCheckIcon, ClockIcon, KeyRoundIcon, ListClockIcon, MailIcon, UserRoundIcon } from "lucide-react";
-import { type ConfirmOptions, type DataTableColumn, dateColumn, Mark, numberColumn, pillsColumn, textColumn, type Tone, userColumn } from "@/components/admin/data-table";
-import type { DetailEditOption } from "@/components/admin/detail";
+import { type ConfirmOptions, type DataTableColumn, dateColumn, Mark, numberColumn, pillsColumn, textColumn, type Tone, userColumn } from "@kilotrace/ui/components/admin/data-table";
+import type { DetailEditOption } from "@kilotrace/ui/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
-import { publicNameOf } from "@/lib/user";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { changeRole, removeMember } from "./actions";
 
 /*

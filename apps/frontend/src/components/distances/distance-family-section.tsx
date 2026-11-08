@@ -1,6 +1,6 @@
 import { FlagIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { BadgeMetric, DistanceBadge, DistanceFamily } from "@/lib/api/types";
+import type { BadgeMetric, DistanceBadge, DistanceFamily } from "@kilotrace/ui/lib/api/types";
 import { BadgeGrid } from "./badge-grid";
 import { FamilyIcon } from "./family-icon";
 import { useAmount } from "./use-amount";

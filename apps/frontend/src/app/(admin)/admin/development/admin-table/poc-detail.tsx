@@ -44,9 +44,9 @@ import {
   DetailTabs,
   fromRule,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { useSplitPanel } from "@/components/split-panel";
-import { UserAvatar } from "@/components/user/user-avatar";
+} from "@kilotrace/ui/components/admin/detail";
+import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import { USERS } from "./poc-columns";
 import type { PocUser } from "./poc-data";
 import { CONNECTIONS, connectionsOf, tagItems, UserMarks } from "./poc-marks";

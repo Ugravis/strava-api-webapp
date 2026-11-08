@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 
 /** Placeholder for an admin page while it loads, inside the shell. */
 export default function AdminPageLoading() {

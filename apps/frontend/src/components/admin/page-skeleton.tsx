@@ -1,8 +1,8 @@
-import { DataTableSkeleton } from "@/components/admin/data-table";
+import { DataTableSkeleton } from "@kilotrace/ui/components/admin/data-table";
 import { KpiGrid, KpiTileSkeleton } from "@/components/admin/kpi-tile";
-import { PageHeaderSkeleton } from "@/components/layout/page-header";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeaderSkeleton } from "@kilotrace/ui/components/layout/page-header";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 
 /*
  * Pieces of the `loading.tsx` of the back office, in the layout of its pages:

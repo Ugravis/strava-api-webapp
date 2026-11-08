@@ -2,7 +2,7 @@
 
 import { MAINTENANCE_TITLES, type MaintenanceTitle } from "@kilotrace/shared";
 import type { SetMaintenanceRequest, SetShowcaseRequest, SetSignupsRequest } from "@kilotrace/shared/admin";
-import type { ActionResult } from "@/components/admin/action-state";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { reasonOf, runAdminAction } from "@/lib/admin/actions";
 
 /*

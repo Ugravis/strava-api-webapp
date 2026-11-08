@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ToAdminLink } from "@/components/admin/admin-sidebar";
 import { AppShell } from "@/components/app-shell/app-shell";
-import { AppShellSkeleton } from "@/components/app-shell/app-shell-skeleton";
+import { AppShellSkeleton } from "@kilotrace/ui/components/app-shell/app-shell-skeleton";
 import { DevToolbar } from "@/components/dev/dev-toolbar";
 
 // Static import: a dynamic one breaks the `instant` validation of every page.

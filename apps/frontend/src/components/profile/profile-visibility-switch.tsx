@@ -14,13 +14,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+} from "@kilotrace/ui/components/ui/alert-dialog";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Label } from "@kilotrace/ui/components/ui/label";
+import { Switch } from "@kilotrace/ui/components/ui/switch";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { errorCodeOf } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { profilesService } from "@/services/profiles.service";
 
 interface ProfileVisibilitySwitchProps {

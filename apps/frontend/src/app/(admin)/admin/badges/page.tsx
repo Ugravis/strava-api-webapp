@@ -1,8 +1,8 @@
 import type { AdminBadgeCatalog } from "@kilotrace/shared/admin";
 import { HeartIcon, LayersIcon, MedalIcon, UserRoundIcon } from "lucide-react";
 import { KpiGrid, KpiTile, shareOf } from "@/components/admin/kpi-tile";
-import { PageHeader } from "@/components/layout/page-header";
-import { Separator } from "@/components/ui/separator";
+import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";

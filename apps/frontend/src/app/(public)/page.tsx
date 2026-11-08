@@ -8,7 +8,7 @@ import { ProgressPreview } from "@/components/landing/progress-preview";
 import { SportsBand } from "@/components/landing/sports-band";
 import { Steps } from "@/components/landing/steps";
 import { StructuredData } from "@/components/landing/structured-data";
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@kilotrace/ui/config/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");

@@ -7,8 +7,8 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Slider } from "@/components/ui/slider";
+} from "@kilotrace/ui/components/ui/dropdown-menu";
+import { Slider } from "@kilotrace/ui/components/ui/slider";
 import { updateSoundSettings, useSoundSettings } from "@/lib/sound/sound-settings";
 
 /**

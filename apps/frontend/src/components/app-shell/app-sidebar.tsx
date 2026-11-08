@@ -11,10 +11,10 @@ import {
   SidebarMenu,
   SidebarRail,
   SidebarSeparator,
-} from "@/components/ui/sidebar";
+} from "@kilotrace/ui/components/ui/sidebar";
 import { mainNavigation } from "@/config/navigation";
 import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
-import type { User } from "@/lib/api/types";
+import type { User } from "@kilotrace/ui/lib/api/types";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 import { SidebarBrand } from "./sidebar-brand";

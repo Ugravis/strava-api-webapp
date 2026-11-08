@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DataTable, type TablePage } from "@/components/admin/data-table";
-import { useRowPanel } from "@/components/admin/detail";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { DataTable, type TablePage } from "@kilotrace/ui/components/admin/data-table";
+import { useRowPanel } from "@kilotrace/ui/components/admin/detail";
+import { ToggleGroup, ToggleGroupItem } from "@kilotrace/ui/components/ui/toggle-group";
 import { fetchPocUsers, USERS } from "./poc-columns";
 import type { PocUser } from "./poc-data";
 import { PocUserPanel } from "./poc-detail";

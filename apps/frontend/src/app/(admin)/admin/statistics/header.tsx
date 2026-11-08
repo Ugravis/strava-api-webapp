@@ -1,7 +1,7 @@
 import { ADMIN_BUSINESS_PERIODS } from "@kilotrace/shared/admin";
 import { getBusinessFormat } from "@/components/admin/business-statistics/business-format";
 import { ViewSelect, ViewToggle } from "@/components/admin/site-activity/view-controls";
-import { PageHeader } from "@/components/layout/page-header";
+import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { type BusinessView, businessStatistics, viewHref } from "./data";
 

@@ -3,8 +3,8 @@
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 /** Height of the bands over the bottom of the map, set on their parent for the map and its panel. */
 export const BANDS_HEIGHT_VAR = "--map-bands-height";

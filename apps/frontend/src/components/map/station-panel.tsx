@@ -3,12 +3,12 @@
 import { CheckIcon, ChevronRightIcon, CircleDashedIcon, TrainFrontIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@kilotrace/ui/components/ui/badge";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { useStation } from "@/hooks/use-station";
-import type { StationDetails, StationNeighbor } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { StationDetails, StationNeighbor } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
 import type { StationPick } from "./stations-layer";
 import type { TileRef } from "./tile-highlight";

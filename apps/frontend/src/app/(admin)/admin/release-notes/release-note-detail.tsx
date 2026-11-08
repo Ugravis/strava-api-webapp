@@ -2,8 +2,8 @@
 
 import { defaultDisplayOf, type PublicReleaseNote, type ReleaseNoteDisplay, RELEASE_VERSION_PATTERN, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
 import { type AdminReleaseNote, RELEASE_NOTE_BANNER_MAX_BYTES, RELEASE_NOTE_BANNER_TYPES, RELEASE_NOTE_RULES } from "@kilotrace/shared/admin";
-import { usePreview } from "@/components/admin/detail/use-preview";
-import { useReleaseNotePdf } from "@/components/release-notes/download-release-note-pdf";
+import { usePreview } from "@kilotrace/ui/components/admin/detail/use-preview";
+import { useReleaseNotePdf } from "@kilotrace/ui/components/release-notes/download-release-note-pdf";
 import { toast } from "sonner";
 import { BellRingIcon, EyeIcon, FileDownIcon, ReceiptTextIcon, TagIcon, TextIcon, Trash2Icon, TypeIcon } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -22,9 +22,9 @@ import {
   DetailSkeleton,
   fromRule,
   type RowPanelControls,
-} from "@/components/admin/detail";
-import { formatDateTime } from "@/components/admin/data-table";
-import { RELEASE_NOTE_SECTION_LOOKS } from "@/components/release-notes/release-note-article";
+} from "@kilotrace/ui/components/admin/detail";
+import { formatDateTime } from "@kilotrace/ui/components/admin/data-table";
+import { RELEASE_NOTE_SECTION_LOOKS } from "@kilotrace/ui/components/release-notes/release-note-article";
 import { createReleaseNote, loadReleaseNote, type ReleaseNoteDraft } from "./actions";
 import { CurrentMark, deleteOf, displayOptions, LOCKS, stepOf, STEP_ICONS, releaseNoteColumns, type ReleaseNoteRights, saveNote, STATE_HINTS, STATES, useReleaseNotesVersion, bumpReleaseNotes } from "./release-note-bits";
 import { ReleaseNotePreview } from "./release-note-preview";

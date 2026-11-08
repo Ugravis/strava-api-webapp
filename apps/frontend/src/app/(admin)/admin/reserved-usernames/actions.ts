@@ -8,7 +8,7 @@ import {
   type UpdateReservedUsernameRequest,
 } from "@kilotrace/shared/admin";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
-import type { ActionResult } from "@/components/admin/action-state";
+import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";

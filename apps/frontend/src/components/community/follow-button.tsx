@@ -96,6 +96,8 @@ interface FollowButtonProps {
   /** Called with the new state, and with the previous one if the server refuses. */
   onChange?: (state: FollowState) => void;
   size?: "sm" | "default";
+  /** -1 within a menu: its item is the stop of the keyboard, and the menu would focus the button first on opening. */
+  tabIndex?: number;
   className?: string;
 }
 
@@ -106,6 +108,7 @@ export function FollowButton({
   followsViewer = false,
   onChange,
   size = "sm",
+  tabIndex,
   className,
 }: FollowButtonProps) {
   const t = useTranslations("community.follow");
@@ -116,6 +119,7 @@ export function FollowButton({
       <Button
         type="button"
         size={size}
+        tabIndex={tabIndex}
         variant={state === "none" ? "default" : "outline"}
         disabled={pending}
         aria-pressed={state !== "none"}

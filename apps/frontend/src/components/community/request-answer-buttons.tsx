@@ -15,11 +15,13 @@ interface RequestAnswerButtonsProps {
   username: string;
   /** Called once the server took the answer. */
   onAnswered?: (accepted: boolean) => void;
+  /** -1 within a menu: its item is the stop of the keyboard, and the menu would focus the buttons first on opening. */
+  tabIndex?: number;
   className?: string;
 }
 
 /** Accepts or declines the request of a user to follow the current one. */
-export function RequestAnswerButtons({ username, onAnswered, className }: RequestAnswerButtonsProps) {
+export function RequestAnswerButtons({ username, onAnswered, tabIndex, className }: RequestAnswerButtonsProps) {
   const t = useTranslations("profile.requests");
   const tErrors = useTranslations("errors");
   const { refresh } = useFollowsSummary();
@@ -45,6 +47,7 @@ export function RequestAnswerButtons({ username, onAnswered, className }: Reques
     <div className={cn("flex shrink-0 gap-1.5", className)}>
       <Button
         size="sm"
+        tabIndex={tabIndex}
         disabled={pending}
         onClick={(event) => void answer(event, true)}
         // Kept within menu items, which recolor their content on focus, down to the icon paths.
@@ -56,6 +59,7 @@ export function RequestAnswerButtons({ username, onAnswered, className }: Reques
       <Button
         size="sm"
         variant="outline"
+        tabIndex={tabIndex}
         disabled={pending}
         onClick={(event) => void answer(event, false)}
         className="**:text-inherit!"

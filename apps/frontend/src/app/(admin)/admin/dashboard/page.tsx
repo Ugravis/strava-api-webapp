@@ -1,4 +1,5 @@
 import { type ReactNode, Suspense } from "react";
+import { ViewPending, ViewPendingProvider } from "@/components/admin/site-activity/view-controls";
 import { requireAdminMember } from "@/lib/admin/access";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { DashboardAttention, DashboardAttentionSkeleton } from "./attention";
@@ -47,23 +48,29 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
         <DashboardKpis />
       </Suspense>
 
-      <BandTitle action={<TeamSwitch team={team} />}>{t("activity")}</BandTitle>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Suspense key={`activity-${team}`} fallback={<DashboardCardSkeleton chart />}>
-          <DashboardSiteActivity team={team} />
-        </Suspense>
-        <Suspense fallback={<DashboardCardSkeleton chart />}>
-          <DashboardSignups />
-        </Suspense>
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Suspense key={`pages-${team}`} fallback={<DashboardCardSkeleton rows={6} className="lg:col-span-2" />}>
-          <DashboardTopPages team={team} />
-        </Suspense>
-        <Suspense fallback={<DashboardCardSkeleton chart />}>
-          <DashboardSports />
-        </Suspense>
-      </div>
+      <ViewPendingProvider>
+        <BandTitle action={<TeamSwitch team={team} />}>{t("activity")}</BandTitle>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ViewPending fallback={<DashboardCardSkeleton chart />}>
+            <Suspense key={`activity-${team}`} fallback={<DashboardCardSkeleton chart />}>
+              <DashboardSiteActivity team={team} />
+            </Suspense>
+          </ViewPending>
+          <Suspense fallback={<DashboardCardSkeleton chart />}>
+            <DashboardSignups />
+          </Suspense>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <ViewPending fallback={<DashboardCardSkeleton rows={6} className="lg:col-span-2" />}>
+            <Suspense key={`pages-${team}`} fallback={<DashboardCardSkeleton rows={6} className="lg:col-span-2" />}>
+              <DashboardTopPages team={team} />
+            </Suspense>
+          </ViewPending>
+          <Suspense fallback={<DashboardCardSkeleton chart />}>
+            <DashboardSports />
+          </Suspense>
+        </div>
+      </ViewPendingProvider>
 
       <BandTitle>{t("exploration")}</BandTitle>
       <Suspense fallback={<DashboardKpisSkeleton />}>

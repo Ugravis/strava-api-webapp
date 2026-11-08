@@ -16,7 +16,13 @@ const ratioOf = (current: number, previous: number) => (previous > 0 ? (current 
 /** The four headline figures, each opening its page. */
 export async function DashboardKpis() {
   const t = getAdminTranslations("dashboard.kpis");
-  const [format, statistics, users, week] = await Promise.all([getFormatter(), dashboardData.statistics(), dashboardData.users(), dashboardData.week()]);
+  const [format, statistics, users, week, active] = await Promise.all([
+    getFormatter(),
+    dashboardData.statistics(),
+    dashboardData.users(),
+    dashboardData.week(),
+    dashboardData.activeUsers(false),
+  ]);
   const percent = (ratio: number) => format.number(ratio, { style: "percent", maximumFractionDigits: 0, signDisplay: "exceptZero" });
   const trend = (ratio: number | null) => (ratio === null ? null : { ratio, text: percent(ratio) });
   const none = t("unavailable");
@@ -47,6 +53,7 @@ export async function DashboardKpis() {
         value={week ? format.number(week.current.activeUsers) : none}
         trend={week ? trend(ratioOf(week.current.activeUsers, week.previous.activeUsers)) : null}
         detail={week && t("activeDetail", { value: format.number(week.previous.activeUsers) })}
+        spark={active?.newVsReturning.map((day) => day.new + day.returning)}
       />
       <KpiTile
         icon={ActivityIcon}

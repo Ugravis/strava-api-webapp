@@ -1,13 +1,12 @@
 import { ADMIN_SPORT_FAMILIES, ADMIN_STATISTICS_DAYS, type AdminSportFamily } from "@kilotrace/shared/admin";
-import Link from "next/link";
 import { getFormatter } from "next-intl/server";
+import { ViewToggle } from "@/components/admin/site-activity/view-controls";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
 import { DonutChart } from "@/components/admin/statistics/donut-chart";
 import type { SeriesColorName } from "@/components/admin/statistics/palette";
 import { TimeSeriesChart } from "@/components/admin/statistics/time-series-chart";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { cn } from "@/lib/utils";
 import { DASHBOARD_ACTIVITY_DAYS, dashboardData } from "./data";
 import { DashboardCard, DashboardUnavailable } from "./parts";
 
@@ -38,24 +37,7 @@ function ChartTotal({ value, label }: { value: string; label: string }) {
 /** Whether the team is counted, kept in `?team=` so that the choice is shared and survives a reload. */
 export function TeamSwitch({ team }: { team: boolean }) {
   const t = getAdminTranslations("dashboard.siteActivity");
-  return (
-    <div className="inline-flex self-start rounded-lg bg-muted p-0.5 text-xs font-medium" role="group" aria-label={t("teamSwitch")}>
-      {[false, true].map((value) => (
-        <Link
-          key={String(value)}
-          href={value ? `${adminRoutes.dashboard}?team=true` : adminRoutes.dashboard}
-          scroll={false}
-          aria-current={value === team ? "true" : undefined}
-          className={cn(
-            "rounded-md px-2.5 py-1 transition-colors",
-            value === team ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {t(value ? "withTeam" : "withoutTeam")}
-        </Link>
-      ))}
-    </div>
-  );
+  return <ViewToggle label={t("withTeam")} checked={team} href={team ? adminRoutes.dashboard : `${adminRoutes.dashboard}?team=true`} />;
 }
 
 /** Users active each day, new or back, with the pages they viewed. */

@@ -11,11 +11,11 @@ import { DatabaseIcon, FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
+import { DataTableSkeleton } from "@/components/admin/data-table";
 import { KpiGrid, KpiTile, KpiTileSkeleton, shareOf } from "@/components/admin/kpi-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/admin/api";
 import { formatBytes, formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -243,7 +243,7 @@ export function UploadsSkeleton() {
           <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
-      <Skeleton className="h-72 w-full rounded-xl" />
+      <DataTableSkeleton rows={5} />
     </div>
   );
 }
@@ -259,5 +259,5 @@ export async function DatabaseSection() {
 }
 
 export function DatabaseSkeleton() {
-  return <Skeleton className="h-96 w-full rounded-xl" aria-busy />;
+  return <DataTableSkeleton rows={10} />;
 }

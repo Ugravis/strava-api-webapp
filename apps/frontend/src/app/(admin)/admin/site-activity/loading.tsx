@@ -1,4 +1,5 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { SITE_ACTIVITY_TABS } from "@/components/admin/site-activity/tabs";
+import { TabsSkeleton, ViewHeaderSkeleton } from "@/components/admin/page-skeleton";
 import { SiteActivityKpisSkeleton } from "./kpis";
 import { SiteActivityTabSkeleton } from "./skeletons";
 
@@ -6,12 +7,9 @@ import { SiteActivityTabSkeleton } from "./skeletons";
 export default function AdminSiteActivityLoading() {
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-96 max-w-full" />
-      </div>
+      <ViewHeaderSkeleton toggles={2} />
       <SiteActivityKpisSkeleton />
-      <Skeleton className="h-10 w-full rounded-lg" />
+      <TabsSkeleton count={SITE_ACTIVITY_TABS.length} />
       <SiteActivityTabSkeleton />
     </>
   );

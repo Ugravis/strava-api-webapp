@@ -19,6 +19,7 @@ import { User } from '../../users/user.entity';
 import { toAuditUser } from '../common/audit-user';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 import { AdminAuditLog } from './admin-audit-log.entity';
+import { auditTargets } from './audit-targets';
 import type { AuditLogQueryDto } from './audit-log-query.dto';
 import { LAST_DAYS } from '../daily-series';
 
@@ -237,12 +238,11 @@ export class AdminAuditLogService {
         ...(row.targetType === 'user' && row.targetId ? [row.targetId] : []),
       ]),
     );
-    const users = new Map(
-      (userIds.size > 0
-        ? await this.users.findBy({ id: In([...userIds]) })
-        : []
-      ).map((user) => [user.id, user]),
-    );
+    const [found, targets] = await Promise.all([
+      userIds.size > 0 ? this.users.findBy({ id: In([...userIds]) }) : [],
+      auditTargets(this.entries.manager, rows),
+    ]);
+    const users = new Map(found.map((user) => [user.id, user]));
     return rows.map((row) => ({
       id: row.id,
       actor: row.actorId
@@ -255,6 +255,7 @@ export class AdminAuditLogService {
         row.targetType === 'user' && row.targetId
           ? toAuditUser(row.targetId, users.get(row.targetId))
           : null,
+      target: targets.get(row.id) ?? null,
       reason: row.reason,
       details: row.details,
       succeeded: row.succeeded,

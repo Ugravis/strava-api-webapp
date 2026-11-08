@@ -3,6 +3,7 @@
  * Client side only: import it from "use client" modules.
  */
 export { DataTable } from "./data-table";
+export { DataTableSkeleton } from "./skeleton";
 export type { DataTableColumn, DataTableConfig, DataTableFacet, DataTableGrouping, DataTableLayout, DataTableView, TableEntry, TableGroup, TablePage, TableMove, TableQuery, TableSort } from "./types";
 export {
   booleanColumn,

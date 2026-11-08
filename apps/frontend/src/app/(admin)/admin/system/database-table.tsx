@@ -28,7 +28,6 @@ import {
 import { useMemo } from "react";
 import {
   bytesColumn,
-  codeColumn,
   customColumn,
   type DataTableColumn,
   type DataTableConfig,
@@ -38,6 +37,7 @@ import {
   formatNumber,
   LinkCell,
   localTableSource,
+  lookColumn,
   numberColumn,
   textColumn,
 } from "@/components/admin/data-table";
@@ -54,6 +54,7 @@ import {
   type RowPanelControls,
   useRowPanel,
 } from "@/components/admin/detail";
+import { tableIcon } from "./table-icons";
 
 /** The tables shown by a table of another page of the back office (`adminRoutes` is server-only). */
 const ADMIN_PAGES: Record<string, { label: string; href: string }> = {
@@ -95,7 +96,13 @@ type Key =
   | "comment";
 
 const COLUMNS: Record<Key, DataTableColumn<AdminDatabaseTable>> = {
-  name: codeColumn({ id: "name", header: "Table", icon: <TableIcon />, sortable: true, locked: true, value: (table) => table.name, width: "max-w-64" }),
+  name: lookColumn({
+    id: "name",
+    header: "Table",
+    icon: <TableIcon />,
+    sortable: true,
+    value: (table) => ({ icon: tableIcon(table.id), name: table.name }),
+  }),
   schema: textColumn({ id: "schema", header: "Schéma", icon: <FolderIcon />, sortable: true, value: (table) => table.schema, muted: true }),
   page: customColumn({
     id: "page",
@@ -125,6 +132,13 @@ const COLUMNS: Record<Key, DataTableColumn<AdminDatabaseTable>> = {
 };
 
 const IDS = Object.keys(COLUMNS) as Key[];
+
+/** The view « Tableau », in this order; the others are extra, shown from « Colonnes ». */
+const TABLE_VIEW: Key[] = ["name", "rows", "totalBytes", "page", "columnsCount", "schema", "indexBytes", "foreignKeysCount", "referencedByCount", "lastVacuum"];
+const COMPACT_VIEW: Key[] = ["name", "rows", "totalBytes", "page"];
+const CARDS_VIEW: Key[] = ["name", "rows", "totalBytes", "page", "schema", "columnsCount"];
+/** The order of the columns of the config: that of the views first, then the extra ones. */
+const ORDERED: Key[] = [...TABLE_VIEW, ...IDS.filter((id) => !TABLE_VIEW.includes(id))];
 
 /** Read once per visit from the catalogs: served in pages by the browser. */
 const sourceOf = (tables: AdminDatabaseTable[]) =>
@@ -167,7 +181,12 @@ export function DatabaseTable({ tables }: { tables: AdminDatabaseTable[] }) {
       search: "Table, colonne ou commentaire",
       noun: (count) => (count > 1 ? "tables" : "table"),
       empty: { title: "Aucune table", description: "Les tables de la base apparaîtront ici." },
-      columns: IDS.map((id) => COLUMNS[id]),
+      columns: ORDERED.map((id) => COLUMNS[id]),
+      views: [
+        { id: "table", label: "Tableau", columns: TABLE_VIEW },
+        { id: "compact", label: "Compact", columns: COMPACT_VIEW },
+        { id: "cards", label: "Cartes", layout: "cards", columns: CARDS_VIEW },
+      ],
       defaultSort: { id: "totalBytes", desc: true },
       defaultFilters: { schema: ["public"] },
       facets: [
@@ -210,7 +229,7 @@ function TableDetail({ table, panel, known }: { table: AdminDatabaseTable; panel
     );
   return (
     <>
-      <DetailHeader media={<DetailMedia icon={<TableIcon />} />} title={table.name} subtitle={table.schema} />
+      <DetailHeader media={<DetailMedia icon={tableIcon(table.id)} />} title={table.name} subtitle={table.schema} />
       <DetailSection title="Table">
         <DetailColumnFields
           row={table}

@@ -23,7 +23,7 @@ export default async function AdminSystemPage() {
       {!can("system.maintenance") && !can("system.signups") && !can("system.showcase") && !can("system.uploads") && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
 
       {result.ok ? (
-        <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <MaintenanceCard maintenance={result.data.maintenance} canEdit={can("system.maintenance")} />
           <SwitchesCard status={result.data} can={can} />
         </div>

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { MAINTENANCE_DESCRIPTION_MAX_LENGTH, MAINTENANCE_TITLES, type MaintenanceBanner, type SystemStatusResponse } from "@kilotrace/shared";
 import {
   ADMIN_REASON_MAX_LENGTH,
@@ -6,7 +7,7 @@ import {
   type AdminDatabaseTable,
   type AdminUploadsAudit,
 } from "@kilotrace/shared/admin";
-import { FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { DatabaseIcon, FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
@@ -27,7 +28,7 @@ import { HeaviestTable, OrphansTable } from "./uploads-tables";
 export function MaintenanceCard({ maintenance, canEdit }: { maintenance: MaintenanceBanner | null; canEdit: boolean }) {
   const t = getAdminTranslations("system.maintenance");
   return (
-    <Card size="sm">
+    <Card size="sm" className="h-full">
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
         <CardDescription>{t("description")}</CardDescription>
@@ -112,7 +113,7 @@ export function SwitchesCard({ status, can }: { status: SystemStatusResponse; ca
     cancel,
   });
   return (
-    <Card size="sm">
+    <Card size="sm" className="h-full">
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
         <CardDescription>{t("description")}</CardDescription>
@@ -135,10 +136,13 @@ export function SwitchesCard({ status, can }: { status: SystemStatusResponse; ca
   );
 }
 
+/** Read by the figures and by the table of the page: once per request. */
+const databaseTables = cache(() => adminApi<AdminDatabaseTable[]>("/system/database").catch(() => null));
+
 /** Weight of the stored files, read from the storage on every visit: streamed apart. */
 export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
   const t = getAdminTranslations("system.uploads");
-  const result = await adminApi<AdminUploadsAudit>("/system/uploads").catch(() => null);
+  const [result, database] = await Promise.all([adminApi<AdminUploadsAudit>("/system/uploads").catch(() => null), databaseTables()]);
   if (!result?.ok) {
     return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>;
   }
@@ -148,7 +152,8 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <KpiGrid columns={3}>
+      <KpiGrid columns={4}>
+        <DatabaseTile tables={database?.ok ? database.data : null} />
         <KpiTile icon={FileImageIcon} color="blue" label={t("avatars")} value={formatBytes(avatars.bytes)} detail={t("files", { count: avatars.count })} gauge={shareOf(avatars.bytes, stored)} />
         <KpiTile icon={FileWarningIcon} color="aqua" label={t("orphans")} value={formatBytes(orphans.bytes)} detail={t("files", { count: orphans.count })} gauge={shareOf(orphans.bytes, stored)} />
         <KpiTile
@@ -209,11 +214,31 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+/** Weight of the tables of the database, indexes included. */
+function DatabaseTile({ tables }: { tables: AdminDatabaseTable[] | null }) {
+  const t = getAdminTranslations("system.database");
+  if (!tables) {
+    return <KpiTile icon={DatabaseIcon} color="yellow" label={t("weight")} value="—" detail={t("error")} />;
+  }
+  const total = tables.reduce((sum, table) => sum + table.totalBytes, 0);
+  const indexes = tables.reduce((sum, table) => sum + table.indexBytes, 0);
+  return (
+    <KpiTile
+      icon={DatabaseIcon}
+      color="yellow"
+      label={t("weight")}
+      value={formatBytes(total)}
+      detail={t("weightDetail", { count: tables.length, indexes: formatBytes(indexes) })}
+      gauge={shareOf(indexes, total)}
+    />
+  );
+}
+
 export function UploadsSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy>
-      <KpiGrid columns={3}>
-        {Array.from({ length: 3 }, (_, index) => (
+      <KpiGrid columns={4}>
+        {Array.from({ length: 4 }, (_, index) => (
           <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
@@ -225,7 +250,7 @@ export function UploadsSkeleton() {
 /** The tables of the database, read from the catalogs on every visit: streamed apart. */
 export async function DatabaseSection() {
   const t = getAdminTranslations("system.database");
-  const result = await adminApi<AdminDatabaseTable[]>("/system/database").catch(() => null);
+  const result = await databaseTables();
   if (!result?.ok) {
     return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>;
   }

@@ -28,7 +28,7 @@ export function SiteSwitch({ checked, action, canEdit, texts }: { checked: boole
         <span className="block text-sm font-medium">{texts.label}</span>
         <span className="block text-sm text-muted-foreground">{texts.description}</span>
       </label>
-      <Switch id={id} checked={checked} disabled={!canEdit} onCheckedChange={() => setOpen(true)} className="mt-0.5" />
+      <Switch id={id} checked={checked} disabled={!canEdit} onCheckedChange={() => setOpen(true)} className="mt-0.5 data-unchecked:bg-destructive dark:data-unchecked:bg-destructive" />
       <ActionDialog
         action={action}
         open={open}

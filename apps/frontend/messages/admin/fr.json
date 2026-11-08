@@ -808,8 +808,8 @@
       }
     },
     "uploads": {
-      "title": "Audit des fichiers",
-      "description": "Poids des images importées par les utilisateurs dans le stockage.",
+      "title": "Audit du stockage",
+      "description": "Poids de la base de données et des images importées par les utilisateurs dans le stockage.",
       "error": "Le stockage est injoignable pour le moment.",
       "avatars": "Avatars",
       "orphans": "Orphelins",
@@ -833,7 +833,9 @@
     "database": {
       "title": "Tables de la base",
       "description": "Toutes les tables de PostgreSQL, lues dans ses catalogues, en lecture seule. Les lignes sont une estimation de Postgres ; l'activité court depuis le dernier reset de ses statistiques.",
-      "error": "Impossible de lire les tables de la base pour le moment."
+      "error": "Impossible de lire les tables de la base pour le moment.",
+      "weight": "Base de données",
+      "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index"
     }
   },
   "team": {

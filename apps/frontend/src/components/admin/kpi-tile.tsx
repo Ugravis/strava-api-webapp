@@ -174,3 +174,38 @@ function Sparkline({ values, color, fromMin }: { values: number[]; color: Series
     </svg>
   );
 }
+
+/** The secondary figures of a page, under its tiles: small cards, five abreast on a wide page. */
+export function KpiStrip({ children }: { children: ReactNode }) {
+  return (
+    <div className="@container">
+      <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-5 @lg:gap-4 [&>*:last-child:nth-child(odd)]:col-span-2 @2xl:[&>*:last-child:nth-child(odd)]:col-span-1">{children}</div>
+    </div>
+  );
+}
+
+/** A secondary figure on two lines: its label, then its value followed by its detail. */
+export function KpiStripFigure({ label, value, detail }: { label: string; value: ReactNode; detail?: ReactNode }) {
+  return (
+    <Card className="min-w-0 gap-0.5 px-3.5 py-2.5">
+      <span className="truncate text-xs text-muted-foreground" title={label}>
+        {label}
+      </span>
+      <span className="flex min-w-0 items-baseline gap-1.5">
+        <span className="shrink-0 text-base font-semibold tracking-tight tabular-nums">{value}</span>
+        {detail && <span className="min-w-0 truncate text-[11px] text-muted-foreground">{detail}</span>}
+      </span>
+    </Card>
+  );
+}
+
+/** Stands for the strip while its data loads. */
+export function KpiStripSkeleton() {
+  return (
+    <KpiStrip>
+      {Array.from({ length: 5 }, (_, index) => (
+        <Skeleton key={index} className="h-15 rounded-xl" />
+      ))}
+    </KpiStrip>
+  );
+}

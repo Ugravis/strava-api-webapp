@@ -1,11 +1,7 @@
 import { ActivityIcon, MapPinnedIcon, RouteIcon, UsersIcon } from "lucide-react";
 import { getBusinessFormat } from "@/components/admin/business-statistics/business-format";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
-import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
-import { STRIP, StripFigure } from "../site-activity/kpis";
+import { KpiGrid, KpiStrip, KpiStripFigure, KpiStripSkeleton, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 import { type BusinessView, businessStatistics, viewHref } from "./data";
 
 /** The headline figures of the period against the one before, each opening its tab; then the ratios. */
@@ -62,13 +58,13 @@ export async function BusinessKpis({ view }: { view: BusinessView }) {
           spark={series.distanceM}
         />
       </KpiGrid>
-      <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
-        <StripFigure label={t("connectionRate")} value={format.percent(format.ratio(connected, accounts), 0)} detail={t("connectionRateDetail", { connected, accounts })} />
-        <StripFigure label={t("perAthlete")} value={perAthlete(activities.current)} detail={t("perAthleteDetail", { distance: format.km(athletes.current > 0 ? distanceM.current / athletes.current : 0) })} />
-        <StripFigure label={t("moving")} value={format.hours(movingS.current)} detail={previousOf(movingS.previous === null ? null : format.hours(movingS.previous))} />
-        <StripFigure label={t("elevation")} value={format.meters(elevationM.current)} detail={previousOf(elevationM.previous === null ? null : format.meters(elevationM.previous))} />
-        <StripFigure label={t("discoveries")} value={format.number(discoveries.current)} detail={previousNumber(discoveries.previous)} />
-      </Card>
+      <KpiStrip>
+        <KpiStripFigure label={t("connectionRate")} value={format.percent(format.ratio(connected, accounts), 0)} detail={t("connectionRateDetail", { connected, accounts })} />
+        <KpiStripFigure label={t("perAthlete")} value={perAthlete(activities.current)} detail={t("perAthleteDetail", { distance: format.km(athletes.current > 0 ? distanceM.current / athletes.current : 0) })} />
+        <KpiStripFigure label={t("moving")} value={format.hours(movingS.current)} detail={previousOf(movingS.previous === null ? null : format.hours(movingS.previous))} />
+        <KpiStripFigure label={t("elevation")} value={format.meters(elevationM.current)} detail={previousOf(elevationM.previous === null ? null : format.meters(elevationM.previous))} />
+        <KpiStripFigure label={t("discoveries")} value={format.number(discoveries.current)} detail={previousNumber(discoveries.previous)} />
+      </KpiStrip>
     </div>
   );
 }
@@ -81,7 +77,7 @@ export function BusinessKpisSkeleton() {
           <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
-      <Skeleton className="h-22 w-full rounded-xl" />
+      <KpiStripSkeleton />
     </div>
   );
 }

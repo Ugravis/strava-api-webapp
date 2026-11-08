@@ -7,6 +7,7 @@ const KNOWN_DEFAULTS = new Set([
   'development-cookie-secret',
   'development-encryption-secret',
   'development-webhook-verify-token',
+  'development-admin-gateway-secret',
 ]);
 
 /** Secrets that must be long random strings in production. */
@@ -14,6 +15,7 @@ const STRONG_SECRETS = [
   'COOKIE_SECRET',
   'ENCRYPTION_SECRET',
   'STRAVA_WEBHOOK_VERIFY_TOKEN',
+  'ADMIN_GATEWAY_SECRET',
 ] as const;
 
 /** Credentials of the bundled services, which only need to be non-default. */
@@ -56,8 +58,10 @@ export function validateEnvironment(
         );
       }
     }
-    if (!read('FRONTEND_URL').startsWith('https://')) {
-      errors.push('FRONTEND_URL must be an https:// URL');
+    for (const name of ['FRONTEND_URL', 'ADMIN_URL']) {
+      if (!read(name).startsWith('https://')) {
+        errors.push(`${name} must be an https:// URL`);
+      }
     }
   }
 

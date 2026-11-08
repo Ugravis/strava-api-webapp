@@ -4,9 +4,11 @@ const secret = 'a'.repeat(32);
 const production = {
   NODE_ENV: 'production',
   FRONTEND_URL: 'https://kilotrace.app',
+  ADMIN_URL: 'https://admin.kilotrace.app',
   COOKIE_SECRET: secret,
   ENCRYPTION_SECRET: secret,
   STRAVA_WEBHOOK_VERIFY_TOKEN: secret,
+  ADMIN_GATEWAY_SECRET: secret,
   DB_PASSWORD: 'db-password',
   S3_ACCESS_KEY: 's3-access-key',
   S3_SECRET_KEY: 's3-secret-key',
@@ -52,5 +54,23 @@ describe('validateEnvironment', () => {
     expect(() =>
       validateEnvironment({ STRAVA_WEBHOOK_VERIFY_TOKEN: 'a/b' }),
     ).toThrow('STRAVA_WEBHOOK_VERIFY_TOKEN may only contain');
+  });
+
+  it('requires the gateway secret of the back office and its https URL in production', () => {
+    expect(() =>
+      validateEnvironment({ ...production, ADMIN_GATEWAY_SECRET: undefined }),
+    ).toThrow('ADMIN_GATEWAY_SECRET');
+    expect(() =>
+      validateEnvironment({
+        ...production,
+        ADMIN_GATEWAY_SECRET: 'development-admin-gateway-secret',
+      }),
+    ).toThrow('ADMIN_GATEWAY_SECRET');
+    expect(() =>
+      validateEnvironment({
+        ...production,
+        ADMIN_URL: 'http://admin.kilotrace.app',
+      }),
+    ).toThrow('ADMIN_URL');
   });
 });

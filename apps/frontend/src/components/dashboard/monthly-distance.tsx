@@ -2,7 +2,7 @@
 
 import { BarChart3Icon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { type PointerEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
@@ -15,17 +15,38 @@ import { niceStep } from "@kilotrace/ui/components/dashboard/evolution-chart";
 
 const FAMILIES: readonly MonthlyFamily[] = ["ride", "run", "hike", "swim", "other"];
 
-/** Color of the curve of each family: categorical hues in a fixed order, the other sports in grey. */
-const FAMILY_CLASS: Record<MonthlyFamily, { stroke: string; swatch: string }> = {
-  ride: { stroke: "stroke-[#2a78d6] dark:stroke-[#3987e5]", swatch: "bg-[#2a78d6] dark:bg-[#3987e5]" },
-  run: { stroke: "stroke-[#eb6834] dark:stroke-[#d95926]", swatch: "bg-[#eb6834] dark:bg-[#d95926]" },
-  hike: { stroke: "stroke-[#1baf7a] dark:stroke-[#199e70]", swatch: "bg-[#1baf7a] dark:bg-[#199e70]" },
-  swim: { stroke: "stroke-[#eda100] dark:stroke-[#c98500]", swatch: "bg-[#eda100] dark:bg-[#c98500]" },
-  other: { stroke: "stroke-muted-foreground", swatch: "bg-muted-foreground" },
-};
+/** Green of the most practiced family, akin to the bars of the week chart. */
+const LEADING_CLASS = "bg-green-500";
+/** Colors of the next families by rank, away from the green and the violet of the curves. */
+const RANK_CLASSES = ["bg-blue-500", "bg-orange-500", "bg-amber-500", "bg-rose-500"];
+/** The other sports stay grey unless they lead. */
+const OTHER_CLASS = "bg-foreground/15";
 
-const HEIGHT = 260;
-const MARGIN = { top: 16, right: 16, bottom: 24, left: 56 };
+/** Color of each family, by its distance over the period: the most practiced one in green. */
+function familyColors(ranked: MonthlyFamily[]): Record<MonthlyFamily, string> {
+  const colors = Object.fromEntries(FAMILIES.map((family) => [family, OTHER_CLASS])) as Record<MonthlyFamily, string>;
+  let rank = 0;
+  ranked.forEach((family, index) => {
+    if (index === 0) colors[family] = LEADING_CLASS;
+    else if (family !== "other") colors[family] = RANK_CLASSES[rank++ % RANK_CLASSES.length];
+  });
+  return colors;
+}
+
+/** Past years drawn as dashed curves, the closest one the most marked. */
+const HISTORY_YEARS = [1, 2] as const;
+const HISTORY_CLASS: Record<(typeof HISTORY_YEARS)[number], { curve: string; dot: string; swatch: string }> = {
+  1: {
+    curve: "text-violet-700 dark:text-violet-400",
+    dot: "bg-violet-700 dark:bg-violet-400",
+    swatch: "border-violet-700 dark:border-violet-400",
+  },
+  2: {
+    curve: "text-violet-700/35 dark:text-violet-400/40",
+    dot: "bg-violet-300 dark:bg-violet-400/50",
+    swatch: "border-violet-700/35 dark:border-violet-400/40",
+  },
+};
 
 const EMPTY_FAMILIES: Record<MonthlyFamily, number> = { ride: 0, run: 0, hike: 0, swim: 0, other: 0 };
 
@@ -37,8 +58,8 @@ const monthKey = (index: number) => `${Math.floor(index / 12)}-${String((index %
 
 /**
  * Distance of each month, from the current one back a year, or of a past
- * calendar year with the arrows: the total as the main curve, each family of
- * sports as a thinner one, the same months a year earlier in grey.
+ * calendar year with the arrows: each family of sports stacked in the bar of
+ * its month, the same months of the three years before as curves.
  */
 export function MonthlyDistance({ version }: { version: string }) {
   const t = useTranslations("dashboard.monthly");
@@ -51,7 +72,7 @@ export function MonthlyDistance({ version }: { version: string }) {
   const [year, setYear] = useState<number | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<MonthlyFamily>>(new Set());
 
-  const { yearMonths, previousMonths } = useMemo(() => {
+  const { yearMonths, history } = useMemo(() => {
     const byMonth = new Map((months ?? []).map((month) => [month.month, month]));
     const monthAt = (index: number): MonthDistance =>
       byMonth.get(monthKey(index)) ?? { month: monthKey(index), distanceM: 0, families: EMPTY_FAMILIES };
@@ -59,15 +80,20 @@ export function MonthlyDistance({ version }: { version: string }) {
     const count = year === null ? ROLLING_MONTHS : 12;
     return {
       yearMonths: Array.from({ length: count }, (_, index) => monthAt(first + index)),
-      previousMonths: Array.from({ length: count }, (_, index) => monthAt(first + index - 12)),
+      history: HISTORY_YEARS.map((years) =>
+        Array.from({ length: count }, (_, index) => monthAt(first + index - 12 * years)),
+      ),
     };
   }, [months, year, currentYear, now]);
   // Families practiced during the year, those hidden from the legend apart.
   const practiced = FAMILIES.filter((family) => yearMonths.some((month) => month.families[family] > 0));
+  const distanceOf = (family: MonthlyFamily) => yearMonths.reduce((sum, month) => sum + month.families[family], 0);
+  const colors = familyColors(practiced.toSorted((a, b) => distanceOf(b) - distanceOf(a)));
   const total = yearMonths.reduce((sum, month) => sum + month.distanceM, 0);
 
   return (
-    <Card>
+    // The tooltip of the chart may rise above the card.
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle className="flex items-center gap-1.5">
           <BarChart3Icon className="size-4 text-muted-foreground" aria-hidden />
@@ -103,14 +129,6 @@ export function MonthlyDistance({ version }: { version: string }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <ul className="flex min-h-8 flex-wrap gap-2" aria-label={t("legend")}>
-          <li className="flex h-8 items-center gap-1.5 px-1 text-sm font-medium">
-            <span className="h-0.75 w-3.5 rounded-full bg-foreground" aria-hidden />
-            {t("total")}
-          </li>
-          <li className="flex h-8 items-center gap-1.5 px-1 text-sm text-muted-foreground">
-            <span className="h-0.5 w-3.5 rounded-full bg-muted-foreground/50" aria-hidden />
-            {t("previousYearCurve")}
-          </li>
           {practiced.map((family) => (
             <li key={family}>
               <Button
@@ -128,7 +146,7 @@ export function MonthlyDistance({ version }: { version: string }) {
                 }
               >
                 <span
-                  className={cn("h-0.5 w-3 rounded-full", FAMILY_CLASS[family].swatch, hidden.has(family) && "opacity-30")}
+                  className={cn("h-2.5 w-1.5 rounded-full", colors[family], hidden.has(family) && "opacity-30")}
                   aria-hidden
                 />
                 <span className={cn(hidden.has(family) && "text-muted-foreground line-through")}>
@@ -141,12 +159,13 @@ export function MonthlyDistance({ version }: { version: string }) {
         {error && !months ? (
           <p className="text-sm text-muted-foreground">{t("error")}</p>
         ) : !months ? (
-          <Skeleton style={{ height: HEIGHT }} />
+          <Skeleton className="h-64" />
         ) : (
           <MonthlyChart
             months={yearMonths}
-            previous={previousMonths}
+            history={history}
             families={practiced.filter((family) => !hidden.has(family))}
+            colors={colors}
           />
         )}
       </CardContent>
@@ -159,188 +178,196 @@ const dateOfMonth = (month: string) => new Date(`${month}-01T12:00:00`);
 
 interface MonthlyChartProps {
   months: MonthDistance[];
-  /** The same months a year earlier. */
-  previous: MonthDistance[];
+  /** The same months one and two years earlier. */
+  history: MonthDistance[][];
   families: MonthlyFamily[];
+  colors: Record<MonthlyFamily, string>;
 }
 
-/** The curves of the months, a slot each; pointed at, the figures of a month. */
-function MonthlyChart({ months, previous, families }: MonthlyChartProps) {
+/** The families of each month stacked in its bar, under the dashed curves of the years before. */
+function MonthlyChart({ months, history, families, colors }: MonthlyChartProps) {
   const t = useTranslations("dashboard.monthly");
   const format = useFormatter();
-  const container = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
   const chart = useRef<HTMLDivElement>(null);
   const { pointed, point, leave } = usePointed<number>(chart);
 
-  // Measured before the first paint, so that the chart never shows empty.
-  useLayoutEffect(() => {
-    const element = container.current;
-    if (!element) return;
-    setWidth(element.getBoundingClientRect().width);
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  const plotWidth = Math.max(width - MARGIN.left - MARGIN.right, 1);
-  const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
-  const slot = plotWidth / months.length;
-  const maxKm = Math.max(...months.map((month) => month.distanceM), ...previous.map((month) => month.distanceM), 1) / 1000;
-  const step = niceStep(maxKm);
-  const high = Math.ceil(maxKm / step) * step;
-
-  const x = (index: number) => MARGIN.left + (index + 0.5) * slot;
-  const y = (meters: number) => MARGIN.top + (1 - meters / 1000 / high) * plotHeight;
+  // Only the shown families count, the past years included: like is compared with like.
+  const shown = (month: MonthDistance) => families.reduce((sum, family) => sum + month.families[family], 0);
+  const max = Math.max(...months.map(shown), ...history.flat().map(shown), 1);
+  const step = niceStep(max / 1000) * 1000;
+  const high = Math.ceil(max / step) * step;
+  const share = (meters: number) => (meters / high) * 100;
   const km = (meters: number) =>
     format.number(meters / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 });
-  const curve = (value: (month: MonthDistance) => number, of: MonthDistance[] = months) =>
-    monotonePath(of.map((month, index): [number, number] => [x(index), y(value(month))]));
-  const totalCurve = curve((month) => month.distanceM);
-  const pointedMonth = pointed === null ? null : months[pointed];
-
-  const pointMonth = (event: PointerEvent<SVGSVGElement>) => {
-    const left = event.currentTarget.getBoundingClientRect().left;
-    const index = Math.floor((event.clientX - left - MARGIN.left) / slot);
-    point(event, index >= 0 && index < months.length ? index : null);
-  };
+  const short = (meters: number) => format.number(meters / 1000, { maximumFractionDigits: 0 });
+  const spansYears = months[0].month.slice(0, 4) !== months[months.length - 1].month.slice(0, 4);
+  const columns = { gridTemplateColumns: `repeat(${months.length}, minmax(0, 1fr))` };
 
   return (
-    <div ref={chart} className="relative w-full select-none">
-      <div ref={container} style={{ height: HEIGHT }}>
-        {width > 0 && (
-          <svg
-            role="img"
-            aria-label={t("label")}
-            width={width}
-            height={HEIGHT}
-            className="block"
-            onPointerDown={pointMonth}
-            onPointerMove={pointMonth}
-            onPointerLeave={leave}
-          >
-            {Array.from({ length: Math.round(high / step) + 1 }, (_, index) => index * step).map((value) => (
-              <g key={value}>
-                <line
-                  x1={MARGIN.left}
-                  x2={MARGIN.left + plotWidth}
-                  y1={y(value * 1000)}
-                  y2={y(value * 1000)}
-                  className="stroke-border"
-                  strokeDasharray={value === 0 ? undefined : "2 3"}
-                />
-                <text
-                  x={MARGIN.left - 8}
-                  y={y(value * 1000)}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                  className="fill-muted-foreground text-[10px] tabular-nums"
-                >
-                  {km(value * 1000)}
-                </text>
-              </g>
-            ))}
-            {months.map((month, index) => (
-              <text
-                key={month.month}
-                x={x(index)}
-                y={HEIGHT - 6}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[10px] capitalize"
-              >
-                {format.dateTime(
-                  dateOfMonth(month.month),
-                  // The year where it changes, when the months span two.
-                  months[0].month.slice(0, 4) !== months[months.length - 1].month.slice(0, 4) &&
-                    (index === 0 || month.month.endsWith("-01"))
-                    ? { month: "short", year: "2-digit" }
-                    : { month: "short" },
-                )}
-              </text>
-            ))}
-            {pointed !== null && (
-              <rect
-                x={MARGIN.left + pointed * slot}
-                y={MARGIN.top}
-                width={slot}
-                height={plotHeight}
-                className="fill-foreground/5"
-              />
-            )}
-            {months.length > 1 && (
-              <path
-                d={`${totalCurve} L ${x(months.length - 1)} ${y(0)} L ${x(0)} ${y(0)} Z`}
-                className="fill-foreground/5"
-              />
-            )}
-            <path
-              d={curve((month) => month.distanceM, previous)}
-              fill="none"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              className="stroke-muted-foreground/40"
-            />
-            {families.map((family) => (
-              <path
-                key={family}
-                d={curve((month) => month.families[family])}
-                fill="none"
-                strokeWidth={2}
-                strokeLinecap="round"
-                className={FAMILY_CLASS[family].stroke}
-              />
-            ))}
-            <path d={totalCurve} fill="none" strokeWidth={3} strokeLinecap="round" className="stroke-foreground" />
-            {months.map((month, index) => (
-              <circle
-                key={month.month}
-                cx={x(index)}
-                cy={y(month.distanceM)}
-                r={pointed === index ? 5 : 3}
-                strokeWidth={2}
-                className="fill-foreground stroke-card"
-              />
-            ))}
-          </svg>
-        )}
-      </div>
-      {pointedMonth && pointed !== null && (
-        <div
-          role="tooltip"
-          className={cn(
-            "pointer-events-none absolute top-2 z-10 flex min-w-44 flex-col gap-0.5 rounded-lg bg-popover px-2.5 py-2 text-xs whitespace-nowrap text-popover-foreground shadow-md ring-1 ring-foreground/10",
-            // Beside its month, on the side with more room.
-            x(pointed) > width / 2 ? "-translate-x-[calc(100%+16px)]" : "translate-x-4",
-          )}
-          style={{ left: x(pointed) }}
-        >
-          <span className="font-medium first-letter:uppercase">
-            {format.dateTime(dateOfMonth(pointedMonth.month), { month: "long", year: "numeric" })}
-          </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-0.75 w-3 rounded-full bg-foreground" />
-            {t("total")}
-            <span className="ml-auto pl-3 font-semibold text-foreground tabular-nums">{km(pointedMonth.distanceM)}</span>
-          </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-0.5 w-3 rounded-full bg-muted-foreground/50" />
-            {t("previousYearCurve")}
-            <span className="ml-auto pl-3 tabular-nums">{km(previous[pointed].distanceM)}</span>
-          </span>
-          {families
-            .filter((family) => pointedMonth.families[family] > 0)
-            .sort((a, b) => pointedMonth.families[b] - pointedMonth.families[a])
-            .map((family) => (
-              <span key={family} className="flex items-center gap-1.5 text-muted-foreground">
-                <span className={cn("h-0.5 w-3 rounded-full", FAMILY_CLASS[family].swatch)} />
-                {t(`families.${family}`)}
-                <span className="ml-auto pl-3 font-medium text-foreground tabular-nums">
-                  {km(pointedMonth.families[family])}
-                </span>
+    <div className="flex flex-col gap-2">
+      <div ref={chart} className="relative ml-12" onPointerLeave={leave}>
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-5 bottom-0">
+          {Array.from({ length: Math.round(high / step) + 1 }, (_, index) => index * step).map((value) => (
+            <div
+              key={value}
+              className={cn("absolute inset-x-0 border-t", value === 0 ? "border-border" : "border-dashed border-border/70")}
+              style={{ bottom: `${share(value)}%` }}
+            >
+              <span className="absolute right-full -translate-y-1/2 pr-2 text-[10px] whitespace-nowrap text-muted-foreground tabular-nums">
+                {km(value)}
               </span>
-            ))}
+            </div>
+          ))}
         </div>
-      )}
+        <ol className="relative grid h-56 gap-1 pt-5" style={columns} aria-label={t("label")}>
+          {months.map((month, index) => {
+            const total = shown(month);
+            const stacked = families.filter((family) => month.families[family] > 0);
+            return (
+              <li
+                key={month.month}
+                aria-label={`${format.dateTime(dateOfMonth(month.month), { month: "long", year: "numeric" })} : ${km(total)}`}
+                onPointerEnter={(event) => point(event, index)}
+                onPointerDown={(event) => point(event, index)}
+                className="relative flex items-end justify-center"
+              >
+                {pointed === index && <div className="absolute inset-x-0 -top-5 bottom-0 rounded-md bg-foreground/4" />}
+                {total > 0 && (
+                  <>
+                    <div
+                      className="relative flex w-4 flex-col-reverse gap-px overflow-hidden sm:w-7 lg:w-9 transition-[height] duration-700 ease-out"
+                      style={{ height: `${share(total)}%` }}
+                    >
+                      {stacked.map((family) => (
+                        <div
+                          key={family}
+                          className={cn("min-h-px", colors[family])}
+                          style={{ height: `${(month.families[family] / total) * 100}%` }}
+                        />
+                      ))}
+                    </div>
+                    <span
+                      className="absolute left-1/2 hidden -translate-x-1/2 text-[9px] text-muted-foreground tabular-nums sm:block"
+                      style={{ bottom: `calc(${share(total)}% + 2px)` }}
+                    >
+                      {short(total)}
+                    </span>
+                  </>
+                )}
+                {pointed === index &&
+                  HISTORY_YEARS.map((years) => (
+                    <span
+                      key={years}
+                      className={cn(
+                        "pointer-events-none absolute left-1/2 z-[1] size-2 -translate-x-1/2 translate-y-1/2 rounded-full ring-2 ring-card",
+                        HISTORY_CLASS[years].dot,
+                      )}
+                      style={{ bottom: `${share(shown(history[years - 1][index]))}%` }}
+                    />
+                  ))}
+                {pointed === index && (
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 z-10 flex min-w-40 -translate-x-1/2 flex-col gap-0.5 rounded-lg bg-popover px-2.5 py-2 text-xs whitespace-nowrap text-popover-foreground shadow-md ring-1 ring-foreground/10"
+                    // Above the taller of its bar, its label and its curves.
+                    style={{
+                      bottom: `calc(${share(Math.max(total, ...history.map((year) => shown(year[index]))))}% + 16px)`,
+                    }}
+                  >
+                    <span className="font-medium first-letter:uppercase">
+                      {format.dateTime(dateOfMonth(month.month), { month: "long", year: "numeric" })}
+                    </span>
+                    {stacked
+                      .toSorted((a, b) => month.families[b] - month.families[a])
+                      .map((family) => (
+                        <TooltipRow
+                          key={family}
+                          swatch={cn("h-2.5 w-1.5 rounded-full", colors[family])}
+                          label={t(`families.${family}`)}
+                        >
+                          {km(month.families[family])}
+                        </TooltipRow>
+                      ))}
+                    {stacked.length > 1 && (
+                      <TooltipRow swatch="w-1.5" label={t("total")}>
+                        {km(total)}
+                      </TooltipRow>
+                    )}
+                    <span className="my-1 h-px bg-border" />
+                    {HISTORY_YEARS.map((years) => (
+                      <TooltipRow
+                        key={years}
+                        swatch={cn("w-3 border-t-[1.5px] border-dashed", HISTORY_CLASS[years].swatch)}
+                        label={t("yearsEarlier", { count: years })}
+                      >
+                        {km(shown(history[years - 1][index]))}
+                      </TooltipRow>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <svg
+          aria-hidden
+          viewBox={`0 0 ${months.length * 100} 100`}
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute inset-x-0 top-5 bottom-0 h-[calc(100%-1.25rem)] w-full overflow-visible"
+        >
+          {[...HISTORY_YEARS].reverse().map((years) => (
+            <path
+              key={years}
+              d={monotonePath(
+                history[years - 1].map((month, index): [number, number] => [index * 100 + 50, 100 - share(shown(month))]),
+              )}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              className={HISTORY_CLASS[years].curve}
+            />
+          ))}
+        </svg>
+      </div>
+      <ol className="ml-12 grid gap-1" style={columns} aria-hidden>
+        {months.map((month, index) => (
+          <li
+            key={month.month}
+            className={cn(
+              "truncate text-center text-[11px] text-muted-foreground capitalize",
+              pointed === index && "font-semibold text-foreground",
+            )}
+          >
+            {format.dateTime(
+              dateOfMonth(month.month),
+              // The year where it changes, when the months span two.
+              spansYears && (index === 0 || month.month.endsWith("-01")) ? { month: "short", year: "2-digit" } : { month: "short" },
+            )}
+          </li>
+        ))}
+      </ol>
+      <ul className="flex flex-wrap justify-end gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        {HISTORY_YEARS.map((years) => (
+          <li key={years} className="flex items-center gap-1.5">
+            <span className={cn("w-3 border-t-[1.5px] border-dashed", HISTORY_CLASS[years].swatch)} />
+            {t("yearsEarlier", { count: years })}
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+}
+
+/** A line of the tooltip of the chart: the mark of a series, its name and its value. */
+function TooltipRow({ swatch, label, children }: { swatch: string; label: string; children: ReactNode }) {
+  return (
+    <span className="flex items-center gap-1.5 text-muted-foreground">
+      <span className={swatch} />
+      {label}
+      <span className="ml-auto pl-3 font-medium text-foreground tabular-nums">{children}</span>
+    </span>
   );
 }

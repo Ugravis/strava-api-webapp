@@ -13,6 +13,10 @@ export class SystemSettings {
   @Column({ name: 'signups_enabled', type: 'boolean', default: true })
   signupsEnabled!: boolean;
 
+  /** Tiles, stations and pinned badges shown on the profiles to other users. */
+  @Column({ name: 'profile_showcase_enabled', type: 'boolean', default: true })
+  profileShowcaseEnabled!: boolean;
+
   /** Null while no banner is shown. */
   @Column({
     name: 'maintenance_title',

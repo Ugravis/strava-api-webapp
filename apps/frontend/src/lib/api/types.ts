@@ -581,6 +581,8 @@ export interface PublicProfile extends ProfileSummary {
   requestedViewer: boolean;
   /** Whether it is the profile of the current user. */
   self: boolean;
+  /** Whether showcases are shown on the profiles, so that a disabled one is never told. */
+  showcaseEnabled: boolean;
   /** Null when hidden, or when showcases are disabled. */
   showcase: ProfileShowcase | null;
 }

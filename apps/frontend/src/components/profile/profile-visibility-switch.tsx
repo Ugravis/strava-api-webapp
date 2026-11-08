@@ -27,6 +27,8 @@ interface ProfileVisibilitySwitchProps {
   onChange?: (isPrivate: boolean) => void;
   /** A labelled switch, or a lock alone, closed while private. */
   variant?: "switch" | "lock";
+  /** Whether showcases are shown on the profiles: the dialog never tells of a disabled one. */
+  showcase?: boolean;
   className?: string;
 }
 
@@ -35,7 +37,7 @@ interface ProfileVisibilitySwitchProps {
  * a dialog telling what changes. Turning it public accepts the pending follow
  * requests.
  */
-export function ProfileVisibilitySwitch({ onChange, variant = "switch", className }: ProfileVisibilitySwitchProps) {
+export function ProfileVisibilitySwitch({ onChange, variant = "switch", showcase = true, className }: ProfileVisibilitySwitchProps) {
   const t = useTranslations("profile.visibility");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
@@ -95,7 +97,7 @@ export function ProfileVisibilitySwitch({ onChange, variant = "switch", classNam
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t(`confirm.${mode}.title`)}</AlertDialogTitle>
-            <AlertDialogDescription>{t(`confirm.${mode}.description`)}</AlertDialogDescription>
+            <AlertDialogDescription>{t(showcase ? `confirm.${mode}.description` : `confirm.${mode}.descriptionNoShowcase`)}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>

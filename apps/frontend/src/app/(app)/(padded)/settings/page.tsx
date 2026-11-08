@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -10,21 +9,22 @@ import { PasswordSettings } from "@/components/settings/password-settings";
 import { PrivacySettings } from "@/components/settings/privacy-settings";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 import { StravaConnectFeedback } from "@/components/strava/strava-connect-feedback";
+import { profileShowcaseEnabled } from "@/lib/system/status";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("settings");
   return { title: t("title") };
 }
 
-export default function SettingsPage() {
-  const t = useTranslations("settings");
+export default async function SettingsPage() {
+  const [t, showcase] = await Promise.all([getTranslations("settings"), profileShowcaseEnabled()]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 py-2 sm:py-4">
       <PageHeader title={t("title")} description={t("description")} />
       <AvatarSettings />
       <ProfileSettings />
-      <PrivacySettings />
+      <PrivacySettings showcase={showcase} />
       <Suspense>
         <StravaConnectFeedback />
       </Suspense>

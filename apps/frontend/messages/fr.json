@@ -335,7 +335,8 @@
     "locked": {
       "title": "Ce profil est privé",
       "description": "Abonnez-vous à {name} pour voir ses badges et ses statistiques.",
-      "requested": "Votre demande d'abonnement est en attente."
+      "requested": "Votre demande d'abonnement est en attente.",
+      "descriptionNoShowcase": "Abonnez-vous à {name} pour voir ses abonnements."
     },
     "showcase": {
       "railway": "Voies",
@@ -356,12 +357,14 @@
         "private": {
           "title": "Passer votre profil en privé ?",
           "description": "Seuls vos abonnés verront vos badges épinglés, vos statistiques et vos abonnements. Les nouveaux abonnés devront être acceptés. Votre nom, votre bio et vos tags restent visibles.",
-          "action": "Passer en privé"
+          "action": "Passer en privé",
+          "descriptionNoShowcase": "Seuls vos abonnés verront vos abonnements. Les nouveaux abonnés devront être acceptés. Votre nom, votre bio et vos tags restent visibles."
         },
         "public": {
           "title": "Rendre votre profil public ?",
           "description": "Tout le monde verra vos badges épinglés, vos statistiques et vos abonnements. Les demandes d'abonnement en attente seront acceptées.",
-          "action": "Rendre public"
+          "action": "Rendre public",
+          "descriptionNoShowcase": "Tout le monde verra vos abonnements. Les demandes d'abonnement en attente seront acceptées."
         }
       },
       "lock": {

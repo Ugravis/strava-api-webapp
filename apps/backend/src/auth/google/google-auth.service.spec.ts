@@ -107,6 +107,7 @@ describe('GoogleAuthService', () => {
     system.status.mockResolvedValue({
       maintenance: null,
       signupsEnabled: false,
+      profileShowcaseEnabled: true,
     });
 
     await expect(service.signIn(profile, metadata)).resolves.toEqual({

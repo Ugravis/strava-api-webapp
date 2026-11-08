@@ -34,7 +34,7 @@ function detailsOf(entry: AuditLogEntry): string[] {
     typeof active === "boolean" && t("active", { active: String(active) }),
     typeof title === "string" && t("title", { title: titles.has(title as never) ? titles(title as never) : title }),
     typeof description === "string" && t("description", { description }),
-    typeof enabled === "boolean" && t("signups", { enabled: String(enabled) }),
+    typeof enabled === "boolean" && t(entry.action === "system.showcase" ? "showcase" : "signups", { enabled: String(enabled) }),
     typeof username === "string" && t("username", { username }),
     typeof category === "string" &&
       t("category", { category: categories.has(category as never) ? categories(category as never) : category }),

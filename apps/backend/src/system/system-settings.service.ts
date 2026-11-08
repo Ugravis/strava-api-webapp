@@ -67,6 +67,10 @@ export class SystemSettingsService {
     return this.write({ signupsEnabled: enabled });
   }
 
+  setProfileShowcaseEnabled(enabled: boolean): Promise<void> {
+    return this.write({ profileShowcaseEnabled: enabled });
+  }
+
   /** The row is inserted by the migration; the defaults stand in for it otherwise. */
   private async read(): Promise<SystemSettings> {
     return (
@@ -74,6 +78,7 @@ export class SystemSettingsService {
       this.settings.create({
         id: SETTINGS_ID,
         signupsEnabled: true,
+        profileShowcaseEnabled: true,
         maintenanceTitle: null,
         maintenanceDescription: null,
         maintenanceSince: null,
@@ -100,5 +105,6 @@ function toStatus(settings: SystemSettings): SystemStatusResponse {
           }
         : null,
     signupsEnabled: settings.signupsEnabled,
+    profileShowcaseEnabled: settings.profileShowcaseEnabled,
   };
 }

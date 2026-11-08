@@ -38,6 +38,7 @@ import {
   ToggleRightIcon,
   Trash2Icon,
   UnlinkIcon,
+  IdCardIcon,
   UserLockIcon,
   UserPenIcon,
   UserRoundMinusIcon,
@@ -118,6 +119,7 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   "system.maintenance.set": <MegaphoneIcon />,
   "system.maintenance.clear": <MegaphoneOffIcon />,
   "system.signups": <UserLockIcon />,
+  "system.showcase": <IdCardIcon />,
   "system.uploads.orphans.delete": <FileXIcon />,
 };
 

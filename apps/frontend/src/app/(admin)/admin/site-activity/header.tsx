@@ -1,5 +1,5 @@
 import { ADMIN_SITE_ACTIVITY_PERIODS } from "@kilotrace/shared/admin";
-import { ViewSwitch } from "@/components/admin/site-activity/parts";
+import { ViewSelect, ViewToggle } from "@/components/admin/site-activity/view-controls";
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
 import { PageHeader } from "@/components/layout/page-header";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -11,29 +11,13 @@ export function SiteActivityHeader({ view, description }: { view: SiteActivityVi
   return (
     <div className="flex flex-col gap-3">
       <PageHeader title={t("title")} description={description} />
-      <div className="flex flex-wrap gap-2">
-        <ViewSwitch
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <ViewSelect
           label={t("period")}
           options={ADMIN_SITE_ACTIVITY_PERIODS.map((days) => ({ key: String(days), label: t("days", { days }), href: viewHref(view, { days }), current: days === view.days }))}
         />
-        <ViewSwitch
-          label={t("teamSwitch")}
-          options={[false, true].map((team) => ({
-            key: String(team),
-            label: t(team ? "withTeam" : "withoutTeam"),
-            href: viewHref(view, { team }),
-            current: team === view.team,
-          }))}
-        />
-        <ViewSwitch
-          label={t("adminSwitch")}
-          options={[true, false].map((admin) => ({
-            key: String(admin),
-            label: t(admin ? "withAdmin" : "withoutAdmin"),
-            href: viewHref(view, { admin }),
-            current: admin === view.admin,
-          }))}
-        />
+        <ViewToggle label={t("withTeam")} checked={view.team} href={viewHref(view, { team: !view.team })} />
+        <ViewToggle label={t("withAdmin")} checked={view.admin} href={viewHref(view, { admin: !view.admin })} />
       </div>
     </div>
   );

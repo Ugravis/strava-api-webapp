@@ -38,6 +38,7 @@ export function SiteSwitch({ checked, action, canEdit, texts }: { checked: boole
         submitLabel={step.submit}
         cancelLabel={texts.cancel}
         destructive={checked}
+        quiet
       />
     </div>
   );

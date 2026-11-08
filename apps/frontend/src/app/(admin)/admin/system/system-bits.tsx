@@ -52,7 +52,7 @@ export function MaintenanceCard({ maintenance, canEdit }: { maintenance: Mainten
           <div className="flex flex-wrap gap-2">
             <MaintenanceFormDialog maintenance={maintenance} />
             {maintenance && (
-              <ActionForm action={clearMaintenance}>
+              <ActionForm action={clearMaintenance} quiet>
                 <SubmitButton size="sm" variant="outline">
                   <MegaphoneOffIcon />
                   {t("turnOff")}
@@ -71,6 +71,7 @@ function MaintenanceFormDialog({ maintenance }: { maintenance: MaintenanceBanner
   return (
     <FormDialog
       action={setMaintenance}
+      quiet
       trigger={
         maintenance
           ? { label: t("edit"), icon: <PencilIcon />, variant: "outline" }

@@ -27,7 +27,8 @@ const PATHS = Array.from({ length: WAVES }, (_, index) => wavePath(index));
 export function ProfileWaves({ color }: { color: string | null }) {
   const hue = color ?? DEFAULT_PROFILE_COLOR;
   return (
-    <div className="relative min-h-40 flex-1 overflow-hidden border-t" aria-hidden>
+    // As tall as the showcase (its widgets and its row of badges), so that the card keeps its size.
+    <div className="relative min-h-[282px] flex-1 overflow-hidden border-t" aria-hidden>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" className="absolute inset-0 size-full">
         {PATHS.map((path, index) => (
           <path key={path} d={path} fill={hue} fillOpacity={0.08 + index * 0.05} />

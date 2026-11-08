@@ -27,7 +27,7 @@ export function AdminSidebar({
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarBrand href="/dashboard" />
+          <SidebarBrand href="/dashboard" variant="admin" />
         </SidebarMenu>
       </SidebarHeader>
       <SidebarSeparator className="mt-1" />

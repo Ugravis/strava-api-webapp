@@ -3,7 +3,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AppLogoMark, AppWordmark } from "@kilotrace/ui/components/brand/app-logo";
+import { AppLogoMark, type AppVariant, AppWordmark } from "@kilotrace/ui/components/brand/app-logo";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
 
@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/component
  * shown on hover. On mobile, the sidebar is a drawer: no collapse. The logo
  * leads to `href`, the home of the current part of the site.
  */
-export function SidebarBrand({ href }: { href: string }) {
+export function SidebarBrand({ href, variant }: { href: string; variant?: AppVariant }) {
   const t = useTranslations("nav");
   const { state, isMobile, toggleSidebar } = useSidebar();
 
@@ -42,7 +42,7 @@ export function SidebarBrand({ href }: { href: string }) {
         className="min-w-0 flex-1 hover:bg-transparent active:bg-transparent"
       >
         <AppLogoMark />
-        <AppWordmark />
+        <AppWordmark variant={variant} />
       </SidebarMenuButton>
       {!isMobile && (
         <Tooltip>

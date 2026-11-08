@@ -1,3 +1,5 @@
+import type { AdminRole } from "@kilotrace/shared/admin";
+
 export interface User {
   id: string;
   email: string;
@@ -14,6 +16,8 @@ export interface User {
   profileColor: string | null;
   profilePrivate: boolean;
   hasPassword: boolean;
+  /** Highest back-office role, null outside the team. */
+  adminRole: AdminRole | null;
   createdAt: string;
 }
 

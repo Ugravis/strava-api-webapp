@@ -99,6 +99,17 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
     useNotifications();
   const [filterOpen, setFilterOpen] = useState(false);
   const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
+  const [list, setList] = useState<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
+
+  // Opens on the latest: the list may keep the scroll of a former opening, or scroll to an item focused by the menu.
+  useEffect(() => {
+    if (!open || !list) return;
+    list.scrollTo({ top: 0 });
+    // Again once the menu has placed its focus.
+    const frame = requestAnimationFrame(() => list.scrollTo({ top: 0 }));
+    return () => cancelAnimationFrame(frame);
+  }, [open, list, category]);
 
   // Loads the next page once the end of the list scrolls into view.
   useEffect(() => {
@@ -113,8 +124,9 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
 
   return (
     <DropdownMenu
-      onOpenChange={(open) => {
-        if (open) {
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) {
           // Always opens on every notification.
           setCategory("all");
           openPanel();
@@ -155,7 +167,7 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
           </DropdownMenuSub>
         </div>
         <DropdownMenuSeparator />
-        <div className="max-h-96 overflow-y-auto">
+        <div ref={setList} className="max-h-96 overflow-y-auto">
           {error && !notifications ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">{t("error")}</p>
           ) : !notifications ? (

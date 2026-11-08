@@ -24,8 +24,10 @@ FROM deps AS build
 # Read at build time: rewrites and public variables are compiled into the bundle.
 ARG API_INTERNAL_URL=http://backend:4000
 ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_ADMIN_URL
 ENV API_INTERNAL_URL=$API_INTERNAL_URL \
   NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+  NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL \
   NEXT_TELEMETRY_DISABLED=1
 COPY --from=prune /app/out/full/ .
 RUN pnpm turbo run build --filter=@kilotrace/frontend

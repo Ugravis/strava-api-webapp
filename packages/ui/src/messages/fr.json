@@ -190,7 +190,13 @@
     "collapseMenu": "Réduire le menu",
     "expandMenu": "Agrandir le menu",
     "userMenu": "Menu du compte",
-    "releaseNotes": "Nouveautés"
+    "releaseNotes": "Nouveautés",
+    "toAdmin": "Back-office",
+    "adminRoles": {
+      "support": "Support",
+      "admin": "Admin",
+      "super-admin": "Super-admin"
+    }
   },
   "theme": {
     "toggle": "Changer de thème",

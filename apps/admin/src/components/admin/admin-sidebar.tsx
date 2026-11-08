@@ -42,6 +42,7 @@ export function ToAppLink({ roles }: { roles: readonly AdminRole[] }) {
       label={getAdminTranslations("shell")("toApp")}
       caption={role ? getAdminTranslations("roles")(role) : ""}
       icon={<GlobeIcon />}
+      external
     />
   );
 }

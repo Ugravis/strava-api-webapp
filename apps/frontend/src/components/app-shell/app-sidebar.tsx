@@ -17,12 +17,13 @@ import { DEFAULT_AUTHENTICATED_ROUTE } from "@/config/routes";
 import type { User } from "@kilotrace/ui/lib/api/types";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
+import { ToAdminLink } from "./to-admin-link";
 import { SidebarBrand } from "@kilotrace/ui/components/app-shell/sidebar-brand";
 
 export interface AppSidebarSlots {
   /** Entries of the sidebar; the main navigation of the site by default. */
   navigation?: ReactNode;
-  /** Link set apart above the user menu, to another part of the site. */
+  /** Link set apart above the user menu, to another part of the site; the back office for its team by default. */
   switchLink?: ReactNode;
   /** Target of the logo. */
   homeHref?: string;
@@ -31,7 +32,7 @@ export interface AppSidebarSlots {
 export function AppSidebar({
   user,
   navigation = <NavMain items={mainNavigation} />,
-  switchLink,
+  switchLink = <ToAdminLink role={user.adminRole} />,
   homeHref = DEFAULT_AUTHENTICATED_ROUTE,
 }: AppSidebarSlots & { user: User }) {
   return (

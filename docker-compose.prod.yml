@@ -99,6 +99,7 @@ services:
       args:
         API_INTERNAL_URL: http://backend:4000
         NEXT_PUBLIC_SITE_URL: ${FRONTEND_URL}
+        NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL}
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://backend:4000

@@ -99,18 +99,6 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
     useNotifications();
   const [filterOpen, setFilterOpen] = useState(false);
   const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
-  const [list, setList] = useState<HTMLDivElement | null>(null);
-  const [open, setOpen] = useState(false);
-
-  // Opens on the latest: the list may keep the scroll of a former opening, or scroll to an item focused by the menu.
-  useEffect(() => {
-    if (!open || !list) return;
-    list.scrollTo({ top: 0 });
-    // Again once the menu has placed its focus.
-    const frame = requestAnimationFrame(() => list.scrollTo({ top: 0 }));
-    return () => cancelAnimationFrame(frame);
-  }, [open, list, category]);
-
   // Loads the next page once the end of the list scrolls into view.
   useEffect(() => {
     if (!sentinel || !hasMore) return;
@@ -124,9 +112,8 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
 
   return (
     <DropdownMenu
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) {
+      onOpenChange={(open) => {
+        if (open) {
           // Always opens on every notification.
           setCategory("all");
           openPanel();
@@ -167,7 +154,7 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
           </DropdownMenuSub>
         </div>
         <DropdownMenuSeparator />
-        <div ref={setList} className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] scrollbar-thin">
           {error && !notifications ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">{t("error")}</p>
           ) : !notifications ? (
@@ -273,11 +260,11 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
         <span className="text-xs text-muted-foreground">
           {format.relativeTime(new Date(notification.createdAt), now)}
         </span>
-        {request && <RequestAnswerButtons username={actor.username} className="mt-1" />}
+        {request && <RequestAnswerButtons username={actor.username} tabIndex={-1} className="mt-1" />}
         {followBack && (
           // Kept from the item, which would open the profile.
           <span className="mt-1" onClick={(event) => event.stopPropagation()}>
-            <FollowButton username={actor.username} state={followState} followsViewer onChange={setFollowState} />
+            <FollowButton username={actor.username} state={followState} followsViewer onChange={setFollowState} tabIndex={-1} />
           </span>
         )}
       </span>

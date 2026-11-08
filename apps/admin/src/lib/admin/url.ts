@@ -31,3 +31,12 @@ export function hrefWith(path: string, current: Record<string, string | undefine
   const search = query.toString();
   return search ? `${path}?${search}` : path;
 }
+
+/**
+ * Absolute URL of a page of the back office, for redirects of route
+ * handlers: behind the reverse proxy, `request.url` holds the address the
+ * server listens on (`0.0.0.0:3200`), not the public host.
+ */
+export function adminUrl(path: string, request: Request): URL {
+  return new URL(path, process.env.ADMIN_URL || request.url);
+}

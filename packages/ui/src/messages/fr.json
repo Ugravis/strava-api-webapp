@@ -690,13 +690,13 @@
         "swim": "Natation",
         "other": "Autres sports"
       },
-      "label": "Distance de chaque mois, au total, par sport et un an plus tôt",
+      "label": "Distance de chaque mois par sport, comparée aux deux années précédentes",
       "error": "Impossible de charger les distances mensuelles pour le moment.",
       "summary": "{distance} sur la période",
       "previousYear": "Année précédente",
       "nextYear": "Année suivante",
       "rollingTitle": "Distance mensuelle sur un an",
-      "previousYearCurve": "Un an plus tôt"
+      "yearsEarlier": "{count, plural, one {Un an plus tôt} other {# ans plus tôt}}"
     }
   },
   "strava": {

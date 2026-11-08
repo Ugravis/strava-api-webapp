@@ -2,6 +2,7 @@ import type { AdminGoogleAuthorization } from "@kilotrace/shared/admin";
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { adminApi } from "@/lib/admin/api";
+import { adminUrl } from "@/lib/admin/url";
 import { SESSION_COOKIE_OPTIONS } from "@/lib/admin/session-cookie";
 import { GOOGLE_STATE_COOKIE, GOOGLE_STATE_PATH } from "./state-cookie";
 
@@ -9,7 +10,7 @@ import { GOOGLE_STATE_COOKIE, GOOGLE_STATE_PATH } from "./state-cookie";
 export async function GET(request: NextRequest) {
   const result = await adminApi<AdminGoogleAuthorization>("/auth/google", "POST").catch(() => null);
   if (!result?.ok) {
-    return NextResponse.redirect(new URL("/login?error=google", request.url));
+    return NextResponse.redirect(adminUrl("/login?error=google", request));
   }
   (await cookies()).set(GOOGLE_STATE_COOKIE, result.data.state, {
     ...SESSION_COOKIE_OPTIONS,

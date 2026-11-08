@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { StravaConnectionStatus } from "@/lib/api/types";
+import type { StravaConnectionStatus } from "@kilotrace/ui/lib/api/types";
 
 /** Page the Strava authorization flow comes back to. */
 export type StravaConnectOrigin = "dashboard" | "settings";

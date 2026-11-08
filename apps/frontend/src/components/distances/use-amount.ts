@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { useFormatter } from "next-intl";
-import type { BadgeMetric } from "@/lib/api/types";
+import type { BadgeMetric } from "@kilotrace/ui/lib/api/types";
 import { formatAmount } from "@/lib/badge-amount";
 
 /** Formats an amount of a metric with its unit, in the language of the user; `whole`, without decimals. */

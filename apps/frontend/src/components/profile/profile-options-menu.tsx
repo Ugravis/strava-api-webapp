@@ -4,10 +4,10 @@ import { ClockIcon, EllipsisIcon, FlagIcon, HeartIcon, UserMinusIcon, UserPlusIc
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { type FollowState, followStateOf, useFollowAction } from "@/components/community/follow-button";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { PublicProfile } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@kilotrace/ui/components/ui/dropdown-menu";
+import type { PublicProfile } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import type { useProfileLike } from "./like-button";
 import { ReportUserDialog } from "./report-user-dialog";
 

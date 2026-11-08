@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { GridBackdrop } from "@/components/layout/grid-backdrop";
+import { GridBackdrop } from "@kilotrace/ui/components/layout/grid-backdrop";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("terms");

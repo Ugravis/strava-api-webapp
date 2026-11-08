@@ -3,14 +3,14 @@
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { useActivityFormat } from "@/hooks/use-activity-format";
-import { usePointed } from "@/hooks/use-pointed";
+import { usePointed } from "@kilotrace/ui/hooks/use-pointed";
 import { useYearDays } from "@/hooks/use-year-days";
-import type { ActivityDay } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { ActivityDay } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { addDays, dateOf, dayKey, dayLevel, levelThresholds, totalsOf, weekStart } from "./calendar";
 
 /** Colors of the levels of a day, the green of the tiles of the map for the busiest ones. */

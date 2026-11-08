@@ -1,0 +1,24 @@
+"use client";
+
+import { useActionState, useEffect, type ReactNode } from "react";
+import { toast } from "sonner";
+import type { Action } from "@kilotrace/ui/components/admin/action-state";
+
+/**
+ * Form posting to a Server Action without confirmation, e.g. a toggle; the
+ * outcome is told by a toast. Generic: its texts come from the caller.
+ */
+export function ActionForm({ action, quiet, className, children }: { action: Action; /** No toast on success, a failure still told. */ quiet?: boolean; className?: string; children: ReactNode }) {
+  const [result, formAction] = useActionState(action, null);
+
+  useEffect(() => {
+    if (!result || (result.ok && quiet)) return;
+    (result.ok ? toast.success : toast.error)(result.message);
+  }, [result, quiet]);
+
+  return (
+    <form action={formAction} className={className}>
+      {children}
+    </form>
+  );
+}

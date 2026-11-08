@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { PendingGoogleSignup, SuspensionNotice, User, UsernameAvailability } from "@/lib/api/types";
+import type { PendingGoogleSignup, SuspensionNotice, User, UsernameAvailability } from "@kilotrace/ui/lib/api/types";
 
 export interface LoginInput {
   email: string;

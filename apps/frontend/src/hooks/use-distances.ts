@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { DistanceBadge, DistancesOverview } from "@/lib/api/types";
+import type { DistanceBadge, DistancesOverview } from "@kilotrace/ui/lib/api/types";
 import { distancesService } from "@/services/distances.service";
 
 export interface DistancesState {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { DistanceBadgeDetails } from "@/lib/api/types";
+import type { DistanceBadgeDetails } from "@kilotrace/ui/lib/api/types";
 import { distancesService } from "@/services/distances.service";
 
 /** Completions and next estimate of one badge; nothing without a badge. */

@@ -9,7 +9,7 @@ import {
   type FieldPath,
   type FieldValues,
 } from "react-hook-form";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@kilotrace/ui/components/ui/field";
 
 export type FormControlProps<
   T extends FieldValues,

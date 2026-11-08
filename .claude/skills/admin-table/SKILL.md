@@ -6,7 +6,7 @@ description: Build or change a back-office list with the data table kit (DataTab
 # Admin data table
 
 1. Read `docs/admin-tables.md`. It holds the recipe, the config and builder reference, and the rules. Follow the rules as written.
-2. Read `apps/frontend/src/app/(admin)/admin/development/admin-table/poc-columns.tsx`: a complete config using every feature.
+2. Read `apps/admin/src/app/(shell)/development/admin-table/poc-columns.tsx`: a complete config using every feature.
 3. Build the three layers, in this order:
    1. **Backend.**
       - A `GET …/table` route in the admin controller of the domain, taking `@TableQueryParam()`.

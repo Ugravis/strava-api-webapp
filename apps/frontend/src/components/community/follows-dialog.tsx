@@ -3,14 +3,14 @@
 import { SearchIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@kilotrace/ui/components/ui/dialog";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@kilotrace/ui/components/ui/input-group";
+import { Tabs, TabsList, TabsTrigger } from "@kilotrace/ui/components/ui/tabs";
 import { useFollowsList } from "@/hooks/use-follows-list";
 import { PROFILE_SEARCH_MIN_LENGTH, useProfileSearch } from "@/hooks/use-profile-search";
-import type { FollowDirection, ProfileSummary } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { FollowDirection, ProfileSummary } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { UserRow, UserRowsSkeleton } from "./user-row";
 
 const DIRECTIONS: FollowDirection[] = ["followers", "following"];

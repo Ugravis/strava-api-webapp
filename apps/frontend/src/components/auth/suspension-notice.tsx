@@ -3,8 +3,8 @@
 import { BanIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { SuspensionNotice as Notice } from "@/lib/api/types";
+import { Alert, AlertDescription, AlertTitle } from "@kilotrace/ui/components/ui/alert";
+import type { SuspensionNotice as Notice } from "@kilotrace/ui/lib/api/types";
 import { authService } from "@/services/auth.service";
 
 /** Why the sign-in was refused to a suspended account, as told by the team. */

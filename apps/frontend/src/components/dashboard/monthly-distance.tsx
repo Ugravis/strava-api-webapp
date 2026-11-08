@@ -3,15 +3,15 @@
 import { BarChart3Icon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { type PointerEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { useMonthlyDistances } from "@/hooks/use-monthly-distances";
-import { usePointed } from "@/hooks/use-pointed";
-import type { MonthDistance, MonthlyFamily } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import { usePointed } from "@kilotrace/ui/hooks/use-pointed";
+import type { MonthDistance, MonthlyFamily } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { monotonePath } from "./chart-path";
-import { niceStep } from "./evolution-chart";
+import { niceStep } from "@kilotrace/ui/components/dashboard/evolution-chart";
 
 const FAMILIES: readonly MonthlyFamily[] = ["ride", "run", "hike", "swim", "other"];
 

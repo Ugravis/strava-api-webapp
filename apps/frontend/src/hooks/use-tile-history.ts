@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sharedRequest } from "@/lib/api/shared-request";
-import type { HistoryMode, TileHistorySummary } from "@/lib/api/types";
+import type { HistoryMode, TileHistorySummary } from "@kilotrace/ui/lib/api/types";
 import { tilesService } from "@/services/tiles.service";
 
 /** The backend replays the first visits in the background, a few seconds after the tiles change. */

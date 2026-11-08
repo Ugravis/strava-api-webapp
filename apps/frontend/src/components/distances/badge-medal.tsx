@@ -2,9 +2,9 @@
 
 import { StarIcon, UserRoundIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import type { DistanceBadge } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
-import { BadgeIcon } from "./badge-icon";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
 import { FamilyIcon } from "./family-icon";
 import { ProgressRing } from "./progress-ring";
 import { progressTier } from "./progress-tier";

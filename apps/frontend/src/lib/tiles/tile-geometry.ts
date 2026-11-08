@@ -1,5 +1,5 @@
 import type { Feature, FeatureCollection, LineString, Polygon } from "geojson";
-import type { TileSquare } from "@/lib/api/types";
+import type { TileSquare } from "@kilotrace/ui/lib/api/types";
 
 /** Large tiles: slippy-map tiles at zoom 14. */
 export const TILE_ZOOM = 14;

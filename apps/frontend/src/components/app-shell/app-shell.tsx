@@ -6,12 +6,12 @@ import { TrackSyncProvider } from "@/components/tracks/track-sync-provider";
 import { ReleaseNotesNotice } from "@/components/release-notes/release-notes-notice";
 import { PageViewTracker } from "@/components/site-activity/page-view-tracker";
 import { MaintenanceNotice } from "@/components/system/maintenance-notice";
-import { SidebarInset } from "@/components/ui/sidebar";
+import { SidebarInset } from "@kilotrace/ui/components/ui/sidebar";
 import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
 import { AppHeader } from "./app-header";
 import { AppSidebar, type AppSidebarSlots } from "./app-sidebar";
-import { PersistedSidebarProvider, SIDEBAR_STATE_COOKIE } from "./sidebar-state";
+import { PersistedSidebarProvider, SIDEBAR_STATE_COOKIE } from "@kilotrace/ui/components/app-shell/sidebar-state";
 
 /**
  * Authenticated layout: resolves the session, then renders the sidebar and

@@ -45,6 +45,12 @@ import { UserTokensService } from './tokens/user-tokens.service';
     OAuthAccountsService,
     { provide: APP_GUARD, useClass: SessionGuard },
   ],
-  exports: [AuthService, SessionsService, SessionCookie],
+  exports: [
+    AuthService,
+    SessionsService,
+    SessionCookie,
+    GoogleOAuthService,
+    GoogleAuthService,
+  ],
 })
 export class AuthModule {}

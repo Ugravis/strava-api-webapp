@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { progressTier } from "./progress-tier";
 import { useRevealed } from "./use-revealed";
 

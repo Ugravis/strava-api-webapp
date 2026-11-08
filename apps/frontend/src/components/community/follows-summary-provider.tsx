@@ -2,7 +2,7 @@
 
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNotifications } from "@/components/notifications/notifications-provider";
-import type { FollowsSummary } from "@/lib/api/types";
+import type { FollowsSummary } from "@kilotrace/ui/lib/api/types";
 import { profilesService } from "@/services/profiles.service";
 
 interface FollowsSummaryState {

@@ -1,4 +1,4 @@
-import { GridBackdrop } from "@/components/layout/grid-backdrop";
+import { GridBackdrop } from "@kilotrace/ui/components/layout/grid-backdrop";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

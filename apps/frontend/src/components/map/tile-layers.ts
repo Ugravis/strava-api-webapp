@@ -7,7 +7,7 @@ import type {
   RasterTileSource,
   VectorTileSource,
 } from "maplibre-gl";
-import type { TilesSummary } from "@/lib/api/types";
+import type { TilesSummary } from "@kilotrace/ui/lib/api/types";
 import {
   gridCollection,
   maxSquareCollection,

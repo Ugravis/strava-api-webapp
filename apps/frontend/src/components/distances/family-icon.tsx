@@ -8,7 +8,7 @@ import {
   WavesIcon,
 } from "lucide-react";
 import { createElement } from "react";
-import type { DistanceFamily } from "@/lib/api/types";
+import type { DistanceFamily } from "@kilotrace/ui/lib/api/types";
 
 const FAMILY_ICONS: Record<DistanceFamily, LucideIcon> = {
   all: ActivityIcon,

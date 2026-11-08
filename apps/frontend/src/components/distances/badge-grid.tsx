@@ -3,9 +3,9 @@
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { useGridColumns } from "@/hooks/use-grid-columns";
-import type { DistanceBadge } from "@/lib/api/types";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
 import { BadgeCard, type BadgeCardLayout } from "./badge-card";
 
 /**

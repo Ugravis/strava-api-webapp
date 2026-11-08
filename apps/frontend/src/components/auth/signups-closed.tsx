@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { routes } from "@/config/routes";
-import { AuthCard } from "./auth-card";
+import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
 
 /** In place of the sign-up forms while the back office keeps them closed. */
 export function SignupsClosed() {

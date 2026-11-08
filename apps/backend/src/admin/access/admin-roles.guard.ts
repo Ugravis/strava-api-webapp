@@ -12,9 +12,12 @@ import { Reflector } from '@nestjs/core';
 import type { AuthenticatedRequest } from '../../auth/auth-request';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { AUDITED_KEY, NOT_AUDITED_KEY } from '../audit/audited.decorator';
-import { ADMIN_AREA_KEY } from './admin-controller.decorator';
+import {
+  ADMIN_AREA_KEY,
+  ADMIN_SIGN_IN_KEY,
+} from './admin-controller.decorator';
 import { adminNotFound } from './admin-not-found';
-import { isAdminPath } from './admin-path';
+import { isAdminPath, isAdminSignInPath } from './admin-path';
 import { AdminPermissionsService } from '../permissions/admin-permissions.service';
 import { ANY_MEMBER, PERMISSION_KEY } from './permission.decorator';
 
@@ -44,10 +47,18 @@ export class AdminRolesGuard implements CanActivate {
     if (!isAdminArea && !isAdminPath(request.path)) {
       return true;
     }
+    // Sign-in, before any session: the access middleware checked the secret.
+    if (
+      this.reflector.getAllAndOverride<boolean>(ADMIN_SIGN_IN_KEY, targets) &&
+      isAdminSignInPath(request.path)
+    ) {
+      return true;
+    }
 
-    // Set by the access middleware; its absence means a misconfiguration.
+    // Set by the access middleware; its absence, or a session of the site
+    // (a route misplaced under the sign-in), means a misconfiguration.
     const roles = request.auth?.user.roles ?? [];
-    if (!highestAdminRole(roles)) {
+    if (request.auth?.session.kind !== 'admin' || !highestAdminRole(roles)) {
       throw adminNotFound(request);
     }
     if (!isAdminArea) {

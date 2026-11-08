@@ -3,10 +3,10 @@
 import { LoaderCircleIcon, MapPinIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import type { CitySuggestion } from "@/lib/api/types";
-import { countryName } from "@/lib/countries/country-format";
-import { cn } from "@/lib/utils";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@kilotrace/ui/components/ui/input-group";
+import type { CitySuggestion } from "@kilotrace/ui/lib/api/types";
+import { countryName } from "@kilotrace/ui/lib/countries/country-format";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { accountService } from "@/services/account.service";
 
 /** Wait after the last key before searching. */

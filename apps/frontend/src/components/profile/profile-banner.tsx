@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 const WIDTH = 600;
 const HEIGHT = 180;

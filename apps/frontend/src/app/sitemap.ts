@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { routes } from "@/config/routes";
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@kilotrace/ui/config/site";
 
 /** Only public pages worth indexing; the authentication forms are left out. */
 export default function sitemap(): MetadataRoute.Sitemap {

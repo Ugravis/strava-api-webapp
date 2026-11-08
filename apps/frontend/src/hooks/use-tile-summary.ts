@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTrackSync } from "@/components/tracks/track-sync-provider";
 import { sharedRequest } from "@/lib/api/shared-request";
-import type { TilesSummary } from "@/lib/api/types";
+import type { TilesSummary } from "@kilotrace/ui/lib/api/types";
 import { tilesService } from "@/services/tiles.service";
 
 /** The backend computes the achievements in the background, a few seconds after the tiles change. */

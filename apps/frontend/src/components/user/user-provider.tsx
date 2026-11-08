@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, type ReactNode } from "react";
-import type { User } from "@/lib/api/types";
+import type { User } from "@kilotrace/ui/lib/api/types";
 
 const UserContext = createContext<User | null>(null);
 

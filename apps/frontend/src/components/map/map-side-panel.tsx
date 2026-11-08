@@ -3,8 +3,8 @@
 import { ArrowLeftIcon, ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ReactNode, Ref } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { cn } from "@kilotrace/ui/lib/utils";
 
 interface MapSidePanelProps {
   ref?: Ref<HTMLElement>;

@@ -3,7 +3,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActivityFormat } from "@/hooks/use-activity-format";
-import type { TileActivity } from "@/lib/api/types";
+import type { TileActivity } from "@kilotrace/ui/lib/api/types";
 import { StravaActivityLink } from "./strava-activity-link";
 
 interface TileActivityItemProps {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { BadgeTheme } from "@/lib/api/types";
+import { Tabs, TabsList, TabsTrigger } from "@kilotrace/ui/components/ui/tabs";
+import type { BadgeTheme } from "@kilotrace/ui/lib/api/types";
 
 /** Value of the tab showing every badge. */
 export const ALL_THEMES = "all";

@@ -1,4 +1,4 @@
-import type { HistoryMode } from "@/lib/api/types";
+import type { HistoryMode } from "@kilotrace/ui/lib/api/types";
 import {
   dayAtStep,
   dayOf,

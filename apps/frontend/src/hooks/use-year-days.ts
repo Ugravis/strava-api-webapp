@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ActivityDay } from "@/lib/api/types";
+import type { ActivityDay } from "@kilotrace/ui/lib/api/types";
 import { activitiesService } from "@/services/activities.service";
 
 /**

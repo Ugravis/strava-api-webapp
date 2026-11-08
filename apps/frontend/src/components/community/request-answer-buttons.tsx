@@ -4,9 +4,9 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, type MouseEvent } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { errorCodeOf } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { profilesService } from "@/services/profiles.service";
 import { useFollowsSummary } from "./follows-summary-provider";
 

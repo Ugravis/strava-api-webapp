@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Controller, type Control, type FieldPath, type FieldValues } from "react-hook-form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldError } from "@/components/ui/field";
+import { Checkbox } from "@kilotrace/ui/components/ui/checkbox";
+import { Field, FieldError } from "@kilotrace/ui/components/ui/field";
 
 interface CheckboxFieldProps<T extends FieldValues> {
   control: Control<T>;

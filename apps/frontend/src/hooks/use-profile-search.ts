@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ProfileSummary } from "@/lib/api/types";
+import type { ProfileSummary } from "@kilotrace/ui/lib/api/types";
 import { profilesService, SEARCH_PAGE_SIZE } from "@/services/profiles.service";
 import { useDebouncedValue } from "./use-debounced-value";
 

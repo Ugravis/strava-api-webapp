@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { CitySuggestion, FavoriteSport, User } from "@/lib/api/types";
+import type { CitySuggestion, FavoriteSport, User } from "@kilotrace/ui/lib/api/types";
 
 export interface UpdateProfileInput {
   /** null clears the display name. */

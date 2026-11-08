@@ -1,5 +1,5 @@
 import { type ReactNode, Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { signupsEnabled } from "@/lib/system/status";
 import { SignupsClosed } from "./signups-closed";
 

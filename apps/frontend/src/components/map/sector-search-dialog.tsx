@@ -10,11 +10,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@kilotrace/ui/components/ui/command";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { useCountryCodes } from "@/hooks/use-country-codes";
-import type { CountryCompletion } from "@/lib/api/types";
-import { countryFlag, countryName, percentDecimals } from "@/lib/countries/country-format";
+import type { CountryCompletion } from "@kilotrace/ui/lib/api/types";
+import { countryFlag, countryName, percentDecimals } from "@kilotrace/ui/lib/countries/country-format";
 import { matchScore } from "@/lib/countries/country-search";
 
 interface SectorSearchDialogProps {

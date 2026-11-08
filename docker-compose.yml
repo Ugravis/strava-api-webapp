@@ -58,6 +58,9 @@ services:
       DB_NAME: ${DB_NAME:-strava_webapp}
       PORT: 4000
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:3200}
+      # Shared with the admin service only: the frontend never holds it.
+      ADMIN_GATEWAY_SECRET: ${ADMIN_GATEWAY_SECRET:-development-admin-gateway-secret}
       COOKIE_SECRET: ${COOKIE_SECRET:-development-cookie-secret}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
@@ -116,7 +119,28 @@ services:
     volumes:
       - ./apps/frontend/src:/app/apps/frontend/src
       - ./apps/frontend/public:/app/apps/frontend/public
-      - ./apps/frontend/messages:/app/apps/frontend/messages
+      - ./packages/ui/src:/app/packages/ui/src
+
+  # Back office, on its own host and port: http://localhost:3200.
+  admin:
+    build:
+      context: .
+      dockerfile: docker/admin.Dockerfile
+      target: dev
+    environment:
+      API_INTERNAL_URL: http://backend:4000
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:3200}
+      ADMIN_GATEWAY_SECRET: ${ADMIN_GATEWAY_SECRET:-development-admin-gateway-secret}
+      NEXT_PUBLIC_SITE_URL: ${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - "3200:3200"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/admin/src:/app/apps/admin/src
+      - ./apps/admin/public:/app/apps/admin/public
+      - ./apps/admin/messages:/app/apps/admin/messages
+      - ./packages/ui/src:/app/packages/ui/src
 
 volumes:
   db-data:

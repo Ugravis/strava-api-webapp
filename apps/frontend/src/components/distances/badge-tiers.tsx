@@ -1,7 +1,7 @@
 import { CheckIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import type { DistanceBadge } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { useAmount } from "./use-amount";
 
 /** Every tier of a tiered badge, those reached checked and the next one with its progress. */

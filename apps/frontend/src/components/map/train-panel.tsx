@@ -3,10 +3,10 @@
 import { ChevronDownIcon, CrosshairIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@kilotrace/ui/components/ui/badge";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { REAL_TRAIN_SPEED, useTrainSpeed } from "@/lib/trains/train-speed";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelSection } from "./panel-figure";
 import type { StationPick } from "./stations-layer";
 import type { TrainInfo, TrainStop } from "./train-traffic";

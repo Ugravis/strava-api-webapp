@@ -1,4 +1,4 @@
-import type { BadgeMetric } from "@/lib/api/types";
+import type { BadgeMetric } from "@kilotrace/ui/lib/api/types";
 
 /** Metrics of the achievements tabs that count what the user achieved, whatever the sport. */
 export const CHALLENGE_METRICS: readonly BadgeMetric[] = ["activities", "active_days", "tiles", "subtiles", "stations"];

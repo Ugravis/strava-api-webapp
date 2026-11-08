@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { AuthCard } from "@/components/auth/auth-card";
+import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { routes } from "@/config/routes";
 

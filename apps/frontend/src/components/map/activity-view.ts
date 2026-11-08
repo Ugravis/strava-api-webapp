@@ -1,4 +1,4 @@
-import type { ActivityTiles } from "@/lib/api/types";
+import type { ActivityTiles } from "@kilotrace/ui/lib/api/types";
 
 /** What the map draws of the activity shown. Not kept: each activity opens with the defaults. */
 export interface ActivityView {

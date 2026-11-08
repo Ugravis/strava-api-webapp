@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AppLogo } from "@/components/brand/app-logo";
+import { AppLogo } from "@kilotrace/ui/components/brand/app-logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { routes } from "@/config/routes";
 
 export function PublicNavbar() {

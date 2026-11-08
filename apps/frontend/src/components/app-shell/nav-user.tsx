@@ -3,7 +3,7 @@
 import { EllipsisIcon, LogOutIcon, SettingsIcon, MegaphoneIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { UserAvatar } from "@/components/user/user-avatar";
+import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +12,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+} from "@kilotrace/ui/components/ui/dropdown-menu";
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/ui/sidebar";
 import { routes } from "@/config/routes";
-import type { User } from "@/lib/api/types";
-import { publicNameOf } from "@/lib/user";
+import type { User } from "@kilotrace/ui/lib/api/types";
+import { publicNameOf } from "@kilotrace/ui/lib/user";
 import { SoundSubmenu } from "./sound-submenu";
-import { ThemeMenuItem } from "./theme-menu-item";
+import { ThemeMenuItem } from "@kilotrace/ui/components/app-shell/theme-menu-item";
 import { useLogout } from "./use-logout";
 
 function UserSummary({ user }: { user: User }) {

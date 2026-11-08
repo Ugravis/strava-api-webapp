@@ -3,11 +3,11 @@
 import type { PublicReleaseNote } from "@kilotrace/shared";
 import { useTranslations } from "next-intl";
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { releaseNotesService } from "@/services/release-notes.service";
-import { ReleaseNoteArticle } from "./release-note-article";
+import { ReleaseNoteArticle } from "@kilotrace/ui/components/release-notes/release-note-article";
 
 /** Every published note, the latest first; read here, they count as seen. */
 export function ReleaseNotesHistory() {

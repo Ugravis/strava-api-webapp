@@ -7,7 +7,7 @@ import type {
   SymbolLayerSpecification,
   VectorTileSource,
 } from "maplibre-gl";
-import type { VisitedStations } from "@/lib/api/types";
+import type { VisitedStations } from "@kilotrace/ui/lib/api/types";
 import type { MapHistory } from "./history-layer";
 import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
 import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";

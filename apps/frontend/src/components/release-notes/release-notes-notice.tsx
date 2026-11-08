@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { routes } from "@/config/routes";
 import { releaseNotesService } from "@/services/release-notes.service";
-import { ReleaseNoteBanner } from "./release-note-banner";
-import { ReleaseNoteDialog } from "./release-note-dialog";
+import { ReleaseNoteBanner } from "@kilotrace/ui/components/release-notes/release-note-banner";
+import { ReleaseNoteDialog } from "@kilotrace/ui/components/release-notes/release-note-dialog";
 
 /**
  * The notes of the versions the user missed, once per visit: together in a

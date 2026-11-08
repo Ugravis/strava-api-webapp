@@ -1,6 +1,6 @@
 import { AwardIcon, SquareIcon, SparklesIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { MAP_COLORS, TileGrid } from "./tile-grid";
 
 const TILES = [

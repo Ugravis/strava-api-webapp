@@ -2,9 +2,9 @@
 
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { BadgeIcon } from "@/components/distances/badge-icon";
-import type { UserTag } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
+import type { UserTag } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { ShowcaseDialog } from "./showcase-dialog";
 
 /** Badges of the membership, in the order of the catalog, each opening its details. */

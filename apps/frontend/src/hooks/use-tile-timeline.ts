@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { TileTimelineDay } from "@/lib/api/types";
+import type { TileTimelineDay } from "@kilotrace/ui/lib/api/types";
 import { tilesService } from "@/services/tiles.service";
 
 /**

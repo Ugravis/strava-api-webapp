@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { StravaConnectButton } from "@/components/strava/strava-connect-button";
-import { StravaIcon } from "@/components/strava/strava-icon";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -15,9 +15,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@kilotrace/ui/components/ui/alert-dialog";
+import { Badge } from "@kilotrace/ui/components/ui/badge";
+import { Button } from "@kilotrace/ui/components/ui/button";
 import { useTrackSyncManager } from "@/components/tracks/track-sync-provider";
 import { useStravaConnection } from "@/hooks/use-strava-connection";
 import { errorCodeOf } from "@/lib/api/errors";

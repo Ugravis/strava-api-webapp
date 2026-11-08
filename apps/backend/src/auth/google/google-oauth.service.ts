@@ -37,7 +37,10 @@ export class GoogleOAuthService {
     return this.client !== null;
   }
 
-  async createAuthorizationRequest(): Promise<GoogleAuthorizationRequest> {
+  /** `redirectUri`: the callback of another host of the same client, e.g. the back office. */
+  async createAuthorizationRequest(
+    redirectUri?: string,
+  ): Promise<GoogleAuthorizationRequest> {
     const client = this.requireClient();
     const { codeVerifier, codeChallenge } =
       await client.generateCodeVerifierAsync();
@@ -48,16 +51,23 @@ export class GoogleOAuthService {
       code_challenge: codeChallenge,
       code_challenge_method: CodeChallengeMethod.S256,
       prompt: 'select_account',
+      ...(redirectUri && { redirect_uri: redirectUri }),
     });
     return { url, state, codeVerifier };
   }
 
+  /** `redirectUri`: the one of the authorization request, when not the default. */
   async exchangeCode(
     code: string,
     codeVerifier: string,
+    redirectUri?: string,
   ): Promise<GoogleProfile> {
     const client = this.requireClient();
-    const { tokens } = await client.getToken({ code, codeVerifier });
+    const { tokens } = await client.getToken({
+      code,
+      codeVerifier,
+      ...(redirectUri && { redirect_uri: redirectUri }),
+    });
     if (!tokens.id_token) {
       throw new Error('Google did not return an ID token');
     }

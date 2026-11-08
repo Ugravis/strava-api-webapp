@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@kilotrace/ui/config/site";
 import { FAQ_KEYS } from "./faq";
 
 /** JSON-LD describing the site, the application and the FAQ, for rich results. */

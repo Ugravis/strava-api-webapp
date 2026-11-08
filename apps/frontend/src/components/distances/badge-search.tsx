@@ -2,10 +2,10 @@
 
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import type { DistanceBadge } from "@/lib/api/types";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@kilotrace/ui/components/ui/command";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
 import { matchScore } from "@/lib/countries/country-search";
-import { BadgeIcon } from "./badge-icon";
+import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
 
 interface BadgeSearchProps {
   /** Every badge, whatever the theme shown. */

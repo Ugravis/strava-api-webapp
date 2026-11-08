@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sharedRequest } from "@/lib/api/shared-request";
-import type { StationDetails } from "@/lib/api/types";
+import type { StationDetails } from "@kilotrace/ui/lib/api/types";
 import { stationsService } from "@/services/stations.service";
 
 const fetchDetails = sharedRequest(stationsService.getDetails);

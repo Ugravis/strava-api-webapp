@@ -3,6 +3,7 @@ import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { isUniqueViolation } from '../../common/database-errors';
 import { SystemSettingsService } from '../../system/system-settings.service';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../users/dto/validation.constants';
+import type { User } from '../../users/user.entity';
 import { normalizeEmail, UsersService } from '../../users/users.service';
 import { AuthService, type AuthResult } from '../auth.service';
 import type { CompleteGoogleSignupDto } from '../dto/complete-google-signup.dto';
@@ -39,35 +40,8 @@ export class GoogleAuthService {
     profile: GoogleProfile,
     metadata: SessionMetadata,
   ): Promise<GoogleSignInOutcome> {
-    const linkedUserId = await this.oauthAccounts.findUserId(
-      PROVIDER,
-      profile.subject,
-    );
-    if (linkedUserId) {
-      const user = await this.users.findById(linkedUserId);
-      if (user) {
-        return {
-          kind: 'signed-in',
-          result: await this.auth.startSession(user, metadata),
-        };
-      }
-    }
-
-    if (!profile.emailVerified) {
-      throw ApiErrors.forbidden(
-        ApiErrorCode.InvalidCredentials,
-        'The Google account email is not verified',
-      );
-    }
-
-    // Google verified the address: it is safe to attach this identity to the existing account.
-    const existingUser = await this.users.findByEmail(profile.email);
+    const existingUser = await this.findUser(profile);
     if (existingUser) {
-      await this.oauthAccounts.link(existingUser.id, PROVIDER, profile.subject);
-      await this.users.setExternalAvatarIfMissing(
-        existingUser,
-        profile.picture,
-      );
       return {
         kind: 'signed-in',
         result: await this.auth.startSession(existingUser, metadata),
@@ -86,6 +60,39 @@ export class GoogleAuthService {
         picture: profile.picture,
       },
     };
+  }
+
+  /**
+   * The account of a Google identity: the one it is linked to, else the one
+   * of its verified email, which it gets linked to. Null when there is none.
+   */
+  async findUser(profile: GoogleProfile): Promise<User | null> {
+    const linkedUserId = await this.oauthAccounts.findUserId(
+      PROVIDER,
+      profile.subject,
+    );
+    if (linkedUserId) {
+      const user = await this.users.findById(linkedUserId);
+      if (user) {
+        return user;
+      }
+    }
+
+    if (!profile.emailVerified) {
+      throw ApiErrors.forbidden(
+        ApiErrorCode.InvalidCredentials,
+        'The Google account email is not verified',
+      );
+    }
+
+    // Google verified the address: it is safe to attach this identity to the existing account.
+    const existingUser = await this.users.findByEmail(profile.email);
+    if (!existingUser) {
+      return null;
+    }
+    await this.oauthAccounts.link(existingUser.id, PROVIDER, profile.subject);
+    await this.users.setExternalAvatarIfMissing(existingUser, profile.picture);
+    return existingUser;
   }
 
   suggestUsername(pending: PendingGoogleSignup): Promise<string> {

@@ -8,7 +8,7 @@ import type {
   TileTimelineDay,
   TilesSummary,
   TileVisits,
-} from "@/lib/api/types";
+} from "@kilotrace/ui/lib/api/types";
 
 export const tilesService = {
   getSummary: () => apiRequest<TilesSummary>("/tiles/summary"),

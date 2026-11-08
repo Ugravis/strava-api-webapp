@@ -1,8 +1,8 @@
 import { useTranslations } from "next-intl";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { buttonVariants } from "@kilotrace/ui/components/ui/button";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { stravaAuthorizeUrl, type StravaConnectOrigin } from "@/services/strava.service";
-import { StravaIcon } from "./strava-icon";
+import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
 
 interface StravaConnectButtonProps {
   from: StravaConnectOrigin;

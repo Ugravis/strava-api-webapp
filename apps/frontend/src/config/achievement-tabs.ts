@@ -1,5 +1,5 @@
 import { AwardIcon, FlagIcon, MilestoneIcon, MountainIcon, TimerIcon, type LucideIcon } from "lucide-react";
-import type { BadgeMetric } from "@/lib/api/types";
+import type { BadgeMetric } from "@kilotrace/ui/lib/api/types";
 import { routes } from "./routes";
 
 /** First-level tabs of the achievements page, in display order. New badge kinds only need a tab declared here. */

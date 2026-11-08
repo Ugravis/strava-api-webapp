@@ -2,9 +2,9 @@
 
 import { CircleAlertIcon, RefreshCwIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertAction, AlertDescription } from "@kilotrace/ui/components/ui/alert";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { StravaConnectCard } from "@/components/strava/strava-connect-card";
 import { StravaConnectionSummary } from "@/components/strava/strava-connection-summary";
 import { StravaSyncStatus } from "@/components/strava/strava-sync-status";
@@ -12,7 +12,7 @@ import { useRequestSync } from "@/components/strava/use-request-sync";
 import { useActivitiesOverview } from "@/hooks/use-activities-overview";
 import { useActivityStats } from "@/hooks/use-activity-stats";
 import { isSyncActive, useStravaConnection } from "@/hooks/use-strava-connection";
-import type { StravaConnectionStatus } from "@/lib/api/types";
+import type { StravaConnectionStatus } from "@kilotrace/ui/lib/api/types";
 import { ActivityCalendar } from "./activity-calendar";
 import { BadgesHighlight } from "./badges-highlight";
 import { DashboardHero } from "./dashboard-hero";

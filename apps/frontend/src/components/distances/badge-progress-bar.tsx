@@ -3,9 +3,9 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import { useFormatter, useTranslations } from "next-intl";
 import { useAmount } from "./use-amount";
-import { ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
-import type { DistanceBadge } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
+import { ProgressIndicator, ProgressTrack } from "@kilotrace/ui/components/ui/progress";
+import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { progressTier } from "./progress-tier";
 import { useRevealed } from "./use-revealed";
 

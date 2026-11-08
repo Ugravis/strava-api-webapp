@@ -2,12 +2,12 @@
 
 import { useFormatter, useTranslations } from "next-intl";
 import { useId } from "react";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@kilotrace/ui/components/ui/label";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { Switch } from "@kilotrace/ui/components/ui/switch";
 import { useActivityDetails } from "@/hooks/use-activity";
 import { isFootSport, useActivityFormat } from "@/hooks/use-activity-format";
-import type { ActivityDetails, ActivityTiles, LevelGains } from "@/lib/api/types";
+import type { ActivityDetails, ActivityTiles, LevelGains } from "@kilotrace/ui/lib/api/types";
 import { type ActivityView, hasGains } from "./activity-view";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
 import { StravaActivityLink } from "./strava-activity-link";

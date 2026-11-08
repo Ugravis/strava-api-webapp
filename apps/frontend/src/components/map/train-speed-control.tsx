@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@kilotrace/ui/components/ui/slider";
 import {
   clampTrainSpeed,
   MAX_TRAIN_SPEED,
@@ -12,7 +12,7 @@ import {
   TRAIN_SPEED_STEPS,
   useTrainSpeed,
 } from "@/lib/trains/train-speed";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { BandHeading } from "./map-stat";
 
 /** The step closest to `speed`, by ratio: ×3 is nearer ×2 than ×5. */

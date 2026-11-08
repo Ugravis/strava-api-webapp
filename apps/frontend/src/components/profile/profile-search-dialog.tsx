@@ -5,13 +5,13 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ResultSection, SearchResults } from "@/components/community/follows-dialog";
 import { UserRowsSkeleton } from "@/components/community/user-row";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@kilotrace/ui/components/ui/dialog";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@kilotrace/ui/components/ui/input-group";
 import { useCurrentUser } from "@/components/user/user-provider";
 import { type FollowsListState, useFollowsList } from "@/hooks/use-follows-list";
 import { PROFILE_SEARCH_MIN_LENGTH } from "@/hooks/use-profile-search";
-import type { ProfileSummary } from "@/lib/api/types";
+import type { ProfileSummary } from "@kilotrace/ui/lib/api/types";
 
 /** A magnifier opening a search of every user, those followed first, apart; until typed, the follows of the current user. */
 export function ProfileSearchDialog() {

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTrackSyncManager } from "@/components/tracks/track-sync-provider";
-import type { StravaConnectionStatus, SyncJob, TileProgress } from "@/lib/api/types";
+import type { StravaConnectionStatus, SyncJob, TileProgress } from "@kilotrace/ui/lib/api/types";
 import { stravaService } from "@/services/strava.service";
 
 const POLL_INTERVAL_MS = 2_000;

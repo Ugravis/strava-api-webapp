@@ -3,10 +3,10 @@
 import { CalendarIcon, CircleAlertIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { HistoryMode, TileHistorySummary } from "@/lib/api/types";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Slider } from "@kilotrace/ui/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@kilotrace/ui/components/ui/toggle-group";
+import type { HistoryMode, TileHistorySummary } from "@kilotrace/ui/lib/api/types";
 import {
   dayAtStep,
   dayOf,
@@ -15,7 +15,7 @@ import {
   type HistoryStep,
   stepDay,
 } from "@/lib/tiles/history-period";
-import { cn } from "@/lib/utils";
+import { cn } from "@kilotrace/ui/lib/utils";
 import type { MapColor } from "./map-keys";
 import { Stat, ValueSkeleton } from "./map-stat";
 

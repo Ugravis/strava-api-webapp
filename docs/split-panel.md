@@ -1,13 +1,13 @@
 # Split panel
 
-A detail panel on the right of the pages of a section, e.g. the row of a table opened by a click. Generic: it knows nothing of tables, and the data table kit knows nothing of it (`docs/admin-tables.md`). Showcase: `/admin/development/admin-table`, the first table.
+A detail panel on the right of the pages of a section, e.g. the row of a table opened by a click. Generic: it knows nothing of tables, and the data table kit knows nothing of it (`docs/admin-tables.md`). Showcase: `/development/admin-table` of the admin app, the first table.
 
 ## Where things are
 
 | Path | Role |
 | --- | --- |
-| `apps/frontend/src/components/split-panel/` (import from `@/components/split-panel`) | `SplitPanelProvider` (state), `SplitPanelArea` (the pages and the panel), `useSplitPanel` (for pages). |
-| `apps/frontend/src/app/(admin)/layout.tsx` | The provider of the back office around the pages and the footer, the area around the pages only. |
+| `packages/ui/src/components/split-panel/` (import from `@kilotrace/ui/components/split-panel`) | `SplitPanelProvider` (state), `SplitPanelArea` (the pages and the panel), `useSplitPanel` (for pages). |
+| `apps/admin/src/app/(shell)/layout.tsx` | The provider of the back office around the pages and the footer, the area around the pages only. |
 
 ## Behaviour
 

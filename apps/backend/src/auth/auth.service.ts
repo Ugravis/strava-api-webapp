@@ -71,14 +71,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, metadata: SessionMetadata): Promise<AuthResult> {
-    const user = await this.users.findByEmail(dto.email);
-    if (!user?.passwordHash) {
-      await this.passwordHasher.verify(dto.password, await this.getDummyHash());
-      throw this.invalidCredentials();
-    }
-    if (!(await this.passwordHasher.verify(dto.password, user.passwordHash))) {
-      throw this.invalidCredentials();
-    }
+    const user = await this.verifyCredentials(dto.email, dto.password);
     assertNotSuspended(user);
     return {
       user,
@@ -88,6 +81,19 @@ export class AuthService {
         dto.rememberMe ?? false,
       ),
     };
+  }
+
+  /** The account of an email and password, else the error of wrong credentials. */
+  async verifyCredentials(email: string, password: string): Promise<User> {
+    const user = await this.users.findByEmail(email);
+    if (!user?.passwordHash) {
+      await this.passwordHasher.verify(password, await this.getDummyHash());
+      throw this.invalidCredentials();
+    }
+    if (!(await this.passwordHasher.verify(password, user.passwordHash))) {
+      throw this.invalidCredentials();
+    }
+    return user;
   }
 
   /** Starts a persistent session for an already authenticated identity (e.g. OAuth). */

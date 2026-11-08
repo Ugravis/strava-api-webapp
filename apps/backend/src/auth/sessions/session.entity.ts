@@ -9,6 +9,12 @@ import {
 } from 'typeorm';
 import { User } from '../../users/user.entity';
 
+/**
+ * `site`: the public site. `admin`: the back office, on its own host and
+ * cookie. Neither opens the other.
+ */
+export type SessionKind = 'site' | 'admin';
+
 @Entity('sessions')
 export class Session {
   @PrimaryGeneratedColumn('uuid')
@@ -25,6 +31,9 @@ export class Session {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user?: User;
+
+  @Column({ type: 'varchar', length: 16, default: 'site' })
+  kind!: SessionKind;
 
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt!: Date;

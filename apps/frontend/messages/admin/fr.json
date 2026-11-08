@@ -125,7 +125,8 @@
       "version": "Version",
       "morning": "Bonjour {name}",
       "evening": "Bonsoir {name}",
-      "pulse": "<strong>{actions, plural, =0 {Aucune action} one {# action} other {# actions}}</strong> de l'équipe en 24 h, <strong>{signups, plural, =0 {aucune inscription} one {# inscription} other {# inscriptions}}</strong> en 7 jours."
+      "lastAction": "Votre dernière action consignée : <strong>{when}</strong>.",
+      "noAction": "Aucune action consignée à votre nom pour l'instant."
     },
     "days": {
       "today": "Aujourd'hui",

@@ -1,6 +1,7 @@
 import type { AdminRole } from "@kilotrace/shared/admin";
 import { ListClockIcon, type LucideIcon, PackageIcon, ShieldCheckIcon } from "lucide-react";
 import Link from "next/link";
+import { getFormatter } from "next-intl/server";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { HeroBackdrop } from "@/components/dashboard/dashboard-hero";
@@ -44,9 +45,9 @@ function HeroFact({ icon: Icon, label, children, href }: { icon: LucideIcon; lab
       </span>
     </>
   );
-  const className = "flex items-center gap-3 rounded-xl bg-card/70 px-3.5 py-3 ring-1 ring-blue-200/70 dark:ring-blue-900/50";
+  const className = "flex items-center gap-3 rounded-xl bg-transparent px-3.5 py-3 ring-1 ring-blue-200/70 dark:ring-blue-900/50";
   return href ? (
-    <Link href={href} className={cn(className, "transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/40")}>
+    <Link href={href} className={cn(className, "transition-colors hover:bg-blue-500/5")}>
       {content}
     </Link>
   ) : (
@@ -59,23 +60,18 @@ interface DashboardHeroProps {
   roles: AdminRole[];
 }
 
-/** Greets the member as the dashboard of the site does: the day, the pulse of the site, their roles and actions, the version. */
+/** Greets the member as the dashboard of the site does: the day, their latest action, their roles and actions, the version. */
 export async function DashboardHero({ memberId, roles }: DashboardHeroProps) {
   const t = getAdminTranslations("dashboard.hero");
   const roleLabel = getAdminTranslations("roles");
   // The day and hour of the request, never those of a prerender.
-  const [user, dev, mine, audit, users] = await Promise.all([
-    getCurrentUser(),
-    dashboardData.dev(),
-    dashboardData.auditOf(memberId),
-    dashboardData.audit(),
-    dashboardData.users(),
-    connection(),
-  ]);
+  const [user, dev, mine, format] = await Promise.all([getCurrentUser(), dashboardData.dev(), dashboardData.auditOf(memberId), getFormatter(), connection()]);
   const now = new Date();
   // Read from its part: the formatted hour may carry a unit, e.g. « 23 h ».
   const hour = Number(hourOf.formatToParts(now).find((part) => part.type === "hour")?.value);
   const greeting = hour < 5 || hour >= 18 ? "evening" : "morning";
+  // The entries come newest first: the first is the latest action of the member.
+  const latest = mine?.items[0];
   return (
     <section className={FRAME}>
       <HeroBackdrop id="admin-hero-tiles" tone="text-blue-500" tiles="opacity-50" station="fill-card" />
@@ -86,13 +82,14 @@ export async function DashboardHero({ memberId, roles }: DashboardHeroProps) {
             <p className="text-xs font-medium tracking-wide text-blue-600 uppercase dark:text-blue-400">{today.format(now)}</p>
             <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">{user ? t(greeting, { name: publicNameOf(user) }) : t("title")}</h1>
             <p className="text-sm text-muted-foreground">
-              {audit && users
-                ? t.rich("pulse", {
-                    actions: audit.today,
-                    signups: users.signups,
-                    strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
-                  })
-                : t("description")}
+              {!mine
+                ? t("description")
+                : latest
+                  ? t.rich("lastAction", {
+                      when: format.relativeTime(new Date(latest.createdAt), now),
+                      strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+                    })
+                  : t("noAction")}
             </p>
           </div>
         </div>

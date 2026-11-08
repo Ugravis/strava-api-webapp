@@ -50,27 +50,31 @@ function contours(seed: string): string[] {
   return paths;
 }
 
+/** The contour lines of the relief of a profile, in `currentColor`, filling their box. */
+export function ContourLines({ seed, fixedStroke, className }: { seed: string; /** Lines of the same weight whatever the scale of the box. */ fixedStroke?: boolean; className?: string }) {
+  return (
+    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="xMidYMid slice" className={cn("absolute inset-0 size-full", className)}>
+      {contours(seed).map((path, index) => (
+        <path
+          key={index}
+          d={path}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={index % LINES === LINES - 1 ? 0.12 : 0.22}
+          strokeWidth={index % LINES === 0 ? 1.5 : 1}
+          strokeLinejoin="round"
+          vectorEffect={fixedStroke ? "non-scaling-stroke" : undefined}
+        />
+      ))}
+    </svg>
+  );
+}
+
 /** Banner of a profile: contour lines of an imaginary relief, its own for each user, on the hue of the profile. */
 export function ProfileBanner({ seed, style, className }: { seed: string; style: CSSProperties; className?: string }) {
   return (
     <div aria-hidden className={cn("relative isolate overflow-hidden", className)} style={style}>
-      <svg
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        preserveAspectRatio="xMidYMid slice"
-        className="absolute inset-0 size-full text-white"
-      >
-        {contours(seed).map((path, index) => (
-          <path
-            key={index}
-            d={path}
-            fill="none"
-            stroke="currentColor"
-            strokeOpacity={index % LINES === LINES - 1 ? 0.12 : 0.22}
-            strokeWidth={index % LINES === 0 ? 1.5 : 1}
-            strokeLinejoin="round"
-          />
-        ))}
-      </svg>
+      <ContourLines seed={seed} className="text-white" />
       <div className="absolute inset-0 bg-linear-to-t from-black/25 to-transparent" />
     </div>
   );

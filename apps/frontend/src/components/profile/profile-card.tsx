@@ -36,7 +36,7 @@ import { CardImageDialog } from "./card-image-dialog";
 import { ProfileBanner } from "./profile-banner";
 import { DEFAULT_PROFILE_COLOR, type ProfileColorStyles, profileColorStyles } from "./profile-color";
 import { ShareProfileDialog } from "./share-profile-dialog";
-import { ProfileWaves } from "./profile-waves";
+import { ProfileRelief } from "./profile-relief";
 import { ShowcaseDialog } from "./showcase-dialog";
 
 interface ProfileCardProps {
@@ -217,7 +217,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, onFollowChange, 
           <ShowcaseView showcase={profile.showcase} self={profile.self} colors={colors} />
         ) : (
           // Visible yet without a showcase: turned off for the whole site, never told.
-          <ProfileWaves color={profile.color} />
+          <ProfileRelief seed={profile.username} color={profile.color} />
         )
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 border-t bg-muted/40 px-5 py-8 text-center">

@@ -1,10 +1,11 @@
 "use client";
 
-import type { AuditUser } from "@kilotrace/shared/admin";
+import type { AuditTargetType, AuditUser } from "@kilotrace/shared/admin";
 import {
   ArrowRightIcon,
   ArrowUpDownIcon,
   AtSignIcon,
+  AwardIcon,
   BadgeMinusIcon,
   BadgePlusIcon,
   BanIcon,
@@ -20,7 +21,10 @@ import {
   FolderPenIcon,
   FolderPlusIcon,
   FolderXIcon,
+  FlagIcon,
   FlagOffIcon,
+  FolderIcon,
+  NewspaperIcon,
   GavelIcon,
   HashIcon,
   ListIcon,
@@ -49,7 +53,22 @@ import {
   SendIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { codeColumn, type DataTableColumn, dateColumn, lookColumn, statusColumn, textColumn, type Tone, userColumn } from "@/components/admin/data-table";
+import {
+  codeColumn,
+  customColumn,
+  type DataTableColumn,
+  dateColumn,
+  EmptyValue,
+  LookCell,
+  lookColumn,
+  Mark,
+  statusColumn,
+  textColumn,
+  type Tone,
+  UserCell,
+  userColumn,
+} from "@/components/admin/data-table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DetailFieldButton } from "@/components/admin/detail";
 import { createVersion } from "@/lib/admin/version";
 import type { OpenUser } from "../users/use-user-panel";
@@ -125,6 +144,29 @@ const ACTION_ICONS: Record<string, ReactNode> = {
 
 export const actionIcon = (entry: AuditRow) => ACTION_ICONS[entry.action] ?? <ZapIcon />;
 
+/** One icon per kind of target object. */
+const TARGET_ICONS: Record<AuditTargetType, ReactNode> = {
+  badge: <AwardIcon />,
+  badge_theme: <FolderIcon />,
+  userTag: <TagIcon />,
+  releaseNote: <NewspaperIcon />,
+  report: <FlagIcon />,
+  username: <AtSignIcon />,
+};
+
+/** The target of an entry: a user, else the object it names, else a dash. */
+function TargetCell({ entry }: { entry: AuditRow }) {
+  if (entry.targetUser) return <UserCell user={entry.targetUser} />;
+  const { target } = entry;
+  if (!target) return <EmptyValue />;
+  return (
+    <LookCell
+      look={{ icon: TARGET_ICONS[target.type] ?? <ZapIcon />, name: target.name, background: target.color }}
+      marks={target.deleted && <Mark label="Supprimé" tone="gray" icon={<Trash2Icon />} />}
+    />
+  );
+}
+
 /** Opens a user of the entry in the side panel, while the account exists. */
 function userTool(user: AuditUser | null, openUser: OpenUser) {
   const { username } = user ?? {};
@@ -141,7 +183,20 @@ export function auditColumns(openUser: OpenUser): DataTableColumn<AuditRow>[] {
   return [
     dateColumn({ id: "createdAt", header: "Date", icon: <CalendarClockIcon />, sortable: true, locked: true, time: true, value: (entry) => entry.createdAt }),
     userColumn({ id: "actor", header: "Auteur", icon: <UserPenIcon />, locked: false, value: (entry) => entry.actor, empty: "Système", tools: (entry) => userTool(entry.actor, openUser) }),
-    userColumn({ id: "target", header: "Cible", icon: <ArrowRightIcon />, locked: false, value: (entry) => entry.targetUser, tools: (entry) => userTool(entry.targetUser, openUser) }),
+    customColumn({
+      id: "target",
+      header: "Cible",
+      icon: <ArrowRightIcon />,
+      cell: (entry) => <TargetCell entry={entry} />,
+      copy: (entry) => entry.targetUser?.username ?? entry.target?.name ?? null,
+      tools: (entry) => userTool(entry.targetUser, openUser),
+      skeleton: (
+        <span className="flex items-center gap-2">
+          <Skeleton className="size-5 rounded-full" />
+          <Skeleton className="h-4 w-28" />
+        </span>
+      ),
+    }),
     lookColumn({ id: "action", header: "Action", icon: <ZapIcon />, sortable: true, locked: false, value: (entry) => ({ icon: actionIcon(entry), name: entry.label }) }),
     statusColumn({ id: "outcome", header: "Résultat", icon: <CircleDotIcon />, value: (entry) => (entry.succeeded ? "succeeded" : "failed"), statuses: OUTCOMES }),
     textColumn({ id: "reason", header: "Raison", icon: <StickyNoteIcon />, value: (entry) => entry.reason, muted: true, width: "max-w-72" }),

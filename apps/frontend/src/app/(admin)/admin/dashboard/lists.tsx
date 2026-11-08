@@ -140,7 +140,11 @@ export async function DashboardTeamActivity() {
                   <span className="text-sm">
                     <span className="font-medium">{entry.actor ? (entry.actor.displayName ?? entry.actor.username ?? t("deleted")) : t("system")}</span>{" "}
                     <span className="text-muted-foreground">·</span> {entry.label}
-                    {entry.targetUser?.username && <span className="text-muted-foreground"> · @{entry.targetUser.username}</span>}
+                    {entry.targetUser?.username ? (
+                      <span className="text-muted-foreground"> · @{entry.targetUser.username}</span>
+                    ) : (
+                      entry.target && <span className="text-muted-foreground"> · {entry.target.name}</span>
+                    )}
                   </span>
                   {(entry.reason ?? entry.lines[0]) && <span className="line-clamp-1 text-xs text-muted-foreground">{entry.reason ?? entry.lines[0]}</span>}
                 </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { BoxIcon, EyeIcon, EyeOffIcon, KeyIcon, ListIcon, ShieldIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, KeyIcon, ListIcon, ShieldIcon } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { formatDateTime, Mark } from "@/components/admin/data-table";
@@ -51,7 +51,6 @@ export function AuditRowPanel({ id, superAdmin, openUser }: { id: string; superA
 function AuditDetail({ entry, superAdmin, openUser }: { entry: AuditRow; superAdmin: boolean; openUser: OpenUser }) {
   const columns = useMemo(() => auditColumns(openUser), [openUser]);
   const field = (id: string) => <DetailColumnField row={entry} columns={columns} id={id} />;
-  const target = entry.targetId && !entry.targetUser ? `${entry.targetType ?? "objet"} ${entry.targetId}` : null;
   return (
     <>
       <DetailHeader
@@ -72,13 +71,7 @@ function AuditDetail({ entry, superAdmin, openUser }: { entry: AuditRow; superAd
         <DetailFields>
           {field("createdAt")}
           {field("actor")}
-          {target ? (
-            <DetailField label="Cible" icon={<BoxIcon />}>
-              {target}
-            </DetailField>
-          ) : (
-            field("target")
-          )}
+          {field("target")}
           {field("action")}
           <DetailField label="Clé de l'action" icon={<KeyIcon />}>
             <code className="font-mono text-xs">{entry.action}</code>

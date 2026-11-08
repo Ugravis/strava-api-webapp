@@ -21,6 +21,22 @@ export interface AuditUser {
   avatarUrl: string | null;
 }
 
+/** Kinds of objects an entry may target besides a user. */
+export const AUDIT_TARGET_TYPES = ["badge", "badge_theme", "userTag", "releaseNote", "report", "username"] as const;
+export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
+
+/** An object other than a user targeted by an entry, named as it is now, else as recorded. */
+export interface AuditTarget {
+  type: AuditTargetType;
+  id: string;
+  /** Its name, else its id. */
+  name: string;
+  /** `#rrggbb` of its look, when it has one. */
+  color: string | null;
+  /** The object no longer exists. */
+  deleted: boolean;
+}
+
 /** `GET /api/admin/audit-log`: an entry of the audit log. */
 export interface AuditLogEntry {
   id: string;
@@ -31,6 +47,8 @@ export interface AuditLogEntry {
   targetId: string | null;
   /** The target user, when the target is one. */
   targetUser: AuditUser | null;
+  /** The target object, when it is not a user; also the object an entry creates. */
+  target: AuditTarget | null;
   reason: string | null;
   /** Parameters of the action, e.g. the fields reset or the end of a suspension. */
   details: Record<string, unknown> | null;

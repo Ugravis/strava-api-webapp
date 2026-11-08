@@ -1,6 +1,6 @@
 {
   "name": "@kilotrace/ui",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "description": "Components, kits, theme and texts shared by the Next.js apps, as sources compiled by each app.",

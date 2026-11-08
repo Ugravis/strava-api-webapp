@@ -3,6 +3,7 @@ import { TriangleAlertIcon } from "lucide-react";
 import nextPackage from "next/package.json";
 import { version as reactVersion } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeaderSkeleton } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -119,10 +120,7 @@ export function MigrationsSection({ applied, pending }: { applied: AdminMigratio
 export function DevSkeleton() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-96 max-w-full" />
-      </div>
+      <PageHeaderSkeleton width="w-40" />
       <Skeleton className="h-36 w-full rounded-xl" />
       <Skeleton className="h-64 w-full rounded-xl" />
       <Skeleton className="h-px w-full" />

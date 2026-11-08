@@ -1,4 +1,5 @@
 import type { AdminCommitsResponse } from "@kilotrace/shared/admin";
+import { DataTableSkeleton } from "@/components/admin/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
@@ -32,7 +33,7 @@ export function CommitsSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-busy>
       <Skeleton className="h-4 w-72 max-w-full" />
-      <Skeleton className="h-[40rem] w-full rounded-xl" />
+      <DataTableSkeleton rows={15} />
     </div>
   );
 }

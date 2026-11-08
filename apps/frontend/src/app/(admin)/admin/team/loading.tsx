@@ -1,20 +1,21 @@
-import { KpiGrid, KpiTileSkeleton } from "@/components/admin/kpi-tile";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DataTableSkeleton } from "@/components/admin/data-table";
+import { KpiGridSkeleton, SectionTitleSkeleton } from "@/components/admin/page-skeleton";
+import { PageHeaderSkeleton } from "@/components/layout/page-header";
+import { Separator } from "@/components/ui/separator";
 
-/** Placeholder of the permissions page, in its layout. */
+/** Placeholder of the team page, in its layout: header, roles, the members, then the permission matrix. */
 export default function AdminTeamLoading() {
   return (
     <div className="flex flex-col gap-6" aria-busy>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-96 max-w-full" />
-      </div>
-      <KpiGrid columns={3}>
-        {Array.from({ length: 3 }, (_, index) => (
-          <KpiTileSkeleton key={index} />
-        ))}
-      </KpiGrid>
-      <Skeleton className="h-64 w-full rounded-xl" />
+      <PageHeaderSkeleton width="w-40" />
+      <KpiGridSkeleton count={3} />
+      <Separator />
+      <DataTableSkeleton rows={4} />
+      <Separator />
+      <section className="flex flex-col gap-3">
+        <SectionTitleSkeleton description />
+        <DataTableSkeleton rows={8} />
+      </section>
     </div>
   );
 }

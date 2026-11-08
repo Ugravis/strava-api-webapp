@@ -2,23 +2,27 @@
 
 import { ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 
 /** A choice of the page among several, kept in the address: each option carries its own. */
 export function ViewSelect({ label, options }: { label: string; options: { key: string; label: string; href: string; current: boolean }[] }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const current = options.find((option) => option.current)?.key;
+  const [, startTransition] = useTransition();
+  // Shown at once, while the page of the new choice loads behind its skeletons.
+  const [current, setCurrent] = useOptimistic(options.find((option) => option.current)?.key);
   return (
-    <span className={cn("relative inline-flex", pending && "opacity-70")}>
+    <span className="relative inline-flex">
       <select
         aria-label={label}
         value={current}
         onChange={(event) => {
           const option = options.find((entry) => entry.key === event.target.value);
-          if (option) startTransition(() => router.push(option.href, { scroll: false }));
+          if (!option) return;
+          startTransition(() => {
+            setCurrent(option.key);
+            router.push(option.href, { scroll: false });
+          });
         }}
         className="h-8 cursor-pointer appearance-none rounded-lg border border-input bg-background py-1 pr-8 pl-2.5 text-xs font-medium shadow-xs transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
       >
@@ -36,10 +40,21 @@ export function ViewSelect({ label, options }: { label: string; options: { key: 
 /** A choice of the page turned on or off, kept in the address; the label tells what is on. */
 export function ViewToggle({ label, checked, href }: { label: string; checked: boolean; href: string }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Turned at once, while the page of the new choice loads behind its skeletons.
+  const [on, setOn] = useOptimistic(checked);
   return (
-    <label className={cn("inline-flex h-8 cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground select-none", pending && "opacity-70")}>
-      <Switch size="sm" checked={checked} onCheckedChange={() => startTransition(() => router.push(href, { scroll: false }))} />
+    <label className="inline-flex h-8 cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground select-none">
+      <Switch
+        size="sm"
+        checked={on}
+        onCheckedChange={(next) =>
+          startTransition(() => {
+            setOn(next);
+            router.push(href, { scroll: false });
+          })
+        }
+      />
       {label}
     </label>
   );

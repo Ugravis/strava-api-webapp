@@ -1,7 +1,7 @@
 import { KpiStrip, KpiStripFigure } from "@/components/admin/kpi-tile";
 import type { AdminStravaUsagePoint } from "@kilotrace/shared/admin";
 import { getBusinessFormat } from "@/components/admin/business-statistics/business-format";
-import { ScalableBarChart } from "@/components/admin/business-statistics/scalable-bar-chart";
+import { LogScaleChartCard } from "@/components/admin/business-statistics/log-scale-chart-card";
 import { BarChart } from "@/components/admin/site-activity/bar-chart";
 import { BarList, CardFigure, ChartHead } from "@/components/admin/site-activity/parts";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
@@ -61,18 +61,19 @@ export async function StravaTab({ view }: { view: BusinessView }) {
       </KpiStrip>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <DashboardCard title={t("imports.title")} description={t("imports.description")} className="lg:col-span-2">
-          <ScalableBarChart
-            figures={<CardFigure value={format.number(sum(activities))} label={t("imports.total")} />}
-            switchLabel={t("imports.log")}
-            labels={labels}
-            titles={titles}
-            series={[{ id: "activities", label: t("imports.series"), color: "blue" }]}
-            values={{ activities }}
-            label={t("imports.title")}
-            height={HEIGHT}
-          />
-        </DashboardCard>
+        <LogScaleChartCard
+          title={t("imports.title")}
+          description={t("imports.description")}
+          className="lg:col-span-2"
+          figures={<CardFigure value={format.number(sum(activities))} label={t("imports.total")} />}
+          switchLabel={t("imports.log")}
+          labels={labels}
+          titles={titles}
+          series={[{ id: "activities", label: t("imports.series"), color: "blue" }]}
+          values={{ activities }}
+          label={t("imports.title")}
+          height={HEIGHT}
+        />
         <DashboardCard title={t("links.title")} description={t("links.description")}>
           <div className="flex flex-col gap-4">
             <ChartHead figures={<CardFigure value={format.number(sum(links))} label={t("links.total")} />} />

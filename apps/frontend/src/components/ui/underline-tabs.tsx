@@ -27,7 +27,7 @@ export interface UnderlineTabsProps<Tab extends string> {
 /** Colour of the selected tab and of its underline: the ink of the page, or the blue of the back office. */
 const ACCENTS = {
   foreground: { indicator: "bg-foreground", tab: "" },
-  blue: { indicator: "bg-blue-600 dark:bg-blue-500", tab: "data-active:text-blue-600 dark:data-active:text-blue-400" },
+  blue: { indicator: "bg-blue-600 dark:bg-blue-500", tab: "hover:text-blue-600! data-active:text-blue-600 dark:hover:text-blue-400! dark:data-active:text-blue-400" },
 } as const;
 
 /** A line of tabs with a sliding underline, scrolled sideways when it does not fit. */

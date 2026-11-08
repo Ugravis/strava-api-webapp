@@ -185,11 +185,12 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
         </DashboardCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <DashboardCard title={t("activeDays.title")} description={t("activeDays.description")} className="lg:col-span-2">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {/* Four charts of one size: the months part by the room between two cards (padding twice and the gap). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <DashboardCard title={t("activeDays.title")} description={t("activeDays.description")} className="lg:col-span-3">
+          <div className="grid h-full grid-cols-1 gap-6 md:grid-cols-3 lg:gap-16">
             {users.activeDays.map((month) => (
-              <div key={month.month} className="flex flex-col gap-2">
+              <div key={month.month} className="flex flex-col justify-end gap-2">
                 <span className="text-sm font-medium first-letter:uppercase">{format.longMonth(month.month)}</span>
                 <Histogram bins={month.distribution} label={format.longMonth(month.month)} unit={days} series={t("users")} color="aqua" format={format} height={160} />
               </div>
@@ -197,14 +198,14 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
           </div>
         </DashboardCard>
         <DashboardCard title={t("atLeast.title")} description={t("atLeast.description", { days: view.days })}>
-          <div className="flex flex-col gap-4">
-            <ChartHead
-              figures={<CardFigure value={format.percent(format.ratio(activeOn(REGULAR_DAYS), activeInPeriod), 0)} label={t("atLeast.regular", { count: REGULAR_DAYS })} />}
-            />
+          <div className="flex h-full flex-col justify-end gap-2">
+            <span className="text-sm font-medium">
+              {t("atLeast.regular", { count: REGULAR_DAYS, share: format.percent(format.ratio(activeOn(REGULAR_DAYS), activeInPeriod), 0) })}
+            </span>
             <BarChart
               labels={atLeast.map((bin) => format.number(bin.value))}
               titles={atLeast.map((bin) => t("atLeast.bin", { count: bin.value }))}
-              series={[{ id: "count", label: t("users"), color: "blue" }]}
+              series={[{ id: "count", label: t("users"), color: "aqua" }]}
               values={{ count: atLeast.map((bin) => bin.count) }}
               notes={[{ label: t("atLeast.share"), values: atLeast.map((bin) => format.percent(format.ratio(bin.count, activeInPeriod), 0)) }]}
               label={t("atLeast.title")}

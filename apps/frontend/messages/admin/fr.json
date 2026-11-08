@@ -675,7 +675,7 @@
         "description": "À la date d'import, pas à celle de l'activité",
         "total": "Importées sur la période",
         "series": "Activités",
-        "log": "Échelle logarithmique"
+        "log": "Logarithmique"
       },
       "links": {
         "title": "Nouveaux liens",
@@ -1213,8 +1213,8 @@
       },
       "atLeast": {
         "title": "Actifs au moins N jours",
-        "description": "Utilisateurs actifs sur au moins chaque nombre de jours, sur les {days} jours",
-        "regular": "Actifs {count} jours ou plus",
+        "description": "Utilisateurs actifs au moins N jours sur les {days} jours",
+        "regular": "{share} actifs {count} jours ou plus",
         "bin": "{count, plural, one {Au moins # jour actif} other {Au moins # jours actifs}}",
         "share": "Part des actifs"
       }

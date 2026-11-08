@@ -1,4 +1,6 @@
 import {
+  ADMIN_GATEWAY_HEADER,
+  ADMIN_SESSION_COOKIE,
   AdminRole,
   DEFAULT_ADMIN_GRANTS,
   permissionsOf,
@@ -24,6 +26,7 @@ import { AdminAccessMiddleware } from '../src/admin/access/admin-access.middlewa
 import {
   ADMIN_THROTTLE,
   AdminController,
+  AdminSignInController,
 } from '../src/admin/access/admin-controller.decorator';
 import { AdminRolesGuard } from '../src/admin/access/admin-roles.guard';
 import {
@@ -42,7 +45,9 @@ import { Audited, NotAudited } from '../src/admin/audit/audited.decorator';
 import { SessionGuard } from '../src/auth/guards/session.guard';
 import { UserActivityService } from '../src/site-activity/user-activity.service';
 import { SessionCookie } from '../src/auth/session-cookie';
+import type { SessionKind } from '../src/auth/sessions/session.entity';
 import { SessionsService } from '../src/auth/sessions/sessions.service';
+import adminConfig from '../src/config/admin.config';
 import { DEFAULT_THROTTLE } from '../src/auth/throttle';
 import { ApiErrorCode, ApiErrors } from '../src/common/api-error';
 import { API_PREFIX } from '../src/common/api-prefix';
@@ -132,6 +137,25 @@ class RogueController {
   }
 }
 
+/** Sign-in of the back office: behind the secret only. */
+@AdminSignInController()
+class SignInProbeController {
+  @Get('probe')
+  probe(): string {
+    return 'sign-in';
+  }
+}
+
+/** Misplaced under the sign-in, yet declared as a back-office route. */
+@AdminController('auth/misplaced')
+class MisplacedController {
+  @Get()
+  @AnyMember()
+  misplaced(): string {
+    return 'misplaced';
+  }
+}
+
 /** A regular user route. */
 @Controller('user-area')
 class UserAreaController {
@@ -141,25 +165,37 @@ class UserAreaController {
   }
 }
 
-/** Stands for the database: users are read on every validation. */
+/**
+ * Stands for the database: users are read on every validation. A token
+ * stands for a session of both kinds unless given one.
+ */
 class FakeUserStore {
   readonly users = new Map<string, User>();
+  readonly kinds = new Map<string, SessionKind>();
 
-  add(token: string, roles: AdminRole[] = []): User {
+  add(token: string, roles: AdminRole[] = [], kind?: SessionKind): User {
     const user = { id: `${token}-id`, roles } as User;
     this.users.set(token, user);
+    if (kind) {
+      this.kinds.set(token, kind);
+    } else {
+      this.kinds.delete(token);
+    }
     return user;
   }
 
-  validate(token: string) {
+  validate(token: string, kind: SessionKind = 'site') {
     const user = this.users.get(token);
+    const only = this.kinds.get(token);
     return Promise.resolve(
-      user
-        ? { session: { id: token }, user: { ...user }, renewed: false }
+      user && (!only || only === kind)
+        ? { session: { id: token, kind }, user: { ...user }, renewed: false }
         : null,
     );
   }
 }
+
+const GATEWAY_SECRET = 'test-gateway-secret';
 
 const store = new FakeUserStore();
 const auditEntries: AuditEntry[] = [];
@@ -170,6 +206,8 @@ const auditEntries: AuditEntry[] = [];
     AdminMeController,
     ProbeController,
     RogueController,
+    SignInProbeController,
+    MisplacedController,
     UserAreaController,
   ],
   providers: [
@@ -179,8 +217,12 @@ const auditEntries: AuditEntry[] = [];
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     {
       provide: SessionsService,
-      useValue: { validate: (token: string) => store.validate(token) },
+      useValue: {
+        validate: (token: string, kind?: SessionKind) =>
+          store.validate(token, kind),
+      },
     },
+    { provide: adminConfig.KEY, useValue: { gatewaySecret: GATEWAY_SECRET } },
     { provide: UserActivityService, useValue: { record: () => undefined } },
     {
       provide: SessionCookie,
@@ -241,13 +283,21 @@ describe('Admin guards (e2e)', () => {
     auditEntries.length = 0;
   });
 
-  const as = (token: string) => `kilotrace_session=${token}`;
-  const get = (path: string, token?: string) => {
-    const call = request(app.getHttpServer()).get(path);
+  // As the admin app sends them: its secret, and the cookies of the browser.
+  const as = (token: string) =>
+    `kilotrace_session=${token}; ${ADMIN_SESSION_COOKIE}=${token}`;
+  const get = (path: string, token?: string, secret = GATEWAY_SECRET) => {
+    const call = request(app.getHttpServer())
+      .get(path)
+      .set(ADMIN_GATEWAY_HEADER, secret);
     return token ? call.set('Cookie', as(token)) : call;
   };
   const post = (path: string, token: string, body?: object) =>
-    request(app.getHttpServer()).post(path).set('Cookie', as(token)).send(body);
+    request(app.getHttpServer())
+      .post(path)
+      .set(ADMIN_GATEWAY_HEADER, GATEWAY_SECRET)
+      .set('Cookie', as(token))
+      .send(body);
 
   describe('404 for non-admins', () => {
     const notFound = (method: string, path: string) => ({
@@ -269,6 +319,40 @@ describe('Admin guards (e2e)', () => {
       await get(path).expect(404).expect(notFound('GET', path));
       await get(path, 'user').expect(404).expect(notFound('GET', path));
       await get(path, 'unknown').expect(404).expect(notFound('GET', path));
+    });
+
+    it('answers a super-admin without the secret of the admin app', async () => {
+      store.add('super', [AdminRole.SuperAdmin]);
+      await get('/api/admin/me', 'super').expect(200);
+      await request(app.getHttpServer())
+        .get('/api/admin/me')
+        .set('Cookie', as('super'))
+        .expect(404)
+        .expect(notFound('GET', '/api/admin/me'));
+      await get('/api/admin/me', 'super', 'wrong-secret')
+        .expect(404)
+        .expect(notFound('GET', '/api/admin/me'));
+      await get('/api/admin/me', 'super', `${GATEWAY_SECRET}x`).expect(404);
+    });
+
+    it('answers a super-admin signed in on the site only', async () => {
+      store.add('site', [AdminRole.SuperAdmin], 'site');
+      await get('/api/admin/me', 'site')
+        .expect(404)
+        .expect(notFound('GET', '/api/admin/me'));
+      await get('/api/user-area', 'site').expect(200);
+    });
+
+    it('opens the sign-in with the secret only, before any session', async () => {
+      await get('/api/admin/auth/probe').expect(200).expect('sign-in');
+      await request(app.getHttpServer())
+        .get('/api/admin/auth/probe')
+        .expect(404);
+    });
+
+    it('keeps a route misplaced under the sign-in closed to a site session', async () => {
+      store.add('site', [AdminRole.SuperAdmin], 'site');
+      await get('/api/admin/auth/misplaced', 'site').expect(404);
     });
 
     it('answers a state-changing route the same way, before validation', async () => {
@@ -316,6 +400,11 @@ describe('Admin guards (e2e)', () => {
     it('answers an unknown back-office route with a 404', () => {
       store.add('super', [AdminRole.SuperAdmin]);
       return get('/api/admin/does-not-exist', 'super').expect(404);
+    });
+
+    it('never open the site with a session of the back office', () => {
+      store.add('admin', [AdminRole.SuperAdmin], 'admin');
+      return get('/api/user-area', 'admin').expect(401);
     });
 
     it('still open the user routes', () => {

@@ -1,8 +1,11 @@
 import { applyDecorators, Controller, SetMetadata } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { AuthContext } from '../../auth/auth-request';
+import { Public } from '../../auth/decorators/public.decorator';
+import { SensitiveThrottle } from '../../auth/throttle';
 
 export const ADMIN_AREA_KEY = 'adminArea';
+export const ADMIN_SIGN_IN_KEY = 'adminSignIn';
 
 /**
  * Per admin and route, instead of the default limit of the public API: the
@@ -25,4 +28,18 @@ export const AdminController = (path: string): ClassDecorator =>
     Controller(`admin/${path}`),
     SetMetadata(ADMIN_AREA_KEY, true),
     Throttle({ default: ADMIN_THROTTLE }),
+  );
+
+/**
+ * Mounts the sign-in of the back office under `/admin/auth`: behind the
+ * secret of the admin app (access middleware) but before any session, so
+ * left alone by the session and roles guards. Limited per client IP, which
+ * the admin app forwards.
+ */
+export const AdminSignInController = (): ClassDecorator =>
+  applyDecorators(
+    Controller('admin/auth'),
+    Public(),
+    SetMetadata(ADMIN_SIGN_IN_KEY, true),
+    SensitiveThrottle(),
   );

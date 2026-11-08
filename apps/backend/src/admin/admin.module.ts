@@ -28,6 +28,9 @@ import { UsersModule } from '../users/users.module';
 import { AdminAccessMiddleware } from './access/admin-access.middleware';
 import { AdminRolesGuard } from './access/admin-roles.guard';
 import { AdminMeController } from './admin-me.controller';
+import { AdminAuthController } from './auth/admin-auth.controller';
+import { AdminAuthService } from './auth/admin-auth.service';
+import { AdminSessionController } from './auth/admin-session.controller';
 import { AdminNavigationController } from './admin-navigation.controller';
 import { AdminAuditLogController } from './audit/admin-audit-log.controller';
 import { AdminAuditLog } from './audit/admin-audit-log.entity';
@@ -76,8 +79,8 @@ export const ADMIN_ROUTES = [
 ];
 
 /**
- * Back office under `/api/admin`, called by the Next.js server only (the
- * frontend proxy blocks it from the browser).
+ * Back office under `/api/admin`, called by the server of the admin app
+ * only, with its secret: the public site never reaches it.
  */
 @Module({
   imports: [
@@ -107,6 +110,8 @@ export const ADMIN_ROUTES = [
     ReleaseNotesModule,
   ],
   controllers: [
+    AdminAuthController,
+    AdminSessionController,
     AdminMeController,
     AdminNavigationController,
     AdminStatisticsController,
@@ -126,6 +131,7 @@ export const ADMIN_ROUTES = [
     AdminReleaseNotesController,
   ],
   providers: [
+    AdminAuthService,
     AdminAuditLogService,
     AdminUsersService,
     AdminUserReportsService,

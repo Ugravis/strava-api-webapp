@@ -1,6 +1,7 @@
 import { type AdminMeResponse, isAdminRole } from '@kilotrace/shared/admin';
 import { Get } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { avatarUrlFor } from '../users/dto/user-response';
 import type { User } from '../users/user.entity';
 import { AdminController } from './access/admin-controller.decorator';
 import { AnyMember } from './access/permission.decorator';
@@ -16,6 +17,10 @@ export class AdminMeController {
   async me(@CurrentUser() user: User): Promise<AdminMeResponse> {
     return {
       id: user.id,
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: avatarUrlFor(user),
       roles: user.roles.filter(isAdminRole),
       permissions: await this.permissions.permissionsOf(user.roles),
     };

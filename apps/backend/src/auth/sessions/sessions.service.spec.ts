@@ -41,6 +41,7 @@ describe('SessionsService', () => {
       tokenHash: hashToken('token'),
       userId: 'user-id',
       user: { id: 'user-id' } as User,
+      kind: 'site',
       persistent: true,
       expiresAt: new Date(Date.now() + DAY_MS),
       lastSeenAt: new Date(),

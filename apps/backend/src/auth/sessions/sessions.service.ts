@@ -4,7 +4,7 @@ import { LessThan, Not, Repository } from 'typeorm';
 import authConfig, { type AuthConfig } from '../../config/auth.config';
 import { generateToken, hashToken } from '../../common/crypto.util';
 import { isSuspended, User } from '../../users/user.entity';
-import { Session } from './session.entity';
+import { Session, type SessionKind } from './session.entity';
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -42,6 +42,7 @@ export class SessionsService {
     userId: string,
     metadata: SessionMetadata,
     persistent: boolean,
+    kind: SessionKind = 'site',
   ): Promise<CreatedSession> {
     const token = generateToken();
     const now = new Date();
@@ -49,6 +50,7 @@ export class SessionsService {
     await this.sessions.insert({
       tokenHash: hashToken(token),
       userId,
+      kind,
       persistent,
       expiresAt,
       lastSeenAt: now,
@@ -58,10 +60,16 @@ export class SessionsService {
     return { token, expiresAt, persistent };
   }
 
-  /** Resolves a session token, applying sliding expiration. */
-  async validate(token: string): Promise<ValidatedSession | null> {
+  /**
+   * Resolves a session token of the given kind, applying sliding
+   * expiration: a back-office token never opens the site, nor the reverse.
+   */
+  async validate(
+    token: string,
+    kind: SessionKind = 'site',
+  ): Promise<ValidatedSession | null> {
     const session = await this.sessions.findOne({
-      where: { tokenHash: hashToken(token) },
+      where: { tokenHash: hashToken(token), kind },
       relations: { user: true },
     });
     if (!session?.user) {
@@ -92,6 +100,10 @@ export class SessionsService {
 
   async revoke(token: string): Promise<void> {
     await this.sessions.delete({ tokenHash: hashToken(token) });
+  }
+
+  async revokeById(sessionId: string): Promise<void> {
+    await this.sessions.delete({ id: sessionId });
   }
 
   /** Revokes every session of a user, optionally keeping the current one. */

@@ -1,0 +1,5 @@
+/* Theme, base styles and utilities shared with the back office. */
+@import "@kilotrace/ui/src/styles/globals.css";
+
+/* Classes used by the shared components, outside the app. */
+@source "../../../../packages/ui/src";

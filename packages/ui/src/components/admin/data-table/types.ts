@@ -1,0 +1,170 @@
+import type { TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
+import type { ReactNode } from "react";
+import type { ActionResult } from "../action-state";
+import type { DetailFieldEdit } from "../detail/edit-types";
+
+export type { TableEntry, TableGroup, TablePage, TableQuery, TableSort } from "@kilotrace/shared/table";
+
+/** A column. Prefer the builders of `columns.tsx`, which apply the rules of the kit. */
+export interface DataTableColumn<T> {
+  /** Also the id the server sorts by. */
+  id: string;
+  header: string;
+  /** Before the name of the column: a lucide icon, required by the rules. */
+  icon: ReactNode;
+  cell: (row: T) => ReactNode;
+  /** Drawn in the detail instead of `cell`, e.g. a switch with the words its cell leaves out. */
+  detailCell?: (row: T) => ReactNode;
+  /** The server knows how to sort by it. */
+  sortable?: boolean;
+  /** Shape of its cells while loading, a bar by default. */
+  skeleton?: ReactNode;
+  /** Out of the columns menu, always shown: the first column, mostly. */
+  locked?: boolean;
+  /** Its header shows the icon alone, its name in a bubble: a narrow column. */
+  compact?: boolean;
+  /** Its cells hold the drag handle of `reorder`: the column of `orderColumn`. */
+  order?: boolean;
+  /** The text a floating button copies on hover, none when null. */
+  copy?: (row: T) => string | null;
+  /**
+   * Edits the value of a row in place, from a pencil floating beside copy, in
+   * the cell as in the detail (`edit` of the detail kit); none when undefined.
+   */
+  edit?: (row: T) => DetailFieldEdit | undefined;
+  /**
+   * Buttons floating beside copy and edit on hover (any `DetailFieldButton`,
+   * e.g. moderate), in the cell as in the detail; none when null.
+   */
+  tools?: (row: T) => ReactNode;
+  /** An outside page its value opens in a new tab, underlined on hover; none when null. */
+  href?: (row: T) => string | null;
+  /** In cards, drawn as the cover at the top of the card instead of a value: the image of `imageColumn`. */
+  cover?: (row: T) => ReactNode;
+  /** In no view: hidden until ticked in the « Colonnes » menu, in every view. */
+  extra?: boolean;
+  className?: string;
+}
+
+/**
+ * A row moved by drag and drop, between its new neighbours on the page, in
+ * ascending order: placed right before `before`, else right after `after`.
+ */
+export interface TableMove {
+  id: string;
+  after: string | null;
+  before: string | null;
+}
+
+/** A filter of the header: the rows having any of the values picked. */
+export interface DataTableFacet {
+  id: string;
+  label: string;
+  options: { value: string; label: string; icon?: ReactNode }[];
+}
+
+/** A way to group the rows, under foldable titles. */
+export interface DataTableGrouping {
+  id: string;
+  label: string;
+  /** The title of a group from its key, as the server sends it. */
+  title: (key: string) => ReactNode;
+}
+
+/**
+ * How a view draws its rows, always with the cells of the columns: a table,
+ * cards of values one under the other, or items of values side by side,
+ * following each other on the line.
+ */
+export type DataTableLayout = "table" | "cards" | "list";
+
+/**
+ * A way to show the rows: any layout, with all or some columns. Its name is
+ * free, its icon is that of its layout: several tables of other columns
+ * look alike in the menu.
+ */
+export interface DataTableView {
+  id: string;
+  label: string;
+  /** A table by default. */
+  layout?: DataTableLayout;
+  /** Shown columns, all by default. */
+  columns?: string[];
+  /** Rows per page, else the `pageSize` of the config, else the default of the layout. */
+  pageSize?: number;
+  /** Without the checkboxes of `bulkActions`, e.g. a list of short items. */
+  noSelection?: boolean;
+  /** Without the menu of `actions`. */
+  noActions?: boolean;
+  /** Sent to `fetch` with the query, e.g. the branch of a history: the rows themselves change. */
+  params?: Record<string, string>;
+}
+
+export interface DataTableConfig<T> {
+  /** Names its parameters in the URL, unique on the page. */
+  id: string;
+  /** Asks the server for a page: a Server Action, or `localTableSource`; `params` are those of the current view. */
+  fetch: (query: TableQuery, params: Record<string, string>) => Promise<TablePage<T>>;
+  rowId: (row: T) => string;
+  /** The first one stays on screen while the table scrolls sideways. */
+  columns: DataTableColumn<T>[];
+  /** Placeholder of the search field, e.g. what it searches; no field without it. */
+  search?: string;
+  facets?: DataTableFacet[];
+  groupings?: DataTableGrouping[];
+  /** The first one is the default. */
+  views?: DataTableView[];
+  /** The main action of the list, e.g. to add an item. */
+  create?: { label: string; onClick: () => void };
+  /** Applied by the system, as `defaultSort`; « Aucun » then joins the menu. */
+  defaultGroupBy?: string;
+  /** By date of creation, newest first, unless said otherwise. */
+  defaultSort?: TableSort;
+  /** Applied by the system, shown active only once the user picks. */
+  defaultFilters?: Record<string, string[]>;
+  /** Rows per page, else the default of the layout: 30 for a table, 24 for cards, 60 for a list. */
+  pageSize?: number;
+  /**
+   * Most height of the box of a table, which grows with its rows up to it:
+   * any CSS length, e.g. `"480px"` or `"calc(100dvh - 12rem)"`. `"none"`
+   * by default: it grows without a scroll of its own, the page scrolls.
+   */
+  maxHeight?: string;
+  /** Buttons on the selected rows, in a bar at the bottom; rows get checkboxes with it. */
+  bulkActions?: (ids: string[], clear: () => void) => ReactNode;
+  /**
+   * Saves a row moved by its handle, in an `orderColumn`. Rows move once
+   * sorted by it, without search or filters, within their group.
+   */
+  reorder?: (move: TableMove) => Promise<ActionResult>;
+  /** Greyed rows, e.g. hidden entries. */
+  muted?: (row: T) => boolean;
+  /** Icon buttons or a menu, at the end of the row: `RowActions` mostly. */
+  actions?: (row: T) => ReactNode;
+  /** A click on the row, e.g. to open its panel. */
+  onOpen?: (row: T) => void;
+  empty: { title: string; description: string };
+  /**
+   * A message of its own for no row under some filters, e.g. the default ones
+   * (« nothing open »): `null` keeps « Aucun résultat » and its button.
+   */
+  emptyFiltered?: (query: { filters: Record<string, string[]>; search: string }) => { title: string; description: string } | null;
+  /** The rows counted, e.g. `(count) => (count > 1 ? "comptes" : "compte")`. */
+  noun: (count: number) => string;
+}
+
+/*
+ * The choices of the user, apart from the defaults of the system: null (or
+ * no key) until the user picks, even the default, which the header then
+ * shows as active. A reset hands back to the system.
+ */
+export interface DataTablePicks {
+  filters: Record<string, string[]>;
+  sort: TableSort | null;
+  /** `""` once the user picks no grouping against a `defaultGroupBy`. */
+  groupBy: string | undefined;
+  /** Of the columns of the current view. */
+  hidden: Set<string> | null;
+  /** Of the columns of the other views. */
+  shown: Set<string> | null;
+}

@@ -1,12 +1,26 @@
 # Public entry point: HTTPS certificates (Let's Encrypt) and redirection from
-# http, then everything goes to Next.js, which proxies /api to the backend.
+# http. The site goes to its Next.js app, which proxies /api to the backend;
+# the back office to its own app, on its own host. Network-level filtering of
+# the back office (IP allowlist, forward_auth) would go in its block.
 {$DOMAIN} {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		-Server
+		# Would disclose a rewrite of the proxies of the apps.
+		-X-Middleware-Rewrite
 	}
 	reverse_proxy frontend:3000
+}
+
+admin.{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+		-X-Middleware-Rewrite
+	}
+	reverse_proxy admin:3200
 }
 
 www.{$DOMAIN} {

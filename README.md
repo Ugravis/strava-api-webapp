@@ -7,15 +7,17 @@ Gamified web platform connected to Strava. Activities are displayed on a map wit
 - **Backend**: NestJS, TypeORM
 - **Database**: PostgreSQL with PostGIS
 - **Frontend**: Next.js, shadcn/ui
-- **Tooling**: pnpm workspaces, Docker
+- **Tooling**: pnpm workspaces, Turborepo, Docker
 
 ## Structure
 
 ```
-backend/          NestJS API
-frontend/         Next.js application
-packages/shared/  Types shared between frontend and backend
-docker/           Dockerfiles
+apps/backend/                NestJS API
+apps/frontend/               Next.js application
+packages/shared/             API contracts, constants and validation rules (compiled, ESM + CJS)
+packages/typescript-config/  Shared tsconfig presets (base, library, nestjs, nextjs)
+packages/eslint-config/      Shared ESLint flat configs (nestjs, nextjs)
+docker/                      Dockerfiles
 ```
 
 ## Getting started
@@ -38,9 +40,11 @@ Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be rea
 
 ```bash
 pnpm install
-pnpm dev:backend
-pnpm dev:frontend
+pnpm dev
 ```
+
+`@kilotrace/shared` is a compiled package: `pnpm dev` builds it first and rebuilds it on change. The
+Docker dev images build it once, so after changing it, rebuild them (`docker compose up --build`).
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
 applies the pending migrations, empties the user data tables but keeps the datasets (countries,
@@ -50,9 +54,9 @@ object storage (uploaded avatars, map previews); it refuses to run when `NODE_EN
 To manage migrations manually:
 
 ```bash
-pnpm --filter backend migration:generate src/database/migrations/<Name>
-pnpm --filter backend migration:run
-pnpm --filter backend migration:revert
+pnpm --filter @kilotrace/backend migration:generate src/database/migrations/<Name>
+pnpm --filter @kilotrace/backend migration:run
+pnpm --filter @kilotrace/backend migration:revert
 ```
 
 ## Authentication
@@ -70,6 +74,31 @@ pnpm --filter backend migration:revert
   With "Stay signed in", the cookie lasts 30 days and is extended while used; otherwise it ends
   with the browser and the session expires after 24 hours of inactivity.
   The browser only talks to the frontend origin, which proxies `/api` to the backend.
+
+## Back office
+
+Served by the site itself under `/admin` (frontend) and `/api/admin` (backend), with the normal
+session. Nothing of it is disclosed to anyone else:
+
+- **Roles**: `users.roles`, hierarchical (`support` < `admin` < `super-admin`, in
+  `@kilotrace/shared/admin`), read from the database on every request, so a withdrawn role
+  applies at once. `ADMIN_BOOTSTRAP_EMAIL` makes an existing account the first super-admin at
+  startup, while no user holds a role.
+- **API**: an access middleware answers the router's own 404 to anyone without a role, whether
+  the route exists or not. Routes are declared with `@AdminController()` and `@Roles()` (deny by
+  default), have their own rate limit (per admin), and must be `@Audited()` when they change
+  state; a destructive action requires a `reason`. The frontend proxy strips the cookies of
+  `/api/admin` requests from the browser: only the Next.js server calls it.
+- **Audit**: `admin_audit_log` is append-only (who, what, on what, why, outcome). A trigger
+  rejects deletions and any update other than the masking columns (`hidden_at`, `hidden_by`).
+- **Pages**: server components, behind a role check in the proxy (`src/proxy.ts`), which serves
+  non-admins the very page of an unknown route with a 404 status; Caddy removes the
+  `X-Middleware-Rewrite` header that would tell it apart. Changes go through Server Actions and
+  `src/lib/admin` (server-only); the browser only gets generic components. The back office has
+  a sidebar of its own (`(admin)` route group); a link at the bottom of each sidebar, captioned
+  with the highest role, leads to the other part, rendered on the server for admins only. Texts live in
+  `messages/admin/fr.json`, outside the messages sent to the browser. Never indexed, and left out
+  of `robots.txt` and the sitemap.
 
 ## Strava
 
@@ -265,7 +294,7 @@ indicator) opens a temporary **Dev** panel: a read-only view of the database (we
 activities, sync jobs, connections, users) and of the Strava quotas, refreshed every 3 seconds
 while open, with the rows changed in the last minute highlighted. It is served by
 `GET /api/dev/overview`, which is never registered when `NODE_ENV=production`. To remove it:
-delete `backend/src/dev`, `frontend/src/components/dev` and their two references
+delete `apps/backend/src/dev`, `apps/frontend/src/components/dev` and their two references
 (`AppModule`, authenticated layout).
 
 ## Production
@@ -280,13 +309,16 @@ automatic certificates and HSTS. No Adminer, Mailpit or storage console.
 
 ```bash
 cp .env.production.example .env   # then fill in every value, chmod 600 .env
-docker compose -f docker-compose.prod.yml up -d --build
+GIT_COMMIT=$(git rev-parse HEAD) docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+- **Commit**: `GIT_COMMIT` is baked into the backend image and shown in the back office
+  (`/admin/dev`), along with the versions and the applied migrations; left empty, the page says so.
 
 - **Secrets**: the backend refuses to start in production when `COOKIE_SECRET`,
   `ENCRYPTION_SECRET` or `STRAVA_WEBHOOK_VERIFY_TOKEN` is missing, a development default or
   shorter than 32 characters, when a database or storage credential keeps its default, or when
-  `FRONTEND_URL` is not https (`backend/src/config/environment.validation.ts`).
+  `FRONTEND_URL` is not https (`apps/backend/src/config/environment.validation.ts`).
 - **Cookies** are `Secure` whenever `FRONTEND_URL` is https, and prefixed with `kilotrace_`:
   browsers share cookies between all the ports of a host, other apps included.
 - **Email sign-in**: sign-up, sign-in and password reset by email answer
@@ -295,7 +327,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 - **Strava webhook**: events are not signed, so the verify token is the last segment of the
   callback URL (`/api/strava/webhook/<token>`); any other URL answers 404.
 - **Headers**: Next.js sends the Content Security Policy, `X-Frame-Options: DENY`, `nosniff`,
-  `Referrer-Policy` and `Permissions-Policy` (`frontend/next.config.ts`).
+  `Referrer-Policy` and `Permissions-Policy` (`apps/frontend/next.config.ts`).
 - **Geography**: `country_parts` and the stations tables are not created by any user action:
   import them once (`pnpm countries:import`, `pnpm stations:import`) through an SSH tunnel to
   the database, or copy them from another database with `pg_dump --data-only -t <table>`.
@@ -304,19 +336,20 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 | Command                 | Description                                             |
 | ----------------------- | ------------------------------------------------------- |
-| `pnpm check-all`        | Run every CI check on all packages, sequentially        |
-| `pnpm check:backend`    | Backend: lint, type-check, unit tests, e2e tests, build |
-| `pnpm check:frontend`   | Frontend: lint, type-check, build                       |
-| `pnpm check:shared`     | Shared package: type-check                              |
+| `pnpm check`            | Run every CI check on all packages                      |
+| `pnpm dev`              | Start every app in development mode                     |
 | `pnpm lint`             | Lint all packages                                       |
 | `pnpm typecheck`        | Type-check all packages                                 |
 | `pnpm test`             | Run unit tests                                          |
+| `pnpm test:e2e`         | Run e2e tests                                           |
 | `pnpm build`            | Build all packages                                      |
 | `pnpm countries:import` | Import the country boundaries from Overture Maps        |
 | `pnpm stations:import`  | Import the train stations and links from an OSM file    |
 | `pnpm db:seed:bench`    | Create the `bench` account with a large tile history    |
 
-The CI runs the same `check:*` commands, so `pnpm check-all` reproduces it locally.
+Tasks run through Turborepo (`turbo.json`), which caches their results in `.turbo`. Add
+`--filter=<package>` to run one package, e.g. `pnpm dev --filter=@kilotrace/frontend`. The CI runs
+`pnpm check` on the packages affected by the change, so `pnpm check` reproduces it locally.
 
 ## Workflow
 

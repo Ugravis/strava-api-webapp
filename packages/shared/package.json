@@ -1,14 +1,64 @@
 {
   "name": "@kilotrace/shared",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./admin": {
+      "import": {
+        "types": "./dist/admin/index.d.ts",
+        "default": "./dist/admin/index.js"
+      },
+      "require": {
+        "types": "./dist/admin/index.d.cts",
+        "default": "./dist/admin/index.cjs"
+      }
+    },
+    "./table": {
+      "import": {
+        "types": "./dist/table/index.d.ts",
+        "default": "./dist/table/index.js"
+      },
+      "require": {
+        "types": "./dist/table/index.d.cts",
+        "default": "./dist/table/index.cjs"
+      }
+    },
+    "./rules": {
+      "import": {
+        "types": "./dist/rules/index.d.ts",
+        "default": "./dist/rules/index.js"
+      },
+      "require": {
+        "types": "./dist/rules/index.d.cts",
+        "default": "./dist/rules/index.cjs"
+      }
+    }
+  },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "check": "pnpm typecheck"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@kilotrace/typescript-config": "workspace:*",
+    "tsup": "^8.5.1",
     "typescript": "^5.7.3"
   }
 }

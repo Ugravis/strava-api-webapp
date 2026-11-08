@@ -1,25 +1,25 @@
 {
   "name": "kilotrace",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "packageManager": "pnpm@10.34.7",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "dev:backend": "pnpm --filter backend start:dev",
-    "dev:frontend": "pnpm --filter frontend dev",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "check:backend": "pnpm --filter backend check",
-    "check:frontend": "pnpm --filter frontend check",
-    "check:shared": "pnpm --filter @kilotrace/shared check",
-    "check-all": "pnpm -r --workspace-concurrency=1 check",
-    "db:reset": "pnpm --filter backend db:reset",
-    "db:seed:bench": "pnpm --filter backend db:seed:bench",
-    "countries:import": "pnpm --filter backend countries:import",
-    "stations:import": "pnpm --filter backend stations:import"
+    "build": "turbo run build",
+    "check": "turbo run lint typecheck test test:e2e build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "typecheck": "turbo run typecheck",
+    "db:reset": "pnpm --filter @kilotrace/backend db:reset",
+    "db:seed:bench": "pnpm --filter @kilotrace/backend db:seed:bench",
+    "countries:import": "pnpm --filter @kilotrace/backend countries:import",
+    "stations:import": "pnpm --filter @kilotrace/backend stations:import"
+  },
+  "devDependencies": {
+    "turbo": "2.11.8"
   }
 }

@@ -3,6 +3,7 @@
 ## Stack & Commands
 - Stack: NestJS, TypeORM, PostgreSQL/PostGIS, Next.js, Tailwind, shadcn/ui, Docker.
 - PM: pnpm (use `pnpm --filter <app> <cmd>`).
+- Apps: `apps/frontend` (public site), `apps/admin` (back office, own host `admin.*`, port 3200), `apps/backend`. Shared UI, kits, theme and texts: `packages/ui` (`@kilotrace/ui/*`). No admin code in `apps/frontend`.
 - Strict TS, mobile-first, responsive, skeleton loaders, SOLID principles.
 
 ## Interaction & Git
@@ -13,6 +14,13 @@
 - Source code: Max 150 lines per read. If > 150 lines, locate targets via `grep -n` and inspect using `offset`/`limit`.
 - Configs/Locks/Data: NEVER read full lockfiles, logs, GeoJSON, GPX, or Docker files. Use `jq`, `yq`, `grep`, `head`, `tail`.
 - Tests: Run targeted files only (never full suite). Silence linters (`--quiet`).
+
+## Admin Tables
+- Every back-office list uses the data table kit (`@kilotrace/ui/components/admin/data-table` + `runTableQuery`). Read `docs/admin-tables.md` first (skill `admin-table`).
+
+## Split Panel & Details
+- Every side panel uses the split panel kit (`@kilotrace/ui/components/split-panel`), generic, knowing nothing of tables. Read `docs/split-panel.md` first (skill `split-panel`).
+- Every detail of a back-office row (panel, dialog or page) uses the detail kit (`@kilotrace/ui/components/admin/detail`). Read `docs/admin-detail.md` first (skill `admin-detail`).
 
 ## Output Rules
 - Output changed lines only (minimal diff style).

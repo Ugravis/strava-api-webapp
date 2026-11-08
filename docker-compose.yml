@@ -58,9 +58,15 @@ services:
       DB_NAME: ${DB_NAME:-strava_webapp}
       PORT: 4000
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:3200}
+      # Shared with the admin service only: the frontend never holds it.
+      ADMIN_GATEWAY_SECRET: ${ADMIN_GATEWAY_SECRET:-development-admin-gateway-secret}
       COOKIE_SECRET: ${COOKIE_SECRET:-development-cookie-secret}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       MAIL_FROM: ${MAIL_FROM:-Kilotrace <no-reply@localhost>}
@@ -86,8 +92,8 @@ services:
       storage:
         condition: service_started
     volumes:
-      - ./backend/src:/app/backend/src
-      - ./backend/test:/app/backend/test
+      - ./apps/backend/src:/app/apps/backend/src
+      - ./apps/backend/test:/app/apps/backend/test
 
   # Optional public URL for Strava webhooks in development:
   # `docker compose --profile tunnel up`. Exposes the backend on a random
@@ -106,14 +112,36 @@ services:
       target: dev
     environment:
       API_INTERNAL_URL: http://backend:4000
+      NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL:-http://localhost:3200}
     ports:
       - "3000:3000"
     depends_on:
       - backend
     volumes:
-      - ./frontend/src:/app/frontend/src
-      - ./frontend/public:/app/frontend/public
-      - ./frontend/messages:/app/frontend/messages
+      - ./apps/frontend/src:/app/apps/frontend/src
+      - ./apps/frontend/public:/app/apps/frontend/public
+      - ./packages/ui/src:/app/packages/ui/src
+
+  # Back office, on its own host and port: http://localhost:3200.
+  admin:
+    build:
+      context: .
+      dockerfile: docker/admin.Dockerfile
+      target: dev
+    environment:
+      API_INTERNAL_URL: http://backend:4000
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:3200}
+      ADMIN_GATEWAY_SECRET: ${ADMIN_GATEWAY_SECRET:-development-admin-gateway-secret}
+      NEXT_PUBLIC_SITE_URL: ${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - "3200:3200"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/admin/src:/app/apps/admin/src
+      - ./apps/admin/public:/app/apps/admin/public
+      - ./apps/admin/messages:/app/apps/admin/messages
+      - ./packages/ui/src:/app/packages/ui/src
 
 volumes:
   db-data:

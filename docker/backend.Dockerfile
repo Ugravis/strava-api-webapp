@@ -2,32 +2,37 @@ FROM node:24-alpine AS base
 RUN npm install -g pnpm@10.34.7
 WORKDIR /app
 
+# Keep in sync with the turbo version of the root package.json.
+FROM base AS prune
+RUN npm install -g turbo@2.11.8
+COPY . .
+RUN turbo prune @kilotrace/backend --docker
+
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY backend/package.json backend/
-COPY frontend/package.json frontend/
-COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --filter backend...
+COPY --from=prune /app/out/json/ .
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS dev
-COPY backend backend
-COPY packages packages
-WORKDIR /app/backend
+COPY --from=prune /app/out/full/ .
+# The app watches its own sources; the workspace packages it imports are built once.
+RUN pnpm turbo run build --filter=@kilotrace/backend^...
+WORKDIR /app/apps/backend
 EXPOSE 4000
-CMD ["pnpm", "start:dev"]
+CMD ["pnpm", "dev"]
 
 FROM deps AS build
-COPY backend backend
-COPY packages packages
-RUN pnpm --filter backend build \
-  && pnpm --filter backend deploy --prod --legacy /out
+COPY --from=prune /app/out/full/ .
+RUN pnpm turbo run build --filter=@kilotrace/backend \
+  && pnpm --filter @kilotrace/backend deploy --prod --legacy /out
 
 FROM node:24-alpine AS prod
-ENV NODE_ENV=production
+# Commit shown in the back office; `.git` stays out of the build context.
+ARG GIT_COMMIT=""
+ENV NODE_ENV=production GIT_COMMIT=${GIT_COMMIT}
 WORKDIR /app
 COPY --from=build --chown=node:node /out/package.json ./
 COPY --from=build --chown=node:node /out/node_modules node_modules
-COPY --from=build --chown=node:node /app/backend/dist dist
+COPY --from=build --chown=node:node /app/apps/backend/dist dist
 USER node
 EXPOSE 4000
 CMD ["node", "dist/main"]

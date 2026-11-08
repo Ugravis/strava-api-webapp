@@ -2,17 +2,21 @@ FROM node:24-alpine AS base
 RUN npm install -g pnpm@10.34.7
 WORKDIR /app
 
+# Keep in sync with the turbo version of the root package.json.
+FROM base AS prune
+RUN npm install -g turbo@2.11.8
+COPY . .
+RUN turbo prune @kilotrace/frontend --docker
+
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY backend/package.json backend/
-COPY frontend/package.json frontend/
-COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --filter frontend...
+COPY --from=prune /app/out/json/ .
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS dev
-COPY frontend frontend
-COPY packages packages
-WORKDIR /app/frontend
+COPY --from=prune /app/out/full/ .
+# The app watches its own sources; the workspace packages it imports are built once.
+RUN pnpm turbo run build --filter=@kilotrace/frontend^...
+WORKDIR /app/apps/frontend
 EXPOSE 3000
 CMD ["pnpm", "dev"]
 
@@ -20,12 +24,13 @@ FROM deps AS build
 # Read at build time: rewrites and public variables are compiled into the bundle.
 ARG API_INTERNAL_URL=http://backend:4000
 ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_ADMIN_URL
 ENV API_INTERNAL_URL=$API_INTERNAL_URL \
   NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+  NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL \
   NEXT_TELEMETRY_DISABLED=1
-COPY frontend frontend
-COPY packages packages
-RUN pnpm --filter frontend build
+COPY --from=prune /app/out/full/ .
+RUN pnpm turbo run build --filter=@kilotrace/frontend
 
 FROM node:24-alpine AS prod
 ENV NODE_ENV=production \
@@ -33,9 +38,9 @@ ENV NODE_ENV=production \
   HOSTNAME=0.0.0.0 \
   PORT=3000
 WORKDIR /app
-COPY --from=build --chown=node:node /app/frontend/.next/standalone ./
-COPY --from=build --chown=node:node /app/frontend/.next/static frontend/.next/static
-COPY --from=build --chown=node:node /app/frontend/public frontend/public
+COPY --from=build --chown=node:node /app/apps/frontend/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/frontend/.next/static apps/frontend/.next/static
+COPY --from=build --chown=node:node /app/apps/frontend/public apps/frontend/public
 USER node
 EXPOSE 3000
-CMD ["node", "frontend/server.js"]
+CMD ["node", "apps/frontend/server.js"]

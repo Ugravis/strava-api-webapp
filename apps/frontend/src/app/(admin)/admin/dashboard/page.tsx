@@ -49,7 +49,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
       <BandTitle action={<TeamSwitch team={team} />}>{t("activity")}</BandTitle>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Suspense fallback={<DashboardCardSkeleton chart />}>
+        <Suspense key={`activity-${team}`} fallback={<DashboardCardSkeleton chart />}>
           <DashboardSiteActivity team={team} />
         </Suspense>
         <Suspense fallback={<DashboardCardSkeleton chart />}>
@@ -57,7 +57,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
         </Suspense>
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Suspense fallback={<DashboardCardSkeleton rows={6} className="lg:col-span-2" />}>
+        <Suspense key={`pages-${team}`} fallback={<DashboardCardSkeleton rows={6} className="lg:col-span-2" />}>
           <DashboardTopPages team={team} />
         </Suspense>
         <Suspense fallback={<DashboardCardSkeleton chart />}>
@@ -82,10 +82,10 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
       <BandTitle>{t("latest")}</BandTitle>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Suspense fallback={<DashboardCardSkeleton rows={9} className="lg:col-span-2" />}>
+        <Suspense fallback={<DashboardCardSkeleton rows={14} className="lg:col-span-2" />}>
           <DashboardTeamActivity />
         </Suspense>
-        <Suspense fallback={<DashboardCardSkeleton rows={9} />}>
+        <Suspense fallback={<DashboardCardSkeleton rows={14} />}>
           <DashboardRecentUsers />
         </Suspense>
       </div>

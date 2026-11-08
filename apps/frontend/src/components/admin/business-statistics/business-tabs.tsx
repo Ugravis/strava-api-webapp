@@ -14,5 +14,5 @@ const ICONS: Record<BusinessTab, LucideIcon> = {
 
 /** Parts of the business statistics. */
 export function BusinessTabs(props: UnderlineTabsProps<BusinessTab>) {
-  return <UnderlineTabs {...props} icons={ICONS} />;
+  return <UnderlineTabs {...props} icons={ICONS} accent="blue" />;
 }

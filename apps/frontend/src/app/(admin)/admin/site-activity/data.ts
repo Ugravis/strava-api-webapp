@@ -16,7 +16,7 @@ export const DEFAULT_DAYS: AdminSiteActivityPeriod = 30;
 export interface SiteActivityView {
   days: AdminSiteActivityPeriod;
   team: boolean;
-  /** Whether the views of the back-office pages are counted. */
+  /** Whether the views of the back-office pages are counted; off by default. */
   admin: boolean;
   tab: SiteActivityTab;
 }
@@ -25,7 +25,7 @@ export function viewOf(params: Record<string, string | string[] | undefined>): S
   return {
     days: ADMIN_SITE_ACTIVITY_PERIODS.find((days) => String(days) === params.days) ?? DEFAULT_DAYS,
     team: params.team === "true",
-    admin: params.admin !== "false",
+    admin: params.admin === "true",
     tab: SITE_ACTIVITY_TABS.find((tab) => tab === params.tab) ?? "audience",
   };
 }
@@ -33,7 +33,7 @@ export function viewOf(params: Record<string, string | string[] | undefined>): S
 /** The address of the page with some of its choices changed. */
 export const viewHref = (view: SiteActivityView, next: Partial<SiteActivityView>) => {
   const { days, team, admin, tab } = { ...view, ...next };
-  return `${adminRoutes.siteActivity}?days=${days}&team=${team}${admin ? "" : "&admin=false"}&tab=${tab}`;
+  return `${adminRoutes.siteActivity}?days=${days}&team=${team}${admin ? "&admin=true" : ""}&tab=${tab}`;
 };
 
 /**

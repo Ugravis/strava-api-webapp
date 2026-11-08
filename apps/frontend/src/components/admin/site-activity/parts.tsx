@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { SERIES_COLORS, type SeriesColorName } from "@/components/admin/statistics/palette";
 import { cn } from "@/lib/utils";
@@ -51,28 +50,6 @@ export function BarList({ items, max, color = "blue", mono = false, empty, maxHe
   );
 }
 
-/** A choice of the page, kept in the address, as the team switch of the dashboard. */
-export function ViewSwitch({ label, options }: { label: string; options: { key: string; label: string; href: string; current: boolean }[] }) {
-  return (
-    <div className="inline-flex rounded-lg bg-muted p-0.5 text-xs font-medium" role="group" aria-label={label}>
-      {options.map((option) => (
-        <Link
-          key={option.key}
-          href={option.href}
-          scroll={false}
-          aria-current={option.current ? "true" : undefined}
-          className={cn(
-            "rounded-md px-2.5 py-1 transition-colors",
-            option.current ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {option.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
 /** A figure summing a card, above its chart. */
 export function CardFigure({ value, label }: { value: ReactNode; label: string }) {
   return (
@@ -97,12 +74,26 @@ export function ChartHead({ figures, legend }: { figures?: ReactNode; legend?: R
  * A cell shaded by a ratio, in a single hue: retention and conversion grids.
  * Text keeps its ink whatever the shade.
  */
-export function RateCell({ ratio, children, title, className }: { ratio: number | null; children: ReactNode; title?: string; className?: string }) {
+export function RateCell({
+  ratio,
+  children,
+  title,
+  className,
+  compact = false,
+}: {
+  ratio: number | null;
+  children: ReactNode;
+  title?: string;
+  className?: string;
+  /** A thin cell of a fixed width, for a grid that must not stretch. */
+  compact?: boolean;
+}) {
   return (
     <td className={cn("p-0.5", className)} title={title}>
       <span
         className={cn(
-          "relative flex h-8 min-w-12 items-center justify-center overflow-hidden rounded-md text-xs tabular-nums",
+          "relative flex items-center justify-center overflow-hidden tabular-nums",
+          compact ? "h-6 w-20 rounded-[4px] text-[11px]" : "h-8 min-w-12 rounded-md text-xs",
           ratio === null ? "text-muted-foreground" : "bg-muted/60 font-medium",
         )}
       >

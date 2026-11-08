@@ -15,5 +15,5 @@ const ICONS: Record<SiteActivityTab, LucideIcon> = {
 
 /** Parts of the site activity. */
 export function SiteActivityTabs(props: UnderlineTabsProps<SiteActivityTab>) {
-  return <UnderlineTabs {...props} icons={ICONS} />;
+  return <UnderlineTabs {...props} icons={ICONS} accent="blue" />;
 }

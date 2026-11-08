@@ -1,17 +1,19 @@
+import { KpiStrip, KpiStripFigure } from "@/components/admin/kpi-tile";
 import type { AdminStravaUsagePoint } from "@kilotrace/shared/admin";
 import { getBusinessFormat } from "@/components/admin/business-statistics/business-format";
+import { LogScaleChartCard } from "@/components/admin/business-statistics/log-scale-chart-card";
 import { BarChart } from "@/components/admin/site-activity/bar-chart";
 import { BarList, CardFigure, ChartHead } from "@/components/admin/site-activity/parts";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
 import { StravaUsageChart } from "@/components/admin/statistics/strava-usage-chart";
-import { Card } from "@/components/ui/card";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
-import { STRIP, StripFigure } from "../site-activity/kpis";
 import { type BusinessView, businessStatistics } from "./data";
 
 const HEIGHT = 200;
+
+/** Error codes of the failed synchronizations named in plain words; the other Strava statuses share a label. */
+const KNOWN_ERRORS = ["UNEXPECTED", "UNKNOWN", "STRAVA_401", "STRAVA_403", "STRAVA_404", "STRAVA_429"] as const;
 
 /** The read limit of the latest slot with a Strava call. */
 const latestLimit = (usage: AdminStravaUsagePoint[]) => usage.findLast((entry) => entry.readLimit !== null)?.readLimit ?? 0;
@@ -35,6 +37,11 @@ export async function StravaTab({ view }: { view: BusinessView }) {
     { id: "update", label: t("webhooks.update"), color: "aqua" as const },
     { id: "delete", label: t("webhooks.delete"), color: "orange" as const },
   ];
+  const errorLabel = (code: string) => {
+    if (KNOWN_ERRORS.includes(code as (typeof KNOWN_ERRORS)[number])) return t(`jobs.codes.${code as (typeof KNOWN_ERRORS)[number]}`);
+    const status = /^STRAVA_(\d{3})$/.exec(code)?.[1];
+    return status ? t("jobs.codes.strava", { status }) : t("jobs.codes.other", { code });
+  };
   const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
   const activities = data.imports.map((point) => point.activities);
   const links = data.imports.map((point) => point.connections);
@@ -45,21 +52,28 @@ export async function StravaTab({ view }: { view: BusinessView }) {
 
   return (
     <>
-      <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
-        <StripFigure label={t("strip.connected")} value={format.number(connections.connected)} detail={t("strip.connectedDetail", { share: format.percent(format.ratio(connections.connected, connections.accounts), 0) })} />
-        <StripFigure label={t("strip.fresh")} value={format.number(connections.fresh)} detail={t("strip.freshDetail")} />
-        <StripFigure label={t("strip.neverSynced")} value={format.number(connections.neverSynced)} detail={t("strip.neverSyncedDetail")} />
-        <StripFigure label={t("strip.privateScope")} value={format.percent(format.ratio(connections.privateScope, connections.connected), 0)} detail={t("strip.privateScopeDetail")} />
-        <StripFigure label={t("strip.quota")} value={today?.read != null && today.readLimit ? format.percent(today.read / today.readLimit, 0) : "–"} detail={t("strip.quotaDetail", { peak: peak === null ? "–" : format.number(peak), limit: format.number(limit) })} />
-      </Card>
+      <KpiStrip>
+        <KpiStripFigure label={t("strip.connected")} value={format.number(connections.connected)} detail={t("strip.connectedDetail", { share: format.percent(format.ratio(connections.connected, connections.accounts), 0) })} />
+        <KpiStripFigure label={t("strip.fresh")} value={format.number(connections.fresh)} detail={t("strip.freshDetail")} />
+        <KpiStripFigure label={t("strip.neverSynced")} value={format.number(connections.neverSynced)} detail={t("strip.neverSyncedDetail")} />
+        <KpiStripFigure label={t("strip.privateScope")} value={format.percent(format.ratio(connections.privateScope, connections.connected), 0)} detail={t("strip.privateScopeDetail")} />
+        <KpiStripFigure label={t("strip.quota")} value={today?.read != null && today.readLimit ? format.percent(today.read / today.readLimit, 0) : "–"} detail={t("strip.quotaDetail", { peak: peak === null ? "–" : format.number(peak), limit: format.number(limit) })} />
+      </KpiStrip>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <DashboardCard title={t("imports.title")} description={t("imports.description")} className="lg:col-span-2">
-          <div className="flex flex-col gap-4">
-            <ChartHead figures={<CardFigure value={format.number(sum(activities))} label={t("imports.total")} />} />
-            <BarChart labels={labels} titles={titles} series={[{ id: "activities", label: t("imports.series"), color: "blue" }]} values={{ activities }} label={t("imports.title")} height={HEIGHT} />
-          </div>
-        </DashboardCard>
+        <LogScaleChartCard
+          title={t("imports.title")}
+          description={t("imports.description")}
+          className="lg:col-span-2"
+          figures={<CardFigure value={format.number(sum(activities))} label={t("imports.total")} />}
+          switchLabel={t("imports.log")}
+          labels={labels}
+          titles={titles}
+          series={[{ id: "activities", label: t("imports.series"), color: "blue" }]}
+          values={{ activities }}
+          label={t("imports.title")}
+          height={HEIGHT}
+        />
         <DashboardCard title={t("links.title")} description={t("links.description")}>
           <div className="flex flex-col gap-4">
             <ChartHead figures={<CardFigure value={format.number(sum(links))} label={t("links.total")} />} />
@@ -91,7 +105,20 @@ export async function StravaTab({ view }: { view: BusinessView }) {
               height={HEIGHT}
             />
             {jobs.errors.length > 0 && (
-              <BarList color="orange" mono empty="" items={jobs.errors.map(({ code, count }) => ({ key: code, label: code, value: count, figure: format.number(count) }))} />
+              <div className="flex flex-col gap-2.5 border-t pt-4">
+                <span className="text-xs font-medium text-muted-foreground">{t("jobs.errors")}</span>
+                <BarList
+                  color="orange"
+                  empty=""
+                  max={jobs.failed}
+                  items={jobs.errors.map(({ code, count }) => ({
+                    key: code,
+                    label: <span title={code}>{errorLabel(code)}</span>,
+                    value: count,
+                    figure: t("jobs.errorFigure", { count, share: format.percent(format.ratio(count, jobs.failed), 0) }),
+                  }))}
+                />
+              </div>
             )}
           </div>
         </DashboardCard>

@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface WeekHeatmapProps {
@@ -11,17 +12,17 @@ interface WeekHeatmapProps {
   legend: { less: string; more: string };
 }
 
-/** Views per weekday and hour, a single hue from light to dark; each cell titled with its figures. */
+/** Views per weekday and hour, a single hue from light to dark, in small fixed cells; each cell tells its figures on hover. */
 export function WeekHeatmap({ cells, days, label, title, legend }: WeekHeatmapProps) {
   const max = Math.max(...cells.map((cell) => cell.views), 1);
   const byCell = new Map(cells.map((cell) => [`${cell.weekday}-${cell.hour}`, cell]));
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex w-max max-w-full flex-col gap-3">
       <div className="overflow-x-auto pb-1">
-        <div role="img" aria-label={label} className="grid min-w-[560px] grid-cols-[2.25rem_repeat(24,minmax(0,1fr))] gap-0.75">
+        <div role="img" aria-label={label} className="grid w-max grid-cols-[2.25rem_repeat(24,0.875rem)] gap-[3px]">
           <span />
           {Array.from({ length: 24 }, (_, hour) => (
-            <span key={hour} className="text-center text-[10px] text-muted-foreground tabular-nums">
+            <span key={hour} className="-mx-1 text-center text-[10px] text-muted-foreground tabular-nums">
               {hour % 3 === 0 ? hour : ""}
             </span>
           ))}
@@ -31,11 +32,21 @@ export function WeekHeatmap({ cells, days, label, title, legend }: WeekHeatmapPr
               {Array.from({ length: 24 }, (_, hour) => {
                 const cell = byCell.get(`${index + 1}-${hour}`) ?? { weekday: index + 1, hour, views: 0 };
                 return (
-                  <span key={hour} title={title(cell)} className={cn("relative aspect-square overflow-hidden rounded-[3px]", cell.views === 0 ? "bg-muted/60" : "bg-muted")}>
-                    {cell.views > 0 && (
-                      <span className="absolute inset-0 bg-[#2a78d6] dark:bg-[#3987e5]" style={{ opacity: 0.15 + (cell.views / max) * 0.85 }} aria-hidden />
-                    )}
-                  </span>
+                  <Tooltip key={hour}>
+                    <TooltipTrigger
+                      render={<span />}
+                      aria-label={title(cell)}
+                      className={cn(
+                        "relative size-3.5 overflow-hidden rounded-[3px] transition-shadow hover:ring-2 hover:ring-[#2a78d6]/60 dark:hover:ring-[#3987e5]/70",
+                        cell.views === 0 ? "bg-muted/60" : "bg-muted",
+                      )}
+                    >
+                      {cell.views > 0 && (
+                        <span className="absolute inset-0 bg-[#2a78d6] dark:bg-[#3987e5]" style={{ opacity: 0.15 + (cell.views / max) * 0.85 }} aria-hidden />
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent>{title(cell)}</TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>

@@ -48,7 +48,7 @@ async function DayGroups<T>({ rows, dateOf, render, more }: { rows: T[]; dateOf:
   await connection();
   return (
     // The thin scrollbar of the tables and of the split panel.
-    <div className="-mx-2 h-104 overflow-y-auto overscroll-contain px-2 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
+    <div className="-mx-2 h-156 overflow-y-auto overscroll-contain px-2 [scrollbar-color:color-mix(in_oklab,var(--color-muted-foreground)_35%,transparent)_transparent] [scrollbar-width:thin]">
       {byDay(rows, dateOf).map((day) => (
         <section key={day.key} aria-label={dayLabel(day.date)}>
           <h3 className="sticky top-0 z-10 -mx-2 bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground first-letter:uppercase">

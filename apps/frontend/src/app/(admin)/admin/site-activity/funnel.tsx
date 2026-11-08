@@ -65,12 +65,12 @@ export async function FunnelTab({ view }: { view: SiteActivityView }) {
           <p className="text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <div className={cn("-mx-2 max-h-120 overflow-x-auto px-2", THIN_SCROLL)}>
-            <table className="w-full min-w-[560px] border-separate border-spacing-0 text-sm">
+            <table className="border-separate border-spacing-0 text-sm">
               <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-3 text-left font-medium">{t("cohorts.week")}</th>
                   {STEPS.map((step) => (
-                    <th key={step} className={cn("px-0.5 py-2 font-medium", step === "signedUp" ? "pr-3 text-right" : "text-center")}>
+                    <th key={step} className={cn("px-0.5 py-2 font-medium whitespace-nowrap", step === "signedUp" ? "pr-3 text-right" : "text-center")}>
                       {t(`steps.names.${step}`)}
                     </th>
                   ))}
@@ -79,13 +79,13 @@ export async function FunnelTab({ view }: { view: SiteActivityView }) {
               <tbody>
                 {[...data.cohorts].reverse().map((cohort) => (
                   <tr key={cohort.week}>
-                    <td className="py-0.5 pr-3 whitespace-nowrap">{format.day(cohort.week)}</td>
-                    <td className="py-0.5 pr-3 text-right font-medium tabular-nums">{format.number(cohort.signedUp)}</td>
+                    <td className="py-0.5 pr-3 text-xs whitespace-nowrap">{format.day(cohort.week)}</td>
+                    <td className="py-0.5 pr-3 text-right text-xs font-medium tabular-nums">{format.number(cohort.signedUp)}</td>
                     {STEPS.slice(1).map((step) => {
                       const ratio = format.ratio(cohort[step], cohort.signedUp);
                       return (
-                        <RateCell key={step} ratio={ratio} title={t("cohorts.cell", { count: cohort[step], total: cohort.signedUp })}>
-                          {ratio === null ? "–" : `${format.number(cohort[step])} · ${format.percent(ratio, 0)}`}
+                        <RateCell key={step} compact ratio={ratio} title={t("cohorts.cell", { count: cohort[step], total: cohort.signedUp })}>
+                          {ratio === null ? "–" : format.percent(ratio, 0)}
                         </RateCell>
                       );
                     })}

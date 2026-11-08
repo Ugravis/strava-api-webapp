@@ -674,7 +674,8 @@
         "title": "Activités importées",
         "description": "À la date d'import, pas à celle de l'activité",
         "total": "Importées sur la période",
-        "series": "Activités"
+        "series": "Activités",
+        "log": "Logarithmique"
       },
       "links": {
         "title": "Nouveaux liens",
@@ -689,7 +690,19 @@
         "failed": "Échouées",
         "successRate": "Réussite",
         "medianDuration": "Durée médiane",
-        "active": "En cours"
+        "active": "En cours",
+        "errors": "Causes des échecs",
+        "errorFigure": "{count, plural, one {# échec} other {# échecs}} · {share}",
+        "codes": {
+          "UNEXPECTED": "Erreur interne (hors API Strava)",
+          "UNKNOWN": "Cause non enregistrée",
+          "STRAVA_401": "Strava 401 · accès révoqué ou expiré",
+          "STRAVA_403": "Strava 403 · accès refusé",
+          "STRAVA_404": "Strava 404 · ressource introuvable",
+          "STRAVA_429": "Strava 429 · quota dépassé",
+          "strava": "Strava {status} · erreur de l'API",
+          "other": "Code {code}"
+        }
       },
       "webhooks": {
         "title": "Webhooks Strava",
@@ -1196,7 +1209,14 @@
       },
       "activeDays": {
         "title": "Jours actifs par mois",
-        "description": "Utilisateurs selon leur nombre de jours actifs, sur chacun des 3 derniers mois"
+        "description": "Utilisateurs selon leur nombre de jours actifs, sur l’un des 3 derniers mois"
+      },
+      "atLeast": {
+        "title": "Actifs au moins N jours",
+        "description": "Utilisateurs actifs au moins N jours sur les {days} jours",
+        "regular": "Actifs {count} jours ou plus",
+        "bin": "{count, plural, one {Au moins # jour actif} other {Au moins # jours actifs}}",
+        "share": "Part des actifs"
       }
     },
     "pages": {

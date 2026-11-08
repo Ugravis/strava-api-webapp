@@ -1,13 +1,11 @@
+import { KpiStrip, KpiStripFigure } from "@/components/admin/kpi-tile";
 import { getBusinessFormat, regionName } from "@/components/admin/business-statistics/business-format";
 import { LineChart } from "@/components/admin/site-activity/line-chart";
-import { BarList, CardFigure, ChartHead, RateCell } from "@/components/admin/site-activity/parts";
+import { BarList, CardFigure, ChartHead } from "@/components/admin/site-activity/parts";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
-import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
-import { STRIP, StripFigure } from "../site-activity/kpis";
 import { type BusinessView, businessStatistics } from "./data";
 
 const HEIGHT = 220;
@@ -32,21 +30,21 @@ export async function ExplorationTab({ view }: { view: BusinessView }) {
 
   return (
     <>
-      <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
-        <StripFigure label={t("totals.tiles")} value={format.number(totals.tiles)} detail={t("totals.explorers", { count: totals.explorers })} />
-        <StripFigure label={t("totals.smallTiles")} value={format.number(totals.smallTiles)} detail={t("totals.smallTilesDetail")} />
-        <StripFigure label={t("totals.countries")} value={format.number(totals.countries)} detail={t("totals.countriesDetail")} />
-        <StripFigure
+      <KpiStrip>
+        <KpiStripFigure label={t("totals.tiles")} value={format.number(totals.tiles)} detail={t("totals.explorers", { count: totals.explorers })} />
+        <KpiStripFigure label={t("totals.smallTiles")} value={format.number(totals.smallTiles)} detail={t("totals.smallTilesDetail")} />
+        <KpiStripFigure label={t("totals.countries")} value={format.number(totals.countries)} detail={t("totals.countriesDetail")} />
+        <KpiStripFigure
           label={t("totals.stations")}
           value={format.number(totals.stations)}
           detail={t("totals.imported", { value: format.number(totals.stationsImported), share: format.percent(format.ratio(totals.stations, totals.stationsImported)) })}
         />
-        <StripFigure
+        <KpiStripFigure
           label={t("totals.railway")}
           value={format.km(totals.railwayM)}
           detail={t("totals.imported", { value: format.km(totals.railwayImportedM), share: format.percent(format.ratio(totals.railwayM, totals.railwayImportedM)) })}
         />
-      </Card>
+      </KpiStrip>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <DashboardCard title={t("discoveries.title")} description={t("discoveries.description")} className="lg:col-span-2">
@@ -97,22 +95,31 @@ export async function ExplorationTab({ view }: { view: BusinessView }) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 text-right">#</TableHead>
                   <TableHead>{t("countries.country")}</TableHead>
+                  <TableHead className="w-56">{t("countries.completion")}</TableHead>
                   <TableHead className="text-right">{t("countries.tiles")}</TableHead>
                   <TableHead className="text-right">{t("countries.total")}</TableHead>
-                  <TableHead className="text-center">{t("countries.completion")}</TableHead>
                   <TableHead className="text-right">{t("countries.explorers")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.countries.map((country) => {
+                {data.countries.map((country, index) => {
                   const ratio = country.totalTiles ? Math.min(country.tiles / country.totalTiles, 1) : null;
                   return (
                     <TableRow key={country.country}>
+                      <TableCell className="text-right text-xs text-muted-foreground tabular-nums">{index + 1}</TableCell>
                       <TableCell className="font-medium">{regionName(country.country)}</TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-2.5">
+                          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden>
+                            <span className="block h-full rounded-full bg-[#2a78d6] dark:bg-[#3987e5]" style={{ width: `${(ratio ?? 0) * 100}%` }} />
+                          </span>
+                          <span className="w-14 text-right text-xs tabular-nums">{format.percent(ratio)}</span>
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">{format.number(country.tiles)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{country.totalTiles ? format.number(country.totalTiles) : "–"}</TableCell>
-                      <RateCell ratio={ratio}>{format.percent(ratio)}</RateCell>
+                      <TableCell className="text-right text-muted-foreground tabular-nums">{country.totalTiles ? format.number(country.totalTiles) : "–"}</TableCell>
                       <TableCell className="text-right tabular-nums">{format.number(country.explorers)}</TableCell>
                     </TableRow>
                   );

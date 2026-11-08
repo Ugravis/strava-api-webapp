@@ -19,13 +19,14 @@ const today = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric"
 const hourOf = new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: PARIS });
 
 /** The frame of the dashboard of the site, its tiles in blue to tell the back office apart. */
-const FRAME = "relative isolate overflow-hidden rounded-2xl bg-linear-to-br from-zinc-800 to-zinc-950 p-5 text-zinc-50 ring-1 ring-white/10 sm:p-7";
+const FRAME =
+  "relative isolate overflow-hidden rounded-2xl bg-linear-to-br from-card via-card to-blue-50 p-5 text-foreground ring-1 ring-blue-200 sm:p-7 dark:to-blue-950/40 dark:ring-blue-900/60";
 
-/** The colors of the roles of the team page, in their step for a dark surface. */
+/** The colors of the roles of the team page. */
 const ROLE_PILLS: Record<AdminRole, string> = {
-  support: "bg-slate-400/15 text-slate-200 ring-slate-300/25",
-  admin: "bg-blue-500/20 text-blue-200 ring-blue-400/30",
-  "super-admin": "bg-violet-500/20 text-violet-200 ring-violet-400/30",
+  support: "bg-slate-500/10 text-slate-700 ring-slate-500/20 dark:text-slate-300",
+  admin: "bg-blue-500/10 text-blue-700 ring-blue-500/25 dark:text-blue-300",
+  "super-admin": "bg-violet-500/10 text-violet-700 ring-violet-500/25 dark:text-violet-300",
 };
 
 const PILL = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1";
@@ -34,18 +35,18 @@ const PILL = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs fo
 function HeroFact({ icon: Icon, label, children, href }: { icon: LucideIcon; label: string; children: ReactNode; href?: string }) {
   const content = (
     <>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10">
-        <Icon className="size-4 text-zinc-300" aria-hidden />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 ring-1 ring-blue-500/15">
+        <Icon className="size-4 text-blue-600 dark:text-blue-400" aria-hidden />
       </span>
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-medium tracking-wide text-zinc-400 uppercase">{label}</span>
-        <span className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm font-medium text-zinc-50 tabular-nums">{children}</span>
+        <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{label}</span>
+        <span className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm font-medium tabular-nums">{children}</span>
       </span>
     </>
   );
-  const className = "flex items-center gap-3 rounded-xl bg-white/5 px-3.5 py-3 ring-1 ring-white/10";
+  const className = "flex items-center gap-3 rounded-xl bg-card/70 px-3.5 py-3 ring-1 ring-blue-200/70 dark:ring-blue-900/50";
   return href ? (
-    <Link href={href} className={cn(className, "transition-colors hover:bg-white/10")}>
+    <Link href={href} className={cn(className, "transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/40")}>
       {content}
     </Link>
   ) : (
@@ -77,25 +78,25 @@ export async function DashboardHero({ memberId, roles }: DashboardHeroProps) {
   const greeting = hour < 5 || hour >= 18 ? "evening" : "morning";
   return (
     <section className={FRAME}>
-      <HeroBackdrop id="admin-hero-tiles" tone="text-blue-500" />
+      <HeroBackdrop id="admin-hero-tiles" tone="text-blue-500" tiles="opacity-50" station="fill-card" />
       <div className="flex flex-col gap-6">
         <div className="flex min-w-0 items-center gap-4">
-          {user && <UserAvatar user={user} className="size-14 shrink-0 ring-2 ring-white/15 sm:size-16" fallbackClassName="text-lg" />}
+          {user && <UserAvatar user={user} className="size-14 shrink-0 ring-2 ring-blue-200 sm:size-16 dark:ring-blue-900" fallbackClassName="text-lg" />}
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">{today.format(now)}</p>
+            <p className="text-xs font-medium tracking-wide text-blue-600 uppercase dark:text-blue-400">{today.format(now)}</p>
             <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">{user ? t(greeting, { name: publicNameOf(user) }) : t("title")}</h1>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-muted-foreground">
               {audit && users
                 ? t.rich("pulse", {
                     actions: audit.today,
                     signups: users.signups,
-                    strong: (chunks) => <span className="font-medium text-zinc-200">{chunks}</span>,
+                    strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
                   })
                 : t("description")}
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-5 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 border-t border-blue-200/70 pt-5 dark:border-blue-900/50 sm:grid-cols-3 sm:gap-4">
           <HeroFact icon={ShieldCheckIcon} label={t(roles.length > 1 ? "roles" : "role")}>
             {roles.map((role) => {
               const Icon = ROLE_ICONS[role];
@@ -113,8 +114,8 @@ export async function DashboardHero({ memberId, roles }: DashboardHeroProps) {
           <HeroFact icon={PackageIcon} label={t("version")} href={adminRoutes.dev}>
             {dev ? (
               <>
-                <span className={cn(PILL, "bg-blue-500/20 font-mono text-blue-200 ring-blue-400/30")}>v{dev.version}</span>
-                <span className="text-zinc-400">{dev.environment}</span>
+                <span className={cn(PILL, "bg-blue-500/10 font-mono text-blue-700 ring-blue-500/25 dark:text-blue-300")}>v{dev.version}</span>
+                <span className="text-muted-foreground">{dev.environment}</span>
               </>
             ) : (
               "–"
@@ -131,16 +132,16 @@ export function DashboardHeroSkeleton() {
     <section className={FRAME}>
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-4">
-          <Skeleton className="size-14 shrink-0 rounded-full bg-white/10 sm:size-16" />
+          <Skeleton className="size-14 shrink-0 rounded-full bg-blue-100/60 dark:bg-blue-900/30 sm:size-16" />
           <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-3 w-32 bg-white/10" />
-            <Skeleton className="h-8 w-64 max-w-full bg-white/10" />
-            <Skeleton className="h-4 w-80 max-w-full bg-white/10" />
+            <Skeleton className="h-3 w-32 bg-blue-100/60 dark:bg-blue-900/30" />
+            <Skeleton className="h-8 w-64 max-w-full bg-blue-100/60 dark:bg-blue-900/30" />
+            <Skeleton className="h-4 w-80 max-w-full bg-blue-100/60 dark:bg-blue-900/30" />
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-5 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 border-t border-blue-200/70 pt-5 dark:border-blue-900/50 sm:grid-cols-3 sm:gap-4">
           {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} className="h-16 rounded-xl bg-white/10" />
+            <Skeleton key={index} className="h-16 rounded-xl bg-blue-100/60 dark:bg-blue-900/30" />
           ))}
         </div>
       </div>

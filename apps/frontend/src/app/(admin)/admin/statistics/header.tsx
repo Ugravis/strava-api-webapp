@@ -1,6 +1,6 @@
 import { ADMIN_BUSINESS_PERIODS } from "@kilotrace/shared/admin";
 import { getBusinessFormat } from "@/components/admin/business-statistics/business-format";
-import { ViewSwitch } from "@/components/admin/site-activity/parts";
+import { ViewSelect, ViewToggle } from "@/components/admin/site-activity/view-controls";
 import { PageHeader } from "@/components/layout/page-header";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { type BusinessView, businessStatistics, viewHref } from "./data";
@@ -11,8 +11,8 @@ export function BusinessHeader({ view, description }: { view: BusinessView; desc
   return (
     <div className="flex flex-col gap-3">
       <PageHeader title={t("title")} description={description} />
-      <div className="flex flex-wrap gap-2">
-        <ViewSwitch
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <ViewSelect
           label={t("period")}
           options={ADMIN_BUSINESS_PERIODS.map((period) => ({
             key: period,
@@ -21,15 +21,7 @@ export function BusinessHeader({ view, description }: { view: BusinessView; desc
             current: period === view.period,
           }))}
         />
-        <ViewSwitch
-          label={t("teamSwitch")}
-          options={[false, true].map((team) => ({
-            key: String(team),
-            label: t(team ? "withTeam" : "withoutTeam"),
-            href: viewHref(view, { team }),
-            current: team === view.team,
-          }))}
-        />
+        <ViewToggle label={t("withTeam")} checked={view.team} href={viewHref(view, { team: !view.team })} />
       </div>
     </div>
   );

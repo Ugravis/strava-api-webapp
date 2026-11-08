@@ -1,27 +1,9 @@
 import type { AdminSiteActivityTotals } from "@kilotrace/shared/admin";
 import { EyeIcon, HourglassIcon, RouteIcon, UserCheckIcon } from "lucide-react";
-import type { ReactNode } from "react";
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
-import { KpiGrid, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
+import { KpiGrid, KpiStrip, KpiStripFigure, KpiStripSkeleton, KpiTile, KpiTileSkeleton } from "@/components/admin/kpi-tile";
 import { siteActivity, type SiteActivityView, viewHref } from "./data";
-
-/** A figure of the strip under the tiles. */
-export function StripFigure({ label, value, detail }: { label: string; value: ReactNode; detail: ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1 px-4 py-3.5">
-      <span className="truncate text-xs text-muted-foreground">{label}</span>
-      <span className="text-lg font-semibold tracking-tight tabular-nums">{value}</span>
-      <span className="truncate text-xs text-muted-foreground">{detail}</span>
-    </div>
-  );
-}
-
-/** Cells parted by lines of the border, the last across the row on two columns. */
-export const STRIP = "grid grid-cols-2 gap-px bg-border md:grid-cols-5 [&>*]:bg-card [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1";
 
 /** The headline figures of the period against the one before, each opening its tab; then the ratios. */
 export async function SiteActivityKpis({ view }: { view: SiteActivityView }) {
@@ -85,21 +67,21 @@ export async function SiteActivityKpis({ view }: { view: SiteActivityView }) {
           spark={pages?.daily.map((day) => day.visibleMs)}
         />
       </KpiGrid>
-      <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
-        <StripFigure
+      <KpiStrip>
+        <KpiStripFigure
           label={t("newUsers")}
           value={format.number(current.newUsers)}
           detail={[format.change(current.newUsers, previous.newUsers), previousOf(format.number(previous.newUsers))].filter(Boolean).join(" · ")}
         />
-        <StripFigure label={t("stickiness")} value={format.percent(overview.stickiness)} detail={t("stickinessDetail")} />
-        <StripFigure label={t("averageSession")} value={format.duration(overview.averageSessionMs)} detail={t("averageSessionDetail")} />
-        <StripFigure
+        <KpiStripFigure label={t("stickiness")} value={format.percent(overview.stickiness)} detail={t("stickinessDetail")} />
+        <KpiStripFigure label={t("averageSession")} value={format.duration(overview.averageSessionMs)} detail={t("averageSessionDetail")} />
+        <KpiStripFigure
           label={t("pagesPerSession")}
           value={overview.pagesPerSession === null ? "–" : format.number(overview.pagesPerSession, 1)}
           detail={t("pagesPerSessionDetail")}
         />
-        <StripFigure label={t("bounceRate")} value={format.percent(overview.bounceRate)} detail={t("bounceRateDetail")} />
-      </Card>
+        <KpiStripFigure label={t("bounceRate")} value={format.percent(overview.bounceRate)} detail={t("bounceRateDetail")} />
+      </KpiStrip>
     </div>
   );
 }
@@ -112,7 +94,7 @@ export function SiteActivityKpisSkeleton() {
           <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
-      <Skeleton className="h-22 w-full rounded-xl" />
+      <KpiStripSkeleton />
     </div>
   );
 }

@@ -1,14 +1,12 @@
+import { KpiStrip, KpiStripFigure } from "@/components/admin/kpi-tile";
 import { getBusinessFormat } from "@/components/admin/business-statistics/business-format";
 import { LineChart } from "@/components/admin/site-activity/line-chart";
 import { BarList, ChartHead, CardFigure } from "@/components/admin/site-activity/parts";
 import { ChartLegend } from "@/components/admin/statistics/chart-legend";
 import { DonutChart } from "@/components/admin/statistics/donut-chart";
-import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { cn } from "@/lib/utils";
 import { DashboardCard, DashboardUnavailable } from "../dashboard/parts";
-import { STRIP, StripFigure } from "../site-activity/kpis";
 import { type BusinessView, businessStatistics } from "./data";
 
 const HEIGHT = 220;
@@ -41,17 +39,17 @@ export async function CommunityTab({ view }: { view: BusinessView }) {
 
   return (
     <>
-      <Card className={cn("gap-0 overflow-hidden py-0", STRIP)}>
-        <StripFigure label={t("strip.follows")} value={format.number(follows.accepted)} detail={t("strip.perAccount", { value: accounts > 0 ? format.number(follows.accepted / accounts, 1) : "–" })} />
-        <StripFigure label={t("strip.pending")} value={format.number(follows.pending)} detail={t("strip.pendingDetail", { share: format.percent(format.ratio(follows.accepted, follows.accepted + follows.pending), 0) })} />
-        <StripFigure label={t("strip.mutual")} value={format.number(follows.mutualPairs)} detail={t("strip.mutualDetail")} />
-        <StripFigure label={t("strip.connected")} value={format.percent(format.ratio(follows.connectedAccounts, accounts), 0)} detail={t("strip.connectedDetail", { count: follows.connectedAccounts, accounts })} />
-        <StripFigure
+      <KpiStrip>
+        <KpiStripFigure label={t("strip.follows")} value={format.number(follows.accepted)} detail={t("strip.perAccount", { value: accounts > 0 ? format.number(follows.accepted / accounts, 1) : "–" })} />
+        <KpiStripFigure label={t("strip.pending")} value={format.number(follows.pending)} detail={t("strip.pendingDetail", { share: format.percent(format.ratio(follows.accepted, follows.accepted + follows.pending), 0) })} />
+        <KpiStripFigure label={t("strip.mutual")} value={format.number(follows.mutualPairs)} detail={t("strip.mutualDetail")} />
+        <KpiStripFigure label={t("strip.connected")} value={format.percent(format.ratio(follows.connectedAccounts, accounts), 0)} detail={t("strip.connectedDetail", { count: follows.connectedAccounts, accounts })} />
+        <KpiStripFigure
           label={t("strip.likes")}
           value={format.number(data.likes.current)}
           detail={data.likes.previous === null ? t("strip.wholeHistory") : t("strip.previous", { value: format.number(data.likes.previous) })}
         />
-      </Card>
+      </KpiStrip>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <DashboardCard title={t("growth.title")} description={t("growth.description")} className="lg:col-span-2">

@@ -64,6 +64,8 @@ export interface PublicProfile extends ProfileSummary {
   requestedViewer: boolean;
   /** Whether it is the profile of the viewer. */
   self: boolean;
+  /** Whether showcases are shown on the profiles, so that a disabled one is never told. */
+  showcaseEnabled: boolean;
   /** Null when hidden, or when showcases are disabled. */
   showcase: ProfileShowcase | null;
 }
@@ -174,7 +176,10 @@ export class FollowsService {
     ]);
     const followed = viewerFollow?.pending === false;
     const visible = self || !user.profilePrivate || followed;
-    const showcase = visible ? await this.showcases.of(user.id) : null;
+    const [showcaseEnabled, showcase] = await Promise.all([
+      this.showcases.enabled(),
+      visible ? this.showcases.of(user.id) : null,
+    ]);
     return {
       ...toPublicUser(user),
       followed,
@@ -203,6 +208,7 @@ export class FollowsService {
       followsViewer: followOfViewer?.pending === false,
       requestedViewer: followOfViewer?.pending === true,
       self,
+      showcaseEnabled,
       showcase,
     };
   }

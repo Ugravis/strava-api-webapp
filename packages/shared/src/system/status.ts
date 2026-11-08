@@ -21,4 +21,6 @@ export interface MaintenanceBanner {
 export interface SystemStatusResponse {
   maintenance: MaintenanceBanner | null;
   signupsEnabled: boolean;
+  /** Second part of the profiles: tiles, stations and pinned badges. */
+  profileShowcaseEnabled: boolean;
 }

@@ -61,6 +61,7 @@ import { AdminStatisticsService } from './statistics/admin-statistics.service';
 import { AdminSystemController } from './system/admin-system.controller';
 import { AdminTeamController } from './team/admin-team.controller';
 import { AdminTeamService } from './team/admin-team.service';
+import { AdminDatabaseService } from './system/admin-database.service';
 import { AdminUploadsService } from './system/admin-uploads.service';
 import { UserReport } from '../reports/user-report.entity';
 import { AdminUserReportsController } from './user-reports/admin-user-reports.controller';
@@ -136,6 +137,7 @@ export const ADMIN_ROUTES = [
     AdminBadgesService,
     AdminUserTagsService,
     AdminUploadsService,
+    AdminDatabaseService,
     AdminTeamService,
     AdminReservedUsernamesService,
     AdminDevService,

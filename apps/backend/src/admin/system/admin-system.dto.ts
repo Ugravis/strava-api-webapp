@@ -27,3 +27,8 @@ export class SetSignupsDto {
   @IsBoolean()
   enabled!: boolean;
 }
+
+export class SetShowcaseDto {
+  @IsBoolean()
+  enabled!: boolean;
+}

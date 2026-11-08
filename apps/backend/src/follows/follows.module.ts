@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DistancesModule } from '../distances/distances.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StationsModule } from '../stations/stations.module';
+import { SystemModule } from '../system/system.module';
 import { TilesModule } from '../tiles/tiles.module';
 import { UserReport } from '../reports/user-report.entity';
 import { UserTagAssignment } from '../users/user-tag-assignment.entity';
@@ -25,6 +26,7 @@ import { ProfilesController } from './profiles.controller';
     NotificationsModule,
     DistancesModule,
     StationsModule,
+    SystemModule,
     TilesModule,
   ],
   controllers: [ProfilesController],

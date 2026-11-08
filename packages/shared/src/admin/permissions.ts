@@ -39,6 +39,7 @@ export const ADMIN_PERMISSIONS = {
   "audit.hide": { category: "audit", defaults: [] },
   "system.maintenance": { category: "system", defaults: [] },
   "system.signups": { category: "system", defaults: [] },
+  "system.showcase": { category: "system", defaults: [] },
   "system.uploads": { category: "system", defaults: [] },
   "team.manage": { category: "team", defaults: [], locked: true },
   "permissions.manage": { category: "team", defaults: [], locked: true },

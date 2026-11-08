@@ -260,7 +260,8 @@
       "signups": "{enabled, select, true {Inscriptions ouvertes} other {Inscriptions fermées}}",
       "username": "Pseudo : @{username}",
       "category": "Catégorie : {category}",
-      "sanction": "Sanction : {sanction}"
+      "sanction": "Sanction : {sanction}",
+      "showcase": "{enabled, select, true {Vitrine des profils affichée} other {Vitrine des profils masquée}}"
     },
     "actions": {
       "users": {
@@ -318,7 +319,8 @@
           "orphans": {
             "delete": "Fichiers orphelins supprimés"
           }
-        }
+        },
+        "showcase": "Vitrine des profils affichée ou masquée"
       },
       "releaseNotes": {
         "create": "Note de release écrite à l'avance",
@@ -745,7 +747,7 @@
   },
   "system": {
     "title": "Maintenance",
-    "description": "Bandeau d'information, inscriptions et fichiers stockés.",
+    "description": "Bandeau d'information, interrupteurs du site, fichiers stockés et tables de la base.",
     "readOnly": "Lecture seule : votre rôle n'a la permission de modifier aucun de ces réglages.",
     "statusError": "Impossible de lire l'état du site pour le moment.",
     "maintenance": {
@@ -773,27 +775,41 @@
         "submit": "Afficher"
       }
     },
-    "signups": {
-      "title": "Inscriptions",
-      "description": "Kill switch de la création de comptes, par email et par Google. Les comptes existants se connectent normalement.",
-      "open": "Ouvertes",
-      "closed": "Fermées",
-      "close": {
-        "trigger": "Fermer les inscriptions",
-        "title": "Fermer les inscriptions ?",
-        "description": "Plus aucun compte ne pourra être créé, par email ou par Google, jusqu'à la réouverture.",
-        "submit": "Fermer"
+    "switches": {
+      "title": "Interrupteurs",
+      "description": "Fonctions du site coupées pour tous d'un coup, chaque changement demandé d'abord.",
+      "signups": {
+        "label": "Inscriptions",
+        "description": "Création de comptes, par email et par Google. Les comptes existants se connectent normalement.",
+        "off": {
+          "title": "Fermer les inscriptions ?",
+          "description": "Plus aucun compte ne pourra être créé, par email ou par Google, jusqu'à la réouverture.",
+          "submit": "Fermer"
+        },
+        "on": {
+          "title": "Rouvrir les inscriptions ?",
+          "description": "La création de comptes redevient possible immédiatement.",
+          "submit": "Rouvrir"
+        }
       },
-      "reopen": {
-        "trigger": "Rouvrir les inscriptions",
-        "title": "Rouvrir les inscriptions ?",
-        "description": "La création de comptes redevient possible immédiatement.",
-        "submit": "Rouvrir"
+      "showcase": {
+        "label": "Vitrine des profils",
+        "description": "Deuxième partie des profils : tuiles, gares et badges épinglés. Coupée, elle n'est plus mentionnée et laisse place à un motif à la couleur du profil.",
+        "off": {
+          "title": "Masquer la vitrine des profils ?",
+          "description": "Les tuiles, les gares et les badges épinglés disparaissent de tous les profils, le sien compris, sans être mentionnés.",
+          "submit": "Masquer"
+        },
+        "on": {
+          "title": "Réafficher la vitrine des profils ?",
+          "description": "Les tuiles, les gares et les badges épinglés reviennent sur les profils visibles.",
+          "submit": "Réafficher"
+        }
       }
     },
     "uploads": {
-      "title": "Audit des fichiers",
-      "description": "Poids des images importées par les utilisateurs dans le stockage.",
+      "title": "Audit du stockage",
+      "description": "Poids de la base de données et des images importées par les utilisateurs dans le stockage.",
       "error": "Le stockage est injoignable pour le moment.",
       "avatars": "Avatars",
       "orphans": "Orphelins",
@@ -813,6 +829,13 @@
           "Nettoyage du stockage"
         ]
       }
+    },
+    "database": {
+      "title": "Tables de la base",
+      "description": "Toutes les tables de PostgreSQL, lues dans ses catalogues, en lecture seule. Les lignes sont une estimation de Postgres ; l'activité court depuis le dernier reset de ses statistiques.",
+      "error": "Impossible de lire les tables de la base pour le moment.",
+      "weight": "Base de données",
+      "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index"
     }
   },
   "team": {
@@ -918,6 +941,10 @@
           "signups": {
             "label": "Inscriptions",
             "description": "Ouvrir ou fermer les inscriptions."
+          },
+          "showcase": {
+            "label": "Vitrine des profils",
+            "description": "Afficher ou masquer les tuiles, gares et badges épinglés des profils."
           },
           "uploads": {
             "label": "Fichiers orphelins",

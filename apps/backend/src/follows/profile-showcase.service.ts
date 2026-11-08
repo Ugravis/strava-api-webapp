@@ -5,6 +5,7 @@ import {
   type ProfileBadge,
 } from '../distances/distances.service';
 import { StationsService } from '../stations/stations.service';
+import { SystemSettingsService } from '../system/system-settings.service';
 import type { StoredLevelMetrics } from '../tiles/tile-metrics';
 import { UserTilesService } from '../tiles/user-tiles.service';
 
@@ -35,11 +36,20 @@ export class ProfileShowcaseService {
     private readonly distances: DistancesService,
     private readonly userTiles: UserTilesService,
     private readonly stations: StationsService,
+    private readonly system: SystemSettingsService,
   ) {}
+
+  /** Off by the environment, or from the maintenance page of the back office. */
+  async enabled(): Promise<boolean> {
+    return (
+      this.config.showcaseEnabled &&
+      (await this.system.status()).profileShowcaseEnabled
+    );
+  }
 
   /** Null when showcases are disabled. */
   async of(userId: string): Promise<ProfileShowcase | null> {
-    if (!this.config.showcaseEnabled) {
+    if (!(await this.enabled())) {
       return null;
     }
     const [badges, { tiles, subtiles }, stations] = await Promise.all([

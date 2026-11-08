@@ -1,31 +1,34 @@
 import "server-only";
-import { MAINTENANCE_DESCRIPTION_MAX_LENGTH, MAINTENANCE_TITLES, type MaintenanceBanner } from "@kilotrace/shared";
+import { cache } from "react";
+import { MAINTENANCE_DESCRIPTION_MAX_LENGTH, MAINTENANCE_TITLES, type MaintenanceBanner, type SystemStatusResponse } from "@kilotrace/shared";
 import {
   ADMIN_REASON_MAX_LENGTH,
   ADMIN_REASON_MIN_LENGTH,
+  type AdminDatabaseTable,
   type AdminUploadsAudit,
 } from "@kilotrace/shared/admin";
-import { FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { DatabaseIcon, FileImageIcon, FileWarningIcon, MapIcon, MegaphoneOffIcon, PencilIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { KpiGrid, KpiTile, KpiTileSkeleton, shareOf } from "@/components/admin/kpi-tile";
 import { SubmitButton } from "@/components/admin/submit-button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/admin/api";
 import { formatBytes, formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { clearMaintenance, deleteOrphans, setMaintenance, setSignups } from "./actions";
+import { clearMaintenance, deleteOrphans, setMaintenance, setShowcase, setSignups } from "./actions";
+import { SiteSwitch, type SiteSwitchTexts } from "./site-switch";
+import { DatabaseTable } from "./database-table";
 import { HeaviestTable, OrphansTable } from "./uploads-tables";
 
 /** The banner shown to the signed-in users, and its form for the super-admins. */
 export function MaintenanceCard({ maintenance, canEdit }: { maintenance: MaintenanceBanner | null; canEdit: boolean }) {
   const t = getAdminTranslations("system.maintenance");
   return (
-    <Card size="sm">
+    <Card size="sm" className="h-full">
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
         <CardDescription>{t("description")}</CardDescription>
@@ -49,7 +52,7 @@ export function MaintenanceCard({ maintenance, canEdit }: { maintenance: Mainten
           <div className="flex flex-wrap gap-2">
             <MaintenanceFormDialog maintenance={maintenance} />
             {maintenance && (
-              <ActionForm action={clearMaintenance}>
+              <ActionForm action={clearMaintenance} quiet>
                 <SubmitButton size="sm" variant="outline">
                   <MegaphoneOffIcon />
                   {t("turnOff")}
@@ -68,6 +71,7 @@ function MaintenanceFormDialog({ maintenance }: { maintenance: MaintenanceBanner
   return (
     <FormDialog
       action={setMaintenance}
+      quiet
       trigger={
         maintenance
           ? { label: t("edit"), icon: <PencilIcon />, variant: "outline" }
@@ -98,40 +102,48 @@ function MaintenanceFormDialog({ maintenance }: { maintenance: MaintenanceBanner
   );
 }
 
-/** The kill switch of the sign-ups, confirmed both ways. */
-export function SignupsCard({ enabled, canEdit }: { enabled: boolean; canEdit: boolean }) {
-  const t = getAdminTranslations("system.signups");
-  const step = enabled ? "close" : "reopen";
+/** Switches of the whole site, each asked first both ways. */
+export function SwitchesCard({ status, can }: { status: SystemStatusResponse; can: (permission: "system.signups" | "system.showcase") => boolean }) {
+  const t = getAdminTranslations("system.switches");
+  const cancel = getAdminTranslations("common")("cancel");
+  const texts = (key: "signups" | "showcase"): SiteSwitchTexts => ({
+    label: t(`${key}.label`),
+    description: t(`${key}.description`),
+    off: { title: t(`${key}.off.title`), description: t(`${key}.off.description`), submit: t(`${key}.off.submit`) },
+    on: { title: t(`${key}.on.title`), description: t(`${key}.on.description`), submit: t(`${key}.on.submit`) },
+    cancel,
+  });
   return (
-    <Card size="sm">
+    <Card size="sm" className="h-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {t("title")}
-          <Badge variant={enabled ? "secondary" : "destructive"}>{t(enabled ? "open" : "closed")}</Badge>
-        </CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
-      {canEdit && (
-        <CardContent>
-          <ActionDialog
-            action={setSignups.bind(null, !enabled)}
-            trigger={{ label: t(`${step}.trigger`) }}
-            title={t(`${step}.title`)}
-            description={t(`${step}.description`)}
-            submitLabel={t(`${step}.submit`)}
-            cancelLabel={getAdminTranslations("common")("cancel")}
-            destructive={enabled}
-          />
-        </CardContent>
-      )}
+      <CardContent className="flex flex-col divide-y">
+        <SiteSwitch
+          checked={status.signupsEnabled}
+          action={setSignups.bind(null, !status.signupsEnabled)}
+          canEdit={can("system.signups")}
+          texts={texts("signups")}
+        />
+        <SiteSwitch
+          checked={status.profileShowcaseEnabled}
+          action={setShowcase.bind(null, !status.profileShowcaseEnabled)}
+          canEdit={can("system.showcase")}
+          texts={texts("showcase")}
+        />
+      </CardContent>
     </Card>
   );
 }
 
+/** Read by the figures and by the table of the page: once per request. */
+const databaseTables = cache(() => adminApi<AdminDatabaseTable[]>("/system/database").catch(() => null));
+
 /** Weight of the stored files, read from the storage on every visit: streamed apart. */
 export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
   const t = getAdminTranslations("system.uploads");
-  const result = await adminApi<AdminUploadsAudit>("/system/uploads").catch(() => null);
+  const [result, database] = await Promise.all([adminApi<AdminUploadsAudit>("/system/uploads").catch(() => null), databaseTables()]);
   if (!result?.ok) {
     return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>;
   }
@@ -141,7 +153,8 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <KpiGrid columns={3}>
+      <KpiGrid columns={4}>
+        <DatabaseTile tables={database?.ok ? database.data : null} />
         <KpiTile icon={FileImageIcon} color="blue" label={t("avatars")} value={formatBytes(avatars.bytes)} detail={t("files", { count: avatars.count })} gauge={shareOf(avatars.bytes, stored)} />
         <KpiTile icon={FileWarningIcon} color="aqua" label={t("orphans")} value={formatBytes(orphans.bytes)} detail={t("files", { count: orphans.count })} gauge={shareOf(orphans.bytes, stored)} />
         <KpiTile
@@ -202,15 +215,49 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+/** Weight of the tables of the database, indexes included. */
+function DatabaseTile({ tables }: { tables: AdminDatabaseTable[] | null }) {
+  const t = getAdminTranslations("system.database");
+  if (!tables) {
+    return <KpiTile icon={DatabaseIcon} color="yellow" label={t("weight")} value="—" detail={t("error")} />;
+  }
+  const total = tables.reduce((sum, table) => sum + table.totalBytes, 0);
+  const indexes = tables.reduce((sum, table) => sum + table.indexBytes, 0);
+  return (
+    <KpiTile
+      icon={DatabaseIcon}
+      color="yellow"
+      label={t("weight")}
+      value={formatBytes(total)}
+      detail={t("weightDetail", { count: tables.length, indexes: formatBytes(indexes) })}
+      gauge={shareOf(indexes, total)}
+    />
+  );
+}
+
 export function UploadsSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy>
-      <KpiGrid columns={3}>
-        {Array.from({ length: 3 }, (_, index) => (
+      <KpiGrid columns={4}>
+        {Array.from({ length: 4 }, (_, index) => (
           <KpiTileSkeleton key={index} />
         ))}
       </KpiGrid>
       <Skeleton className="h-72 w-full rounded-xl" />
     </div>
   );
+}
+
+/** The tables of the database, read from the catalogs on every visit: streamed apart. */
+export async function DatabaseSection() {
+  const t = getAdminTranslations("system.database");
+  const result = await databaseTables();
+  if (!result?.ok) {
+    return <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("error")}</p>;
+  }
+  return <DatabaseTable tables={result.data} />;
+}
+
+export function DatabaseSkeleton() {
+  return <Skeleton className="h-96 w-full rounded-xl" aria-busy />;
 }

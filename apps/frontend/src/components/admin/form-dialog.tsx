@@ -64,6 +64,8 @@ export interface FormDialogProps {
   onOpenChange?: (open: boolean) => void;
   /** After the action went through, e.g. to fetch a table again. */
   onSuccess?: () => void;
+  /** The success goes without a toast, the page showing it already; a failure is still told. */
+  quiet?: boolean;
   title: string;
   description: string;
   submitLabel: string;
@@ -113,6 +115,7 @@ function FormDialogForm({
   cancelLabel,
   fields,
   onSuccess,
+  quiet,
   onDone,
 }: FormDialogProps & { onDone: () => void }) {
   const [result, formAction] = useActionState(action, null);
@@ -126,7 +129,7 @@ function FormDialogForm({
   useEffect(() => {
     if (!result) return;
     if (result.ok) {
-      toast.success(result.message);
+      if (!quiet) toast.success(result.message);
       done();
       succeeded();
     } else {

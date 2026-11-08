@@ -36,6 +36,7 @@ import { CardImageDialog } from "./card-image-dialog";
 import { ProfileBanner } from "./profile-banner";
 import { DEFAULT_PROFILE_COLOR, type ProfileColorStyles, profileColorStyles } from "./profile-color";
 import { ShareProfileDialog } from "./share-profile-dialog";
+import { ProfileRelief } from "./profile-relief";
 import { ShowcaseDialog } from "./showcase-dialog";
 
 interface ProfileCardProps {
@@ -212,7 +213,12 @@ export function ProfileCard({ profile, action, onFollowsClosed, onFollowChange, 
         />
       </div>
       {profile.visible ? (
-        profile.showcase && <ShowcaseView showcase={profile.showcase} self={profile.self} colors={colors} />
+        profile.showcase ? (
+          <ShowcaseView showcase={profile.showcase} self={profile.self} colors={colors} />
+        ) : (
+          // Visible yet without a showcase: turned off for the whole site, never told.
+          <ProfileRelief seed={profile.username} color={profile.color} />
+        )
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 border-t bg-muted/40 px-5 py-8 text-center">
           <span className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground">
@@ -222,7 +228,7 @@ export function ProfileCard({ profile, action, onFollowsClosed, onFollowChange, 
           <p className="max-w-xs text-sm text-muted-foreground">
             {profile.requested
               ? t("locked.requested")
-              : t("locked.description", { name })}
+              : t(profile.showcaseEnabled ? "locked.description" : "locked.descriptionNoShowcase", { name })}
           </p>
         </div>
       )}

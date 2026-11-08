@@ -187,7 +187,7 @@ export function ProfilesView() {
       top={
         self ? (
           <div className="flex items-center gap-1">
-            <ProfileVisibilitySwitch variant="lock" onChange={refresh} />
+            <ProfileVisibilitySwitch variant="lock" showcase={profile?.showcaseEnabled ?? true} onChange={refresh} />
             {profile && (
               <ProfileColorButton color={color === undefined ? profile.color : color} onPreview={setColor} />
             )}

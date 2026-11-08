@@ -1,5 +1,5 @@
 import { ADMIN_DURATION_BUCKETS } from "@kilotrace/shared/admin";
-import { ArrowDownIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import { BarChart } from "@/components/admin/site-activity/bar-chart";
 import { BarList, CardFigure, ChartHead, THIN_SCROLL } from "@/components/admin/site-activity/parts";
 import { getSiteActivityFormat } from "@/components/admin/site-activity/site-activity-format";
@@ -106,18 +106,18 @@ export async function SessionsTab({ view }: { view: SiteActivityView }) {
         {data.transitions.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
-          <ol className={cn("-mx-2 grid max-h-120 grid-cols-1 gap-2 px-2 md:grid-cols-2", THIN_SCROLL)}>
+          <ol className={cn("-mx-2 grid max-h-120 grid-cols-1 gap-x-4 gap-y-1 px-2 md:grid-cols-2", THIN_SCROLL)}>
             {data.transitions.map((flow) => (
-              <li key={`${flow.from}>${flow.to}`} className="relative flex items-center gap-3 overflow-hidden rounded-lg bg-muted/40 px-3 py-2">
-                <span className="absolute inset-y-0 left-0 bg-[#2a78d6]/10 dark:bg-[#3987e5]/15" style={{ width: `${(flow.count / maxFlow) * 100}%` }} aria-hidden />
-                <span className="relative flex min-w-0 flex-1 flex-col gap-0.5 font-mono text-xs">
-                  <span className="truncate">{flow.from}</span>
-                  <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
-                    <ArrowDownIcon className="size-3 shrink-0" aria-label={t("transitions.then")} />
-                    <span className="truncate text-foreground">{flow.to}</span>
-                  </span>
-                </span>
-                <span className="relative shrink-0 text-sm font-medium tabular-nums">{format.number(flow.count)}</span>
+              <li
+                key={`${flow.from}>${flow.to}`}
+                title={`${flow.from} → ${flow.to}`}
+                className="relative flex h-7 items-center gap-2 overflow-hidden rounded-md px-2 font-mono text-xs"
+              >
+                <span className="absolute inset-y-0 left-0 rounded-md bg-[#2a78d6]/10 dark:bg-[#3987e5]/15" style={{ width: `${(flow.count / maxFlow) * 100}%` }} aria-hidden />
+                <span className="relative min-w-0 truncate text-muted-foreground">{flow.from}</span>
+                <ArrowRightIcon className="relative size-3 shrink-0 text-muted-foreground" aria-label={t("transitions.then")} />
+                <span className="relative min-w-0 flex-1 truncate">{flow.to}</span>
+                <span className="relative shrink-0 font-sans font-medium tabular-nums">{format.number(flow.count)}</span>
               </li>
             ))}
           </ol>

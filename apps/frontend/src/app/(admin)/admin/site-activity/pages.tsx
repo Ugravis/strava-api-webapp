@@ -182,18 +182,36 @@ export async function PagesTab({ view }: { view: SiteActivityView }) {
             />
           </div>
         </DashboardCard>
-        <DashboardCard title={t("devices.title")} description={t("devices.description")}>
-          <DonutChart
-            label={t("devices.title")}
-            totalLabel={t("daily.views")}
-            emptyLabel={t("empty")}
-            divided
-            segments={devices.map((device) => ({ ...device, value: pages.devices.find((entry) => entry.device === device.id)?.views ?? 0 }))}
-          />
+        <DashboardCard title={t("areas.title")} description={t("areas.description")}>
+          <div className="flex flex-col gap-4">
+            <div className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+              {pages.areas.map((area) => (
+                <span
+                  key={area.area}
+                  className={cn("h-full", SERIES_COLORS[AREA_COLORS[area.area]].swatch)}
+                  style={{ width: `${(format.ratio(area.views, areaTotal) ?? 0) * 100}%` }}
+                />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              {(["app", "admin"] as const).map((key) => {
+                const area = pages.areas.find((entry) => entry.area === key) ?? { area: key, views: 0, users: 0, visibleMs: 0 };
+                return (
+                  <div key={key} className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3.5 py-3">
+                    <ChartLegend items={[{ id: key, label: t(`areas.${key}`), color: AREA_COLORS[key] }]} label={t(`areas.${key}`)} />
+                    <span className="text-lg font-semibold tracking-tight tabular-nums">
+                      {format.number(area.views)} <span className="text-xs font-normal text-muted-foreground">· {format.percent(format.ratio(area.views, areaTotal), 0)}</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground">{t("areas.figure", { users: area.users, time: format.duration(area.visibleMs) })}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </DashboardCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         <DashboardCard title={t("devicesDaily.title")} description={t("devicesDaily.description")} className="lg:col-span-2">
           <div className="flex flex-col gap-4">
             <ChartHead legend={<ChartLegend items={devices} label={t("legend")} />} />
@@ -206,6 +224,15 @@ export async function PagesTab({ view }: { view: SiteActivityView }) {
               points={pages.devicesDaily.map((day) => ({ start: day.date, values: { desktop: day.desktop, mobile: day.mobile, tablet: day.tablet } }))}
             />
           </div>
+        </DashboardCard>
+        <DashboardCard title={t("devices.title")} description={t("devices.description")}>
+          <DonutChart
+            label={t("devices.title")}
+            totalLabel={t("daily.views")}
+            emptyLabel={t("empty")}
+            divided
+            segments={devices.map((device) => ({ ...device, value: pages.devices.find((entry) => entry.device === device.id)?.views ?? 0 }))}
+          />
         </DashboardCard>
         <DashboardCard title={t("devicesDetail.title")} description={t("devicesDetail.description")}>
           <ul className="flex flex-col divide-y">
@@ -238,34 +265,6 @@ export async function PagesTab({ view }: { view: SiteActivityView }) {
           </div>
         </DashboardCard>
       </div>
-
-      <DashboardCard title={t("areas.title")} description={t("areas.description")}>
-        <div className="flex flex-col gap-4">
-          <div className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-            {pages.areas.map((area) => (
-              <span
-                key={area.area}
-                className={cn("h-full", SERIES_COLORS[AREA_COLORS[area.area]].swatch)}
-                style={{ width: `${(format.ratio(area.views, areaTotal) ?? 0) * 100}%` }}
-              />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {(["app", "admin"] as const).map((key) => {
-              const area = pages.areas.find((entry) => entry.area === key) ?? { area: key, views: 0, users: 0, visibleMs: 0 };
-              return (
-                <div key={key} className="flex flex-col gap-1 rounded-lg bg-muted/50 px-3.5 py-3">
-                  <ChartLegend items={[{ id: key, label: t(`areas.${key}`), color: AREA_COLORS[key] }]} label={t(`areas.${key}`)} />
-                  <span className="text-lg font-semibold tracking-tight tabular-nums">
-                    {format.number(area.views)} <span className="text-xs font-normal text-muted-foreground">· {format.percent(format.ratio(area.views, areaTotal), 0)}</span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">{t("areas.figure", { users: area.users, time: format.duration(area.visibleMs) })}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </DashboardCard>
     </>
   );
 }

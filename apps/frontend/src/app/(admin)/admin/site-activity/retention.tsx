@@ -13,6 +13,9 @@ import { siteActivity, type SiteActivityView } from "./data";
 
 const HEIGHT = 220;
 
+/** Active days from which a user counts as regular, in the figure of the card « at least ». */
+const REGULAR_DAYS = 4;
+
 /** Retention of every cohort together: their retained over their eligible. */
 const pooled = (rates: AdminRetention[]): AdminRetention =>
   rates.reduce((sum, rate) => ({ retained: sum.retained + rate.retained, eligible: sum.eligible + rate.eligible }), { retained: 0, eligible: 0 });
@@ -46,6 +49,10 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
   const t = getAdminTranslations("siteActivity.retention");
   const [format, users] = await Promise.all([getSiteActivityFormat(), siteActivity("users", view.days, view.team, view.admin)]);
   if (!users) return <DashboardUnavailable />;
+  // Users active on at least each number of days: the distribution summed from its end.
+  const activeOn = (days: number) => users.activeDaysInPeriod.reduce((sum, bin) => sum + (bin.value >= days ? bin.count : 0), 0);
+  const activeInPeriod = activeOn(1);
+  const atLeast = users.activeDaysInPeriod.filter((bin) => bin.value > 0).map((bin) => ({ value: bin.value, count: activeOn(bin.value) }));
 
   const curve = [
     { id: "rolling", label: t("curve.rolling"), color: "aqua" as const },
@@ -178,16 +185,34 @@ export async function RetentionTab({ view }: { view: SiteActivityView }) {
         </DashboardCard>
       </div>
 
-      <DashboardCard title={t("activeDays.title")} description={t("activeDays.description")}>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {users.activeDays.map((month) => (
-            <div key={month.month} className="flex flex-col gap-2">
-              <span className="text-sm font-medium first-letter:uppercase">{format.longMonth(month.month)}</span>
-              <Histogram bins={month.distribution} label={format.longMonth(month.month)} unit={days} series={t("users")} color="aqua" format={format} height={160} />
-            </div>
-          ))}
-        </div>
-      </DashboardCard>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <DashboardCard title={t("activeDays.title")} description={t("activeDays.description")} className="lg:col-span-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {users.activeDays.map((month) => (
+              <div key={month.month} className="flex flex-col gap-2">
+                <span className="text-sm font-medium first-letter:uppercase">{format.longMonth(month.month)}</span>
+                <Histogram bins={month.distribution} label={format.longMonth(month.month)} unit={days} series={t("users")} color="aqua" format={format} height={160} />
+              </div>
+            ))}
+          </div>
+        </DashboardCard>
+        <DashboardCard title={t("atLeast.title")} description={t("atLeast.description", { days: view.days })}>
+          <div className="flex flex-col gap-4">
+            <ChartHead
+              figures={<CardFigure value={format.percent(format.ratio(activeOn(REGULAR_DAYS), activeInPeriod), 0)} label={t("atLeast.regular", { count: REGULAR_DAYS })} />}
+            />
+            <BarChart
+              labels={atLeast.map((bin) => format.number(bin.value))}
+              titles={atLeast.map((bin) => t("atLeast.bin", { count: bin.value }))}
+              series={[{ id: "count", label: t("users"), color: "blue" }]}
+              values={{ count: atLeast.map((bin) => bin.count) }}
+              notes={[{ label: t("atLeast.share"), values: atLeast.map((bin) => format.percent(format.ratio(bin.count, activeInPeriod), 0)) }]}
+              label={t("atLeast.title")}
+              height={160}
+            />
+          </div>
+        </DashboardCard>
+      </div>
     </>
   );
 }

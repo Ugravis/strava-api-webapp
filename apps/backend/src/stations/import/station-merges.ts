@@ -26,12 +26,15 @@ export interface FootprintStation {
   id: number;
   name: string | null;
   areaM2: number;
+  /** Number of train routes stopping at it. */
+  routes: number;
 }
 
 /**
  * The station each merged station goes into, by id: the groups of
- * overlapping stations go into their largest footprint, then the shortest
- * name, then the smallest id.
+ * overlapping stations go into the one served by the most train routes
+ * (Belfort-Montbéliard TGV, not the halt of Meroux within it), then the
+ * largest footprint, the shortest name, the smallest id.
  */
 export function footprintMerges(
   pairs: FootprintPair[],
@@ -43,9 +46,14 @@ export function footprintMerges(
     while (parent.has(current)) current = parent.get(current)!;
     return current;
   };
-  const rank = (id: number): [number, number, number] => {
+  const rank = (id: number): number[] => {
     const station = stations.get(id)!;
-    return [-station.areaM2, station.name?.length ?? Infinity, id];
+    return [
+      -station.routes,
+      -station.areaM2,
+      station.name?.length ?? Infinity,
+      id,
+    ];
   };
   const before = (p: number, q: number): boolean => {
     const [a, b] = [rank(p), rank(q)];
@@ -74,14 +82,14 @@ const OVERLAPS = `
     WHERE a.kind = 'station' AND b.kind = 'station'
       AND a.zone_source = 'osm' AND b.zone_source = 'osm'
   ), areas AS MATERIALIZED (
-    SELECT p.id, p.name, ST_Area(p.footprint::geography) AS area_m2
+    SELECT p.id, p.osm_id, p.name, ST_Area(p.footprint::geography) AS area_m2
     FROM places p
     WHERE p.id IN (SELECT a FROM pairs UNION SELECT b FROM pairs)
   )
   SELECT pairs.a, pairs.b,
          pairs.shared_m2 / nullif(least(sa.area_m2, sb.area_m2), 0) AS share,
-         sa.name AS name_a, sa.area_m2 AS area_a,
-         sb.name AS name_b, sb.area_m2 AS area_b
+         sa.osm_id AS osm_a, sa.name AS name_a, sa.area_m2 AS area_a,
+         sb.osm_id AS osm_b, sb.name AS name_b, sb.area_m2 AS area_b
   FROM pairs
   JOIN areas sa ON sa.id = pairs.a
   JOIN areas sb ON sb.id = pairs.b
@@ -91,24 +99,37 @@ const OVERLAPS = `
  * Merges the stations whose footprints overlap (`FOOTPRINT_MERGE_SHARE`):
  * the station kept takes the footprint and the small tiles of the others,
  * and their links, the shortest kept between two stations. Returns the
- * number of stations merged.
+ * number of stations merged. `routes`: the number of train routes of the
+ * stations, by OSM id.
  */
 export async function mergeOverlappingStations(
   dataSource: DataSource,
+  routes: Map<number, number>,
 ): Promise<number> {
   const rows: {
     a: number;
     b: number;
     share: number | null;
+    osm_a: string;
     name_a: string | null;
     area_a: number;
+    osm_b: string;
     name_b: string | null;
     area_b: number;
   }[] = await dataSource.query(OVERLAPS, [FOOTPRINT_MERGE_SHARE]);
   const stations = new Map<number, FootprintStation>();
   for (const row of rows) {
-    stations.set(row.a, { id: row.a, name: row.name_a, areaM2: row.area_a });
-    stations.set(row.b, { id: row.b, name: row.name_b, areaM2: row.area_b });
+    for (const [id, osm, name, areaM2] of [
+      [row.a, row.osm_a, row.name_a, row.area_a],
+      [row.b, row.osm_b, row.name_b, row.area_b],
+    ] as const) {
+      stations.set(id, {
+        id,
+        name,
+        areaM2,
+        routes: routes.get(Number(osm)) ?? 0,
+      });
+    }
   }
   const merges = footprintMerges(
     rows.map(({ a, b, share }) => ({ a, b, share: share ?? 0 })),

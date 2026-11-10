@@ -43,6 +43,8 @@ export interface StationCandidate {
   exclusion: StationExclusion | null;
   /** What shows a kept station is served: a train route, or a track beside it. */
   servedBy: 'route' | 'track' | null;
+  /** Number of train routes stopping at it or in its stop areas: its importance. */
+  routes: number;
   /** For a merged station: the index of the station it is merged into. */
   mergedInto: number | null;
 }
@@ -172,6 +174,8 @@ export class RailwayDataBuilder {
   /** `n123` or `w456`: the stops and platforms of the train routes. */
   private readonly routeStops = new Set<string>();
   private readonly routeStations = new Set<number>();
+  /** Train routes stopping at each stop, by `n|w|r` + id. */
+  private readonly routesOfStop = new Map<string, number[]>();
   /** Stations of the train rides of an amusement park. */
   private readonly attractionStations = new Set<number>();
   private readonly stopAreas: string[][] = [];
@@ -191,6 +195,7 @@ export class RailwayDataBuilder {
             point: [object.lon, object.lat],
             exclusion: null,
             servedBy: null,
+            routes: 0,
             mergedInto: null,
             tags: object.tags!,
           });
@@ -209,7 +214,11 @@ export class RailwayDataBuilder {
             if (member.type === 'w' && !isStopRole(member.role)) {
               this.routeTracks.add(member.id);
             } else if (member.type !== 'r') {
-              this.routeStops.add(`${member.type}${member.id}`);
+              const stop = `${member.type}${member.id}`;
+              this.routeStops.add(stop);
+              const routes = this.routesOfStop.get(stop);
+              if (routes) routes.push(object.id);
+              else this.routesOfStop.set(stop, [object.id]);
               if (member.type === 'n') this.routeStations.add(member.id);
             }
           }
@@ -285,12 +294,26 @@ export class RailwayDataBuilder {
    */
   private classifyStations(tracks: Tracks): StationCandidate[] {
     const servedByArea = new Set<number>();
+    const routesOf = new Map<number, Set<number>>();
+    const addRoutes = (station: number, routes: Iterable<number>) => {
+      const known = routesOf.get(station);
+      if (known) for (const route of routes) known.add(route);
+      else routesOf.set(station, new Set(routes));
+    };
     for (const members of this.stopAreas) {
-      if (members.some((member) => this.routeStops.has(member))) {
+      const routes = members.flatMap(
+        (member) => this.routesOfStop.get(member) ?? [],
+      );
+      if (routes.length > 0) {
         for (const member of members) {
-          if (member[0] === 'n') servedByArea.add(Number(member.slice(1)));
+          if (member[0] !== 'n') continue;
+          servedByArea.add(Number(member.slice(1)));
+          addRoutes(Number(member.slice(1)), routes);
         }
       }
+    }
+    for (const [stop, routes] of this.routesOfStop) {
+      if (stop[0] === 'n') addRoutes(Number(stop.slice(1)), routes);
     }
     const stopIndex = this.stopPointIndex();
     const attractions = new Set<StationCandidate>();
@@ -314,6 +337,7 @@ export class RailwayDataBuilder {
           ...candidate,
           exclusion: exclusion ?? (served ? null : 'not_served'),
           servedBy: exclusion === null && served ? 'route' : null,
+          routes: routesOf.get(candidate.osmId)?.size ?? 0,
         };
         if (attraction) attractions.add(station);
         return station;

@@ -270,7 +270,15 @@ export async function importStations(
     `Zones: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
   );
   const merged = await timed('merge', () =>
-    mergeOverlappingStations(dataSource),
+    mergeOverlappingStations(
+      dataSource,
+      new Map(
+        kept.map((index) => [
+          data.stations[index].osmId,
+          data.stations[index].routes,
+        ]),
+      ),
+    ),
   );
   excluded.merged += merged;
   console.log(`${merged} stations merged into an overlapping footprint`);

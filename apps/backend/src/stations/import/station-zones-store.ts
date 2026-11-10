@@ -84,9 +84,11 @@ const UTM_SRID = `(CASE WHEN ST_Y(p.geom) >= 0 THEN 32600 ELSE 32700 END
  * of platforms becomes a block (its band, oriented rectangle or hull),
  * joined to the buildings, gaps closed, holes filled, crumbs dropped. The
  * source falls back to the tracks, then to the point, when a shape is empty.
+ * Every step is materialized: inlined, Postgres would compute a shape again
+ * at each of its uses, many times over.
  */
 const SHAPES = `INSERT INTO zone_shapes (place_id, source, footprint, zone)
-WITH m AS (
+WITH m AS MATERIALIZED (
   SELECT p.id, s.srid,
     ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.clusters), 4326), s.srid) AS clusters,
     ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.buildings), 4326), s.srid) AS buildings,
@@ -95,7 +97,7 @@ WITH m AS (
   JOIN places p ON p.osm_type = 'n' AND p.osm_id = i.osm_id
   CROSS JOIN LATERAL (SELECT ${UTM_SRID} AS srid) AS s
 ),
-f AS (
+f AS MATERIALIZED (
   SELECT m.id, m.srid, m.rails, (
       SELECT ST_Union(ARRAY(
         SELECT CASE
@@ -107,6 +109,7 @@ f AS (
             ST_Buffer(ST_GeometryN(m.clusters, g), ${PLATFORM_REACH_M}, 'endcap=flat ${MITRE}'),
             ${CLOSING_M}, '${MITRE}'), -${CLOSING_M}, '${MITRE}') AS band
           FROM generate_series(1, ST_NumGeometries(m.clusters)) AS g
+          OFFSET 0
         ) AS bands
         WHERE NOT ST_IsEmpty(band)
       ))
@@ -116,13 +119,13 @@ f AS (
     )) AS buildings
   FROM m
 ),
-b AS (
+b AS MATERIALIZED (
   SELECT f.id, f.srid, f.rails,
     ST_Buffer(ST_Buffer(coalesce(ST_Union(f.blocks, f.buildings), f.blocks, f.buildings),
       ${CLOSING_M}, '${MITRE}'), ${PADDING_M - CLOSING_M}, '${MITRE}') AS blob
   FROM f
 ),
-o AS (
+o AS MATERIALIZED (
   SELECT b.id, b.srid, b.rails, (
     SELECT ST_Union(ARRAY(
       SELECT ST_MakePolygon(ST_ExteriorRing(part.geom))

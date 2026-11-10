@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Place } from './place.entity';
+import { PlaceTile } from './place-tile.entity';
 import { RailLinkCountry } from './rail-link-country.entity';
 import { RailLink } from './rail-link.entity';
 import { RailwayImport } from './railway-import.entity';
@@ -9,7 +10,13 @@ import { StationsService } from './stations.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Place, RailLink, RailLinkCountry, RailwayImport]),
+    TypeOrmModule.forFeature([
+      Place,
+      PlaceTile,
+      RailLink,
+      RailLinkCountry,
+      RailwayImport,
+    ]),
   ],
   controllers: [StationsController],
   providers: [StationsService],

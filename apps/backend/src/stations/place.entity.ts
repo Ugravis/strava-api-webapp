@@ -11,9 +11,13 @@ import { Country } from '../countries/country.entity';
 /** Kinds of the places collected on the map. */
 export type PlaceKind = 'station';
 
+/** What the zone of a place comes from, see `ZoneSource`. */
+export type PlaceZoneSource = 'osm' | 'rails' | 'point';
+
 /**
  * A point of interest of the map, imported from OpenStreetMap. Geographic
- * data only: a place is visited when the small tile holding it is.
+ * data only: a place is visited when a small tile of its zone is
+ * (`place_tiles`).
  */
 @Entity('places')
 @Index(['osmType', 'osmId'], { unique: true })
@@ -55,7 +59,7 @@ export class Place {
   @JoinColumn({ name: 'country_code' })
   country?: Country;
 
-  /** Large tile (zoom 14) holding the place. */
+  /** Large tile (zoom 14) holding the point of the place, where its label is. */
   @Column({ type: 'integer' })
   x!: number;
 
@@ -65,6 +69,24 @@ export class Place {
   /** Small tile (zoom 17) holding the place: its bit in the mask of the large tile. */
   @Column({ type: 'smallint' })
   bit!: number;
+
+  /** Footprint drawn on the map, for a zone from OpenStreetMap only. */
+  @Index({ spatial: true })
+  @Column({
+    type: 'geometry',
+    spatialFeatureType: 'MultiPolygon',
+    srid: 4326,
+    nullable: true,
+  })
+  footprint!: string | null;
+
+  @Column({
+    name: 'zone_source',
+    type: 'varchar',
+    length: 8,
+    default: 'point',
+  })
+  zoneSource!: PlaceZoneSource;
 
   /** Last import changing the place: the vector tiles of the places follow it. */
   @Column({ name: 'updated_at', type: 'timestamptz', default: () => 'now()' })

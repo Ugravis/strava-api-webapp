@@ -102,6 +102,59 @@ export function isPassengerTrack(tags: Tags, inTrainRoute: boolean): boolean {
 }
 
 /**
+ * Whether the zone of a station may follow a track: a main or narrow gauge
+ * line, neither heritage nor a yard, siding or spur track, nor an
+ * industrial, military or test line.
+ */
+export function isStationZoneTrack(tags: Tags): boolean {
+  return (
+    (tags.railway === 'rail' || tags.railway === 'narrow_gauge') &&
+    !SERVICE_TRACKS.has(tags.service ?? '') &&
+    !NON_PASSENGER_USAGES.has(tags.usage ?? '')
+  );
+}
+
+/** Whether an object is a train platform: not a tram, bus or metro one. */
+export function isTrainPlatform(tags: Tags | null): boolean {
+  if (!tags || tags.tram === 'yes' || tags.bus === 'yes') return false;
+  if (tags.subway === 'yes') return false;
+  return (
+    tags.railway === 'platform' ||
+    (tags.public_transport === 'platform' && tags.train === 'yes')
+  );
+}
+
+/** Whether a building is the building of a station. */
+export function isStationBuilding(tags: Tags | null): boolean {
+  return (
+    tags?.building !== undefined &&
+    (tags.railway === 'station' ||
+      tags.public_transport === 'station' ||
+      tags.building === 'train_station')
+  );
+}
+
+const ROOF_BUILDINGS = new Set(['roof', 'train_station', 'transportation']);
+
+/** Whether a building may be a roof over the platforms of a station. */
+export function isPlatformRoof(tags: Tags | null): boolean {
+  return ROOF_BUILDINGS.has(tags?.building ?? '');
+}
+
+/** Whether an object lies under the ground: an RER or metro line under the city. */
+export function isUnderground(tags: Tags | null): boolean {
+  if (!tags) return false;
+  const below = (value: string | undefined) =>
+    value !== undefined && Number.parseFloat(value) < 0;
+  return (
+    below(tags.layer) ||
+    below(tags.level) ||
+    tags.location === 'underground' ||
+    tags.tunnel === 'yes'
+  );
+}
+
+/**
  * Whether a station beside a track is served by it although no train route
  * says so: where the routes are not mapped, a passenger track that is
  * neither a heritage nor a tourist line.

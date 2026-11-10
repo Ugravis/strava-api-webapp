@@ -1,5 +1,6 @@
 import { parseOplLine } from './osm-opl';
 import {
+  levelNamesMatch,
   namesMatch,
   normalizedName,
   RailwayDataBuilder,
@@ -164,7 +165,7 @@ describe('RailwayNetwork', () => {
     expect(linksOf(data)).toEqual(['101-102']);
   });
 
-  it('draws a link up to its stations, curving from the tracks', () => {
+  it('draws a link along the tracks only, from where its stations stand on them', () => {
     const f = empty();
     track(f, 1, 1, 0, 10, 'railway=rail');
     station(f, 101, 0.005, LAT + 100 * M);
@@ -173,14 +174,9 @@ describe('RailwayNetwork', () => {
 
     const [link] = new RailwayNetwork(dataOf(f)).linkAll().links;
 
-    expect(link.coords[0]).toEqual([0.005, LAT + 100 * M]);
+    expect(link.coords[0][0]).toBeCloseTo(0.005, 6);
     expect(link.coords.at(-1)).toEqual([0.035, LAT]);
-    // A curve from the station meets the tracks 200 m farther, along them.
-    const met = link.coords.slice(12);
-    expect(met[0][0]).toBeCloseTo(0.005 + 200 / (111_320 * Math.SQRT1_2), 6);
-    for (const [, lat] of met) expect(lat).toBeCloseTo(LAT, 9);
-    const lats = link.coords.slice(0, 13).map(([, lat]) => lat);
-    expect(lats).toEqual([...lats].sort((p, q) => q - p));
+    for (const [, lat] of link.coords) expect(lat).toBeCloseTo(LAT, 9);
     // Measured along the tracks only.
     expect(link.lengthM).toBeCloseTo(
       0.03 * 111_320 * Math.cos((45 * Math.PI) / 180),
@@ -239,6 +235,58 @@ describe('RailwayNetwork', () => {
 
     expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([
       'not_train',
+      null,
+      null,
+    ]);
+  });
+
+  it('never counts the train ride of an amusement park as a train route', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=narrow_gauge,usage=tourism');
+    station(f, 101, 0.005, LAT, ',tourism=attraction');
+    station(f, 102, 0.035, LAT, ',tourism=attraction');
+    route(f, 1, [101, 102], [1]);
+    f.relations[0] = f.relations[0].replace(
+      'route=train',
+      'route=train,attraction=train',
+    );
+
+    expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([
+      'not_served',
+      'not_served',
+    ]);
+  });
+
+  it('never counts a park station beside the stop of a real train as served', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    track(
+      f,
+      2,
+      20,
+      0.005,
+      2,
+      'railway=narrow_gauge,usage=tourism',
+      LAT + 100 * M,
+    );
+    station(f, 101, 0.005, LAT + 100 * M);
+    station(f, 102, 0.035, LAT);
+    station(f, 103, 0.075, LAT);
+    // A heritage station beside the stop is still served by it.
+    station(f, 104, 0.0052, LAT + 50 * M, ',tourism=attraction');
+    f.nodes.push(
+      `n201 Tpublic_transport=stop_position,train=yes x0.005 y${LAT}`,
+    );
+    f.relations.push(
+      `r1 Ttype=route,route=train Mn201@stop,n102@stop,n103@stop,w1@`,
+    );
+    f.relations.push(
+      `r2 Ttype=route,route=train,attraction=train Mn101@stop,w2@`,
+    );
+
+    expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([
+      'not_served',
+      null,
       null,
       null,
     ]);
@@ -433,5 +481,23 @@ describe('namesMatch', () => {
     expect(match('Catford', 'Catford Bridge')).toBe(false);
     expect(match('Lille-Europe', 'Lille-Flandres')).toBe(false);
     expect(match('Bourges', 'Saint-Germain-du-Puy')).toBe(false);
+  });
+});
+
+describe('levelNamesMatch', () => {
+  const match = (a: string, b: string) =>
+    levelNamesMatch(normalizedName(a), normalizedName(b));
+
+  it('matches a level of a station', () => {
+    expect(
+      match('Stuttgart Hauptbahnhof', 'Stuttgart Hauptbahnhof (tief)'),
+    ).toBe(true);
+    expect(match('Leipzig Hbf', 'Leipzig Hbf (Tiefgleise)')).toBe(true);
+  });
+
+  it('tells apart two stations of a town', () => {
+    expect(match('Varese', 'Varese Nord')).toBe(false);
+    expect(match('Essen-Dellwig', 'Essen-Dellwig Ost')).toBe(false);
+    expect(match('Jambes', 'Jambes')).toBe(false);
   });
 });

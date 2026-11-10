@@ -6,6 +6,7 @@ import {
   isStopArea,
   isStopRole,
   isTrackWay,
+  isAttractionRoute,
   isTrainRoute,
   servesStationsNearby,
   type StationExclusion,
@@ -30,6 +31,8 @@ export const SERVED_TRACK_RADIUS_M = 150;
  * their names match or a stop area holds both.
  */
 export const MERGE_RADIUS_M = 200;
+/** …and this close when one name is the other but for a level (`Stuttgart Hauptbahnhof (tief)`). */
+export const LEVEL_MERGE_RADIUS_M = 400;
 
 /** A `railway=station|halt` node of OpenStreetMap. */
 export interface StationCandidate {
@@ -40,6 +43,8 @@ export interface StationCandidate {
   exclusion: StationExclusion | null;
   /** What shows a kept station is served: a train route, or a track beside it. */
   servedBy: 'route' | 'track' | null;
+  /** Number of train routes stopping at it or in its stop areas: its importance. */
+  routes: number;
   /** For a merged station: the index of the station it is merged into. */
   mergedInto: number | null;
 }
@@ -169,6 +174,10 @@ export class RailwayDataBuilder {
   /** `n123` or `w456`: the stops and platforms of the train routes. */
   private readonly routeStops = new Set<string>();
   private readonly routeStations = new Set<number>();
+  /** Train routes stopping at each stop, by `n|w|r` + id. */
+  private readonly routesOfStop = new Map<string, number[]>();
+  /** Stations of the train rides of an amusement park. */
+  private readonly attractionStations = new Set<number>();
   private readonly stopAreas: string[][] = [];
 
   add(object: OplObject): void {
@@ -186,6 +195,7 @@ export class RailwayDataBuilder {
             point: [object.lon, object.lat],
             exclusion: null,
             servedBy: null,
+            routes: 0,
             mergedInto: null,
             tags: object.tags!,
           });
@@ -195,12 +205,20 @@ export class RailwayDataBuilder {
         this.addWay(object.id, object.tags, object.nodes);
         return;
       case 'r':
-        if (isTrainRoute(object.tags)) {
+        if (isAttractionRoute(object.tags)) {
+          for (const member of object.members) {
+            if (member.type === 'n') this.attractionStations.add(member.id);
+          }
+        } else if (isTrainRoute(object.tags)) {
           for (const member of object.members) {
             if (member.type === 'w' && !isStopRole(member.role)) {
               this.routeTracks.add(member.id);
             } else if (member.type !== 'r') {
-              this.routeStops.add(`${member.type}${member.id}`);
+              const stop = `${member.type}${member.id}`;
+              this.routeStops.add(stop);
+              const routes = this.routesOfStop.get(stop);
+              if (routes) routes.push(object.id);
+              else this.routesOfStop.set(stop, [object.id]);
               if (member.type === 'n') this.routeStations.add(member.id);
             }
           }
@@ -276,14 +294,29 @@ export class RailwayDataBuilder {
    */
   private classifyStations(tracks: Tracks): StationCandidate[] {
     const servedByArea = new Set<number>();
+    const routesOf = new Map<number, Set<number>>();
+    const addRoutes = (station: number, routes: Iterable<number>) => {
+      const known = routesOf.get(station);
+      if (known) for (const route of routes) known.add(route);
+      else routesOf.set(station, new Set(routes));
+    };
     for (const members of this.stopAreas) {
-      if (members.some((member) => this.routeStops.has(member))) {
+      const routes = members.flatMap(
+        (member) => this.routesOfStop.get(member) ?? [],
+      );
+      if (routes.length > 0) {
         for (const member of members) {
-          if (member[0] === 'n') servedByArea.add(Number(member.slice(1)));
+          if (member[0] !== 'n') continue;
+          servedByArea.add(Number(member.slice(1)));
+          addRoutes(Number(member.slice(1)), routes);
         }
       }
     }
+    for (const [stop, routes] of this.routesOfStop) {
+      if (stop[0] === 'n') addRoutes(Number(stop.slice(1)), routes);
+    }
     const stopIndex = this.stopPointIndex();
+    const attractions = new Set<StationCandidate>();
     const stations = this.candidates.map(
       ({ tags, ...candidate }): StationCandidate => {
         const byRoute =
@@ -293,17 +326,26 @@ export class RailwayDataBuilder {
         // A metro station shared with the trains, such as a station of a
         // suburban network tagged as both.
         if (exclusion === 'not_train' && byRoute) exclusion = null;
+        // An attraction (the station of a park train) is never served by
+        // the stops or the tracks of the real trains next to it.
+        const attraction = this.attractionStations.has(candidate.osmId);
         const served =
-          byRoute || stopIndex.hasPointNear(candidate.point, SERVED_RADIUS_M);
-        return {
+          byRoute ||
+          (!attraction &&
+            stopIndex.hasPointNear(candidate.point, SERVED_RADIUS_M));
+        const station: StationCandidate = {
           ...candidate,
           exclusion: exclusion ?? (served ? null : 'not_served'),
           servedBy: exclusion === null && served ? 'route' : null,
+          routes: routesOf.get(candidate.osmId)?.size ?? 0,
         };
+        if (attraction) attractions.add(station);
+        return station;
       },
     );
     const unserved = stations.filter(
-      (station) => station.exclusion === 'not_served',
+      (station) =>
+        station.exclusion === 'not_served' && !attractions.has(station),
     );
     for (const station of this.nearServingTracks(unserved, tracks)) {
       station.exclusion = null;
@@ -365,16 +407,16 @@ export class RailwayDataBuilder {
         for (let y = cy - 1; y <= cy + 1; y++) {
           for (const b of index.get(`${x}/${y}`) ?? []) {
             if (b <= a) continue;
-            if (
-              metersBetween(stations[a].point, stations[b].point) >
-              MERGE_RADIUS_M
-            ) {
-              continue;
+            const meters = metersBetween(stations[a].point, stations[b].point);
+            if (meters > LEVEL_MERGE_RADIUS_M) continue;
+            if (meters > MERGE_RADIUS_M) {
+              if (!levelNamesMatch(names[a], names[b])) continue;
+            } else {
+              const sameArea = (areasOf.get(stations[a].osmId) ?? []).some(
+                (area) => (areasOf.get(stations[b].osmId) ?? []).includes(area),
+              );
+              if (!sameArea && !namesMatch(names[a], names[b])) continue;
             }
-            const sameArea = (areasOf.get(stations[a].osmId) ?? []).some(
-              (area) => (areasOf.get(stations[b].osmId) ?? []).includes(area),
-            );
-            if (!sameArea && !namesMatch(names[a], names[b])) continue;
             const [ra, rb] = [root(a), root(b)];
             if (ra === rb) continue;
             if (before(ra, rb)) parent.set(rb, ra);
@@ -481,14 +523,70 @@ const ABBREVIATION_MAX = 4;
  * `Brienz BRB`, but not `Catford` and `Catford Bridge`).
  */
 export function namesMatch(a: string | null, b: string | null): boolean {
-  if (a === null || b === null) return false;
+  return (
+    extraWords(a, b)?.every(
+      (word) => word.length <= ABBREVIATION_MAX || GENERIC_WORDS.has(word),
+    ) ?? false
+  );
+}
+
+/** Shorter words (du, de, am…) never tell two stations together. */
+const SHARED_WORD_MIN = 3;
+
+/**
+ * Whether two normalized names may be parts of one station: one is
+ * missing, one holds the other (`渋谷`, `京王渋谷`), or they share a word
+ * besides the generic ones (`Paris Montparnasse 3 Vaugirard`, `Gare
+ * Montparnasse`); not `Magenta` and `Paris Gare du Nord`.
+ */
+export function namesRelated(a: string | null, b: string | null): boolean {
+  if (a === null || b === null) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  const words = new Set(a.split(' '));
+  return b
+    .split(' ')
+    .some(
+      (word) =>
+        words.has(word) &&
+        word.length >= SHARED_WORD_MIN &&
+        !GENERIC_WORDS.has(word),
+    );
+}
+
+/** Words telling a level of a station from the rest of it. */
+const LEVEL_WORDS = new Set([
+  'tief',
+  'tiefgleise',
+  'tiefbahnhof',
+  'unten',
+  'oben',
+  'souterrain',
+  'souterraine',
+  'sotterranea',
+  'sotterraneo',
+  'superficie',
+  'underground',
+  'subterranea',
+  'subterraneo',
+]);
+
+/** Whether one normalized name is the other with only a level besides (`Hauptbahnhof (tief)`). */
+export function levelNamesMatch(a: string | null, b: string | null): boolean {
+  const rest = extraWords(a, b);
+  return (
+    rest !== null &&
+    rest.length > 0 &&
+    rest.every((word) => LEVEL_WORDS.has(word) || GENERIC_WORDS.has(word))
+  );
+}
+
+/** The words of the longer name around the shorter one, or null when it does not hold it. */
+function extraWords(a: string | null, b: string | null): string[] | null {
+  if (a === null || b === null) return null;
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
   const at = ` ${long} `.indexOf(` ${short} `);
-  if (at === -1) return false;
-  const rest = `${long.slice(0, at)} ${long.slice(at + short.length)}`
+  if (at === -1) return null;
+  return `${long.slice(0, at)} ${long.slice(at + short.length)}`
     .split(' ')
     .filter((word) => word !== '');
-  return rest.every(
-    (word) => word.length <= ABBREVIATION_MAX || GENERIC_WORDS.has(word),
-  );
 }

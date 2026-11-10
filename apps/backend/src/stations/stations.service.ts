@@ -14,7 +14,7 @@ const ZONES_LAYER = 'station-zones';
 /** The footprints and zones are served from this zoom, fading in to be whole at 13: smaller, they are a few pixels. */
 const FOOTPRINTS_MIN_ZOOM = 12;
 /** Bumped when the layers of the vector tiles change: the browser caches them for good, by version. */
-const TILE_FORMAT = 2;
+const TILE_FORMAT = 3;
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 
@@ -406,7 +406,7 @@ export class StationsService {
     const [row]: { tile: Buffer | null }[] = await this.dataSource.query(
       `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
        footprints AS (
-         SELECT p.id,
+         SELECT p.id, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat,
            ST_AsMVTGeom(ST_Transform(p.footprint, 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM places p, bounds b
          WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM} AND p.kind = 'station'

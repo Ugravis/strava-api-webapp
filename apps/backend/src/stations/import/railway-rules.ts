@@ -62,9 +62,20 @@ export function stationExclusion(tags: Tags): StationExclusion | null {
   return null;
 }
 
-/** Passenger train routes, heritage and tourist trains included. */
+/** The train ride of an amusement park (`attraction=train`: Disneyland Railroad). */
+export function isAttractionRoute(tags: Tags | null): boolean {
+  return (
+    tags?.type === 'route' &&
+    tags.route === 'train' &&
+    tags.attraction !== undefined
+  );
+}
+
+/** Passenger train routes, heritage and tourist trains included, but the rides of an amusement park. */
 export function isTrainRoute(tags: Tags | null): boolean {
-  return tags?.type === 'route' && tags.route === 'train';
+  return (
+    tags?.type === 'route' && tags.route === 'train' && !isAttractionRoute(tags)
+  );
 }
 
 export function isStopArea(tags: Tags | null): boolean {

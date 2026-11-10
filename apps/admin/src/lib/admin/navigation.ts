@@ -22,6 +22,7 @@ export const adminRoutes = {
   development: "/development",
   /** Prototypes of the back office, kept as showcases. */
   adminTablePoc: "/development/admin-table",
+  stationZonesPoc: "/development/station-zones",
 } as const;
 
 interface AdminNavItem {

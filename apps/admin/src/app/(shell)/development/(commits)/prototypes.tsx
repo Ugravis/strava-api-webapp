@@ -1,4 +1,4 @@
-import { ArrowUpRightIcon, TableIcon } from "lucide-react";
+import { ArrowUpRightIcon, TableIcon, TrainFrontIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@kilotrace/ui/components/ui/button";
@@ -47,6 +47,22 @@ export function Prototypes() {
                 unoptimized
                 className="size-full object-cover object-top-left transition-transform duration-300 group-hover/card:scale-[1.03]"
               />
+            </div>
+          </article>
+        </li>
+        <li>
+          <article className="flex h-full flex-col gap-2 rounded-xl border bg-card p-4 transition-colors hover:border-foreground/25">
+            <h3 className="flex items-center gap-2 font-medium">
+              <TrainFrontIcon className="size-4 text-muted-foreground" aria-hidden />
+              {t("stationZones.title")}
+            </h3>
+            <p className="text-sm text-muted-foreground">{t("stationZones.description")}</p>
+            <div className="mt-auto flex flex-col items-start gap-1.5 pt-3">
+              <Button size="sm" render={<Link href={adminRoutes.stationZonesPoc} />} nativeButton={false}>
+                {t("stationZones.live")}
+                <ArrowUpRightIcon data-icon="inline-end" />
+              </Button>
+              <p className="text-xs text-muted-foreground">{t("stationZones.liveHint")}</p>
             </div>
           </article>
         </li>

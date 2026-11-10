@@ -33,7 +33,8 @@ interface DailyRow {
  */
 export const stationFirsts = (join = '', where = '') => `firsts AS (
     SELECT p.id, f.user_id, min(f.visited_at) AS at FROM places p
-    JOIN tile_first_visits f ON f.x = p.x AND f.y = p.y AND f.mask & (1::bigint << p.bit) <> 0
+    JOIN place_tiles t ON t.place_id = p.id
+    JOIN tile_first_visits f ON f.x = t.x AND f.y = t.y AND f.mask & (1::bigint << t.bit) <> 0
     ${join}
     WHERE p.kind = 'station' ${where} GROUP BY p.id, f.user_id
   ), stations AS (

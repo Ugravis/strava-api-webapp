@@ -68,6 +68,8 @@ const SOURCES = {
 } as const;
 
 const LAYERS = {
+  zones: "station-zones-fill",
+  zoneOutlines: "station-zones-line",
   footprints: "station-footprints-fill",
   footprintOutlines: "station-footprints-line",
   zone: "station-zone-tiles-line",
@@ -100,8 +102,8 @@ const DIM_OPACITY = 0.6;
 /** Layers of the vector tiles of every station, served by the backend: the points, and the footprints from their zoom. */
 const ALL_SOURCE_LAYER = "stations";
 const FOOTPRINTS_SOURCE_LAYER = "station-footprints";
+const ZONES_SOURCE_LAYER = "station-zones";
 const FOOTPRINTS_MIN_ZOOM = 12;
-const FOOTPRINTS_IN = fadeIn(FOOTPRINTS_MIN_ZOOM, 1);
 /** The backend serves every station from this zoom, down to the deepest; the map stretches them beyond. */
 const ALL_MIN_ZOOM = 6;
 const ALL_MAX_ZOOM = 14;
@@ -199,13 +201,37 @@ function byVisit(map: MapLibreMap, visited: string, unvisited: string): Expressi
 
 function footprintColors(map: MapLibreMap, palette: MapPalette) {
   return {
-    fill: byVisit(map, palette.stationFootprint, palette.stationFootprintUnvisited),
+    fill: byVisit(map, palette.station, palette.stationUnvisited),
     line: byVisit(map, palette.station, palette.stationUnvisited),
+    hatch: byVisit(map, STATION_ICONS.hatch, STATION_ICONS.hatchUnvisited),
   };
 }
 
 /** Palette of each map, for the colors of the footprints when the visited stations change. */
 const palettes = new WeakMap<MapLibreMap, MapPalette>();
+
+/** Id of the station shown on each map: its footprint and zone are less transparent. */
+const selectedIds = new WeakMap<MapLibreMap, number | null>();
+
+/** Opacity of the footprints and the zone tiles, then of those of the station shown. */
+const FOOTPRINT_OPACITY = { base: 0.2, selected: 0.4 } as const;
+const ZONE_OPACITY = { base: 0.45, selected: 0.85 } as const;
+
+/** Fading in from their zoom like `fadeIn`, to `selected` for the station shown, else `base`. */
+function selectedOpacity(
+  map: MapLibreMap,
+  { base, selected }: { base: number; selected: number },
+): ExpressionSpecification {
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    FOOTPRINTS_MIN_ZOOM,
+    0,
+    FOOTPRINTS_MIN_ZOOM + FADE_ZOOMS,
+    ["case", ["==", ["id"], selectedIds.get(map) ?? -1], selected, base],
+  ];
+}
 
 function unvisitedFilter(map: MapLibreMap): ExpressionSpecification {
   return [
@@ -386,6 +412,7 @@ export function addStationLayers(
   if (map.getSource(SOURCES.visited)) return;
   rememberVisited(map, data);
   palettes.set(map, palette);
+  selectedIds.set(map, selected?.id ?? null);
   const top = map.getLayer(SECTOR_VEIL_LAYER_ID)
     ? SECTOR_VEIL_LAYER_ID
     : undefined;
@@ -568,7 +595,14 @@ export function setAllStations(
   const url = version ? allStationsUrl(version) : null;
   const source = map.getSource<VectorTileSource>(SOURCES.all);
   if (source && source.tiles[0] === url) return;
-  for (const id of [LAYERS.footprints, LAYERS.footprintOutlines, LAYERS.unvisited, LAYERS.unvisitedNames]) {
+  for (const id of [
+    LAYERS.zones,
+    LAYERS.zoneOutlines,
+    LAYERS.footprints,
+    LAYERS.footprintOutlines,
+    LAYERS.unvisited,
+    LAYERS.unvisitedNames,
+  ]) {
     if (map.getLayer(id)) map.removeLayer(id);
   }
   if (source) map.removeSource(SOURCES.all);
@@ -579,8 +613,32 @@ export function setAllStations(
     minzoom: ALL_MIN_ZOOM,
     maxzoom: ALL_MAX_ZOOM,
   });
-  // Below the railway and the stations, over the tiles: outline and light fill, no inner details.
+  // Below the railway and the stations, over the tiles: the small tiles of the zones striped, the footprints outlined over a light fill.
   const colors = footprintColors(map, palette);
+  map.addLayer(
+    {
+      id: LAYERS.zones,
+      type: "fill",
+      source: SOURCES.all,
+      "source-layer": ZONES_SOURCE_LAYER,
+      minzoom: FOOTPRINTS_MIN_ZOOM,
+      layout: { visibility: visibility(visible) },
+      paint: { "fill-pattern": colors.hatch, "fill-opacity": selectedOpacity(map, ZONE_OPACITY) },
+    },
+    LAYERS.linksCasing,
+  );
+  map.addLayer(
+    {
+      id: LAYERS.zoneOutlines,
+      type: "line",
+      source: SOURCES.all,
+      "source-layer": ZONES_SOURCE_LAYER,
+      minzoom: FOOTPRINTS_MIN_ZOOM,
+      layout: { visibility: visibility(visible) },
+      paint: { "line-color": colors.line, "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.35), "line-width": 0.6 },
+    },
+    LAYERS.linksCasing,
+  );
   map.addLayer(
     {
       id: LAYERS.footprints,
@@ -589,7 +647,7 @@ export function setAllStations(
       "source-layer": FOOTPRINTS_SOURCE_LAYER,
       minzoom: FOOTPRINTS_MIN_ZOOM,
       layout: { visibility: visibility(visible) },
-      paint: { "fill-color": colors.fill, "fill-opacity": FOOTPRINTS_IN },
+      paint: { "fill-color": colors.fill, "fill-opacity": selectedOpacity(map, FOOTPRINT_OPACITY) },
     },
     LAYERS.linksCasing,
   );
@@ -675,8 +733,10 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   if (map.getLayer(LAYERS.unvisitedNames))
     map.setFilter(LAYERS.unvisitedNames, unvisitedFilter(map));
   const palette = palettes.get(map);
-  if (palette && map.getLayer(LAYERS.footprints)) {
+  if (palette && map.getLayer(LAYERS.zones)) {
     const colors = footprintColors(map, palette);
+    map.setPaintProperty(LAYERS.zones, "fill-pattern", colors.hatch);
+    map.setPaintProperty(LAYERS.zoneOutlines, "line-color", colors.line);
     map.setPaintProperty(LAYERS.footprints, "fill-color", colors.fill);
     map.setPaintProperty(LAYERS.footprintOutlines, "line-color", colors.line);
   }
@@ -684,11 +744,16 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   map.getSource<GeoJSONSource>(SOURCES.links)?.setData(data.links);
 }
 
-/** Rings the station shown in the panel, or none. */
+/** Rings the station shown in the panel and darkens its footprint and zone, or none. */
 export function setSelectedStation(
   map: MapLibreMap,
   station: StationPick | null,
 ): void {
+  selectedIds.set(map, station?.id ?? null);
+  if (map.getLayer(LAYERS.zones)) {
+    map.setPaintProperty(LAYERS.zones, "fill-opacity", selectedOpacity(map, ZONE_OPACITY));
+    map.setPaintProperty(LAYERS.footprints, "fill-opacity", selectedOpacity(map, FOOTPRINT_OPACITY));
+  }
   map.getSource<GeoJSONSource>(SOURCES.selected)?.setData(ringData(station));
   map.getSource<GeoJSONSource>(SOURCES.zone)?.setData(zoneData(station));
 }

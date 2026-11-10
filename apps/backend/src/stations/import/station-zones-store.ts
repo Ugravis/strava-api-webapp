@@ -24,8 +24,11 @@ const FAN_SLACK = 1.8;
 const CRUMB_SHARE = 0.1;
 /** Footprint simplification, in metres. */
 const SIMPLIFY_M = 0.5;
-/** Tracks are buffered by this, a zero-width line touching no tile envelope area. */
-const RAILS_BUFFER_M = 1;
+/**
+ * Tracks are buffered by this, a zero-width line touching no tile envelope
+ * area: the band is both the zone and the footprint drawn, about a track bed wide.
+ */
+const RAILS_BUFFER_M = 3;
 
 const MITRE = 'join=mitre mitre_limit=3';
 
@@ -83,7 +86,8 @@ const UTM_SRID = `(CASE WHEN ST_Y(p.geom) >= 0 THEN 32600 ELSE 32700 END
  * Footprint and zone of a batch of stations, in their UTM zone: each group
  * of platforms becomes a block (its band, oriented rectangle or hull),
  * joined to the buildings, gaps closed, holes filled, crumbs dropped. The
- * source falls back to the tracks, then to the point, when a shape is empty.
+ * source falls back to the tracks, then to the point, when a shape is empty;
+ * the band of the tracks is then the footprint.
  * Every step is materialized: inlined, Postgres would compute a shape again
  * at each of its uses, many times over.
  */
@@ -138,11 +142,13 @@ o AS MATERIALIZED (
 SELECT o.id,
   CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true) THEN 'osm'
     WHEN o.rails IS NOT NULL THEN 'rails' ELSE 'point' END,
-  CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true)
-    THEN ST_Multi(ST_Transform(o.footprint, 4326)) END,
-  CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true) THEN ST_Transform(o.footprint, 3857)
-    WHEN o.rails IS NOT NULL THEN ST_Transform(ST_Buffer(o.rails, ${RAILS_BUFFER_M}), 3857) END
-FROM o`;
+  ST_Multi(ST_Transform(s.shape, 4326)),
+  ST_Transform(s.shape, 3857)
+FROM o
+CROSS JOIN LATERAL (
+  SELECT CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true) THEN o.footprint
+    WHEN o.rails IS NOT NULL THEN ST_Buffer(o.rails, ${RAILS_BUFFER_M}) END AS shape
+) AS s`;
 
 /** Small tiles touching each zone, as large tile + bit, like `places.x/y/bit`. */
 const TILES = `INSERT INTO zone_tiles (place_id, x, y, bit)

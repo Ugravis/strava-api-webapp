@@ -7,11 +7,14 @@ import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
 const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tolerance of the simplified links sent to the map, in degrees (about 2 m). */
 const LINK_SIMPLIFY_DEG = 0.00002;
-/** Layers of the vector tiles of the stations: their points, and their footprints. */
+/** Layers of the vector tiles of the stations: their points, their footprints and the small tiles of their zones. */
 const STATIONS_LAYER = 'stations';
 const FOOTPRINTS_LAYER = 'station-footprints';
-/** The footprints are served from this zoom, fading in to be whole at 13: smaller, they are a few pixels. */
+const ZONES_LAYER = 'station-zones';
+/** The footprints and zones are served from this zoom, fading in to be whole at 13: smaller, they are a few pixels. */
 const FOOTPRINTS_MIN_ZOOM = 12;
+/** Bumped when the layers of the vector tiles change: the browser caches them for good, by version. */
+const TILE_FORMAT = 2;
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 
@@ -284,7 +287,9 @@ export class StationsService {
            (SELECT floor(extract(epoch FROM max(updated_at)))::bigint
             FROM places WHERE kind = 'station') AS changed`,
       );
-    return row.id === null ? null : `${row.id}-${row.changed ?? 0}`;
+    return row.id === null
+      ? null
+      : `${row.id}-${row.changed ?? 0}-${TILE_FORMAT}`;
   }
 
   /** A station, whether the user visited it, and its neighbors. Null for an unknown station. */
@@ -396,7 +401,7 @@ export class StationsService {
     return row.total === 0 ? null : row;
   }
 
-  /** Vector tile of every station, visited or not, with their footprints zoomed in: geography only. */
+  /** Vector tile of every station, visited or not, with their footprints and zone tiles zoomed in: geography only. */
   async stationsTile(zoom: number, x: number, y: number): Promise<Buffer> {
     const [row]: { tile: Buffer | null }[] = await this.dataSource.query(
       `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
@@ -406,6 +411,19 @@ export class StationsService {
          FROM places p, bounds b
          WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM} AND p.kind = 'station'
            AND p.footprint && ST_Transform(b.envelope, 4326)
+       ),
+       zones AS (
+         SELECT t.place_id AS id,
+           ST_AsMVTGeom(ST_TileEnvelope(${SUBTILE_ZOOM},
+             t.x * ${SUBTILES_PER_SIDE} + t.bit % ${SUBTILES_PER_SIDE},
+             t.y * ${SUBTILES_PER_SIDE} + t.bit / ${SUBTILES_PER_SIDE}),
+             b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         -- Integer bounds: the index on the large tiles is used.
+         FROM place_tiles t
+         JOIN places p ON p.id = t.place_id AND p.kind = 'station', bounds b
+         WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM}
+           AND t.x BETWEEN floor($2 * 2.0 ^ (${TILE_ZOOM} - $1))::int AND (ceil(($2 + 1) * 2.0 ^ (${TILE_ZOOM} - $1)) - 1)::int
+           AND t.y BETWEEN floor($3 * 2.0 ^ (${TILE_ZOOM} - $1))::int AND (ceil(($3 + 1) * 2.0 ^ (${TILE_ZOOM} - $1)) - 1)::int
        ),
        points AS (
          SELECT p.id, p.name,
@@ -421,6 +439,9 @@ export class StationsService {
          ), ''::bytea) || coalesce((
            SELECT ST_AsMVT(footprints, '${FOOTPRINTS_LAYER}', ${MVT_EXTENT}, 'geom', 'id')
            FROM footprints WHERE geom IS NOT NULL
+         ), ''::bytea) || coalesce((
+           SELECT ST_AsMVT(zones, '${ZONES_LAYER}', ${MVT_EXTENT}, 'geom', 'id')
+           FROM zones WHERE geom IS NOT NULL
          ), ''::bytea) AS tile`,
       [zoom, x, y],
     );

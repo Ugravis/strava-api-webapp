@@ -9,10 +9,17 @@ import { namesRelated, normalizedName } from './railway-data';
  * stations linked by corridors keep apart (`Magenta`, `Paris Gare du Nord`).
  */
 export const FOOTPRINT_MERGE_SHARE = 0.5;
+/**
+ * …and from this share whatever their names: one footprint within the
+ * other is one station named in two languages (`Youb`, `محطة القطار يوب`).
+ */
+export const FOOTPRINT_WITHIN_SHARE = 0.95;
 
 export interface FootprintPair {
   a: number;
   b: number;
+  /** Share of the smaller footprint inside the other. */
+  share: number;
 }
 
 export interface FootprintStation {
@@ -45,9 +52,10 @@ export function footprintMerges(
     const i = a.findIndex((value, j) => value !== b[j]);
     return i !== -1 && a[i] < b[i];
   };
-  for (const { a, b } of pairs) {
+  for (const { a, b, share } of pairs) {
     const names = [a, b].map((id) => normalizedName(stations.get(id)!.name));
-    if (!namesRelated(names[0], names[1])) continue;
+    if (share < FOOTPRINT_WITHIN_SHARE && !namesRelated(names[0], names[1]))
+      continue;
     const [ra, rb] = [root(a), root(b)];
     if (ra === rb) continue;
     if (before(ra, rb)) parent.set(rb, ra);
@@ -70,7 +78,9 @@ const OVERLAPS = `
     FROM places p
     WHERE p.id IN (SELECT a FROM pairs UNION SELECT b FROM pairs)
   )
-  SELECT pairs.a, pairs.b, sa.name AS name_a, sa.area_m2 AS area_a,
+  SELECT pairs.a, pairs.b,
+         pairs.shared_m2 / nullif(least(sa.area_m2, sb.area_m2), 0) AS share,
+         sa.name AS name_a, sa.area_m2 AS area_a,
          sb.name AS name_b, sb.area_m2 AS area_b
   FROM pairs
   JOIN areas sa ON sa.id = pairs.a
@@ -89,6 +99,7 @@ export async function mergeOverlappingStations(
   const rows: {
     a: number;
     b: number;
+    share: number | null;
     name_a: string | null;
     area_a: number;
     name_b: string | null;
@@ -99,7 +110,10 @@ export async function mergeOverlappingStations(
     stations.set(row.a, { id: row.a, name: row.name_a, areaM2: row.area_a });
     stations.set(row.b, { id: row.b, name: row.name_b, areaM2: row.area_b });
   }
-  const merges = footprintMerges(rows, stations);
+  const merges = footprintMerges(
+    rows.map(({ a, b, share }) => ({ a, b, share: share ?? 0 })),
+    stations,
+  );
   if (merges.size === 0) return 0;
   await dataSource.transaction(async (manager) => {
     await manager.query(

@@ -69,9 +69,11 @@ const SOURCES = {
 
 const LAYERS = {
   zones: "station-zones-fill",
-  zoneOutlines: "station-zones-line",
   footprints: "station-footprints-fill",
   footprintOutlines: "station-footprints-line",
+  footprintHalo: "station-footprint-selected-halo",
+  footprintSelected: "station-footprint-selected-line",
+  footprintHovered: "station-footprint-hovered-line",
   zone: "station-zone-tiles-line",
   unvisited: "stations-unvisited",
   linksCasing: "rail-links-casing",
@@ -203,7 +205,6 @@ function footprintColors(map: MapLibreMap, palette: MapPalette) {
   return {
     fill: byVisit(map, palette.station, palette.stationUnvisited),
     line: byVisit(map, palette.station, palette.stationUnvisited),
-    hatch: byVisit(map, STATION_ICONS.hatch, STATION_ICONS.hatchUnvisited),
   };
 }
 
@@ -212,10 +213,17 @@ const palettes = new WeakMap<MapLibreMap, MapPalette>();
 
 /** Id of the station shown on each map: its footprint and zone are less transparent. */
 const selectedIds = new WeakMap<MapLibreMap, number | null>();
+/** Id of the station under the pointer on each map: its footprint is outlined. */
+const hoveredIds = new WeakMap<MapLibreMap, number | null>();
+
+/** Only the footprint of the station `id`, or none. */
+function footprintFilter(id: number | null | undefined): ExpressionSpecification {
+  return ["==", ["id"], id ?? -1];
+}
 
 /** Opacity of the footprints and the zone tiles, then of those of the station shown. */
 const FOOTPRINT_OPACITY = { base: 0.2, selected: 0.4 } as const;
-const ZONE_OPACITY = { base: 0.45, selected: 0.85 } as const;
+const ZONE_OPACITY = { base: 0.15, selected: 0.3 } as const;
 
 /** Fading in from their zoom like `fadeIn`, to `selected` for the station shown, else `base`. */
 function selectedOpacity(
@@ -597,9 +605,11 @@ export function setAllStations(
   if (source && source.tiles[0] === url) return;
   for (const id of [
     LAYERS.zones,
-    LAYERS.zoneOutlines,
     LAYERS.footprints,
     LAYERS.footprintOutlines,
+    LAYERS.footprintHalo,
+    LAYERS.footprintSelected,
+    LAYERS.footprintHovered,
     LAYERS.unvisited,
     LAYERS.unvisitedNames,
   ]) {
@@ -613,7 +623,7 @@ export function setAllStations(
     minzoom: ALL_MIN_ZOOM,
     maxzoom: ALL_MAX_ZOOM,
   });
-  // Below the railway and the stations, over the tiles: the small tiles of the zones striped, the footprints outlined over a light fill.
+  // Below the railway and the stations, over the tiles: the small tiles of the zones in a light fill, without outlines (the grid of the map draws them), the footprints outlined over a light fill.
   const colors = footprintColors(map, palette);
   map.addLayer(
     {
@@ -623,19 +633,11 @@ export function setAllStations(
       "source-layer": ZONES_SOURCE_LAYER,
       minzoom: FOOTPRINTS_MIN_ZOOM,
       layout: { visibility: visibility(visible) },
-      paint: { "fill-pattern": colors.hatch, "fill-opacity": selectedOpacity(map, ZONE_OPACITY) },
-    },
-    LAYERS.linksCasing,
-  );
-  map.addLayer(
-    {
-      id: LAYERS.zoneOutlines,
-      type: "line",
-      source: SOURCES.all,
-      "source-layer": ZONES_SOURCE_LAYER,
-      minzoom: FOOTPRINTS_MIN_ZOOM,
-      layout: { visibility: visibility(visible) },
-      paint: { "line-color": colors.line, "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.35), "line-width": 0.6 },
+      paint: {
+        "fill-color": colors.fill,
+        "fill-opacity": selectedOpacity(map, ZONE_OPACITY),
+        "fill-antialias": false,
+      },
     },
     LAYERS.linksCasing,
   );
@@ -663,6 +665,38 @@ export function setAllStations(
     },
     LAYERS.linksCasing,
   );
+  // Over the railway, below the stations: the footprint of the station shown glows, the one under the pointer is outlined.
+  for (const [id, filter, paint] of [
+    [
+      LAYERS.footprintHalo,
+      footprintFilter(selectedIds.get(map)),
+      { "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.45), "line-width": 9, "line-blur": 6 },
+    ],
+    [
+      LAYERS.footprintSelected,
+      footprintFilter(selectedIds.get(map)),
+      { "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.95), "line-width": 2.5 },
+    ],
+    [
+      LAYERS.footprintHovered,
+      footprintFilter(hoveredIds.get(map)),
+      { "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.6), "line-width": 1.5 },
+    ],
+  ] as const) {
+    map.addLayer(
+      {
+        id,
+        type: "line",
+        source: SOURCES.all,
+        "source-layer": FOOTPRINTS_SOURCE_LAYER,
+        minzoom: FOOTPRINTS_MIN_ZOOM,
+        filter,
+        layout: { visibility: visibility(visible), "line-join": "miter" },
+        paint: { "line-color": palette.highlight, ...paint },
+      },
+      LAYERS.visited,
+    );
+  }
   map.addLayer(
     {
       id: LAYERS.unvisited,
@@ -735,8 +769,7 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   const palette = palettes.get(map);
   if (palette && map.getLayer(LAYERS.zones)) {
     const colors = footprintColors(map, palette);
-    map.setPaintProperty(LAYERS.zones, "fill-pattern", colors.hatch);
-    map.setPaintProperty(LAYERS.zoneOutlines, "line-color", colors.line);
+    map.setPaintProperty(LAYERS.zones, "fill-color", colors.fill);
     map.setPaintProperty(LAYERS.footprints, "fill-color", colors.fill);
     map.setPaintProperty(LAYERS.footprintOutlines, "line-color", colors.line);
   }
@@ -744,7 +777,7 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   map.getSource<GeoJSONSource>(SOURCES.links)?.setData(data.links);
 }
 
-/** Rings the station shown in the panel and darkens its footprint and zone, or none. */
+/** Rings the station shown in the panel, darkens its footprint and zone and makes its footprint glow, or none. */
 export function setSelectedStation(
   map: MapLibreMap,
   station: StationPick | null,
@@ -753,16 +786,25 @@ export function setSelectedStation(
   if (map.getLayer(LAYERS.zones)) {
     map.setPaintProperty(LAYERS.zones, "fill-opacity", selectedOpacity(map, ZONE_OPACITY));
     map.setPaintProperty(LAYERS.footprints, "fill-opacity", selectedOpacity(map, FOOTPRINT_OPACITY));
+    map.setFilter(LAYERS.footprintHalo, footprintFilter(station?.id));
+    map.setFilter(LAYERS.footprintSelected, footprintFilter(station?.id));
   }
   map.getSource<GeoJSONSource>(SOURCES.selected)?.setData(ringData(station));
   map.getSource<GeoJSONSource>(SOURCES.zone)?.setData(zoneData(station));
 }
 
-/** Rings the station under the pointer, discreetly: a click opens it. */
+/** Rings the station under the pointer and outlines its footprint, discreetly: a click opens it. */
 export function setHoveredStation(
   map: MapLibreMap,
   station: StationPick | null,
 ): void {
+  const id = station?.id ?? null;
+  // Called on every move of the pointer: the filter changes with the station only.
+  if (hoveredIds.get(map) !== id) {
+    hoveredIds.set(map, id);
+    if (map.getLayer(LAYERS.footprintHovered))
+      map.setFilter(LAYERS.footprintHovered, footprintFilter(id));
+  }
   map.getSource<GeoJSONSource>(SOURCES.hovered)?.setData(ringData(station));
 }
 
@@ -836,5 +878,24 @@ export function stationNear(
     if (!best || distance < best.distance)
       best = { pick: { id, lon, lat }, distance };
   }
-  return best?.pick ?? null;
+  return best?.pick ?? footprintAt(map, point);
+}
+
+/** The station whose footprint lies under the pointer, the one drawn on top; null without any. */
+function footprintAt(
+  map: MapLibreMap,
+  point: { x: number; y: number },
+): StationPick | null {
+  if (!map.getLayer(LAYERS.footprints) || map.getZoom() < FOOTPRINTS_MIN_ZOOM + FADE_ZOOMS / 2)
+    return null;
+  const features = map.queryRenderedFeatures([point.x, point.y], {
+    layers: [LAYERS.footprints],
+  });
+  for (const feature of features) {
+    const id = Number(feature.id);
+    const { lon, lat } = feature.properties;
+    if (Number.isSafeInteger(id) && typeof lon === "number" && typeof lat === "number")
+      return { id, lon, lat };
+  }
+  return null;
 }

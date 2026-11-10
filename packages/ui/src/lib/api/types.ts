@@ -490,8 +490,10 @@ export interface StationDetails {
   name: string | null;
   lon: number;
   lat: number;
-  /** Small tile (zoom 17) holding the station: visiting it visits the station. */
+  /** Small tile (zoom 17) holding the station point. */
   tile: { zoom: 17; x: number; y: number };
+  /** Small tiles of its zone (footprint, tracks or point): visiting any of them visits the station. */
+  tiles: { zoom: 17; x: number; y: number }[];
   visited: boolean;
   firstVisitAt: string | null;
   neighbors: StationNeighbor[];

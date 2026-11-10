@@ -8,6 +8,7 @@ import type {
   VectorTileSource,
 } from "maplibre-gl";
 import type { VisitedStations } from "@kilotrace/ui/lib/api/types";
+import { SUBTILE_ZOOM, tilesCollection } from "@/lib/tiles/tile-geometry";
 import type { MapHistory } from "./history-layer";
 import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
 import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
@@ -52,6 +53,8 @@ export interface StationPick {
   id: number;
   lon: number;
   lat: number;
+  /** Small tiles (zoom 17) of its zone, once its details are known: outlined while it is shown. */
+  tiles?: { x: number; y: number }[];
 }
 
 const SOURCES = {
@@ -60,10 +63,14 @@ const SOURCES = {
   links: "rail-links",
   selected: "station-selected",
   hovered: "station-hovered",
+  zone: "station-zone-tiles",
   trains: TRAINS_SOURCE,
 } as const;
 
 const LAYERS = {
+  footprints: "station-footprints-fill",
+  footprintOutlines: "station-footprints-line",
+  zone: "station-zone-tiles-line",
   unvisited: "stations-unvisited",
   linksCasing: "rail-links-casing",
   ties: "rail-links-ties",
@@ -90,8 +97,11 @@ const DIM_LAYER_ID = "stations-dim-veil";
 /** Opacity of the veil, in the color of the land: the map stays readable around the stations. */
 const DIM_OPACITY = 0.6;
 
-/** Layer of the vector tiles of every station, served by the backend. */
+/** Layers of the vector tiles of every station, served by the backend: the points, and the footprints from their zoom. */
 const ALL_SOURCE_LAYER = "stations";
+const FOOTPRINTS_SOURCE_LAYER = "station-footprints";
+const FOOTPRINTS_MIN_ZOOM = 13;
+const FOOTPRINTS_IN = fadeIn(FOOTPRINTS_MIN_ZOOM, 1);
 /** The backend serves every station from this zoom, down to the deepest; the map stretches them beyond. */
 const ALL_MIN_ZOOM = 6;
 const ALL_MAX_ZOOM = 14;
@@ -181,6 +191,21 @@ const NAMED: ExpressionSpecification = ["to-boolean", ["get", "name"]];
 
 /** Ids of the visited stations of each map: the grey names leave them out. */
 const visitedIds = new WeakMap<MapLibreMap, number[]>();
+
+/** `visited` for the features of the visited stations, by id, else `unvisited`. */
+function byVisit(map: MapLibreMap, visited: string, unvisited: string): ExpressionSpecification {
+  return ["case", ["in", ["id"], ["literal", visitedIds.get(map) ?? []]], visited, unvisited];
+}
+
+function footprintColors(map: MapLibreMap, palette: MapPalette) {
+  return {
+    fill: byVisit(map, palette.stationFootprint, palette.stationFootprintUnvisited),
+    line: byVisit(map, palette.station, palette.stationUnvisited),
+  };
+}
+
+/** Palette of each map, for the colors of the footprints when the visited stations change. */
+const palettes = new WeakMap<MapLibreMap, MapPalette>();
 
 function unvisitedFilter(map: MapLibreMap): ExpressionSpecification {
   return [
@@ -319,6 +344,10 @@ function allStationsUrl(version: string): string {
   return `${window.location.origin}/api/stations/vector/{z}/{x}/{y}?v=${version}`;
 }
 
+function zoneData(station: StationPick | null) {
+  return tilesCollection(SUBTILE_ZOOM, (station?.tiles ?? []).map(({ x, y }) => [x, y]));
+}
+
 function ringData(
   station: StationPick | null,
 ): FeatureCollection<Point, { id: number; name: string | null }> {
@@ -356,6 +385,7 @@ export function addStationLayers(
 ): void {
   if (map.getSource(SOURCES.visited)) return;
   rememberVisited(map, data);
+  palettes.set(map, palette);
   const top = map.getLayer(SECTOR_VEIL_LAYER_ID)
     ? SECTOR_VEIL_LAYER_ID
     : undefined;
@@ -379,6 +409,7 @@ export function addStationLayers(
     data: ringData(selected),
   });
   map.addSource(SOURCES.hovered, { type: "geojson", data: ringData(hovered) });
+  map.addSource(SOURCES.zone, { type: "geojson", data: zoneData(selected) });
   // Larger tiles than by default: zoomed far in, a vehicle whose anchor lies off screen is still drawn.
   map.addSource(SOURCES.trains, {
     type: "geojson",
@@ -431,6 +462,17 @@ export function addStationLayers(
         "line-color": gainedColor(palette.railLink, palette),
         "line-width": railWidth(1.2, 2, 3.5),
       },
+    },
+    belowLabels,
+  );
+  // The small tiles of the station shown: visiting any of them visits it.
+  map.addLayer(
+    {
+      id: LAYERS.zone,
+      type: "line",
+      source: SOURCES.zone,
+      layout,
+      paint: { "line-color": palette.highlight, "line-opacity": 0.85, "line-width": 1.5, "line-dasharray": [2, 1.5] },
     },
     belowLabels,
   );
@@ -522,12 +564,13 @@ export function setAllStations(
   visible: boolean,
 ): void {
   if (!map.getLayer(LAYERS.visited)) return;
+  palettes.set(map, palette);
   const url = version ? allStationsUrl(version) : null;
   const source = map.getSource<VectorTileSource>(SOURCES.all);
   if (source && source.tiles[0] === url) return;
-  if (map.getLayer(LAYERS.unvisited)) map.removeLayer(LAYERS.unvisited);
-  if (map.getLayer(LAYERS.unvisitedNames))
-    map.removeLayer(LAYERS.unvisitedNames);
+  for (const id of [LAYERS.footprints, LAYERS.footprintOutlines, LAYERS.unvisited, LAYERS.unvisitedNames]) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
   if (source) map.removeSource(SOURCES.all);
   if (!url) return;
   map.addSource(SOURCES.all, {
@@ -536,6 +579,32 @@ export function setAllStations(
     minzoom: ALL_MIN_ZOOM,
     maxzoom: ALL_MAX_ZOOM,
   });
+  // Below the railway and the stations, over the tiles: outline and light fill, no inner details.
+  const colors = footprintColors(map, palette);
+  map.addLayer(
+    {
+      id: LAYERS.footprints,
+      type: "fill",
+      source: SOURCES.all,
+      "source-layer": FOOTPRINTS_SOURCE_LAYER,
+      minzoom: FOOTPRINTS_MIN_ZOOM,
+      layout: { visibility: visibility(visible) },
+      paint: { "fill-color": colors.fill, "fill-opacity": FOOTPRINTS_IN },
+    },
+    LAYERS.linksCasing,
+  );
+  map.addLayer(
+    {
+      id: LAYERS.footprintOutlines,
+      type: "line",
+      source: SOURCES.all,
+      "source-layer": FOOTPRINTS_SOURCE_LAYER,
+      minzoom: FOOTPRINTS_MIN_ZOOM,
+      layout: { visibility: visibility(visible), "line-join": "miter" },
+      paint: { "line-color": colors.line, "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.9), "line-width": 1.2 },
+    },
+    LAYERS.linksCasing,
+  );
   map.addLayer(
     {
       id: LAYERS.unvisited,
@@ -605,6 +674,12 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   rememberVisited(map, data);
   if (map.getLayer(LAYERS.unvisitedNames))
     map.setFilter(LAYERS.unvisitedNames, unvisitedFilter(map));
+  const palette = palettes.get(map);
+  if (palette && map.getLayer(LAYERS.footprints)) {
+    const colors = footprintColors(map, palette);
+    map.setPaintProperty(LAYERS.footprints, "fill-color", colors.fill);
+    map.setPaintProperty(LAYERS.footprintOutlines, "line-color", colors.line);
+  }
   map.getSource<GeoJSONSource>(SOURCES.visited)?.setData(data.stations);
   map.getSource<GeoJSONSource>(SOURCES.links)?.setData(data.links);
 }
@@ -615,6 +690,7 @@ export function setSelectedStation(
   station: StationPick | null,
 ): void {
   map.getSource<GeoJSONSource>(SOURCES.selected)?.setData(ringData(station));
+  map.getSource<GeoJSONSource>(SOURCES.zone)?.setData(zoneData(station));
 }
 
 /** Rings the station under the pointer, discreetly: a click opens it. */

@@ -108,6 +108,9 @@ export interface MapPalette {
   stationCasing: string;
   /** Stations not visited yet: a quiet grey. */
   stationUnvisited: string;
+  /** Footprints of the stations, light and opaque: overlapping ones are not darker. */
+  stationFootprint: string;
+  stationFootprintUnvisited: string;
   railLink: string;
   /** Veil over the map outside the sector picked: its colors fade towards it. */
   outside: string;
@@ -163,6 +166,8 @@ const LIGHT: MapPalette = {
   station: "#6d28d9",
   stationCasing: "#ffffff",
   stationUnvisited: "#8c8780",
+  stationFootprint: "#e2d8f6",
+  stationFootprintUnvisited: "#d6d2cb",
   railLink: "#6d28d9",
   outside: "#f3f2f0",
   outsideOpacity: 0.65,
@@ -218,6 +223,8 @@ const DARK: MapPalette = {
   station: "#a78bfa",
   stationCasing: "#1f1e1c",
   stationUnvisited: "#7a756d",
+  stationFootprint: "#3a3352",
+  stationFootprintUnvisited: "#33312d",
   railLink: "#a78bfa",
   outside: "#121211",
   outsideOpacity: 0.65,

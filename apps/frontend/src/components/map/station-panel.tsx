@@ -26,8 +26,8 @@ interface StationPanelProps {
 }
 
 /**
- * Content of the panel for a train station: whether its small tile was
- * visited, its neighbors on the railway with the links unlocked, and the
+ * Content of the panel for a train station: whether a small tile of its
+ * zone (outlined on the map) was visited, its neighbors on the railway with the links unlocked, and the
  * activities that crossed its small tile.
  */
 export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, onOpenActivity }: StationPanelProps) {
@@ -42,7 +42,7 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
   });
 
   useEffect(() => {
-    if (station) onLocatedRef.current({ id: station.id, lon: station.lon, lat: station.lat });
+    if (station) onLocatedRef.current({ id: station.id, lon: station.lon, lat: station.lat, tiles: station.tiles });
   }, [station]);
 
   if (error) return <p className="text-muted-foreground">{t("error")}</p>;

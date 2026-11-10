@@ -10,8 +10,8 @@ const LINK_SIMPLIFY_DEG = 0.00002;
 /** Layers of the vector tiles of the stations: their points, and their footprints. */
 const STATIONS_LAYER = 'stations';
 const FOOTPRINTS_LAYER = 'station-footprints';
-/** The footprints are served from this zoom: smaller, they are a few pixels. */
-const FOOTPRINTS_MIN_ZOOM = 13;
+/** The footprints are served from this zoom, fading in to be whole at 13: smaller, they are a few pixels. */
+const FOOTPRINTS_MIN_ZOOM = 12;
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 

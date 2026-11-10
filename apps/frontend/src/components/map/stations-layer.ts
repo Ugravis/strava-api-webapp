@@ -100,7 +100,7 @@ const DIM_OPACITY = 0.6;
 /** Layers of the vector tiles of every station, served by the backend: the points, and the footprints from their zoom. */
 const ALL_SOURCE_LAYER = "stations";
 const FOOTPRINTS_SOURCE_LAYER = "station-footprints";
-const FOOTPRINTS_MIN_ZOOM = 13;
+const FOOTPRINTS_MIN_ZOOM = 12;
 const FOOTPRINTS_IN = fadeIn(FOOTPRINTS_MIN_ZOOM, 1);
 /** The backend serves every station from this zoom, down to the deepest; the map stretches them beyond. */
 const ALL_MIN_ZOOM = 6;

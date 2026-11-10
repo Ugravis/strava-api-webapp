@@ -506,6 +506,29 @@ export function namesMatch(a: string | null, b: string | null): boolean {
   );
 }
 
+/** Shorter words (du, de, am…) never tell two stations together. */
+const SHARED_WORD_MIN = 3;
+
+/**
+ * Whether two normalized names may be parts of one station: one is
+ * missing, one holds the other (`渋谷`, `京王渋谷`), or they share a word
+ * besides the generic ones (`Paris Montparnasse 3 Vaugirard`, `Gare
+ * Montparnasse`); not `Magenta` and `Paris Gare du Nord`.
+ */
+export function namesRelated(a: string | null, b: string | null): boolean {
+  if (a === null || b === null) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  const words = new Set(a.split(' '));
+  return b
+    .split(' ')
+    .some(
+      (word) =>
+        words.has(word) &&
+        word.length >= SHARED_WORD_MIN &&
+        !GENERIC_WORDS.has(word),
+    );
+}
+
 /** Words telling a level of a station from the rest of it. */
 const LEVEL_WORDS = new Set([
   'tief',

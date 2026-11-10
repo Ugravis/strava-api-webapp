@@ -1,10 +1,12 @@
 import type { DataSource } from 'typeorm';
+import { namesRelated, normalizedName } from './railway-data';
 
 /**
  * Two stations whose footprints overlap by at least this share of the
- * smaller one are the parts of one station mapped apart: the level of a
- * Hauptbahnhof (`Hauptbahnhof (tief)`), a hall of a terminus (`Paris
- * Montparnasse 3 - Vaugirard`), the platforms of another operator.
+ * smaller one, and whose names are related (`namesRelated`), are the parts
+ * of one station mapped apart: the level of a Hauptbahnhof (`Hauptbahnhof
+ * (tief)`), a hall of a terminus (`Paris Montparnasse 3 - Vaugirard`). Two
+ * stations linked by corridors keep apart (`Magenta`, `Paris Gare du Nord`).
  */
 export const FOOTPRINT_MERGE_SHARE = 0.5;
 
@@ -44,6 +46,8 @@ export function footprintMerges(
     return i !== -1 && a[i] < b[i];
   };
   for (const { a, b } of pairs) {
+    const names = [a, b].map((id) => normalizedName(stations.get(id)!.name));
+    if (!namesRelated(names[0], names[1])) continue;
     const [ra, rb] = [root(a), root(b)];
     if (ra === rb) continue;
     if (before(ra, rb)) parent.set(rb, ra);

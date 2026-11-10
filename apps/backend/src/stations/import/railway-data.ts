@@ -2,6 +2,7 @@ import type { OplObject, Tags } from './osm-opl';
 import {
   isPassengerTrack,
   isStationNode,
+  isStationZoneTrack,
   isStopArea,
   isStopRole,
   isTrackWay,
@@ -10,6 +11,10 @@ import {
   type StationExclusion,
   stationExclusion,
 } from './railway-rules';
+import { metersBetween, type Point, PointIndex, project } from './railway-geo';
+import { ZoneFeatureCollector, type ZoneFeatures } from './station-zones';
+
+export { metersBetween, type Point, PointIndex, project } from './railway-geo';
 
 /** Coordinates are stored as integers, like OpenStreetMap: 1e-7 degree, about 1 cm. */
 const SCALE = 1e7;
@@ -25,10 +30,6 @@ export const SERVED_TRACK_RADIUS_M = 150;
  * their names match or a stop area holds both.
  */
 export const MERGE_RADIUS_M = 200;
-const METERS_PER_DEGREE = 111_320;
-
-/** `[lon, lat]`. */
-export type Point = [number, number];
 
 /** A `railway=station|halt` node of OpenStreetMap. */
 export interface StationCandidate {
@@ -130,6 +131,8 @@ export interface Tracks {
   nodes: Int32Array;
   /** Whether passenger trains can run on each track. */
   passenger: Uint8Array;
+  /** Whether the zone of a station may follow each track. */
+  zone: Uint8Array;
 }
 
 /** What the import keeps of the railway of OpenStreetMap. */
@@ -137,6 +140,8 @@ export interface RailwayData {
   nodes: NodeStore;
   stations: StationCandidate[];
   tracks: Tracks;
+  /** Platforms and buildings near the candidate stations, for their zones. */
+  features: ZoneFeatures;
 }
 
 /**
@@ -154,6 +159,10 @@ export class RailwayDataBuilder {
   private readonly trackOpen = new Column(uint8(1 << 16), uint8);
   /** Whether each track serves the stations beside it, without a route. */
   private readonly trackServes = new Column(uint8(1 << 16), uint8);
+  private readonly trackZone = new Column(uint8(1 << 16), uint8);
+  private readonly features = new ZoneFeatureCollector(this.nodes, () =>
+    this.candidates.map((candidate) => candidate.point),
+  );
   /** Another way referenced by a relation, such as a platform: its first node. */
   private readonly otherWays = new Map<number, number>();
   private readonly routeTracks = new Set<number>();
@@ -169,6 +178,7 @@ export class RailwayDataBuilder {
           return;
         }
         this.nodes.add(object.id, object.lon, object.lat);
+        this.features.addNode(object.id, object.tags, [object.lon, object.lat]);
         if (isStationNode(object.tags)) {
           this.candidates.push({
             osmId: object.id,
@@ -195,11 +205,14 @@ export class RailwayDataBuilder {
             }
           }
         } else if (isStopArea(object.tags)) {
+          this.features.addStopArea(object.members);
           this.stopAreas.push(
             object.members
               .filter((member) => member.type !== 'r')
               .map((member) => `${member.type}${member.id}`),
           );
+        } else {
+          this.features.addRelation(object.id, object.tags, object.members);
         }
         return;
     }
@@ -209,6 +222,7 @@ export class RailwayDataBuilder {
     if (!isTrackWay(tags)) {
       const first = refs.length > 0 ? this.nodes.indexOf(refs[0]) : -1;
       if (first !== -1) this.otherWays.set(id, first);
+      this.features.addWay(id, tags, refs);
       return;
     }
     const start = this.trackNodes.length;
@@ -225,6 +239,7 @@ export class RailwayDataBuilder {
     this.trackStarts.push(start);
     this.trackOpen.push(isPassengerTrack(tags!, false) ? 1 : 0);
     this.trackServes.push(servesStationsNearby(tags!) ? 1 : 0);
+    this.trackZone.push(isStationZoneTrack(tags!) ? 1 : 0);
   }
 
   finish(): RailwayData {
@@ -243,11 +258,13 @@ export class RailwayDataBuilder {
       starts,
       nodes: this.trackNodes.values(),
       passenger,
+      zone: this.trackZone.values(),
     };
     return {
       nodes: this.nodes,
       stations: this.classifyStations(tracks),
       tracks,
+      features: this.features.finish(),
     };
   }
 
@@ -432,14 +449,6 @@ export class RailwayDataBuilder {
   }
 }
 
-export function metersBetween(
-  [lon1, lat1]: Point,
-  [lon2, lat2]: Point,
-): number {
-  const x = (lon2 - lon1) * Math.cos((((lat1 + lat2) / 2) * Math.PI) / 180);
-  return Math.hypot(x, lat2 - lat1) * METERS_PER_DEGREE;
-}
-
 /** A name without case, accents nor punctuation, or null. */
 export function normalizedName(name: string | null): string | null {
   const normalized = (name ?? '')
@@ -482,61 +491,4 @@ export function namesMatch(a: string | null, b: string | null): boolean {
   return rest.every(
     (word) => word.length <= ABBREVIATION_MAX || GENERIC_WORDS.has(word),
   );
-}
-
-/** Points in cells of about 1 km, to find those near a point. */
-export class PointIndex {
-  private static readonly CELL_DEG = 0.01;
-  private readonly cells = new Map<string, Point[]>();
-
-  add(point: Point): void {
-    const key = PointIndex.key(point[0], point[1]);
-    const cell = this.cells.get(key);
-    if (cell) cell.push(point);
-    else this.cells.set(key, [point]);
-  }
-
-  hasPointNear([lon, lat]: Point, radiusM: number): boolean {
-    const cos = Math.cos((lat * Math.PI) / 180);
-    const cx = Math.floor(lon / PointIndex.CELL_DEG);
-    const cy = Math.floor(lat / PointIndex.CELL_DEG);
-    for (let x = cx - 1; x <= cx + 1; x++) {
-      for (let y = cy - 1; y <= cy + 1; y++) {
-        for (const [plon, plat] of this.cells.get(`${x}/${y}`) ?? []) {
-          const dx = (plon - lon) * cos * METERS_PER_DEGREE;
-          const dy = (plat - lat) * METERS_PER_DEGREE;
-          if (dx * dx + dy * dy <= radiusM * radiusM) return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  static cell(degrees: number): number {
-    return Math.floor(degrees / PointIndex.CELL_DEG);
-  }
-
-  static key(lon: number, lat: number): string {
-    return `${PointIndex.cell(lon)}/${PointIndex.cell(lat)}`;
-  }
-}
-
-/** Distance from `p` to the segment `a → b`, and share of the segment of the nearest point. */
-export function project(
-  p: Point,
-  a: Point,
-  b: Point,
-): { d: number; t: number } {
-  // Local plane around `p`, in meters: exact enough within a few hundred meters.
-  const kx = METERS_PER_DEGREE * Math.cos((p[1] * Math.PI) / 180);
-  const ax = (a[0] - p[0]) * kx;
-  const ay = (a[1] - p[1]) * METERS_PER_DEGREE;
-  const dx = (b[0] - p[0]) * kx - ax;
-  const dy = (b[1] - p[1]) * METERS_PER_DEGREE - ay;
-  const lengthSquared = dx * dx + dy * dy;
-  const t =
-    lengthSquared === 0
-      ? 0
-      : Math.min(1, Math.max(0, -(ax * dx + ay * dy) / lengthSquared));
-  return { d: Math.hypot(ax + dx * t, ay + dy * t), t };
 }

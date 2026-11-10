@@ -9,6 +9,8 @@ import { parseOplLine } from './osm-opl';
 import { type RailwayData, RailwayDataBuilder } from './railway-data';
 import type { StationExclusion } from './railway-rules';
 import { type NetworkLink, RailwayNetwork } from './railway-network';
+import { stationZones } from './station-zones';
+import { saveZones, type ZoneReport } from './station-zones-store';
 
 /** Below this, the extract is considered incomplete and nothing is replaced. */
 const MIN_STATIONS = 1_000;
@@ -20,14 +22,25 @@ const MANY_NEIGHBORS = 6;
 
 /**
  * Objects kept from an OSM extract: the stations, the tracks, the passenger
- * train routes and the stop areas, with the objects they reference.
+ * train routes and the stop areas, with the objects they reference, and
+ * the platforms and buildings drawing the zones of the stations.
  */
 const OSMIUM_FILTERS = [
   'n/railway=station,halt',
   'w/railway=rail,narrow_gauge,preserved',
   'r/route=train',
   'r/public_transport=stop_area',
+  'nwr/railway=platform',
+  'nwr/public_transport=platform',
+  'nwr/public_transport=station',
+  'w/building=train_station,transportation,roof',
+  'w/railway=station',
 ];
+/**
+ * Prefix of the derived extract: changed with the filters, so that an
+ * extract of older filters is never reused.
+ */
+const EXTRACT_PREFIX = 'railway-zones';
 
 interface StationSample {
   osmId: number;
@@ -74,6 +87,8 @@ export interface RailwayImportReport {
   manyNeighbors: (StationSample & { neighbors: number })[];
   /** Per country: kept stations and network length. */
   countries: { code: string; stations: number; networkKm: number }[];
+  /** Stations by source of their zone, and small tiles of all the zones. */
+  zones: ZoneReport;
   durationsS: Record<string, number>;
 }
 
@@ -98,7 +113,7 @@ function run(command: string, args: string[]): Promise<void> {
 async function railwayExtract(source: string): Promise<string> {
   const dir = join(dirname(source), 'derived');
   mkdirSync(dir, { recursive: true });
-  const extract = join(dir, `railway-${basename(source)}`);
+  const extract = join(dir, `${EXTRACT_PREFIX}-${basename(source)}`);
   if (
     existsSync(extract) &&
     statSync(extract).mtimeMs > statSync(source).mtimeMs
@@ -162,10 +177,15 @@ async function readRailway(extract: string): Promise<RailwayData> {
  * (the planet or any extract): osmium keeps its railway, then the whole
  * network is walked in memory. The stations keep their ids from one import
  * to the next; the links are replaced. `dataSource` must be initialized.
+ *
+ * With `zonesOnly`, only the zones of the stations of the file already in
+ * the database are recomputed: a small extract can be tried without
+ * replacing the stations of the world.
  */
 export async function importStations(
   dataSource: DataSource,
   source: string,
+  { zonesOnly = false }: { zonesOnly?: boolean } = {},
 ): Promise<void> {
   const durationsS: Record<string, number> = {};
   const timed = async <T>(step: string, work: () => Promise<T>): Promise<T> => {
@@ -184,6 +204,17 @@ export async function importStations(
   console.log(
     `${data.nodes.size} nodes, ${data.tracks.count} tracks, ${data.stations.length} candidate stations, ${kept.length} kept`,
   );
+  if (zonesOnly) {
+    const zones = await timed('zones', () =>
+      saveZones(dataSource, data, stationZones(data, kept), {
+        onlyComputed: true,
+      }),
+    );
+    console.log(
+      `Zones of ${kept.length} stations: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
+    );
+    return;
+  }
   if (kept.length < MIN_STATIONS) {
     throw new Error(
       `Only ${kept.length} stations kept from ${source}: nothing imported`,
@@ -230,6 +261,12 @@ export async function importStations(
       await saveStations(manager, data, kept);
       await saveLinks(manager, data, result.links);
     }),
+  );
+  const zones = await timed('zones', () =>
+    saveZones(dataSource, data, stationZones(data, kept)),
+  );
+  console.log(
+    `Zones: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
   );
   await timed('countries', async () => {
     await dataSource.query(LOCATE_PLACES);
@@ -303,6 +340,7 @@ export async function importStations(
       stations,
       networkKm: network_km,
     })),
+    zones,
     durationsS,
   };
   await dataSource.query(

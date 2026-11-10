@@ -7,6 +7,9 @@ export const STATION_ICONS = {
   glyph: "station-glyph",
   bubble: "station-name-bubble",
   bubbleUnvisited: "station-name-bubble-unvisited",
+  /** Diagonal stripes over the small tiles of the zones, by visit. */
+  hatch: "station-zone-hatch",
+  hatchUnvisited: "station-zone-hatch-unvisited",
 } as const;
 
 /**
@@ -74,6 +77,25 @@ function image(context: CanvasRenderingContext2D): ImageData {
     context.canvas.width,
     context.canvas.height,
   );
+}
+
+/** Side of the stripes pattern, in CSS pixels: it repeats seamlessly. */
+const HATCH_SIZE = 6;
+
+/** Diagonal stripes in `color`, a pattern repeating over a fill. */
+function hatch(color: string): ImageData {
+  const size = HATCH_SIZE;
+  const c = canvas(size, size);
+  c.strokeStyle = color;
+  c.lineWidth = 1;
+  c.beginPath();
+  // The main diagonal, and the corners of the next ones: the stripes join from tile to tile.
+  for (const offset of [-size, 0, size]) {
+    c.moveTo(offset, size);
+    c.lineTo(offset + size, 0);
+  }
+  c.stroke();
+  return image(c);
 }
 
 /** The front of a train in `color`: body, windscreen, lights and rails. */
@@ -255,6 +277,8 @@ export function addStationIcons(map: MapLibreMap, palette: MapPalette): void {
   const images: ImageEntry[] = [
     [STATION_ICONS.glyph, glyph(palette.stationCasing), {}],
     [STATION_ICONS.bubble, bubble(palette.station), bubbleOptions],
+    [STATION_ICONS.hatch, hatch(palette.station), {}],
+    [STATION_ICONS.hatchUnvisited, hatch(palette.stationUnvisited), {}],
     [
       STATION_ICONS.bubbleUnvisited,
       bubble(palette.stationUnvisited),

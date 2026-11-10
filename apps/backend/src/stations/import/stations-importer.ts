@@ -8,6 +8,7 @@ import { placeTile } from '../station-tile';
 import { parseOplLine } from './osm-opl';
 import { type RailwayData, RailwayDataBuilder } from './railway-data';
 import type { StationExclusion } from './railway-rules';
+import { mergeOverlappingStations } from './station-merges';
 import { type NetworkLink, RailwayNetwork } from './railway-network';
 import { stationZones } from './station-zones';
 import { saveZones, type ZoneReport } from './station-zones-store';
@@ -268,6 +269,11 @@ export async function importStations(
   console.log(
     `Zones: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
   );
+  const merged = await timed('merge', () =>
+    mergeOverlappingStations(dataSource),
+  );
+  excluded.merged += merged;
+  console.log(`${merged} stations merged into an overlapping footprint`);
   await timed('countries', async () => {
     await dataSource.query(LOCATE_PLACES);
     await splitByCountry(dataSource);
@@ -293,7 +299,7 @@ export async function importStations(
   const report: RailwayImportReport = {
     source: basename(source),
     candidates: data.stations.length,
-    kept: kept.length,
+    kept: kept.length - merged,
     servedByTrack: kept.filter(
       (index) => data.stations[index].servedBy === 'track',
     ).length,
@@ -348,7 +354,7 @@ export async function importStations(
     [basename(source), JSON.stringify(report)],
   );
   console.log(
-    `Imported: ${kept.length} stations, ${result.links.length} links, ${report.networkKm} km.`,
+    `Imported: ${kept.length - merged} stations, ${result.links.length} links, ${report.networkKm} km.`,
   );
 }
 

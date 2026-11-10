@@ -5,6 +5,8 @@ const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 const isDevelopment = process.env.NODE_ENV === "development";
 /** Avatars of the commit authors, on the development page. */
 const githubAvatars = "https://avatars.githubusercontent.com";
+/** Base map of the station zones prototype. */
+const mapTiles = "https://tiles.openfreemap.org";
 
 // Inline scripts stay allowed: nonces would force every page to render
 // dynamically, which defeats cache components. The development server also
@@ -13,9 +15,9 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${githubAvatars}`,
+  `img-src 'self' data: blob: ${mapTiles} ${githubAvatars}`,
   "font-src 'self' data:",
-  `connect-src 'self'${isDevelopment ? " ws:" : ""}`,
+  `connect-src 'self' ${mapTiles}${isDevelopment ? " ws:" : ""}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

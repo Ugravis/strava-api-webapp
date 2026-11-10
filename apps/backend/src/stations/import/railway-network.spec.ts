@@ -246,7 +246,10 @@ describe('RailwayNetwork', () => {
     station(f, 101, 0.005, LAT, ',tourism=attraction');
     station(f, 102, 0.035, LAT, ',tourism=attraction');
     route(f, 1, [101, 102], [1]);
-    f.relations[0] = f.relations[0].replace('route=train', 'route=train,attraction=train');
+    f.relations[0] = f.relations[0].replace(
+      'route=train',
+      'route=train,attraction=train',
+    );
 
     expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([
       'not_served',
@@ -257,15 +260,29 @@ describe('RailwayNetwork', () => {
   it('never counts a park station beside the stop of a real train as served', () => {
     const f = empty();
     track(f, 1, 1, 0, 10, 'railway=rail');
-    track(f, 2, 20, 0.005, 2, 'railway=narrow_gauge,usage=tourism', LAT + 100 * M);
+    track(
+      f,
+      2,
+      20,
+      0.005,
+      2,
+      'railway=narrow_gauge,usage=tourism',
+      LAT + 100 * M,
+    );
     station(f, 101, 0.005, LAT + 100 * M);
     station(f, 102, 0.035, LAT);
     station(f, 103, 0.075, LAT);
     // A heritage station beside the stop is still served by it.
     station(f, 104, 0.0052, LAT + 50 * M, ',tourism=attraction');
-    f.nodes.push(`n201 Tpublic_transport=stop_position,train=yes x0.005 y${LAT}`);
-    f.relations.push(`r1 Ttype=route,route=train Mn201@stop,n102@stop,n103@stop,w1@`);
-    f.relations.push(`r2 Ttype=route,route=train,attraction=train Mn101@stop,w2@`);
+    f.nodes.push(
+      `n201 Tpublic_transport=stop_position,train=yes x0.005 y${LAT}`,
+    );
+    f.relations.push(
+      `r1 Ttype=route,route=train Mn201@stop,n102@stop,n103@stop,w1@`,
+    );
+    f.relations.push(
+      `r2 Ttype=route,route=train,attraction=train Mn101@stop,w2@`,
+    );
 
     expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([
       'not_served',
@@ -472,7 +489,9 @@ describe('levelNamesMatch', () => {
     levelNamesMatch(normalizedName(a), normalizedName(b));
 
   it('matches a level of a station', () => {
-    expect(match('Stuttgart Hauptbahnhof', 'Stuttgart Hauptbahnhof (tief)')).toBe(true);
+    expect(
+      match('Stuttgart Hauptbahnhof', 'Stuttgart Hauptbahnhof (tief)'),
+    ).toBe(true);
     expect(match('Leipzig Hbf', 'Leipzig Hbf (Tiefgleise)')).toBe(true);
   });
 

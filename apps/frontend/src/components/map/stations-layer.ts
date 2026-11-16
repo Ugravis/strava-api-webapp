@@ -32,6 +32,8 @@ export interface StationData {
     { id: number; name: string | null } & Gained
   >;
   links: FeatureCollection<LineString, LinkProperties & Gained>;
+  /** The links cut where they diverge: their ties are drawn once. */
+  ties: FeatureCollection<LineString, Gained>;
 }
 
 /** A station at an end of a link. */
@@ -60,6 +62,7 @@ const SOURCES = {
   all: "all-stations",
   visited: "visited-stations",
   links: "rail-links",
+  ties: "rail-ties",
   selected: "station-selected",
   hovered: "station-hovered",
   trains: TRAINS_SOURCE,
@@ -77,6 +80,7 @@ const LAYERS = {
   footprintSelected: "station-footprint-selected-line",
   unvisited: "stations-unvisited",
   linksCasing: "rail-links-casing",
+  tiesCasing: "rail-links-ties-casing",
   ties: "rail-links-ties",
   links: "rail-links-line",
   visited: "stations-visited",
@@ -101,16 +105,19 @@ const NAMES_IN = fadeIn(NAMES_MIN_ZOOM, 1);
 /** The grey bubbles let the map through a little. */
 const UNVISITED_BUBBLE_OPACITY = 0.9;
 const NAME_FONT = ["Noto Sans Bold"];
-/** The links split into two rails over their sleepers from this zoom: a track under the trains, a plain line below. */
-const TIES_MIN_ZOOM = 12;
-/** Zoom where the track reaches its full gauge. */
-const TRACK_ZOOM = 14;
-/** The track, in pixels below the real scale: each rail, the gap between them, the sleepers across and the bed below. */
-/** Zoom range, next to none, over which the line halves its width as its gap opens. */
-const GAP_STEP = 0.001;
-const TRACK = { rail: 1.2, gauge: 4.5, sleeper: 7.5, bed: 9.5 } as const;
+/** The links get ticks across their line from this zoom: a track under the trains, a plain line below. */
+const TIES_MIN_ZOOM = 14;
+/** The track, in pixels below the real scale: the line, the ticks across it and the bed below. */
+const TRACK = { line: 2.4, sleeper: 7.5 } as const;
+/** Opaque white border around the line (in pixels) and around each tick (a share of its width, growing with the map). */
+const LINE_BORDER = 0.9;
+const TIE_BORDER = 0.07;
+/** Dashes of the ticks, in widths of the tick. */
+const TIE_DASH = [0.14, 0.5] as const;
 /** Deepest tiles of the trains: precise enough to a few centimetres. */
 const TRAINS_TILE_MAX_ZOOM = 16;
+/** Deepest tiles of the ties. */
+const TIES_TILE_MAX_ZOOM = 14;
 
 /** Veil over the base map, the tiles and the tracks, below the stations: they stand out. */
 const DIM_LAYER_ID = "stations-dim-veil";
@@ -142,6 +149,7 @@ const EMPTY_LINES: FeatureCollection<LineString, LinkProperties> = {
 export const NO_STATION_DATA: StationData = {
   stations: EMPTY_POINTS,
   links: EMPTY_LINES,
+  ties: { type: "FeatureCollection", features: [] },
 };
 
 /** Grows with the zoom, from a dot on a country to a marker on a town. */
@@ -370,11 +378,13 @@ export function stationData(
     });
   }
   const links: StationData["links"]["features"] = [];
+  const unlockedAts = new Map<number, string | null>();
   for (const link of visited.links) {
     const [a, b] = link.stations.map((id) => firstVisits.get(id));
     if (a === undefined || b === undefined) continue;
     const unlockedAt = a === null || b === null ? (a ?? b) : a > b ? a : b;
     if (!inHistory(unlockedAt, history)) continue;
+    unlockedAts.set(link.id, unlockedAt);
     const [first, second] = link.stations.map((id) => ends.get(id)!);
     // The station nearest the first point starts the link.
     const [lon, lat] = link.coords[0];
@@ -393,9 +403,23 @@ export function stationData(
       geometry: { type: "LineString", coordinates: link.coords },
     });
   }
+  const ties: StationData["ties"]["features"] = [];
+  for (const tie of visited.ties) {
+    // Shown from the first link in the history over it.
+    const inPeriod = tie.linkIds.filter((id) => unlockedAts.has(id));
+    if (inPeriod.length === 0) continue;
+    const ats = inPeriod.map((id) => unlockedAts.get(id) ?? null);
+    const first = ats.includes(null) ? null : (ats as string[]).reduce((a, b) => (a < b ? a : b));
+    ties.push({
+      type: "Feature",
+      properties: { gained: isGained(first, history) },
+      geometry: { type: "LineString", coordinates: tie.coords },
+    });
+  }
   return {
     stations: { type: "FeatureCollection", features: gainedLast(features) },
     links: { type: "FeatureCollection", features: gainedLast(links) },
+    ties: { type: "FeatureCollection", features: gainedLast(ties) },
   };
 }
 
@@ -460,7 +484,10 @@ export function addStationLayers(
     },
     belowLabels,
   );
+  // The links only feed the trains: the railway is drawn from the ties, one geometry for the line, its bed and its ticks.
   map.addSource(SOURCES.links, { type: "geojson", data: data.links });
+  // Tiles no finer than zoom 14, to the half meter: the dashes restart with each tile, whose borders are fewer when zoomed in.
+  map.addSource(SOURCES.ties, { type: "geojson", data: data.ties, maxzoom: TIES_TILE_MAX_ZOOM });
   map.addSource(SOURCES.visited, { type: "geojson", data: data.stations });
   map.addSource(SOURCES.selected, {
     type: "geojson",
@@ -478,60 +505,77 @@ export function addStationLayers(
     {
       id: LAYERS.linksCasing,
       type: "line",
-      source: SOURCES.links,
+      source: SOURCES.ties,
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": palette.stationCasing,
-        "line-opacity": 0.85,
+        "line-opacity": 1,
         "line-width": realScale([
           [ALL_MIN_ZOOM, 2.5],
-          [10, 4],
-          [TIES_MIN_ZOOM, 4.5],
-          [TRACK_ZOOM, TRACK.bed],
+          [10, 3.6],
+          [TIES_MIN_ZOOM, TRACK.line + 2 * LINE_BORDER],
         ]),
       },
     },
     belowLabels,
   );
-  // Thin dashes across the bed, between the rails: the sleepers.
+  // The border of each tick: the same dashes, wider by the border on each side, so longer by it at each end.
+  map.addLayer(
+    {
+      id: LAYERS.tiesCasing,
+      type: "line",
+      source: SOURCES.ties,
+      minzoom: TIES_MIN_ZOOM,
+      layout: { ...layout, "line-join": "round" },
+      paint: {
+        "line-color": palette.stationCasing,
+        "line-opacity": fadeIn(TIES_MIN_ZOOM, 1),
+        "line-width": realScale([
+          [TIES_MIN_ZOOM, TRACK.sleeper * (1 + 2 * TIE_BORDER)],
+        ]),
+        // Starts by the end of the border before the tick (the last dash, with no gap after it): centred on the tick.
+        "line-dasharray": [
+          (TIE_DASH[0] + TIE_BORDER) / (1 + 2 * TIE_BORDER),
+          (TIE_DASH[1] - 2 * TIE_BORDER) / (1 + 2 * TIE_BORDER),
+          TIE_BORDER / (1 + 2 * TIE_BORDER),
+          0,
+        ],
+      },
+    },
+    belowLabels,
+  );
+  // Thin dashes across the line, as opaque and as coloured as it: the ticks.
   map.addLayer(
     {
       id: LAYERS.ties,
       type: "line",
-      source: SOURCES.links,
+      source: SOURCES.ties,
       minzoom: TIES_MIN_ZOOM,
       layout: { ...layout, "line-join": "round" },
       paint: {
         "line-color": gainedColor(palette.railLink, palette),
-        "line-opacity": fadeIn(TIES_MIN_ZOOM, 0.5, TRACK_ZOOM - TIES_MIN_ZOOM),
+        "line-opacity": fadeIn(TIES_MIN_ZOOM, 1),
         "line-width": realScale([
-          [TIES_MIN_ZOOM, 2.4],
-          [TRACK_ZOOM, TRACK.sleeper],
+          [TIES_MIN_ZOOM, TRACK.sleeper],
         ]),
-        "line-dasharray": [0.14, 0.5],
+        "line-dasharray": [...TIE_DASH],
       },
     },
     belowLabels,
   );
-  // One line zoomed out, then two rails: with a gap, each side is as wide as the line, hence the halved width where the gap opens.
+  // One line at every zoom, ticked from `TIES_MIN_ZOOM`.
   map.addLayer(
     {
       id: LAYERS.links,
       type: "line",
-      source: SOURCES.links,
+      source: SOURCES.ties,
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": gainedColor(palette.railLink, palette),
         "line-width": realScale([
           [ALL_MIN_ZOOM, 1.2],
           [10, 2],
-          [TIES_MIN_ZOOM, TRACK.rail * 2],
-          [TIES_MIN_ZOOM + GAP_STEP, TRACK.rail],
-          [TRACK_ZOOM, TRACK.rail],
-        ]),
-        "line-gap-width": realScale([
-          [TIES_MIN_ZOOM, 0],
-          [TRACK_ZOOM, TRACK.gauge],
+          [TIES_MIN_ZOOM, TRACK.line],
         ]),
       },
     },
@@ -817,6 +861,7 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   }
   map.getSource<GeoJSONSource>(SOURCES.visited)?.setData(data.stations);
   map.getSource<GeoJSONSource>(SOURCES.links)?.setData(data.links);
+  map.getSource<GeoJSONSource>(SOURCES.ties)?.setData(data.ties);
   // The bubble of the station shown takes the colors of its visit.
   updateBubble(map);
 }

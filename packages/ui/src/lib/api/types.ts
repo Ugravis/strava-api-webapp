@@ -465,10 +465,18 @@ export interface UnlockedLink {
   coords: [number, number][];
 }
 
+/** A stretch of railway shared by unlocked links, drawn once for their ties. */
+export interface RailTie {
+  linkIds: number[];
+  /** `[lon, lat]` along the tracks. */
+  coords: [number, number][];
+}
+
 /** Stations visited by the user and the links between them. */
 export interface VisitedStations {
   stations: VisitedStation[];
   links: UnlockedLink[];
+  ties: RailTie[];
   /** Changes with each import of the stations: the vector tiles of all the stations follow it. Null without stations. */
   stationsVersion: string | null;
 }

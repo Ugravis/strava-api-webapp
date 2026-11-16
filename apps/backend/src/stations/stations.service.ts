@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { SportType } from '../activities/sport-type';
 import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
+import { reachingStations } from './import/railway-network';
 
 const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tolerance of the simplified links sent to the map, in degrees (about 2 m). */
@@ -14,7 +15,7 @@ const ZONES_LAYER = 'station-zones';
 /** The footprints and zones are served from this zoom, fading in to be whole at 13: smaller, they are a few pixels. */
 const FOOTPRINTS_MIN_ZOOM = 12;
 /** Bumped when the layers of the vector tiles change: the browser caches them for good, by version. */
-const TILE_FORMAT = 3;
+const TILE_FORMAT = 4;
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 
@@ -256,6 +257,9 @@ export class StationsService {
              ORDER BY id`,
             [ids],
           );
+    const points = new Map(
+      stations.map(({ id, lon, lat }) => [id, [lon, lat] as [number, number]]),
+    );
     return {
       stations: stations.map((station) => ({
         id: station.id,
@@ -268,9 +272,13 @@ export class StationsService {
         id: link.id,
         stations: [link.station_a, link.station_b],
         lengthM: Math.round(link.length_m),
-        coords: (
-          JSON.parse(link.geojson) as { coordinates: [number, number][] }
-        ).coordinates,
+        // Stored along the tracks: drawn curving from each station onto them.
+        coords: reachingStations(
+          points.get(link.station_a)!,
+          points.get(link.station_b)!,
+          (JSON.parse(link.geojson) as { coordinates: [number, number][] })
+            .coordinates,
+        ),
       })),
       stationsVersion: await this.stationsVersion(),
     };
@@ -412,18 +420,21 @@ export class StationsService {
          WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM} AND p.kind = 'station'
            AND p.footprint && ST_Transform(b.envelope, 4326)
        ),
+       -- One polygon per zone, its small tiles merged: outlined around the group, not each tile.
        zones AS (
-         SELECT t.place_id AS id,
-           ST_AsMVTGeom(ST_TileEnvelope(${SUBTILE_ZOOM},
+         SELECT t.place_id AS id, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat,
+           ST_AsMVTGeom(ST_Union(ST_TileEnvelope(${SUBTILE_ZOOM},
              t.x * ${SUBTILES_PER_SIDE} + t.bit % ${SUBTILES_PER_SIDE},
-             t.y * ${SUBTILES_PER_SIDE} + t.bit / ${SUBTILES_PER_SIDE}),
-             b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
-         -- Integer bounds: the index on the large tiles is used.
+             t.y * ${SUBTILES_PER_SIDE} + t.bit / ${SUBTILES_PER_SIDE})),
+             (SELECT envelope FROM bounds), ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         -- Integer bounds: the index on the large tiles is used. One large tile more on each side covers the buffer
+         -- (served up to zoom ${TILE_ZOOM}): a zone cut at the edge of the tile would be outlined along it.
          FROM place_tiles t
-         JOIN places p ON p.id = t.place_id AND p.kind = 'station', bounds b
+         JOIN places p ON p.id = t.place_id AND p.kind = 'station'
          WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM}
-           AND t.x BETWEEN floor($2 * 2.0 ^ (${TILE_ZOOM} - $1))::int AND (ceil(($2 + 1) * 2.0 ^ (${TILE_ZOOM} - $1)) - 1)::int
-           AND t.y BETWEEN floor($3 * 2.0 ^ (${TILE_ZOOM} - $1))::int AND (ceil(($3 + 1) * 2.0 ^ (${TILE_ZOOM} - $1)) - 1)::int
+           AND t.x BETWEEN floor($2 * 2.0 ^ (${TILE_ZOOM} - $1))::int - 1 AND ceil(($2 + 1) * 2.0 ^ (${TILE_ZOOM} - $1))::int
+           AND t.y BETWEEN floor($3 * 2.0 ^ (${TILE_ZOOM} - $1))::int - 1 AND ceil(($3 + 1) * 2.0 ^ (${TILE_ZOOM} - $1))::int
+         GROUP BY t.place_id, p.geom
        ),
        points AS (
          SELECT p.id, p.name,

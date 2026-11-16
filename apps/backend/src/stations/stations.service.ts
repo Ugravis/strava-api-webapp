@@ -70,6 +70,8 @@ export interface RailTie {
   linkIds: number[];
   /** `[lon, lat]`, simplified. */
   coords: [number, number][];
+  /** Zoom from which its line of the railway shows, whole. */
+  minZoom: number;
 }
 
 export interface VisitedStations {
@@ -270,11 +272,11 @@ export class StationsService {
             [ids],
           );
     const linkIds = links.map((link) => link.id);
-    const ties: { link_ids: number[]; geojson: string }[] =
+    const ties: { link_ids: number[]; min_zoom: number; geojson: string }[] =
       linkIds.length === 0
         ? []
         : await this.dataSource.query(
-            `SELECT link_ids, ST_AsGeoJSON(ST_Simplify(geom, ${TIE_SIMPLIFY_DEG}), 6) AS geojson
+            `SELECT link_ids, min_zoom, ST_AsGeoJSON(ST_Simplify(geom, ${TIE_SIMPLIFY_DEG}), 6) AS geojson
              FROM rail_segments
              WHERE link_ids && $1::int[]`,
             [linkIds],
@@ -307,6 +309,7 @@ export class StationsService {
         linkIds: tie.link_ids.filter((id) => unlocked.has(id)),
         coords: (JSON.parse(tie.geojson) as { coordinates: [number, number][] })
           .coordinates,
+        minZoom: tie.min_zoom,
       })),
       stationsVersion: await this.stationsVersion(),
     };

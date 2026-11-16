@@ -7,19 +7,12 @@ import type {
   SymbolLayerSpecification,
   VectorTileSource,
 } from "maplibre-gl";
-import type { VisitedStations } from "@kilotrace/ui/lib/api/types";
-import type { MapHistory } from "./history-layer";
+import { SECTOR_VEIL_LAYER_ID, TRAINS_MIN_ZOOM, TRAINS_SOURCE } from "./layer-order";
 import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
-import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
-import { StationBubble } from "./station-bubble";
 import { addRailTies, refreshRailTies, setRailTies, TIES_LAYER, TIES_MIN_ZOOM } from "./rail-ties";
+import { realScale, TRAIN_SIZE } from "./real-scale";
+import { StationBubble } from "./station-bubble";
 import { addStationIcons, glyphUrl, HATCH_LEVELS, STATION_ICONS } from "./station-icons";
-import {
-  realScale,
-  TRAIN_SIZE,
-  TRAINS_MIN_ZOOM,
-  TRAINS_SOURCE,
-} from "./train-traffic";
 
 /** Whether a station or a link was gained in the period of the history: drawn in the pink of the gains. */
 interface Gained {
@@ -34,7 +27,8 @@ export interface StationData {
   >;
   links: FeatureCollection<LineString, LinkProperties & Gained>;
   /** The links cut where they diverge: their ties are drawn once. */
-  ties: FeatureCollection<LineString, Gained>;
+  /** `minZoom`: the zoom its line of the railway shows from, whole. */
+  ties: FeatureCollection<LineString, Gained & { minZoom?: number }>;
 }
 
 /** A station at an end of a link. */
@@ -124,8 +118,15 @@ const ALL_SOURCE_LAYER = "stations";
 const FOOTPRINTS_SOURCE_LAYER = "station-footprints";
 const ZONES_SOURCE_LAYER = "station-zones";
 const FOOTPRINTS_MIN_ZOOM = 12;
-/** The backend serves every station from this zoom, down to the deepest; the map stretches them beyond. */
+/** First zoom of the sizes of the stations and the railway, growing from there. */
 const ALL_MIN_ZOOM = 6;
+/**
+ * Zoom from which the dots of the stations fade in, visited or not: zoomed
+ * out, the railway alone, the stations too many to tell apart. The backend
+ * serves every station from there, down to the deepest; the map stretches
+ * them beyond.
+ */
+const DOTS_MIN_ZOOM = 6;
 const ALL_MAX_ZOOM = 14;
 /** Distance from the pointer, in pixels, where a click looks for a station: a finger is not precise. */
 const PICK_TOLERANCE_PX = 8;
@@ -213,17 +214,132 @@ function nameLayout(
 /** Stations with a name: the others get no bubble. */
 const NAMED: ExpressionSpecification = ["to-boolean", ["get", "name"]];
 
+/**
+ * Tiles of every station with the railway between them (`rails`), each
+ * station marked when the team hid it from the site (`hidden`): the map of
+ * the back office draws them all as visited, the hidden ones as not, to
+ * audit the public map with its own layers.
+ */
+export interface EveryStationTiles {
+  /** URL of the tiles of a version of the data. */
+  url: (version: string) => string;
+  /** Version of the data the layers are added with. */
+  version: string;
+  /** First zoom of the tiles. */
+  minzoom: number;
+}
+
+/** Maps drawing every station as visited, from their tiles. */
+const everyStation = new WeakMap<MapLibreMap, EveryStationTiles>();
+/** Layer of the railway in the tiles of every station. */
+const RAILS_SOURCE_LAYER = "rails";
+
+/**
+ * Draws every station as visited from `tiles` instead of the visits of a
+ * user, the hidden ones in grey. Called before the layers are added.
+ */
+export function drawEveryStation(map: MapLibreMap, tiles: EveryStationTiles): void {
+  everyStation.set(map, tiles);
+}
+
+/**
+ * The railway of the lines long enough to show at the zoom of the tile:
+ * zoomed out, the short ones leave, each whole. The tiles of every station
+ * hold those lines only.
+ */
+const RAIL_SHOWN: ExpressionSpecification = ["<=", ["coalesce", ["get", "minZoom"], 0], ["zoom"]];
+
+/** Zooms the lines of the railway are given: every one shows from the last. */
+const RAIL_ZOOMS = 8;
+
+/**
+ * Opacity of the railway: each line fades in over the zoom after its own,
+ * like every layer of the map (`fadeIn`).
+ */
+const RAIL_OPACITY: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  ...Array.from({ length: RAIL_ZOOMS + 2 }, (_, zoom) => [
+    zoom,
+    // The lines of the furthest zoom out show whole from it.
+    ["case", ["<=", ["coalesce", ["get", "minZoom"], 0], Math.max(0, zoom - FADE_ZOOMS)], 1, 0],
+  ]).flat(),
+] as ExpressionSpecification;
+
+/**
+ * Visited stations past which a map is dense: its dots show from
+ * `DOTS_MIN_ZOOM` only, and its railway is thinned out zoomed out (`RAIL_SHOWN`,
+ * `RAIL_OPACITY`). Below, every visited station and every rail shows at
+ * every zoom: the measures are for the maps holding an outsize network,
+ * such as the one of the back office with every station.
+ */
+const DENSE_STATIONS = 3000;
+
+/** Whether the map is dense: every station drawn, or more visited ones than `DENSE_STATIONS`. */
+function isDense(map: MapLibreMap): boolean {
+  return everyStation.has(map) || (visitedIds.get(map)?.length ?? 0) > DENSE_STATIONS;
+}
+
+/** Opacity of the dots of the visited stations: fading in from their zoom on a dense map. */
+const dotsOpacity = (map: MapLibreMap) => (isDense(map) ? fadeIn(DOTS_MIN_ZOOM, 1) : 1);
+
+/** Whether each map was dense when its layers were last set. */
+const dense = new WeakMap<MapLibreMap, boolean>();
+
+/** Sets the layers for the density of the map, once it changes with the visited stations. */
+function applyDensity(map: MapLibreMap): void {
+  const now = isDense(map);
+  if (dense.get(map) === now || !map.getLayer(LAYERS.visited)) return;
+  dense.set(map, now);
+  map.setLayerZoomRange(LAYERS.visited, now ? DOTS_MIN_ZOOM : 0, 24);
+  map.setPaintProperty(LAYERS.visited, "circle-opacity", dotsOpacity(map));
+  map.setPaintProperty(LAYERS.visited, "circle-stroke-opacity", dotsOpacity(map));
+  for (const id of [LAYERS.linksCasing, LAYERS.links]) {
+    map.setFilter(id, now ? RAIL_SHOWN : null);
+    map.setPaintProperty(id, "line-opacity", now ? RAIL_OPACITY : 1);
+  }
+}
+
+/** Whether a feature of the tiles of every station was hidden by the team. */
+const HIDDEN: ExpressionSpecification = ["boolean", ["get", "hidden"], false];
+
 /** The visited stations with a name, but the one shown: its bubble is drawn over the map. */
 function namedFilter(map: MapLibreMap): ExpressionSpecification {
+  if (everyStation.has(map)) return ["all", NAMED, ["!", HIDDEN], ["!=", ["id"], selectedIds.get(map) ?? -1]];
   return ["all", NAMED, ["!=", ["get", "id"], selectedIds.get(map) ?? -1]];
 }
 
 /** Ids of the visited stations of each map: the grey names leave them out. */
 const visitedIds = new WeakMap<MapLibreMap, number[]>();
 
-/** `visited` for the features of the visited stations, by id, else `unvisited`. */
+/** `visited` for the features of the visited stations, by id, else `unvisited`; when every station is, the hidden ones are not. */
 function byVisit<T extends string | number>(map: MapLibreMap, visited: T, unvisited: T): ExpressionSpecification {
+  if (everyStation.has(map)) return ["case", HIDDEN, unvisited, visited];
   return ["case", ["in", ["id"], ["literal", visitedIds.get(map) ?? []]], visited, unvisited];
+}
+
+/** Whether the station `id` is drawn as visited. */
+function isVisited(map: MapLibreMap, id: number): boolean {
+  if (!everyStation.has(map)) return (visitedIds.get(map) ?? []).includes(id);
+  const [feature] = map.getSource(SOURCES.all)
+    ? map.querySourceFeatures(SOURCES.all, { sourceLayer: ALL_SOURCE_LAYER, filter: ["==", ["id"], id] })
+    : [];
+  return feature?.properties.hidden !== true;
+}
+
+/**
+ * The source of the visited stations (`stations`) or of the railway
+ * between them (`rails`): the GeoJSON of the visits, or the tiles of every
+ * station, the hidden ones left out.
+ */
+function visitedSource(map: MapLibreMap, kind: "stations" | "rails") {
+  if (!everyStation.has(map)) return { source: kind === "stations" ? SOURCES.visited : SOURCES.ties };
+  return {
+    source: SOURCES.all,
+    "source-layer": kind === "stations" ? ALL_SOURCE_LAYER : RAILS_SOURCE_LAYER,
+    ...(kind === "stations" && { filter: ["!", HIDDEN] as ExpressionSpecification }),
+  };
 }
 
 /** The stripes of the zone shown by visit, wider by steps as it grows zoomed in. */
@@ -284,6 +400,7 @@ function selectedOpacity(
 }
 
 function unvisitedFilter(map: MapLibreMap): ExpressionSpecification {
+  if (everyStation.has(map)) return ["all", NAMED, ["!=", ["id"], selectedIds.get(map) ?? -1], HIDDEN];
   return [
     "all",
     NAMED,
@@ -299,33 +416,6 @@ function rememberVisited(map: MapLibreMap, data: StationData): void {
   );
 }
 
-/** Whether a first visit falls in the period of the history; a visit not dated yet counts as an old one. */
-function isGained(
-  firstVisitAt: string | null,
-  history: MapHistory | null,
-): boolean {
-  return (
-    history !== null && firstVisitAt !== null && firstVisitAt >= history.instant
-  );
-}
-
-/** Whether a first visit counts for the history: the map as it was then, or all of it with the gains apart. */
-function inHistory(
-  firstVisitAt: string | null,
-  history: MapHistory | null,
-): boolean {
-  return history?.mode !== "state" || !isGained(firstVisitAt, history);
-}
-
-/** The earlier features first: the gained ones are drawn over them. */
-function gainedLast<T extends { properties: Gained }>(features: T[]): T[] {
-  return features.sort(
-    (a, b) =>
-      Number(a.properties.gained ?? false) -
-      Number(b.properties.gained ?? false),
-  );
-}
-
 /** Color of a station or a link: the pink of the gains when gained in the period of the history. */
 function gainedColor(
   color: string,
@@ -337,85 +427,6 @@ function gainedColor(
     palette.activityTrack,
     color,
   ];
-}
-
-/**
- * The visited stations and the links between them, as of the history when
- * open, or all of them with the gains apart: a link is unlocked by the later
- * of the first visits of its stations.
- */
-export function stationData(
-  visited: VisitedStations | null,
-  history: MapHistory | null,
-): StationData {
-  if (!visited) return NO_STATION_DATA;
-  const firstVisits = new Map<number, string | null>();
-  const ends = new Map<number, LinkEnd>();
-  const features: StationData["stations"]["features"] = [];
-  for (const station of visited.stations) {
-    if (!inHistory(station.firstVisitAt, history)) continue;
-    firstVisits.set(station.id, station.firstVisitAt);
-    ends.set(station.id, {
-      id: station.id,
-      name: station.name,
-      lon: station.lon,
-      lat: station.lat,
-    });
-    features.push({
-      type: "Feature",
-      id: station.id,
-      properties: {
-        id: station.id,
-        name: station.name,
-        gained: isGained(station.firstVisitAt, history),
-      },
-      geometry: { type: "Point", coordinates: [station.lon, station.lat] },
-    });
-  }
-  const links: StationData["links"]["features"] = [];
-  const unlockedAts = new Map<number, string | null>();
-  for (const link of visited.links) {
-    const [a, b] = link.stations.map((id) => firstVisits.get(id));
-    if (a === undefined || b === undefined) continue;
-    const unlockedAt = a === null || b === null ? (a ?? b) : a > b ? a : b;
-    if (!inHistory(unlockedAt, history)) continue;
-    unlockedAts.set(link.id, unlockedAt);
-    const [first, second] = link.stations.map((id) => ends.get(id)!);
-    // The station nearest the first point starts the link.
-    const [lon, lat] = link.coords[0];
-    const startsAtFirst =
-      Math.hypot(first.lon - lon, first.lat - lat) <=
-      Math.hypot(second.lon - lon, second.lat - lat);
-    links.push({
-      type: "Feature",
-      id: link.id,
-      properties: {
-        ...(startsAtFirst
-          ? { start: first, end: second }
-          : { start: second, end: first }),
-        gained: isGained(unlockedAt, history),
-      },
-      geometry: { type: "LineString", coordinates: link.coords },
-    });
-  }
-  const ties: StationData["ties"]["features"] = [];
-  for (const tie of visited.ties) {
-    // Shown from the first link in the history over it.
-    const inPeriod = tie.linkIds.filter((id) => unlockedAts.has(id));
-    if (inPeriod.length === 0) continue;
-    const ats = inPeriod.map((id) => unlockedAts.get(id) ?? null);
-    const first = ats.includes(null) ? null : (ats as string[]).reduce((a, b) => (a < b ? a : b));
-    ties.push({
-      type: "Feature",
-      properties: { gained: isGained(first, history) },
-      geometry: { type: "LineString", coordinates: tie.coords },
-    });
-  }
-  return {
-    stations: { type: "FeatureCollection", features: gainedLast(features) },
-    links: { type: "FeatureCollection", features: gainedLast(links) },
-    ties: { type: "FeatureCollection", features: gainedLast(ties) },
-  };
 }
 
 /** The version is part of the URL: the browser caches the stations of each import. */
@@ -484,6 +495,10 @@ export function addStationLayers(
   // Tiles no finer than zoom 14, to the half meter: enough for the line, the ticks are laid out from the whole geometry.
   map.addSource(SOURCES.ties, { type: "geojson", data: data.ties, maxzoom: TIES_TILE_MAX_ZOOM });
   map.addSource(SOURCES.visited, { type: "geojson", data: data.stations });
+  const every = everyStation.get(map);
+  if (every && !map.getSource(SOURCES.all)) {
+    map.addSource(SOURCES.all, { type: "vector", tiles: [every.url(every.version)], minzoom: every.minzoom, maxzoom: ALL_MAX_ZOOM });
+  }
   map.addSource(SOURCES.selected, {
     type: "geojson",
     data: ringData(selected),
@@ -500,11 +515,12 @@ export function addStationLayers(
     {
       id: LAYERS.linksCasing,
       type: "line",
-      source: SOURCES.ties,
+      ...visitedSource(map, "rails"),
+      ...(isDense(map) && { filter: RAIL_SHOWN }),
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": palette.stationCasing,
-        "line-opacity": 1,
+        "line-opacity": isDense(map) ? RAIL_OPACITY : 1,
         "line-width": realScale([
           [ALL_MIN_ZOOM, 2.5],
           [10, 3.6],
@@ -523,15 +539,18 @@ export function addStationLayers(
     visibility(visible),
     belowLabels,
   );
+  if (every) layTiesFromTiles(map);
   // One line at every zoom, ticked from `TIES_MIN_ZOOM`.
   map.addLayer(
     {
       id: LAYERS.links,
       type: "line",
-      source: SOURCES.ties,
+      ...visitedSource(map, "rails"),
+      ...(isDense(map) && { filter: RAIL_SHOWN }),
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": gainedColor(palette.railLink, palette),
+        "line-opacity": isDense(map) ? RAIL_OPACITY : 1,
         "line-width": realScale([
           [ALL_MIN_ZOOM, 1.2],
           [10, 2],
@@ -545,12 +564,15 @@ export function addStationLayers(
     {
       id: LAYERS.visited,
       type: "circle",
-      source: SOURCES.visited,
+      ...visitedSource(map, "stations"),
+      minzoom: isDense(map) ? DOTS_MIN_ZOOM : 0,
       layout,
       paint: {
         "circle-color": palette.stationCasing,
+        "circle-opacity": dotsOpacity(map),
         "circle-radius": byZoom(1.6, 2.8, 4),
         "circle-stroke-color": gainedColor(palette.station, palette),
+        "circle-stroke-opacity": dotsOpacity(map),
         "circle-stroke-width": byZoom(1.4, 2.2, 3),
       },
     },
@@ -581,7 +603,7 @@ export function addStationLayers(
     {
       id: LAYERS.names,
       type: "symbol",
-      source: SOURCES.visited,
+      ...visitedSource(map, "stations"),
       minzoom: NAMES_MIN_ZOOM,
       filter: namedFilter(map),
       layout: { ...layout, ...nameLayout(STATION_ICONS.bubble, [1.45, 1.65]) },
@@ -618,16 +640,47 @@ export function addStationLayers(
       LAYERS.names,
     );
   }
+  // The layers just added follow the density of the map.
+  dense.set(map, isDense(map));
   bubbles.get(map)?.destroy();
   bubbles.set(map, new StationBubble(map, () => stationOutline(map)));
   setSelectedStation(map, selected);
+}
+
+/** Maps whose ticks are laid out from the railway of the tiles of every station. */
+const tiesFromTiles = new WeakSet<MapLibreMap>();
+
+/**
+ * Lays the ticks out from the railway of the tiles shown, as they load and
+ * after each move: the tiles of every station hold no whole geometry. Not on
+ * \`idle\`: laying them out renders the map again.
+ */
+function layTiesFromTiles(map: MapLibreMap): void {
+  if (tiesFromTiles.has(map)) return;
+  tiesFromTiles.add(map);
+  const lay = () => {
+    if (!map.getSource(SOURCES.all)) return;
+    const lines: StationData["ties"] = { type: "FeatureCollection", features: [] };
+    if (map.getZoom() >= TIES_MIN_ZOOM) {
+      for (const { geometry } of map.querySourceFeatures(SOURCES.all, { sourceLayer: RAILS_SOURCE_LAYER })) {
+        const parts = geometry.type === "LineString" ? [geometry.coordinates] : geometry.type === "MultiLineString" ? geometry.coordinates : [];
+        for (const coordinates of parts) lines.features.push({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } });
+      }
+    }
+    setRailTies(map, lines);
+  };
+  map.on("moveend", lay);
+  map.on("sourcedata", (event) => {
+    if (event.sourceId === SOURCES.all && event.isSourceLoaded) lay();
+  });
 }
 
 /**
  * Adds or replaces the grey stations once the version of the import is
  * known, below the visited ones. Each version gets its own source: a vector
  * source whose first tiles were empty would keep drawing nothing after
- * `setTiles`.
+ * `setTiles`. Drawing every station (`drawEveryStation`), the source holds
+ * the visited ones too: kept, under the tiles of the new version.
  */
 export function setAllStations(
   map: MapLibreMap,
@@ -637,9 +690,18 @@ export function setAllStations(
 ): void {
   if (!map.getLayer(LAYERS.visited)) return;
   palettes.set(map, palette);
+  const every = everyStation.get(map);
+  if (every) {
+    // The visited stations are drawn from the same source: kept, its tiles fetched again under the new version.
+    if (version && version !== every.version) {
+      every.version = version;
+      map.getSource<VectorTileSource>(SOURCES.all)?.setTiles([every.url(version)]);
+    }
+    if (map.getLayer(LAYERS.unvisited)) return;
+  }
   const url = version ? allStationsUrl(version) : null;
   const source = map.getSource<VectorTileSource>(SOURCES.all);
-  if (source && source.tiles[0] === url) return;
+  if (!every && source && source.tiles[0] === url) return;
   for (const id of [
     LAYERS.zones,
     LAYERS.zoneOutlines,
@@ -655,14 +717,16 @@ export function setAllStations(
   ]) {
     if (map.getLayer(id)) map.removeLayer(id);
   }
-  if (source) map.removeSource(SOURCES.all);
-  if (!url) return;
-  map.addSource(SOURCES.all, {
-    type: "vector",
-    tiles: [url],
-    minzoom: ALL_MIN_ZOOM,
-    maxzoom: ALL_MAX_ZOOM,
-  });
+  if (!every) {
+    if (source) map.removeSource(SOURCES.all);
+    if (!url) return;
+    map.addSource(SOURCES.all, {
+      type: "vector",
+      tiles: [url],
+      minzoom: DOTS_MIN_ZOOM,
+      maxzoom: ALL_MAX_ZOOM,
+    });
+  }
   // Below the railway, over the tiles: the small tiles of the zones in a light fill, each zone thinly outlined around its group.
   const colors = footprintColors(map, palette);
   const shown = { visibility: visibility(visible) } as const;
@@ -755,6 +819,7 @@ export function setAllStations(
       type: "circle",
       source: SOURCES.all,
       "source-layer": ALL_SOURCE_LAYER,
+      minzoom: DOTS_MIN_ZOOM,
       layout: { visibility: visibility(visible) },
       paint: {
         "circle-color": palette.stationCasing,
@@ -763,9 +828,9 @@ export function setAllStations(
           "interpolate",
           ["linear"],
           ["zoom"],
-          ALL_MIN_ZOOM,
+          DOTS_MIN_ZOOM,
           0,
-          ALL_MIN_ZOOM + FADE_ZOOMS,
+          DOTS_MIN_ZOOM + FADE_ZOOMS,
           0.8,
           10,
           0.9,
@@ -774,7 +839,7 @@ export function setAllStations(
         ],
         "circle-radius": byZoom(0.8, 1.8, 3),
         "circle-stroke-color": palette.stationUnvisited,
-        "circle-stroke-opacity": fadeIn(ALL_MIN_ZOOM, 1),
+        "circle-stroke-opacity": fadeIn(DOTS_MIN_ZOOM, 1),
         "circle-stroke-width": byZoom(1, 1.6, 2.2),
       },
     },
@@ -806,6 +871,7 @@ export function setAllStations(
 /** Shows the visited stations and the links of `data`; ignored until the layers are added. */
 export function setStationData(map: MapLibreMap, data: StationData): void {
   rememberVisited(map, data);
+  applyDensity(map);
   if (map.getLayer(LAYERS.unvisitedNames))
     map.setFilter(LAYERS.unvisitedNames, unvisitedFilter(map));
   const palette = palettes.get(map);
@@ -878,7 +944,7 @@ function updateBubble(map: MapLibreMap): void {
     bubble.set(null);
     return;
   }
-  const visited = (visitedIds.get(map) ?? []).includes(station.id);
+  const visited = isVisited(map, station.id);
   bubble.set({
     lon: station.lon,
     lat: station.lat,

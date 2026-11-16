@@ -20,12 +20,12 @@ import {
   setActivityTiles,
 } from "./activity-tiles-layer";
 import { activityTrack, addActivityTrackLayer, setActivityTrack, setActivityTrackVisible } from "./activity-track-layer";
-import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
+import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { type MapHistory, setHistory } from "./history-layer";
 import { BANDS_HEIGHT_VAR } from "./map-bands";
 import { MapSidePanel } from "./map-side-panel";
 import { type MapSector, setSector } from "./sector-layer";
-import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
+import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import {
   addTileLayers,
   clickableZooms,
@@ -52,11 +52,12 @@ import {
   setSelectedStation,
   setStationData,
   setStationsVisible,
-  stationData,
   stationNear,
   type StationPick,
   trainNear,
-} from "./stations-layer";
+} from "@kilotrace/ui/lib/map/stations-layer";
+import { stationData } from "./station-data";
+import { centerStation as centerStationOn, stationCut } from "@kilotrace/ui/lib/map/station-camera";
 import { type ActivityView, defaultActivityView, hasGains } from "./activity-view";
 import {
   addTrackLayer,
@@ -105,8 +106,6 @@ const ACTIVITY_PADDING = 48;
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
 /** Marks the moves of the camera framing the sector. */
 const SECTOR_FRAME_EVENT = "sectorFrame";
-/** Room left around the zone of a station centered, in pixels. */
-const STATION_MARGIN_PX = 48;
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({
@@ -532,37 +531,11 @@ export function ActivityMap({
     const map = mapRef.current;
     const station = selectedStationRef.current;
     if (!map || !station) return;
-    const panel = panelWidthOf(panelRef.current, collapsedRef.current);
-    const bands = bandsHeightOf(containerRef.current);
-    const bounds = stationBoundsRef.current;
-    const fit =
-      bounds &&
-      map.cameraForBounds([bounds.west, bounds.south, bounds.east, bounds.north], {
-        padding: { top: STATION_MARGIN_PX, left: STATION_MARGIN_PX, right: panel + STATION_MARGIN_PX, bottom: bands + STATION_MARGIN_PX },
-      });
-    const zoom = zoomIn ? CENTER_ZOOMS[SUBTILE_ZOOM] : map.getZoom();
-    map.easeTo({
-      center: bounds ? [(bounds.west + bounds.east) / 2, (bounds.north + bounds.south) / 2] : [station.lon, station.lat],
-      zoom: fit?.zoom !== undefined ? Math.min(zoom, fit.zoom) : zoom,
-      offset: [-panel / 2, -bands / 2],
-    });
+    centerStationOn(map, station, stationBoundsRef.current, insets(), zoomIn);
   };
 
-  /** Whether the zone of the station shown sticks out of the map beside the panel and the bands. */
-  const stationCut = (bounds: Bounds): boolean => {
-    const map = mapRef.current;
-    if (!map) return false;
-    const { clientWidth, clientHeight } = map.getContainer();
-    const right = clientWidth - panelWidthOf(panelRef.current, collapsedRef.current);
-    const bottom = clientHeight - bandsHeightOf(containerRef.current);
-    return [
-      [bounds.west, bounds.north],
-      [bounds.east, bounds.south],
-    ].some(([lon, lat]) => {
-      const { x, y } = map.project([lon, lat]);
-      return x < 0 || y < 0 || x > right || y > bottom;
-    });
-  };
+  /** Room taken by the panel and the bands over the map. */
+  const insets = () => ({ right: panelWidthOf(panelRef.current, collapsedRef.current), bottom: bandsHeightOf(containerRef.current) });
 
   /** Rings the station shown and, unless just picked on the map whole, centers it beside the panel. */
   const locateStation = (station: StationPick, bounds: Bounds | null) => {
@@ -573,7 +546,7 @@ export function ActivityMap({
     setSelectedStation(map, station);
     if (pickedStationRef.current === station.id) {
       pickedStationRef.current = null;
-      if (bounds && stationCut(bounds)) centerStation(false);
+      if (bounds && stationCut(map, bounds, insets())) centerStation(false);
       return;
     }
     centerStation(true);

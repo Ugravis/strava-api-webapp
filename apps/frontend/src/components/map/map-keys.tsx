@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { cn } from "@kilotrace/ui/lib/utils";
-import { MAP_PALETTES, type MapPalette } from "./map-style";
+import { MAP_PALETTES, type MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 /** A color of the map, in both themes. */
 export type MapColor = { [K in keyof MapPalette]: MapPalette[K] extends string ? K : never }[keyof MapPalette];

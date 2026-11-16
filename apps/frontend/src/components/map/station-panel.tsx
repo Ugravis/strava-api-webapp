@@ -11,7 +11,7 @@ import { type Bounds, SUBTILE_ZOOM, tilesBounds } from "@/lib/tiles/tile-geometr
 import type { StationDetails, StationNeighbor } from "@kilotrace/ui/lib/api/types";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
-import type { StationPick } from "./stations-layer";
+import type { StationPick } from "@kilotrace/ui/lib/map/stations-layer";
 import type { TileRef } from "./tile-highlight";
 import { TileActivityList } from "./tile-activity-list";
 

@@ -1,7 +1,7 @@
 import type { ExpressionSpecification, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
 import type { HistoryMode } from "@kilotrace/ui/lib/api/types";
 import { belowActivityTiles } from "./activity-tiles-layer";
-import { fadeIn, type MapPalette } from "./map-style";
+import { fadeIn, type MapPalette } from "@kilotrace/ui/lib/map/map-style";
 import { rgba, SUBTILE_MIN_ZOOM, subtileOpacity } from "./tile-layers";
 
 /** What the history tool draws on the map. */

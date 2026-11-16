@@ -17,6 +17,7 @@ const KEPT_TABLES = [
   'places',
   'rail_links',
   'rail_segments',
+  'rail_strokes',
   'rail_link_countries',
   'railway_imports',
   'badge_themes',

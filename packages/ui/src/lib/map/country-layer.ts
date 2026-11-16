@@ -1,7 +1,6 @@
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
-import { belowActivityTiles } from "./activity-tiles-layer";
+import { belowActivityTiles, TILE_FILL_LAYER_ID } from "./layer-order";
 import { fadeIn, type MapPalette } from "./map-style";
-import { TILE_FILL_LAYER_ID } from "./tile-layers";
 
 /** Countries visited by the user and the version of the shapes, from the completion. */
 export interface VisitedCountries {
@@ -23,12 +22,15 @@ const FILL_ID = "visited-countries-fill";
 const BORDER_MIN_ZOOM = 7;
 const LINE_ID = "visited-countries-line";
 
+/** URL of the tiles of the shapes of `countries`. */
+export type CountryTilesUrl = (countries: VisitedCountries & { shapesVersion: string }) => string;
+
 /** The countries are part of the URL, sorted: the browser caches each set of countries. */
-function tilesUrl({ codes, shapesVersion }: VisitedCountries & { shapesVersion: string }): string {
+const tilesUrl: CountryTilesUrl = ({ codes, shapesVersion }) => {
   const countries = [...codes].sort().join(",");
   // Absolute: MapLibre fetches the tiles from its worker.
   return `${window.location.origin}/api/countries/shapes/{z}/{x}/{y}?countries=${countries}&v=${shapesVersion}`;
-}
+};
 
 /**
  * Adds the visited countries, merged by the backend into one area made of
@@ -40,12 +42,13 @@ function addCountryLayers(
   map: MapLibreMap,
   countries: VisitedCountries & { shapesVersion: string },
   palette: MapPalette,
+  url: CountryTilesUrl,
 ): void {
   // Below the tiles when they are drawn first.
   const beforeId = map.getLayer(TILE_FILL_LAYER_ID) ? TILE_FILL_LAYER_ID : belowActivityTiles(map);
   map.addSource(SOURCE_ID, {
     type: "vector",
-    tiles: [tilesUrl(countries)],
+    tiles: [url(countries)],
     maxzoom: SHAPES_MAX_ZOOM,
   });
   map.addLayer(
@@ -77,15 +80,15 @@ function addCountryLayers(
   );
 }
 
-/** Shows the visited countries, adding the layers once there are shapes. */
-export function setVisitedCountries(map: MapLibreMap, countries: VisitedCountries, palette: MapPalette): void {
+/** Shows the visited countries, adding the layers once there are shapes; `url` serves them from elsewhere (the back office). */
+export function setVisitedCountries(map: MapLibreMap, countries: VisitedCountries, palette: MapPalette, url: CountryTilesUrl = tilesUrl): void {
   const { shapesVersion } = countries;
   if (!shapesVersion) return;
   const source = map.getSource<VectorTileSource>(SOURCE_ID);
   if (!source) {
-    addCountryLayers(map, { ...countries, shapesVersion }, palette);
+    addCountryLayers(map, { ...countries, shapesVersion }, palette, url);
     return;
   }
-  const url = tilesUrl({ ...countries, shapesVersion });
-  if (source.tiles[0] !== url) source.setTiles([url]);
+  const tiles = url({ ...countries, shapesVersion });
+  if (source.tiles[0] !== tiles) source.setTiles([tiles]);
 }

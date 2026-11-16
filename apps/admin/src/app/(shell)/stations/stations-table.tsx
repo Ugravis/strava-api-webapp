@@ -2,12 +2,14 @@
 
 import type { AdminStation } from "@kilotrace/shared/admin";
 import type { TableQuery } from "@kilotrace/shared/table";
-import { CopyIcon, ExternalLinkIcon, MapIcon, PanelRightOpenIcon } from "lucide-react";
+import { CopyIcon, ExternalLinkIcon, MapIcon, MapPinnedIcon, PanelRightOpenIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { DataTable, type DataTableConfig, RowActions, useConfirmDialog } from "@kilotrace/ui/components/admin/data-table";
 import { type RowPanelControls, useRowPanel } from "@kilotrace/ui/components/admin/detail";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kilotrace/ui/components/ui/dropdown-menu";
+import { datasetMapHref } from "@/config/admin-links";
 import { stationMapHref } from "@/config/site-links";
 import { fetchStationsTable, loadStation } from "./actions";
 import { countryLabel, HELD, nameOf, NAMINGS, osmHref, stationColumns, type StationRights, useStationsVersion, visibilityIcon, visibilityOf, VISIBILITIES, ZONE_SOURCES } from "./station-bits";
@@ -30,6 +32,7 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
   const countries = useMemo(() => (countryKey ? countryKey.split(",") : []), [countryKey]);
   const version = useStationsVersion();
   const { ask, dialog } = useConfirmDialog();
+  const router = useRouter();
   // The panel, read by the menus of the rows: the config stays the same as it changes.
   const panelRef = useRef<RowPanelControls | null>(null);
 
@@ -79,10 +82,14 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => router.push(datasetMapHref(station.id))}>
+              <MapPinnedIcon />
+              Voir sur la carte du dataset
+            </DropdownMenuItem>
             {!station.hiddenAt && (
               <DropdownMenuItem onClick={() => openTab(stationMapHref(station.id))}>
                 <MapIcon />
-                Voir sur la carte
+                Voir sur la carte du site
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => openTab(osmHref(station))}>
@@ -109,7 +116,7 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
         </RowActions>
       ),
     }),
-    [rights, countries, ask],
+    [rights, countries, ask, router],
   );
   const panel = useRowPanel<AdminStation>({
     config,

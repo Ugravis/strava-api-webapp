@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, MapIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -14,6 +14,7 @@ export const adminRoutes = {
   badges: "/badges",
   userTags: "/user-tags",
   stations: "/stations",
+  datasetMap: "/map",
   releaseNotes: "/release-notes",
   reservedUsernames: "/reserved-usernames",
   auditLog: "/audit-log",
@@ -27,7 +28,7 @@ export const adminRoutes = {
 } as const;
 
 interface AdminNavItem {
-  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "stations" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
+  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "stations" | "datasetMap" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
   href: string;
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
@@ -62,7 +63,10 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
   },
   {
     key: "dataset",
-    items: [{ key: "stations", href: adminRoutes.stations, icon: TrainFrontIcon, count: "stations" }],
+    items: [
+      { key: "stations", href: adminRoutes.stations, icon: TrainFrontIcon, count: "stations" },
+      { key: "datasetMap", href: adminRoutes.datasetMap, icon: MapIcon },
+    ],
   },
   {
     key: "infrastructure",

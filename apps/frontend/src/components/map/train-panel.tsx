@@ -8,7 +8,7 @@ import { Button } from "@kilotrace/ui/components/ui/button";
 import { REAL_TRAIN_SPEED, useTrainSpeed } from "@/lib/trains/train-speed";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelSection } from "./panel-figure";
-import type { StationPick } from "./stations-layer";
+import type { StationPick } from "@kilotrace/ui/lib/map/stations-layer";
 import type { TrainInfo, TrainStop } from "./train-traffic";
 
 /** The figures of a train change as it runs: read again a few times a second. */

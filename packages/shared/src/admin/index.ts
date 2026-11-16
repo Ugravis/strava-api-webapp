@@ -7,6 +7,7 @@ export * from "./badges";
 export * from "./business-statistics";
 export * from "./dev";
 export * from "./user-tags";
+export * from "./map";
 export * from "./me";
 export * from "./navigation";
 export * from "./permissions";

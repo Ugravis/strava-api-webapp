@@ -1,12 +1,13 @@
 "use client";
 
-import { CheckIcon, ChevronRightIcon, CircleDashedIcon, TrainFrontIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleDashedIcon, LocateFixedIcon, TrainFrontIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { Badge } from "@kilotrace/ui/components/ui/badge";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { useStation } from "@/hooks/use-station";
+import { type Bounds, SUBTILE_ZOOM, tilesBounds } from "@/lib/tiles/tile-geometry";
 import type { StationDetails, StationNeighbor } from "@kilotrace/ui/lib/api/types";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
@@ -19,7 +20,10 @@ const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
 interface StationPanelProps {
   stationId: number;
   /** Called once the station is known, to ring it on the map and center it. */
-  onLocated: (station: StationPick) => void;
+  /** The station loaded, with the bounds of its zone. */
+  onLocated: (station: StationPick, bounds: Bounds | null) => void;
+  /** Centers the station on the map. */
+  onCenter: () => void;
   onOpenStation: (station: StationPick) => void;
   onOpenTile: (tile: TileRef) => void;
   onOpenActivity: (activityId: string) => void;
@@ -30,7 +34,7 @@ interface StationPanelProps {
  * zone (outlined on the map) was visited, its neighbors on the railway with the links unlocked, and the
  * activities that crossed its small tile.
  */
-export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, onOpenActivity }: StationPanelProps) {
+export function StationPanel({ stationId, onLocated, onCenter, onOpenStation, onOpenTile, onOpenActivity }: StationPanelProps) {
   const t = useTranslations("map.stationPanel");
   const format = useFormatter();
   const { station, error } = useStation(stationId);
@@ -42,7 +46,12 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
   });
 
   useEffect(() => {
-    if (station) onLocatedRef.current({ id: station.id, lon: station.lon, lat: station.lat, tiles: station.tiles });
+    if (!station) return;
+    const zone = station.tiles.length > 0 ? station.tiles : [station.tile];
+    onLocatedRef.current(
+      { id: station.id, lon: station.lon, lat: station.lat, name: station.name },
+      tilesBounds(SUBTILE_ZOOM, zone.map(({ x, y }): [number, number] => [x, y])),
+    );
   }, [station]);
 
   if (error) return <p className="text-muted-foreground">{t("error")}</p>;
@@ -63,7 +72,7 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
           >
             <TrainFrontIcon className="size-5" />
           </span>
-          <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
             <h2 className="text-lg leading-tight font-semibold wrap-break-word">{station.name ?? t("unnamed")}</h2>
             <div>
               <Badge variant={station.visited ? "default" : "outline"}>
@@ -71,6 +80,9 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
               </Badge>
             </div>
           </div>
+          <Button variant="outline" size="icon-sm" onClick={onCenter} aria-label={t("center")} title={t("center")}>
+            <LocateFixedIcon />
+          </Button>
         </div>
         <p className="text-muted-foreground">{station.visited ? t("visitedDescription") : t("notVisitedDescription")}</p>
       </header>

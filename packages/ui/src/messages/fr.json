@@ -972,6 +972,7 @@
       "other": "Autre"
     },
     "tilePanel": {
+      "station": "Gare",
       "tile": "Tuile",
       "subtile": "Petite tuile",
       "description": "Ce que vos activités ont exploré sur cette tuile.",
@@ -1105,8 +1106,8 @@
       "unnamed": "Gare sans nom",
       "visited": "Visitée",
       "notVisited": "Pas encore visitée",
-      "visitedDescription": "Une de vos activités a traversé une des petites tuiles de cette gare, en pointillés sur la carte.",
-      "notVisitedDescription": "Traversez une des petites tuiles de cette gare, en pointillés sur la carte, pour la débloquer.",
+      "visitedDescription": "Une de vos activités a traversé une des petites tuiles de cette gare, surlignées sur la carte.",
+      "notVisitedDescription": "Traversez une des petites tuiles de cette gare, surlignées sur la carte, pour la débloquer.",
       "firstVisit": "Première visite",
       "links": "Liaisons débloquées",
       "neighbors": "Gares voisines",
@@ -1114,6 +1115,7 @@
       "linkUnlocked": "{distance} débloqués",
       "activities": "Activités sur la tuile de la gare",
       "viewTile": "Voir la petite tuile",
+      "center": "Centrer la gare sur la carte",
       "error": "Impossible de charger cette gare.",
       "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>"
     },

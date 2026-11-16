@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { Barlow, Geist, Geist_Mono } from "next/font/google";
+import { Barlow, Geist, Geist_Mono, Noto_Sans } from "next/font/google";
 import { Providers } from "@kilotrace/ui/components/providers";
 import { siteConfig } from "@kilotrace/ui/config/site";
 import { DEFAULT_LOCALE } from "@/i18n/request";
@@ -23,6 +23,14 @@ const barlow = Barlow({
   subsets: ["latin"],
   weight: "800",
   style: "italic",
+});
+
+/** The font of the names on the map, for the bubble of the station shown drawn over it: loaded once used. */
+const notoSans = Noto_Sans({
+  variable: "--font-map",
+  subsets: ["latin"],
+  weight: "700",
+  preload: false,
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,7 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={DEFAULT_LOCALE}
-      className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} ${notoSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

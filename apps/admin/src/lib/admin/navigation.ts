@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -13,6 +13,7 @@ export const adminRoutes = {
   users: "/users",
   badges: "/badges",
   userTags: "/user-tags",
+  stations: "/stations",
   releaseNotes: "/release-notes",
   reservedUsernames: "/reserved-usernames",
   auditLog: "/audit-log",
@@ -26,7 +27,7 @@ export const adminRoutes = {
 } as const;
 
 interface AdminNavItem {
-  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
+  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "stations" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
   href: string;
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
@@ -36,7 +37,7 @@ interface AdminNavItem {
 }
 
 interface AdminNavGroup {
-  key: "general" | "community" | "infrastructure" | "security";
+  key: "general" | "community" | "dataset" | "infrastructure" | "security";
   items: readonly AdminNavItem[];
 }
 
@@ -58,6 +59,10 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
       { key: "badges", href: adminRoutes.badges, icon: TrophyIcon, count: "badges" },
       { key: "userTags", href: adminRoutes.userTags, icon: TagIcon, count: "userTags" },
     ],
+  },
+  {
+    key: "dataset",
+    items: [{ key: "stations", href: adminRoutes.stations, icon: TrainFrontIcon, count: "stations" }],
   },
   {
     key: "infrastructure",

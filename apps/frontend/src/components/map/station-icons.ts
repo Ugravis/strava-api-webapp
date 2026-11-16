@@ -7,6 +7,9 @@ export const STATION_ICONS = {
   glyph: "station-glyph",
   bubble: "station-name-bubble",
   bubbleUnvisited: "station-name-bubble-unvisited",
+  /** Wide diagonal stripes over the small tiles of the zone shown, by visit, followed by the index of their level in `HATCH_LEVELS`. */
+  hatch: "station-zone-hatch-",
+  hatchUnvisited: "station-zone-hatch-unvisited-",
 } as const;
 
 /**
@@ -48,7 +51,7 @@ const RATIO = 2;
 /** Side of the glyph of a station, in CSS pixels. */
 const GLYPH_SIZE = 11;
 /** Bubble: a rounded box over a tail pointing at the station. */
-const BUBBLE = { width: 28, box: 18, tail: 6, radius: 7 } as const;
+const BUBBLE = { width: 28, box: 18, tail: 5, radius: 8 } as const;
 /** Width of the vehicles of a train, in CSS pixels. */
 export const TRAIN_WIDTH = 8;
 /** The vehicles are drawn much larger: they grow with the ground zoomed in and stay sharp. */
@@ -67,6 +70,32 @@ function canvas(
   return context;
 }
 
+/**
+ * Side of the stripes pattern and width of a stripe, in CSS pixels, from
+ * each zoom: a pattern keeps its size on screen, so it widens by steps as the
+ * small tiles grow.
+ */
+export const HATCH_LEVELS = [
+  { fromZoom: 0, size: 14, width: 3 },
+  { fromZoom: 15, size: 26, width: 5.5 },
+  { fromZoom: 16.5, size: 46, width: 10 },
+] as const;
+
+/** Diagonal stripes in `color`, a pattern repeating seamlessly over a fill. */
+function hatch(color: string, { size, width }: { size: number; width: number }): ImageData {
+  const c = canvas(size, size);
+  c.strokeStyle = color;
+  c.lineWidth = width;
+  c.beginPath();
+  // The main diagonal and the corners of the next ones, drawn past the edges: their butt ends would leave notches where the patterns meet.
+  for (const offset of [-size, 0, size]) {
+    c.moveTo(offset - size, 2 * size);
+    c.lineTo(offset + 2 * size, -size);
+  }
+  c.stroke();
+  return image(c);
+}
+
 function image(context: CanvasRenderingContext2D): ImageData {
   return context.getImageData(
     0,
@@ -78,6 +107,15 @@ function image(context: CanvasRenderingContext2D): ImageData {
 
 /** The front of a train in `color`: body, windscreen, lights and rails. */
 function glyph(color: string): ImageData {
+  return image(glyphCanvas(color));
+}
+
+/** The glyph as an image address, for the bubble of the station shown, drawn over the map. */
+export function glyphUrl(color: string): string {
+  return glyphCanvas(color).canvas.toDataURL();
+}
+
+function glyphCanvas(color: string): CanvasRenderingContext2D {
   const c = canvas(GLYPH_SIZE, GLYPH_SIZE);
   c.fillStyle = color;
   c.beginPath();
@@ -95,7 +133,7 @@ function glyph(color: string): ImageData {
   c.moveTo(7.4, 9);
   c.lineTo(8.4, 10.5);
   c.stroke();
-  return image(c);
+  return c;
 }
 
 function bubble(color: string): ImageData {
@@ -260,6 +298,10 @@ export function addStationIcons(map: MapLibreMap, palette: MapPalette): void {
       bubble(palette.stationUnvisited),
       bubbleOptions,
     ],
+    ...HATCH_LEVELS.flatMap((level, i): ImageEntry[] => [
+      [STATION_ICONS.hatch + i, hatch(palette.station, level), {}],
+      [STATION_ICONS.hatchUnvisited + i, hatch(palette.stationUnvisited, level), {}],
+    ]),
     ...(Object.keys(TRAIN_BLOCKS) as TrainCab[]).flatMap(
       (cab): ImageEntry[] => [
         [

@@ -162,7 +162,7 @@ const LIGHT: MapPalette = {
   countryBorder: "#a8906a",
   station: "#6d28d9",
   stationCasing: "#ffffff",
-  stationUnvisited: "#8c8780",
+  stationUnvisited: "#76716a",
   railLink: "#6d28d9",
   outside: "#f3f2f0",
   outsideOpacity: 0.65,
@@ -217,7 +217,7 @@ const DARK: MapPalette = {
   countryBorder: "#6f6658",
   station: "#a78bfa",
   stationCasing: "#1f1e1c",
-  stationUnvisited: "#7a756d",
+  stationUnvisited: "#8f8a82",
   railLink: "#a78bfa",
   outside: "#121211",
   outsideOpacity: 0.65,
@@ -351,17 +351,13 @@ function roadMinZoom(id: string): number {
 
 /**
  * The main railways appear earlier than in the base style, which draws them
- * from zoom 13: a thin line once zoomed in on a region, their hatching from
- * zoom 13. The base map serves them from zoom 8.
+ * from zoom 13: a thin plain line once zoomed in on a region, without the
+ * hatching of the base style. The base map serves them from zoom 8.
  */
 const RAILWAY_MIN_ZOOM = 11;
 const RAILWAY_LAYER_ID = "railway";
-const RAILWAY_DASHLINE_LAYER_ID = "railway_dashline";
-/** Widths of the railway and of its hatching, thin while zoomed out; the base style keeps them wide below zoom 16. */
-const RAILWAY_WIDTHS: Record<string, ExpressionSpecification> = {
-  [RAILWAY_LAYER_ID]: ["interpolate", ["exponential", 1.3], ["zoom"], RAILWAY_MIN_ZOOM, 1, 16, 3, 20, 7],
-  [RAILWAY_DASHLINE_LAYER_ID]: ["interpolate", ["exponential", 1.3], ["zoom"], RAILWAY_MIN_ZOOM, 0.6, 16, 2, 20, 6],
-};
+/** Width of every railway, thin at any zoom; the base style keeps them wide below zoom 16. */
+const RAILWAY_WIDTH: ExpressionSpecification = ["interpolate", ["exponential", 1.3], ["zoom"], RAILWAY_MIN_ZOOM, 0.8, 16, 1.6, 20, 4];
 
 /**
  * Zoom from which each class of road of the base map appears. The data of a
@@ -419,8 +415,6 @@ function roadColor(id: string, base: BasePalette): string {
   if (id.includes("casing")) return base.casing;
   // The roads drawn zoomed out, a dense network: as light as the minor roads.
   if (id.includes("subtle")) return base.minorRoad;
-  // The dashes of the railways are gaps in the land color.
-  if (id.includes("dashline")) return base.land;
   if (id.includes("railway")) return base.rail;
   if (id.includes("path") || id.includes("pier")) return base.path;
   if (id.includes("minor") || id.includes("taxiway")) return base.minorRoad;
@@ -442,9 +436,10 @@ function adjustRoad(layer: LayerSpecification): LayerSpecification {
   const appearZoom = earlier ? RAILWAY_MIN_ZOOM : roadMinZoom(layer.id);
   const minzoom = earlier ? appearZoom : Math.max(layer.minzoom ?? 0, appearZoom);
   const continues = !earlier && appearZoom > 0 && (layer.minzoom ?? 0) > appearZoom;
-  // Flat roads: the casings are hidden.
-  const layout = layer.id.includes("casing") ? { ...layer.layout, visibility: "none" } : layer.layout;
-  const width = RAILWAY_WIDTHS[layer.id];
+  // Flat roads and plain railways: the casings and the hatching are hidden.
+  const hidden = layer.id.includes("casing") || layer.id.includes("dashline");
+  const layout = hidden ? { ...layer.layout, visibility: "none" } : layer.layout;
+  const width = layer.id.includes("railway") ? RAILWAY_WIDTH : undefined;
   return {
     ...layer,
     minzoom,

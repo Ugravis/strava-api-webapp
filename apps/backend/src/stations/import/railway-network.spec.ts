@@ -6,7 +6,11 @@ import {
   RailwayDataBuilder,
   type RailwayData,
 } from './railway-data';
-import { RailwayNetwork, withoutRedundant } from './railway-network';
+import {
+  RailwayNetwork,
+  reachingStations,
+  withoutRedundant,
+} from './railway-network';
 
 /** About 786 m of longitude at latitude 45. */
 const STEP = 0.01;
@@ -499,5 +503,29 @@ describe('levelNamesMatch', () => {
     expect(match('Varese', 'Varese Nord')).toBe(false);
     expect(match('Essen-Dellwig', 'Essen-Dellwig Ost')).toBe(false);
     expect(match('Jambes', 'Jambes')).toBe(false);
+  });
+});
+
+describe('reachingStations', () => {
+  const a: [number, number] = [0.005, LAT + 100 * M];
+  const b: [number, number] = [0.035, LAT];
+  const tracks: [number, number][] = [0.005, 0.015, 0.025, 0.035].map((lon) => [
+    lon,
+    LAT,
+  ]);
+
+  it('curves from each station onto the tracks, whichever end comes first', () => {
+    for (const coords of [tracks, [...tracks].reverse()]) {
+      const path = reachingStations(a, b, coords);
+
+      expect(path[0]).toEqual(a);
+      expect(path.at(-1)).toEqual(b);
+      // The curve meets the tracks 300 m farther, along them.
+      const met = path.slice(12);
+      expect(met[0][0]).toBeCloseTo(0.005 + 300 / (111_320 * Math.SQRT1_2), 6);
+      for (const [, lat] of met) expect(lat).toBeCloseTo(LAT, 9);
+      const lats = path.slice(0, 13).map(([, lat]) => lat);
+      expect(lats).toEqual([...lats].sort((p, q) => q - p));
+    }
   });
 });

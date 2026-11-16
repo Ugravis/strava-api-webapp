@@ -10,7 +10,7 @@ import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { usePanelHistory } from "@/hooks/use-panel-history";
 import type { TilesSummary, VisitedStations } from "@kilotrace/ui/lib/api/types";
-import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
+import { type Bounds, SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
 import { ActivityPanel } from "./activity-panel";
 import {
   activityTileData,
@@ -39,7 +39,7 @@ import {
   visitedTileNear,
 } from "./tile-layers";
 import { addTileOutlines, sameTile, setTileOutline, type TileRef } from "./tile-highlight";
-import { TilePickPanel } from "./tile-pick-panel";
+import { PlaceTabs, type PlaceView, TilePickPanel } from "./tile-pick-panel";
 import { entryFromSearch, entryKey, pickOf, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
 import { StationPanel } from "./station-panel";
 import { TrainPanel } from "./train-panel";
@@ -105,8 +105,8 @@ const ACTIVITY_PADDING = 48;
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
 /** Marks the moves of the camera framing the sector. */
 const SECTOR_FRAME_EVENT = "sectorFrame";
-/** Zoom of the map centered on a station: its town and its neighbors around. */
-const STATION_ZOOM = 13;
+/** Room left around the zone of a station centered, in pixels. */
+const STATION_MARGIN_PX = 48;
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({
@@ -157,7 +157,7 @@ export function ActivityMap({
   const selectedStationRef = useRef<StationPick | null>(null);
   // The station just picked on the map: unlike a station reached otherwise, the camera stays.
   const pickedStationRef = useRef<number | null>(null);
-  const pickStationRef = useRef<(station: StationPick) => void>(() => {});
+  const pickStationRef = useRef<(station: StationPick, pick: TilePick | null) => void>(() => {});
   const pickTrainRef = useRef<(trainId: number) => void>(() => {});
 
   const t = useTranslations("map.panel");
@@ -296,11 +296,11 @@ export function ActivityMap({
         return;
       }
       const station = showStationsRef.current ? stationNear(map, event.point) : null;
+      const pick = pickTile(map, modeRef.current, event.point);
       if (station) {
-        pickStationRef.current(station);
+        pickStationRef.current(station, pick);
         return;
       }
-      const pick = pickTile(map, modeRef.current, event.point);
       if (pick) pickRef.current(pick);
     });
     // The tile under the pointer is outlined: a click opens it. Looked for
@@ -489,9 +489,12 @@ export function ActivityMap({
       history.push({ kind: "tile", ...pick });
       setCollapsed(false);
     };
-    pickStationRef.current = (station) => {
+    pickStationRef.current = (station, pick) => {
       pickedStationRef.current = station.id;
-      history.push({ kind: "station", stationId: station.id });
+      // Shown at once on the map, before the panel loads it.
+      selectedStationRef.current = station;
+      if (mapRef.current) setSelectedStation(mapRef.current, station);
+      history.push({ kind: "station", stationId: station.id, ...(pick && { pick }) });
       setCollapsed(false);
     };
     pickTrainRef.current = (trainId) => {
@@ -518,21 +521,76 @@ export function ActivityMap({
     if (mapRef.current) setSelectedStation(mapRef.current, null);
   }, [stationId]);
 
-  /** Rings the station shown and, unless just picked on the map, centers it beside the panel. */
-  const locateStation = (station: StationPick) => {
+  /** Bounds of the zone of the station shown, once loaded. */
+  const stationBoundsRef = useRef<Bounds | null>(null);
+
+  /**
+   * Centers the station shown beside the panel, zoomed in like a small tile
+   * (`zoomIn`) or as it is, but out enough for its whole zone to fit.
+   */
+  const centerStation = (zoomIn: boolean) => {
+    const map = mapRef.current;
+    const station = selectedStationRef.current;
+    if (!map || !station) return;
+    const panel = panelWidthOf(panelRef.current, collapsedRef.current);
+    const bands = bandsHeightOf(containerRef.current);
+    const bounds = stationBoundsRef.current;
+    const fit =
+      bounds &&
+      map.cameraForBounds([bounds.west, bounds.south, bounds.east, bounds.north], {
+        padding: { top: STATION_MARGIN_PX, left: STATION_MARGIN_PX, right: panel + STATION_MARGIN_PX, bottom: bands + STATION_MARGIN_PX },
+      });
+    const zoom = zoomIn ? CENTER_ZOOMS[SUBTILE_ZOOM] : map.getZoom();
+    map.easeTo({
+      center: bounds ? [(bounds.west + bounds.east) / 2, (bounds.north + bounds.south) / 2] : [station.lon, station.lat],
+      zoom: fit?.zoom !== undefined ? Math.min(zoom, fit.zoom) : zoom,
+      offset: [-panel / 2, -bands / 2],
+    });
+  };
+
+  /** Whether the zone of the station shown sticks out of the map beside the panel and the bands. */
+  const stationCut = (bounds: Bounds): boolean => {
+    const map = mapRef.current;
+    if (!map) return false;
+    const { clientWidth, clientHeight } = map.getContainer();
+    const right = clientWidth - panelWidthOf(panelRef.current, collapsedRef.current);
+    const bottom = clientHeight - bandsHeightOf(containerRef.current);
+    return [
+      [bounds.west, bounds.north],
+      [bounds.east, bounds.south],
+    ].some(([lon, lat]) => {
+      const { x, y } = map.project([lon, lat]);
+      return x < 0 || y < 0 || x > right || y > bottom;
+    });
+  };
+
+  /** Rings the station shown and, unless just picked on the map whole, centers it beside the panel. */
+  const locateStation = (station: StationPick, bounds: Bounds | null) => {
     selectedStationRef.current = station;
+    stationBoundsRef.current = bounds;
     const map = mapRef.current;
     if (!map) return;
     setSelectedStation(map, station);
     if (pickedStationRef.current === station.id) {
       pickedStationRef.current = null;
+      if (bounds && stationCut(bounds)) centerStation(false);
       return;
     }
-    map.easeTo({
-      center: [station.lon, station.lat],
-      zoom: Math.max(map.getZoom(), STATION_ZOOM),
-      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, -bandsHeightOf(containerRef.current) / 2],
-    });
+    centerStation(true);
+  };
+
+  /** Shows another view of the place picked, in place of the current one: the camera stays. */
+  const showPlace = (stationId: number | undefined, pick: TilePick | undefined, view: PlaceView) => {
+    if (view === "station") {
+      if (stationId === undefined) return;
+      pickedStationRef.current = stationId;
+      history.replace({ kind: "station", stationId, ...(pick && { pick: { tile: pick.tile, subtile: pick.subtile, zoom: pick.zoom } }) });
+      return;
+    }
+    if (!pick) return;
+    const next: TilePick = { tile: pick.tile, subtile: pick.subtile, zoom: view };
+    pickedRef.current = shownTile(next);
+    history.replace({ kind: "tile", ...next, ...(stationId !== undefined && { stationId }) });
   };
 
   const shown = entry?.kind === "tile" ? shownTile(entry) : null;
@@ -631,23 +689,28 @@ export function ActivityMap({
               onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
             />
           ) : entry.kind === "station" ? (
-            <StationPanel
-              key={entry.stationId}
-              stationId={entry.stationId}
-              onLocated={locateStation}
-              onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
-              onOpenTile={(tile) => history.push({ kind: "tile", ...pickOf(tile) })}
-              onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
-            />
+            <div className="flex flex-col gap-5">
+              <PlaceTabs
+                station
+                pick={entry.pick}
+                value="station"
+                onValueChange={(view) => showPlace(entry.stationId, entry.pick, view)}
+              />
+              <StationPanel
+                key={entry.stationId}
+                stationId={entry.stationId}
+                onLocated={locateStation}
+                onCenter={() => centerStation(true)}
+                onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
+                onOpenTile={(tile) => history.push({ kind: "tile", ...pickOf(tile), stationId: entry.stationId })}
+                onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
+              />
+            </div>
           ) : entry.kind === "tile" ? (
             <TilePickPanel
               pick={entry}
-              onZoomChange={(zoom) => {
-                const pick = { ...entry, zoom };
-                // Another level of the same place: the camera stays.
-                pickedRef.current = shownTile(pick);
-                history.replace(pick);
-              }}
+              stationId={entry.stationId}
+              onViewChange={(view) => showPlace(entry.stationId, entry, view)}
               onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
             />
           ) : (

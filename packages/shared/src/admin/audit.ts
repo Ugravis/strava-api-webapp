@@ -22,7 +22,7 @@ export interface AuditUser {
 }
 
 /** Kinds of objects an entry may target besides a user. */
-export const AUDIT_TARGET_TYPES = ["badge", "badge_theme", "userTag", "releaseNote", "report", "username"] as const;
+export const AUDIT_TARGET_TYPES = ["badge", "badge_theme", "userTag", "releaseNote", "report", "username", "station"] as const;
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
 
 /** An object other than a user targeted by an entry, named as it is now, else as recorded. */

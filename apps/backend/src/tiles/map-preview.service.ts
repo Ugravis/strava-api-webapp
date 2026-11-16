@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import { DataSource } from 'typeorm';
 import { StorageService } from '../storage/storage.service';
 import { rectanglesSql } from './map-tile-sql';
+import { shownStation } from '../stations/shown-stations';
 import { TILE_ZOOM } from './tile-grid';
 
 /** Light or dark, as the map. */
@@ -252,7 +253,7 @@ export class MapPreviewService {
          SELECT DISTINCT t.place_id AS id FROM user_tiles u
          JOIN place_tiles t ON t.x = u.x AND t.y = u.y AND u.mask & (1::bigint << t.bit) <> 0
          JOIN places p ON p.id = t.place_id
-         WHERE u.user_id = $1 AND p.kind = 'station'
+         WHERE u.user_id = $1 AND ${shownStation()}
        ),
        rail_links_unlocked AS (
          SELECT ST_Collect(ST_Simplify(ST_Transform(r.geom, 3857), ${tolerance})) AS geom
@@ -291,7 +292,7 @@ export class MapPreviewService {
          (${WORLD_HALF_M} - ST_Y(m.geom)) * ${TILE_SCALE} AS y
        FROM (
          SELECT ST_Transform(p.geom, 3857) AS geom FROM places p
-         WHERE p.kind = 'station' AND p.x BETWEEN $2 AND $4 AND p.y BETWEEN $3 AND $5
+         WHERE ${shownStation()} AND p.x BETWEEN $2 AND $4 AND p.y BETWEEN $3 AND $5
            AND p.id IN (
              SELECT t.place_id FROM user_tiles u
              JOIN place_tiles t ON t.x = u.x AND t.y = u.y AND u.mask & (1::bigint << t.bit) <> 0

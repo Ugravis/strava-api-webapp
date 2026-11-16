@@ -4,6 +4,7 @@ import { basename, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { DataSource, EntityManager } from 'typeorm';
 import { LOCATE_PLACES } from '../place-countries';
+import { COUNT_PLACE_HOLDERS } from '../place-holders';
 import { placeTile } from '../station-tile';
 import { parseOplLine } from './osm-opl';
 import { type RailwayData, RailwayDataBuilder } from './railway-data';
@@ -214,6 +215,7 @@ export async function importStations(
     console.log(
       `Zones of ${kept.length} stations: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
     );
+    await timed('holders', () => dataSource.query(COUNT_PLACE_HOLDERS));
     return;
   }
   if (kept.length < MIN_STATIONS) {
@@ -287,6 +289,7 @@ export async function importStations(
     await dataSource.query(LOCATE_PLACES);
     await splitByCountry(dataSource);
   });
+  await timed('holders', () => dataSource.query(COUNT_PLACE_HOLDERS));
 
   const countries: { code: string; stations: number; network_km: number }[] =
     await dataSource.query(

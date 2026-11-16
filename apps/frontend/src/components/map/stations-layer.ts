@@ -12,6 +12,7 @@ import type { MapHistory } from "./history-layer";
 import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
 import { SECTOR_VEIL_LAYER_ID } from "./sector-layer";
 import { StationBubble } from "./station-bubble";
+import { addRailTies, refreshRailTies, setRailTies, TIES_LAYER, TIES_MIN_ZOOM } from "./rail-ties";
 import { addStationIcons, glyphUrl, HATCH_LEVELS, STATION_ICONS } from "./station-icons";
 import {
   realScale,
@@ -80,8 +81,7 @@ const LAYERS = {
   footprintSelected: "station-footprint-selected-line",
   unvisited: "stations-unvisited",
   linksCasing: "rail-links-casing",
-  tiesCasing: "rail-links-ties-casing",
-  ties: "rail-links-ties",
+  ties: TIES_LAYER,
   links: "rail-links-line",
   visited: "stations-visited",
   trains: "station-trains-icon",
@@ -105,15 +105,10 @@ const NAMES_IN = fadeIn(NAMES_MIN_ZOOM, 1);
 /** The grey bubbles let the map through a little. */
 const UNVISITED_BUBBLE_OPACITY = 0.9;
 const NAME_FONT = ["Noto Sans Bold"];
-/** The links get ticks across their line from this zoom: a track under the trains, a plain line below. */
-const TIES_MIN_ZOOM = 14;
-/** The track, in pixels below the real scale: the line, the ticks across it and the bed below. */
-const TRACK = { line: 2.4, sleeper: 7.5 } as const;
-/** Opaque white border around the line (in pixels) and around each tick (a share of its width, growing with the map). */
+/** The line of the track, in pixels below the real scale: ticked from `TIES_MIN_ZOOM` (see `rail-ties`). */
+const TRACK = { line: 2.4 } as const;
+/** Opaque white border around the line, in pixels. */
 const LINE_BORDER = 0.9;
-const TIE_BORDER = 0.07;
-/** Dashes of the ticks, in widths of the tick. */
-const TIE_DASH = [0.14, 0.5] as const;
 /** Deepest tiles of the trains: precise enough to a few centimetres. */
 const TRAINS_TILE_MAX_ZOOM = 16;
 /** Deepest tiles of the ties. */
@@ -486,7 +481,7 @@ export function addStationLayers(
   );
   // The links only feed the trains: the railway is drawn from the ties, one geometry for the line, its bed and its ticks.
   map.addSource(SOURCES.links, { type: "geojson", data: data.links });
-  // Tiles no finer than zoom 14, to the half meter: the dashes restart with each tile, whose borders are fewer when zoomed in.
+  // Tiles no finer than zoom 14, to the half meter: enough for the line, the ticks are laid out from the whole geometry.
   map.addSource(SOURCES.ties, { type: "geojson", data: data.ties, maxzoom: TIES_TILE_MAX_ZOOM });
   map.addSource(SOURCES.visited, { type: "geojson", data: data.stations });
   map.addSource(SOURCES.selected, {
@@ -519,48 +514,13 @@ export function addStationLayers(
     },
     belowLabels,
   );
-  // The border of each tick: the same dashes, wider by the border on each side, so longer by it at each end.
-  map.addLayer(
-    {
-      id: LAYERS.tiesCasing,
-      type: "line",
-      source: SOURCES.ties,
-      minzoom: TIES_MIN_ZOOM,
-      layout: { ...layout, "line-join": "round" },
-      paint: {
-        "line-color": palette.stationCasing,
-        "line-opacity": fadeIn(TIES_MIN_ZOOM, 1),
-        "line-width": realScale([
-          [TIES_MIN_ZOOM, TRACK.sleeper * (1 + 2 * TIE_BORDER)],
-        ]),
-        // Starts by the end of the border before the tick (the last dash, with no gap after it): centred on the tick.
-        "line-dasharray": [
-          (TIE_DASH[0] + TIE_BORDER) / (1 + 2 * TIE_BORDER),
-          (TIE_DASH[1] - 2 * TIE_BORDER) / (1 + 2 * TIE_BORDER),
-          TIE_BORDER / (1 + 2 * TIE_BORDER),
-          0,
-        ],
-      },
-    },
-    belowLabels,
-  );
-  // Thin dashes across the line, as opaque and as coloured as it: the ticks.
-  map.addLayer(
-    {
-      id: LAYERS.ties,
-      type: "line",
-      source: SOURCES.ties,
-      minzoom: TIES_MIN_ZOOM,
-      layout: { ...layout, "line-join": "round" },
-      paint: {
-        "line-color": gainedColor(palette.railLink, palette),
-        "line-opacity": fadeIn(TIES_MIN_ZOOM, 1),
-        "line-width": realScale([
-          [TIES_MIN_ZOOM, TRACK.sleeper],
-        ]),
-        "line-dasharray": [...TIE_DASH],
-      },
-    },
+  // The ticks across the line, bordered like it, below it.
+  addRailTies(
+    map,
+    data.ties,
+    gainedColor(palette.railLink, palette),
+    palette.stationCasing,
+    visibility(visible),
     belowLabels,
   );
   // One line at every zoom, ticked from `TIES_MIN_ZOOM`.
@@ -862,6 +822,7 @@ export function setStationData(map: MapLibreMap, data: StationData): void {
   map.getSource<GeoJSONSource>(SOURCES.visited)?.setData(data.stations);
   map.getSource<GeoJSONSource>(SOURCES.links)?.setData(data.links);
   map.getSource<GeoJSONSource>(SOURCES.ties)?.setData(data.ties);
+  setRailTies(map, data.ties);
   // The bubble of the station shown takes the colors of its visit.
   updateBubble(map);
 }
@@ -1016,6 +977,7 @@ export function setStationsVisible(map: MapLibreMap, visible: boolean): void {
     if (map.getLayer(id))
       map.setLayoutProperty(id, "visibility", visibility(visible));
   }
+  refreshRailTies(map);
   bubbles.get(map)?.setVisible(visible);
 }
 

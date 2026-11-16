@@ -4,6 +4,7 @@ import { Place } from './place.entity';
 import { PlaceTile } from './place-tile.entity';
 import { RailLinkCountry } from './rail-link-country.entity';
 import { RailLink } from './rail-link.entity';
+import { RailSegment } from './rail-segment.entity';
 import { RailwayImport } from './railway-import.entity';
 import { StationsController } from './stations.controller';
 import { StationsService } from './stations.service';
@@ -15,6 +16,7 @@ import { StationsService } from './stations.service';
       PlaceTile,
       RailLink,
       RailLinkCountry,
+      RailSegment,
       RailwayImport,
     ]),
   ],

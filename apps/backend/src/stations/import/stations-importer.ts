@@ -282,6 +282,7 @@ export async function importStations(
   );
   excluded.merged += merged;
   console.log(`${merged} stations merged into an overlapping footprint`);
+  await timed('segments', () => saveSegments(dataSource));
   await timed('countries', async () => {
     await dataSource.query(LOCATE_PLACES);
     await splitByCountry(dataSource);
@@ -441,6 +442,47 @@ async function saveLinks(
       ],
     );
   }
+}
+
+/**
+ * Cuts the links into the segments they share, for ties drawn once. Done by
+ * degree cell, a union of the whole network being too large for the memory:
+ * a segment ends where a cell does, which the drawing does not show. The
+ * pieces with the same links are merged back: a ties' dash restarts with
+ * each segment, doubling the tick at every cut.
+ */
+export async function saveSegments(dataSource: DataSource): Promise<void> {
+  const cells: { x: number; y: number }[] = await dataSource.query(
+    `SELECT DISTINCT x, y FROM rail_links l,
+       generate_series(floor(ST_XMin(l.geom))::int, floor(ST_XMax(l.geom))::int) x,
+       generate_series(floor(ST_YMin(l.geom))::int, floor(ST_YMax(l.geom))::int) y`,
+  );
+  await dataSource.transaction(async (manager) => {
+    await manager.query('DELETE FROM rail_segments');
+    for (const { x, y } of cells) {
+      await manager.query(
+        `WITH near AS (
+           SELECT l.id, ST_Intersection(l.geom, ST_MakeEnvelope($1::float8, $2::float8, $1::float8 + 1, $2::float8 + 1, 4326)) AS g
+           FROM rail_links l
+           WHERE l.geom && ST_MakeEnvelope($1::float8, $2::float8, $1::float8 + 1, $2::float8 + 1, 4326)
+         ), segs AS (
+           SELECT (ST_Dump(ST_UnaryUnion(ST_Collect(g)))).geom AS geom
+           FROM near WHERE NOT ST_IsEmpty(g)
+         ), owned AS (
+           SELECT s.geom, array_agg(n.id ORDER BY n.id) AS link_ids
+           FROM segs s
+           JOIN near n ON ST_DWithin(n.g, ST_LineInterpolatePoint(s.geom, 0.5), 0.0000001)
+           WHERE GeometryType(s.geom) = 'LINESTRING'
+           GROUP BY s.geom
+         )
+         INSERT INTO rail_segments (geom, link_ids)
+         SELECT (ST_Dump(ST_LineMerge(ST_Collect(geom)))).geom, link_ids
+         FROM owned
+         GROUP BY link_ids`,
+        [x, y],
+      );
+    }
+  });
 }
 
 /**

@@ -8,6 +8,8 @@ import { reachingStations } from './import/railway-network';
 const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tolerance of the simplified links sent to the map, in degrees (about 2 m). */
 const LINK_SIMPLIFY_DEG = 0.00002;
+/** Tolerance of the simplified ties, in degrees (about 0.5 m): finer, as they are drawn from the zoom where the base map shows the rail itself. */
+const TIE_SIMPLIFY_DEG = 0.000005;
 /** Layers of the vector tiles of the stations: their points, their footprints and the small tiles of their zones. */
 const STATIONS_LAYER = 'stations';
 const FOOTPRINTS_LAYER = 'station-footprints';
@@ -62,9 +64,18 @@ export interface UnlockedLink {
   coords: [number, number][];
 }
 
+/** A stretch of railway, with the unlocked links running over it. */
+export interface RailTie {
+  linkIds: number[];
+  /** `[lon, lat]`, simplified. */
+  coords: [number, number][];
+}
+
 export interface VisitedStations {
   stations: VisitedStation[];
   links: UnlockedLink[];
+  /** The railway of the unlocked links cut where they diverge, drawn once for their ties. */
+  ties: RailTie[];
   /**
    * Changes with every import of the stations: the vector tiles of all the
    * stations can be cached until it changes. Null without stations.
@@ -257,6 +268,17 @@ export class StationsService {
              ORDER BY id`,
             [ids],
           );
+    const linkIds = links.map((link) => link.id);
+    const ties: { link_ids: number[]; geojson: string }[] =
+      linkIds.length === 0
+        ? []
+        : await this.dataSource.query(
+            `SELECT link_ids, ST_AsGeoJSON(ST_Simplify(geom, ${TIE_SIMPLIFY_DEG}), 6) AS geojson
+             FROM rail_segments
+             WHERE link_ids && $1::int[]`,
+            [linkIds],
+          );
+    const unlocked = new Set(linkIds);
     const points = new Map(
       stations.map(({ id, lon, lat }) => [id, [lon, lat] as [number, number]]),
     );
@@ -279,6 +301,11 @@ export class StationsService {
           (JSON.parse(link.geojson) as { coordinates: [number, number][] })
             .coordinates,
         ),
+      })),
+      ties: ties.map((tie) => ({
+        linkIds: tie.link_ids.filter((id) => unlocked.has(id)),
+        coords: (JSON.parse(tie.geojson) as { coordinates: [number, number][] })
+          .coordinates,
       })),
       stationsVersion: await this.stationsVersion(),
     };

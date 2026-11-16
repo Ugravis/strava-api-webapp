@@ -6,7 +6,7 @@ import type {
   Map as MapLibreMap,
 } from "maplibre-gl";
 import { FADE_ZOOMS } from "./map-style";
-import { realScale } from "./train-traffic";
+import { realScale } from "./real-scale";
 
 /**
  * The ticks across the railway: one symbol by tick, placed from the whole

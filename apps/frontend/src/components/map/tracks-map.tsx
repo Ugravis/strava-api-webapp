@@ -23,7 +23,7 @@ import {
   historyInstant,
   withinSteps,
 } from "@/lib/tiles/history-period";
-import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
+import { NO_COUNTRIES, type VisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { HistoryBand } from "./history-band";
 import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";

@@ -16,7 +16,7 @@ import {
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
 import { belowHistory } from "./history-layer";
-import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
+import { FADE_ZOOMS, fadeIn, type MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 /** Which levels of tiles the map shows: none while the tiles module is hidden, the large tiles, or both levels. */
 export type TileMode = "none" | "tiles" | "both";
@@ -86,8 +86,9 @@ const LEVEL_LAYERS = {
 } as const;
 const ALL_LAYERS = [...LEVEL_LAYERS.tiles, ...LEVEL_LAYERS.subtiles, "tile-grid-line"];
 
-/** Lowest layer of the tiles: the visited countries go below it. */
-export const TILE_FILL_LAYER_ID = "visited-tiles-fill";
+import { TILE_FILL_LAYER_ID } from "@kilotrace/ui/lib/map/layer-order";
+
+export { TILE_FILL_LAYER_ID };
 /**
  * Fills drawn as the ground of the map, right over its bare land: they
  * hide none of the vegetation, water, buildings, roads and names.

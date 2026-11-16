@@ -1,7 +1,7 @@
 import type { FeatureCollection, LineString } from "geojson";
 import type { ExpressionSpecification, GeoJSONSource, LngLatBoundsLike, Map as MapLibreMap } from "maplibre-gl";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
-import { fadeIn, type MapPalette } from "./map-style";
+import { fadeIn, type MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 const SOURCE_ID = "activity-tracks";
 export const TRACK_LAYER_ID = "activity-tracks-line";

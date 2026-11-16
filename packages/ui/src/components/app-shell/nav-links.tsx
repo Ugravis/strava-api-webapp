@@ -18,6 +18,16 @@ import {
 } from "@kilotrace/ui/components/ui/sidebar";
 import { cn } from "@kilotrace/ui/lib/utils";
 
+
+const ONE_DECIMAL = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+
+/** A count in a pill, short: whole under a thousand, else rounded to a tenth of k or M (1105 → « 1,1k »). */
+function shortCount(count: number): string {
+  if (count < 1_000) return String(Math.round(count));
+  if (count < 999_950) return `${ONE_DECIMAL.format(count / 1_000)}k`;
+  return `${ONE_DECIMAL.format(count / 1_000_000)}M`;
+}
+
 export interface NavLink {
   href: string;
   label: string;
@@ -63,8 +73,16 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
             </SidebarMenuButton>
             {item.badge === undefined && !item.alert ? null : (
               <SidebarMenuBadge className="gap-1 px-0">
-                {!!item.alert && <span className="rounded-full bg-destructive px-1.5 text-white">{item.alert.toLocaleString("fr-FR")}</span>}
-                {item.badge !== undefined && <span className="rounded-full bg-sidebar-accent px-1.5">{item.badge.toLocaleString("fr-FR")}</span>}
+                {!!item.alert && (
+                  <span className="rounded-full bg-destructive px-1.5 text-white" title={item.alert.toLocaleString("fr-FR")}>
+                    {shortCount(item.alert)}
+                  </span>
+                )}
+                {item.badge !== undefined && (
+                  <span className="rounded-full bg-sidebar-accent px-1.5" title={item.badge.toLocaleString("fr-FR")}>
+                    {shortCount(item.badge)}
+                  </span>
+                )}
               </SidebarMenuBadge>
             )}
           </SidebarMenuItem>

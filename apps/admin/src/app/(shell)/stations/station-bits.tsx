@@ -18,7 +18,7 @@ import {
   TypeIcon,
   UsersIcon,
 } from "lucide-react";
-import { codeColumn, type ConfirmOptions, type DataTableColumn, dateColumn, lookColumn, Mark, numberColumn, statusColumn, textColumn } from "@kilotrace/ui/components/admin/data-table";
+import { codeColumn, formatNumber, type ConfirmOptions, type DataTableColumn, dateColumn, lookColumn, Mark, numberColumn, statusColumn, textColumn } from "@kilotrace/ui/components/admin/data-table";
 import { fromRule } from "@kilotrace/ui/components/admin/detail";
 import { countryFlag, countryName } from "@kilotrace/ui/lib/countries/country-format";
 import { createVersion } from "@/lib/admin/version";
@@ -131,11 +131,18 @@ export const stationColumns = (edit: boolean): DataTableColumn<AdminStation>[] =
   }),
   numberColumn({ id: "holders", header: "Possesseurs", icon: <UsersIcon />, sortable: true, zero: true, value: (station) => station.holders }),
   textColumn({ id: "country", header: "Pays", icon: <EarthIcon />, sortable: true, value: (station) => station.countryCode && countryLabel(station.countryCode) }),
+  textColumn({
+    id: "network",
+    header: "Réseau",
+    icon: <TrainTrackIcon />,
+    value: (station) => `${formatNumber(station.links)} · ${formatNumber(Math.round(station.linksM / 100) / 10)} km`,
+  }),
   numberColumn({ id: "links", header: "Liaisons", icon: <TrainTrackIcon />, value: (station) => station.links }),
   numberColumn({ id: "linksKm", header: "Voies reliées", icon: <RouteIcon />, unit: "km", value: (station) => (station.linksM ? Math.round(station.linksM / 100) / 10 : null) }),
   statusColumn({ id: "zoneSource", header: "Géométrie", icon: <ShapesIcon />, value: (station) => station.zoneSource, statuses: ZONE_SOURCES }),
   statusColumn({ id: "visibility", header: "Site", icon: <EyeIcon />, value: (station) => (station.hiddenAt ? "hidden" : "shown"), statuses: VISIBILITIES }),
   numberColumn({ id: "zoneTiles", header: "Tuiles de géométrie", icon: <Grid2x2Icon />, value: (station) => station.zoneTiles }),
+  textColumn({ id: "osmName", header: "Nom OSM", icon: <TypeIcon />, muted: true, value: (station) => station.osmName }),
   textColumn({
     id: "customName",
     header: "Nom custom",
@@ -150,7 +157,6 @@ export const stationColumns = (edit: boolean): DataTableColumn<AdminStation>[] =
       onSave: (name) => saveName(station, name),
     }),
   }),
-  textColumn({ id: "osmName", header: "Nom OSM", icon: <TypeIcon />, muted: true, value: (station) => station.osmName }),
   codeColumn({ id: "osm", header: "OpenStreetMap", icon: <MapPinnedIcon />, value: (station) => `${station.osmType}${station.osmId}`, href: osmHref }),
   codeColumn({ id: "coordinates", header: "Coordonnées", icon: <MapPinIcon />, value: (station) => `${station.lat.toFixed(5)}, ${station.lon.toFixed(5)}` }),
   codeColumn({ id: "id", header: "Identifiant", icon: <FingerprintIcon />, value: (station) => station.id }),

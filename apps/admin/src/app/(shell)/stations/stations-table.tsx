@@ -43,13 +43,13 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
       empty: { title: "Aucune gare", description: "Les gares apparaîtront ici après le premier import (pnpm stations:import)." },
       defaultSort: { id: "holders", desc: true },
       views: [
-        { id: "compact", label: "Table compacte", columns: ["name", "holders", "country", "links", "linksKm", "zoneSource", "visibility"] },
+        { id: "compact", label: "Table compacte", columns: ["name", "holders", "country", "links", "linksKm", "visibility"] },
         {
           id: "detailed",
           label: "Table détaillée",
-          columns: ["name", "holders", "country", "links", "linksKm", "zoneSource", "visibility", "zoneTiles", "customName", "osmName", "osm", "coordinates", "id", "updatedAt"],
+          columns: ["name", "holders", "country", "links", "linksKm", "zoneSource", "visibility", "zoneTiles", "osmName", "customName", "osm", "coordinates", "id", "updatedAt"],
         },
-        { id: "cards", label: "Cartes", layout: "cards", columns: ["name", "country", "links", "holders"] },
+        { id: "cards", label: "Cartes", layout: "cards", columns: ["name", "country", "network", "holders"] },
       ],
       columns: stationColumns(rights.edit),
       facets: [

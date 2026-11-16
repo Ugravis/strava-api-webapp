@@ -10,6 +10,7 @@ import { parseOplLine } from './osm-opl';
 import { type RailwayData, RailwayDataBuilder } from './railway-data';
 import type { StationExclusion } from './railway-rules';
 import { mergeOverlappingStations } from './station-merges';
+import { saveStrokes } from './rail-strokes';
 import { type NetworkLink, RailwayNetwork } from './railway-network';
 import { stationZones } from './station-zones';
 import { saveZones, type ZoneReport } from './station-zones-store';
@@ -285,6 +286,7 @@ export async function importStations(
   excluded.merged += merged;
   console.log(`${merged} stations merged into an overlapping footprint`);
   await timed('segments', () => saveSegments(dataSource));
+  await timed('strokes', () => saveStrokes(dataSource));
   await timed('countries', async () => {
     await dataSource.query(LOCATE_PLACES);
     await splitByCountry(dataSource);

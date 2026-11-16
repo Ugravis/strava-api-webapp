@@ -64,6 +64,7 @@ export default async function AdminStationsPage() {
             color="yellow"
             label="Réseau"
             value={`${number.format(overview.linksKm)} km`}
+            href={adminRoutes.datasetMap}
             detail={`${plural(overview.links, "liaison", "liaisons")} entre gares${overview.lastImportAt ? `, importé le ${new Date(overview.lastImportAt).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}` : ""}`}
           />
         </KpiGrid>

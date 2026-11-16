@@ -42,7 +42,8 @@
     "reservedUsernames": "Pseudos",
     "releaseNotes": "Notes de release",
     "siteActivity": "Activité du site",
-    "stations": "Gares"
+    "stations": "Gares",
+    "datasetMap": "Carte"
   },
   "roles": {
     "support": "Support",

@@ -3,6 +3,7 @@ import { AppShellSkeleton } from "@kilotrace/ui/components/app-shell/app-shell-s
 import { Suspense } from "react";
 import { AdminNavigation, ToAppLink } from "@/components/admin/admin-sidebar";
 import { AdminShell } from "@/components/admin/shell/admin-shell";
+import { PageFrame } from "@/components/admin/shell/page-frame";
 import { requireAdminMember } from "@/lib/admin/access";
 
 /**
@@ -26,10 +27,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
       {/* The detail of a row, on the right of any page. */}
       <SplitPanelProvider>
         <SplitPanelArea>
-          {/* As the padded pages of the site. */}
-          <div className="flex min-h-[calc(100svh-3.5rem)] flex-1 flex-col p-4 md:min-h-svh md:p-6">
-            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2 sm:py-4">{children}</div>
-          </div>
+          <PageFrame>{children}</PageFrame>
         </SplitPanelArea>
       </SplitPanelProvider>
     </AdminShell>

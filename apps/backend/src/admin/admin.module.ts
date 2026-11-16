@@ -16,6 +16,7 @@ import { ProviderConnection } from '../connections/provider-connection.entity';
 import { Follow } from '../follows/follow.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReleaseNote } from '../release-notes/release-note.entity';
+import { CountriesModule } from '../countries/countries.module';
 import { ReleaseNotesModule } from '../release-notes/release-notes.module';
 import { StorageModule } from '../storage/storage.module';
 import { StravaModule } from '../strava/strava.module';
@@ -42,6 +43,8 @@ import {
 } from './badges/admin-badges.controller';
 import { AdminBadgesService } from './badges/admin-badges.service';
 import { Place } from '../stations/place.entity';
+import { AdminMapController } from './map/admin-map.controller';
+import { AdminMapService } from './map/admin-map.service';
 import { AdminStationsController } from './stations/admin-stations.controller';
 import { AdminStationsService } from './stations/admin-stations.service';
 import { AdminUserTagsController } from './user-tags/admin-user-tags.controller';
@@ -112,6 +115,7 @@ export const ADMIN_ROUTES = [
     StorageModule,
     SystemModule,
     ReleaseNotesModule,
+    CountriesModule,
   ],
   controllers: [
     AdminAuthController,
@@ -127,6 +131,7 @@ export const ADMIN_ROUTES = [
     AdminBadgesController,
     AdminBadgeThemesController,
     AdminUserTagsController,
+    AdminMapController,
     AdminStationsController,
     AdminSystemController,
     AdminTeamController,
@@ -147,6 +152,7 @@ export const ADMIN_ROUTES = [
     AdminBusinessStatisticsService,
     AdminBadgesService,
     AdminUserTagsService,
+    AdminMapService,
     AdminStationsService,
     AdminUploadsService,
     AdminDatabaseService,

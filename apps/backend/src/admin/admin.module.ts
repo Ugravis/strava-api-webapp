@@ -41,6 +41,9 @@ import {
   AdminBadgeThemesController,
 } from './badges/admin-badges.controller';
 import { AdminBadgesService } from './badges/admin-badges.service';
+import { Place } from '../stations/place.entity';
+import { AdminStationsController } from './stations/admin-stations.controller';
+import { AdminStationsService } from './stations/admin-stations.service';
 import { AdminUserTagsController } from './user-tags/admin-user-tags.controller';
 import { AdminUserTagsService } from './user-tags/admin-user-tags.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
@@ -100,6 +103,7 @@ export const ADMIN_ROUTES = [
       AdminRolePermission,
       ReleaseNote,
       UserReport,
+      Place,
     ]),
     AuthModule,
     UsersModule,
@@ -123,6 +127,7 @@ export const ADMIN_ROUTES = [
     AdminBadgesController,
     AdminBadgeThemesController,
     AdminUserTagsController,
+    AdminStationsController,
     AdminSystemController,
     AdminTeamController,
     AdminPermissionsController,
@@ -142,6 +147,7 @@ export const ADMIN_ROUTES = [
     AdminBusinessStatisticsService,
     AdminBadgesService,
     AdminUserTagsService,
+    AdminStationsService,
     AdminUploadsService,
     AdminDatabaseService,
     AdminTeamService,

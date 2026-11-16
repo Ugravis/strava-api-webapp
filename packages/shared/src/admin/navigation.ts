@@ -4,6 +4,7 @@ export interface AdminNavigationCounts {
   badges: number;
   userTags: number;
   reservedUsernames: number;
+  stations: number;
   /** Reports waiting for a decision, in a red pill. */
   openReports: number;
 }

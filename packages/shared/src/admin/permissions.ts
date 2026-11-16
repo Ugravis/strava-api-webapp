@@ -1,7 +1,7 @@
 import { AdminRole } from "./roles";
 
 /** Sections of the back office with actions, in the order of the permissions table. */
-export const ADMIN_PERMISSION_CATEGORIES = ["users", "reports", "usernames", "badges", "userTags", "releaseNotes", "audit", "system", "team"] as const;
+export const ADMIN_PERMISSION_CATEGORIES = ["users", "reports", "usernames", "badges", "userTags", "stations", "releaseNotes", "audit", "system", "team"] as const;
 
 export type AdminPermissionCategory = (typeof ADMIN_PERMISSION_CATEGORIES)[number];
 
@@ -32,6 +32,7 @@ export const ADMIN_PERMISSIONS = {
   "userTags.create": { category: "userTags", defaults: ["admin"] },
   "userTags.edit": { category: "userTags", defaults: ["admin"] },
   "userTags.delete": { category: "userTags", defaults: ["admin"] },
+  "stations.edit": { category: "stations", defaults: ["admin"] },
   "releaseNotes.create": { category: "releaseNotes", defaults: ["admin"] },
   "releaseNotes.edit": { category: "releaseNotes", defaults: ["admin"] },
   "releaseNotes.publish": { category: "releaseNotes", defaults: ["admin"] },

@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import type { SportType } from '../activities/sport-type';
 import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
 import { reachingStations } from './import/railway-network';
+import { shownStation, stationName } from './shown-stations';
 
 const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tolerance of the simplified links sent to the map, in degrees (about 2 m). */
@@ -140,12 +141,12 @@ const PLACE_VISITED = `EXISTS (
 )`;
 
 /** Stations visited by the user `$1`: a small tile of their zone at least. */
-const VISITED_STATIONS = `SELECT p.id, p.name, p.geom FROM places p
+const VISITED_STATIONS = `SELECT p.id, ${stationName()} AS name, p.geom FROM places p
   WHERE p.id IN (
     SELECT t.place_id FROM user_tiles u
     JOIN place_tiles t ON t.x = u.x AND t.y = u.y AND u.mask & (1::bigint << t.bit) <> 0
     WHERE u.user_id = $1
-  ) AND p.kind = 'station'`;
+  ) AND ${shownStation()}`;
 
 /** First visits by the user `$1` of the small tiles of the zone of the place `v`. */
 const ZONE_FIRST_VISITS = `place_tiles t
@@ -341,13 +342,13 @@ export class StationsService {
       first_visit_at: Date | null;
       tiles: [number, number, number][];
     }[] = await this.dataSource.query(
-      `SELECT p.id, p.name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat, p.x, p.y, p.bit,
+      `SELECT p.id, ${stationName()} AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat, p.x, p.y, p.bit,
          ${PLACE_VISITED} AS visited,
          (SELECT min(f.visited_at) FROM ${ZONE_FIRST_VISITS}
           WHERE t.place_id = p.id) AS first_visit_at,
          (SELECT json_agg(json_build_array(t.x, t.y, t.bit) ORDER BY t.y, t.bit, t.x)
           FROM place_tiles t WHERE t.place_id = p.id) AS tiles
-       FROM places p WHERE p.id = $2 AND p.kind = 'station'`,
+       FROM places p WHERE p.id = $2 AND ${shownStation()}`,
       [userId, id],
     );
     if (!station) {
@@ -361,10 +362,11 @@ export class StationsService {
       length_m: number;
       visited: boolean;
     }[] = await this.dataSource.query(
-      `SELECT p.id, p.name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat, l.length_m,
+      `SELECT p.id, ${stationName()} AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat, l.length_m,
          ${PLACE_VISITED} AS visited
        FROM rail_links l
        JOIN places p ON p.id = CASE WHEN l.station_a = $2 THEN l.station_b ELSE l.station_a END
+         AND ${shownStation()}
        WHERE l.station_a = $2 OR l.station_b = $2
        ORDER BY l.length_m`,
       [userId, id],
@@ -430,7 +432,7 @@ export class StationsService {
          SELECT count(*)::int AS total,
            count(*) FILTER (WHERE p.id IN (SELECT id FROM visited))::int AS visited
          FROM places p
-         WHERE p.kind = 'station' AND p.country_code = $2`,
+         WHERE ${shownStation()} AND p.country_code = $2`,
         [userId, code],
       );
     return row.total === 0 ? null : row;
@@ -444,7 +446,7 @@ export class StationsService {
          SELECT p.id, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat,
            ST_AsMVTGeom(ST_Transform(p.footprint, 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM places p, bounds b
-         WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM} AND p.kind = 'station'
+         WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM} AND ${shownStation()}
            AND p.footprint && ST_Transform(b.envelope, 4326)
        ),
        -- One polygon per zone, its small tiles merged: outlined around the group, not each tile.
@@ -457,17 +459,17 @@ export class StationsService {
          -- Integer bounds: the index on the large tiles is used. One large tile more on each side covers the buffer
          -- (served up to zoom ${TILE_ZOOM}): a zone cut at the edge of the tile would be outlined along it.
          FROM place_tiles t
-         JOIN places p ON p.id = t.place_id AND p.kind = 'station'
+         JOIN places p ON p.id = t.place_id AND ${shownStation()}
          WHERE $1 >= ${FOOTPRINTS_MIN_ZOOM}
            AND t.x BETWEEN floor($2 * 2.0 ^ (${TILE_ZOOM} - $1))::int - 1 AND ceil(($2 + 1) * 2.0 ^ (${TILE_ZOOM} - $1))::int
            AND t.y BETWEEN floor($3 * 2.0 ^ (${TILE_ZOOM} - $1))::int - 1 AND ceil(($3 + 1) * 2.0 ^ (${TILE_ZOOM} - $1))::int
          GROUP BY t.place_id, p.geom
        ),
        points AS (
-         SELECT p.id, p.name,
+         SELECT p.id, ${stationName()} AS name,
            ST_AsMVTGeom(ST_Transform(p.geom, 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM places p, bounds b
-         WHERE p.kind = 'station'
+         WHERE ${shownStation()}
            AND p.geom && ST_Transform(ST_Expand(b.envelope,
              (ST_XMax(b.envelope) - ST_XMin(b.envelope)) * ${MVT_BUFFER / MVT_EXTENT}), 4326)
        )

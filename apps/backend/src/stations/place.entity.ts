@@ -88,7 +88,20 @@ export class Place {
   })
   zoneSource!: PlaceZoneSource;
 
-  /** Last import changing the place: the vector tiles of the places follow it. */
+  /** Accounts holding the place: see `COUNT_PLACE_HOLDERS`. */
+  @Index('IDX_places_holders')
+  @Column({ type: 'integer', default: 0 })
+  holders!: number;
+
+  /** Name given by the team, shown in place of `name`, which the imports keep refreshing. */
+  @Column({ name: 'custom_name', type: 'text', nullable: true })
+  customName!: string | null;
+
+  /** Hidden from the site by the team, over the imports: no map, no visit, no figure. */
+  @Column({ name: 'hidden_at', type: 'timestamptz', nullable: true })
+  hiddenAt!: Date | null;
+
+  /** Last import or change of the team on the place: the vector tiles of the places follow it. */
   @Column({ name: 'updated_at', type: 'timestamptz', default: () => 'now()' })
   updatedAt!: Date;
 }

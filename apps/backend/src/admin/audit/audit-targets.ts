@@ -4,6 +4,7 @@ import { BadgeTheme } from '../../distances/badge-theme.entity';
 import { Badge } from '../../distances/badge.entity';
 import { ReleaseNote } from '../../release-notes/release-note.entity';
 import { UserReport } from '../../reports/user-report.entity';
+import { Place } from '../../stations/place.entity';
 import { UserTag } from '../../users/user-tag.entity';
 import type { AdminAuditLog } from './admin-audit-log.entity';
 
@@ -29,6 +30,7 @@ const TYPES = new Set<string>([
   'userTag',
   'releaseNote',
   'report',
+  'station',
 ]);
 
 interface Ref {
@@ -92,6 +94,17 @@ async function find(
         await manager.findBy(UserReport, { id: In(ids) }),
         (report) => report.id,
         (report) => ({ name: `@${report.targetUsername}`, color: null }),
+      );
+    case 'station':
+      return by(
+        await manager.findBy(Place, {
+          id: In(ids.map(Number).filter(Number.isSafeInteger)),
+        }),
+        (place) => String(place.id),
+        (place) => ({
+          name: place.customName ?? place.name ?? `#${place.id}`,
+          color: null,
+        }),
       );
     case 'username':
       return new Map(ids.map((id) => [id, { name: id, color: null }]));

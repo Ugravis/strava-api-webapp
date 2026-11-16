@@ -25,6 +25,7 @@
     "groups": {
       "general": "Général",
       "community": "Communauté",
+      "dataset": "Dataset",
       "infrastructure": "Infrastructure",
       "security": "Sécurité"
     },
@@ -40,7 +41,8 @@
     "development": "Développement",
     "reservedUsernames": "Pseudos",
     "releaseNotes": "Notes de release",
-    "siteActivity": "Activité du site"
+    "siteActivity": "Activité du site",
+    "stations": "Gares"
   },
   "roles": {
     "support": "Support",
@@ -349,6 +351,10 @@
       "reports": {
         "sanction": "Signalement sanctionné",
         "dismiss": "Signalement rejeté"
+      },
+      "stations": {
+        "rename": "Gare renommée",
+        "hide": "Gare masquée ou affichée"
       }
     },
     "overview": {
@@ -880,7 +886,8 @@
         "audit": "Logs",
         "system": "Maintenance",
         "team": "Permissions",
-        "releaseNotes": "Notes de release"
+        "releaseNotes": "Notes de release",
+        "stations": "Gares"
       },
       "list": {
         "users": {
@@ -1001,6 +1008,12 @@
           "handle": {
             "label": "Traiter les signalements",
             "description": "Sanctionner ou rejeter un signalement. Une sanction demande aussi la permission de son action."
+          }
+        },
+        "stations": {
+          "edit": {
+            "label": "Modifier",
+            "description": "Renommer ou masquer une gare du site."
           }
         }
       }
@@ -1487,5 +1500,9 @@
       "withoutAdmin": "Pages admin exclues",
       "adminExcluded": "pages /admin exclues des vues et des sessions"
     }
+  },
+  "stations": {
+    "title": "Gares",
+    "description": "Les gares importées d'OpenStreetMap, visitées par les membres sur la carte. Un nom custom ou un masquage tient au fil des imports."
   }
 }

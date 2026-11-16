@@ -64,6 +64,7 @@ const ADMIN_PAGES: Record<string, { label: string; href: string }> = {
   "public.badges": { label: "Badges", href: "/badges" },
   "public.badge_themes": { label: "Badges · Collections", href: "/badges" },
   "public.user_tags": { label: "Tags", href: "/user-tags" },
+  "public.places": { label: "Gares", href: "/stations" },
   "public.release_notes": { label: "Notes de release", href: "/release-notes" },
   "public.admin_audit_log": { label: "Logs", href: "/audit-log" },
   "public.admin_role_permissions": { label: "Permissions", href: "/team" },

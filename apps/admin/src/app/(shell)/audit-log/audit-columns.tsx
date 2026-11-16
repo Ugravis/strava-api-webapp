@@ -39,6 +39,7 @@ import {
   TagIcon,
   TagPlusIcon,
   TagXIcon,
+  TrainFrontIcon,
   ToggleRightIcon,
   Trash2Icon,
   UnlinkIcon,
@@ -88,6 +89,7 @@ export const DOMAINS: Record<string, string> = {
   roles: "Rôles",
   badges: "Badges",
   userTags: "Tags",
+  stations: "Gares",
   system: "Système",
 };
 
@@ -129,6 +131,8 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   "userTags.update": <PencilIcon />,
   "userTags.delete": <Trash2Icon />,
   "userTags.reorder": <ArrowUpDownIcon />,
+  "stations.rename": <PencilIcon />,
+  "stations.hide": <EyeOffIcon />,
   "releaseNotes.create": <FilePlusIcon />,
   "releaseNotes.update": <FilePenIcon />,
   "releaseNotes.status": <SendIcon />,
@@ -152,6 +156,7 @@ const TARGET_ICONS: Record<AuditTargetType, ReactNode> = {
   releaseNote: <NewspaperIcon />,
   report: <FlagIcon />,
   username: <AtSignIcon />,
+  station: <TrainFrontIcon />,
 };
 
 /** The target of an entry: a user, else the object it names, else a dash. */

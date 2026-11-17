@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
+import { EmailSignInGate } from "@/components/auth/email-sign-in-gate";
 import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { LoginForm } from "@/components/auth/login-form";
 import { routes } from "@/config/routes";
-import { emailSignInEnabled } from "@/lib/system/status";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("auth.login");
   return { title: t("title") };
 }
 
-export default async function LoginPage() {
-  const t = await getTranslations("auth.login");
-  const email = await emailSignInEnabled();
+export default function LoginPage() {
+  const t = useTranslations("auth.login");
 
   return (
     <AuthCard
@@ -30,12 +30,12 @@ export default async function LoginPage() {
         </p>
       }
     >
-      <GoogleSignIn separator={email} />
-      {email && (
+      <GoogleSignIn />
+      <EmailSignInGate>
         <Suspense>
           <LoginForm />
         </Suspense>
-      )}
+      </EmailSignInGate>
     </AuthCard>
   );
 }

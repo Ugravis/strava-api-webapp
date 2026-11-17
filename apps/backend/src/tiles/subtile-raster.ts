@@ -1,12 +1,11 @@
 import { crc32, deflate } from 'node:zlib';
 import { promisify } from 'node:util';
-import { SUBTILE_ZOOM, TILE_ZOOM } from './tile-grid';
+import { SUBTILES_PER_SIDE, TILE_ZOOM } from './tile-grid';
 
 const deflateAsync = promisify(deflate);
 
 /** Side of the images in pixels: twice a 256 pixels map tile, sharp on high density screens. */
 export const RASTER_SIZE = 512;
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 
 /** Palette indexes of the pixels. */
 export const RASTER_EMPTY = 0;

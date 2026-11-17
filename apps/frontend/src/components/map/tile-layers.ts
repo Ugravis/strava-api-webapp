@@ -7,6 +7,7 @@ import type {
   RasterTileSource,
   VectorTileSource,
 } from "maplibre-gl";
+import { TILES_MAX_ZOOM } from "@kilotrace/shared";
 import type { TilesSummary } from "@kilotrace/ui/lib/api/types";
 import {
   gridCollection,
@@ -32,8 +33,6 @@ const VECTOR_SOURCE = "user-tiles";
  * whatever the density of the tiles, down to the zoom of a whole country.
  */
 const RASTER_SOURCE = "user-subtiles";
-/** The backend serves the tiles down to this zoom; the map stretches them beyond. */
-const TILES_MAX_ZOOM = 12;
 /** Layers of the vector tiles: merged areas, and the small tiles at the deepest zoom, to pick them. */
 const SOURCE_LAYERS = {
   tiles: "tiles",

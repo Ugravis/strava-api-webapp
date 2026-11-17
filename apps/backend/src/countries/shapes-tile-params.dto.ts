@@ -8,12 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-
-/**
- * Deepest zoom of the shape tiles: the map stretches them beyond. At zoom
- * 10, a large tile still spans 64 units of the 4096 of a vector tile.
- */
-export const SHAPES_MAX_ZOOM = 10;
+import { SHAPES_MAX_ZOOM } from '@kilotrace/shared';
 
 export class ShapesTileParamsDto {
   @Type(() => Number)

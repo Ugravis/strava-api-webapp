@@ -1,7 +1,6 @@
-import { SUBTILE_ZOOM, TILE_ZOOM } from './tile-grid';
+import { SUBTILES_PER_SIDE } from './tile-grid';
 import type { TilePoint } from './tile-metrics';
 
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tile coordinates stay below 2^17: a pair fits in one safe integer. */
 const KEY_BASE = 2 ** 18;
 

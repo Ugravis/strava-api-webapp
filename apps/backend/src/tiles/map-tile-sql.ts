@@ -1,4 +1,4 @@
-import { SUBTILE_ZOOM, TILE_ZOOM } from './tile-grid';
+import { TILE_ZOOM } from './tile-grid';
 
 /**
  * SQL shared by the map tiles of the user: vector tiles of areas of large
@@ -26,7 +26,6 @@ export const VECTOR_OUTLINE_MIN_ZOOM = 10;
 const MVT_BUFFER = 64;
 /** Half of the Web Mercator world, in meters. */
 const WORLD_HALF_M = 20037508.342789244;
-export const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 
 /** Range of large tiles covered by the map tile `(zoom, x, y)`, extended by `margin` large tiles. */
 export function tileRange(zoom: number, x: number, y: number, margin = 0) {

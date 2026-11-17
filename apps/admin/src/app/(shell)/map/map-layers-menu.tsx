@@ -4,6 +4,7 @@ import type { LayerGroup } from "@kilotrace/ui/lib/map/stations-layer";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { Switch } from "@kilotrace/ui/components/ui/switch";
+import { cn } from "@kilotrace/ui/lib/utils";
 import { LayersIcon, PinIcon } from "lucide-react";
 import { useId, useState } from "react";
 
@@ -76,19 +77,28 @@ export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onCh
           <PinIcon />
         </Button>
       </header>
-      {open && (
-        <div className="border-t px-3 py-1.5">
-          {SHOWN.map(({ key, label }) => (
-            <Row key={key} label={label} checked={!value.hidden.has(key)} onChange={(on) => toggle(key, on)} />
-          ))}
-          <Separator className="my-1.5" />
-          <Row
-            label="Forcer toutes les gares"
-            checked={value.everyDot}
-            onChange={(everyDot) => onChange({ ...value, everyDot })}
-          />
+      {/* Unfolds and folds in height; out of reach of the keyboard while folded. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+        inert={!open}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t px-3 py-1.5">
+            {SHOWN.map(({ key, label }) => (
+              <Row key={key} label={label} checked={!value.hidden.has(key)} onChange={(on) => toggle(key, on)} />
+            ))}
+            <Separator className="my-1.5" />
+            <Row
+              label="Forcer toutes les gares"
+              checked={value.everyDot}
+              onChange={(everyDot) => onChange({ ...value, everyDot })}
+            />
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import type { AdminMapRegion, AdminMapStation } from "@kilotrace/shared/admin";
+import type { AdminMapRegion, AdminMapStation, AdminMapVersion } from "@kilotrace/shared/admin";
 import { adminApi } from "@/lib/admin/api";
 
 /** Where a station lies, with the bounds of its zone: null when it is gone. */
@@ -19,4 +19,11 @@ export async function locateRegion(code: string): Promise<AdminMapRegion | null>
   if (result.ok) return result.data;
   if (result.status === 404) return null;
   throw new Error(`Admin map region ${code}: ${result.status}`);
+}
+
+/** The versions of the tiles of the map: a new one after each import. */
+export async function loadMapVersion(): Promise<AdminMapVersion> {
+  const result = await adminApi<AdminMapVersion>("/map/version");
+  if (!result.ok) throw new Error(`Admin map version: ${result.status}`);
+  return result.data;
 }

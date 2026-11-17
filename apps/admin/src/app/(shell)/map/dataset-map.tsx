@@ -31,6 +31,7 @@ import { StationRowPanel } from "../stations/station-detail";
 import { locateRegion, locateStation } from "./actions";
 import { DEFAULT_LAYERS, MapLayersMenu, type MapLayersState } from "./map-layers-menu";
 import "@/lib/map/maplibre-worker";
+import { adminTilesUrl } from "@/lib/map/tiles";
 
 
 /** As on the public map: the stations are hovered from this zoom, the zoom the tiles are clicked from. */
@@ -42,10 +43,6 @@ const REGION_PADDING = 48;
 
 /** The panel holds a region (its ISO code) or a station (its numeric id). */
 const isRegion = (id: string) => /^[A-Z]{2}$/.test(id);
-
-/** Tiles of the map of the back office, relayed by `/map-tiles` with the session. Absolute: MapLibre fetches them from its worker. */
-const tilesUrl = (source: "stations" | "countries", version: string, everyDot = false) =>
-  `${window.location.origin}/map-tiles/${source}/{z}/{x}/{y}?v=${encodeURIComponent(version)}${everyDot ? "&dots=all" : ""}`;
 
 /** Room the side panel takes over the map, when it floats over it: the map shrinks beside it otherwise. */
 function insetsOf(map: MapLibreMap): MapInsets {
@@ -127,7 +124,7 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   useEffect(() => {
     const map = new MapLibreMap({ container: container.current!, ...DEFAULT_VIEW, attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false });
     mapRef.current = map;
-    drawEveryStation(map, { url: (version) => tilesUrl("stations", version, state.current.everyDot), version: state.current.versions.stations, minzoom: STATIONS_MIN_ZOOM });
+    drawEveryStation(map, { url: (version) => adminTilesUrl("stations", version, state.current.everyDot), version: state.current.versions.stations, minzoom: STATIONS_MIN_ZOOM });
     setDiscreetDots(map, true);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
@@ -135,7 +132,7 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
       const { palette, versions } = state.current;
       // Below the first label layer, as on the public map.
       const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
-      setVisitedCountries(map, { codes: [], shapesVersion: versions.countries }, palette, ({ shapesVersion }) => tilesUrl("countries", shapesVersion));
+      setVisitedCountries(map, { codes: [], shapesVersion: versions.countries }, palette, ({ shapesVersion }) => adminTilesUrl("countries", shapesVersion));
       addStationLayers(map, NO_STATION_DATA, selected.current?.pick ?? null, hovered.current, palette, true, false, firstLabel);
       setAllStations(map, versions.stations, palette, true);
     });

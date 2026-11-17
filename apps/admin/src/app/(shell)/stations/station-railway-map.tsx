@@ -6,10 +6,13 @@ import { LngLatBounds, Map as MapLibreMap, NavigationControl } from "maplibre-gl
 import { useTheme } from "next-themes";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
+import { setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { BASE_STYLE_URL, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import { stationData } from "@kilotrace/ui/lib/map/station-data";
 import { addStationLayers, setHoveredStation, stationNear, type StationPick } from "@kilotrace/ui/lib/map/stations-layer";
 import "@/lib/map/maplibre-worker";
+import { adminTilesUrl } from "@/lib/map/tiles";
+import { loadMapVersion } from "../map/actions";
 import { loadStationRailway } from "./actions";
 
 /** Room around the stations framed, in pixels: their name bubbles above them, the zoom buttons on the right. */
@@ -19,7 +22,7 @@ const MAX_ZOOM = 15;
 
 /**
  * The banner of a station: the station and those the railway links it to,
- * nothing else, drawn as on the public map. The map moves; a click on a
+ * nothing else, drawn as on the map of the dataset, every country in its colour. The map moves; a click on a
  * neighbor opens it (`onOpen`).
  */
 export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: string) => void }) {
@@ -28,7 +31,7 @@ export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: str
   const { resolvedTheme } = useTheme();
   const palette = useMemo(() => mapPalette(resolvedTheme), [resolvedTheme]);
   // The railway of the station loaded last, null when it failed: another station waits for its own.
-  const [loaded, setLoaded] = useState<{ id: string; railway: AdminStationRailway | null } | null>(null);
+  const [loaded, setLoaded] = useState<{ id: string; railway: (AdminStationRailway & { countries: string }) | null } | null>(null);
   const current = loaded?.id === id ? loaded : null;
   const railway = current?.railway ?? null;
   const failed = current !== null && railway === null;
@@ -40,8 +43,8 @@ export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: str
 
   useEffect(() => {
     let live = true;
-    loadStationRailway(id).then(
-      (found) => live && setLoaded({ id, railway: found }),
+    Promise.all([loadStationRailway(id), loadMapVersion()]).then(
+      ([railway, versions]) => live && setLoaded({ id, railway: { ...railway, countries: versions.countries } }),
       () => live && setLoaded({ id, railway: null }),
     );
     return () => {
@@ -73,6 +76,8 @@ export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: str
       const station = railway.stations.find((one) => String(one.id) === id);
       const selected: StationPick | null = station ? { id: station.id, lon: station.lon, lat: station.lat, name: station.name } : null;
       const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
+      // Every country in its colour, as on the map of the dataset.
+      setVisitedCountries(map, { codes: [], shapesVersion: railway.countries }, palette, ({ shapesVersion }) => adminTilesUrl("countries", shapesVersion));
       addStationLayers(map, stationData(railway), selected, null, palette, true, false, firstLabel);
     });
     map.on("click", (event) => {

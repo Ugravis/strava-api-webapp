@@ -23,7 +23,7 @@ import { StravaConnectionService } from '../strava-connection.service';
 
 const PROVIDER = 'strava';
 /** Share of each Strava quota window the background refinement may use. */
-const QUOTA_SHARE = 0.5;
+const QUOTA_SHARE = 0.9;
 const MAX_ATTEMPTS = 5;
 
 function latLng(
@@ -122,7 +122,13 @@ export class StravaTilesService {
       activityId,
       tilesFromSummary(summary, assessment),
       assessment,
-      assessment.sparse ? 'sparse' : cropped ? 'cropped' : null,
+      assessment.sparse
+        ? 'sparse'
+        : assessment.suspectGap
+          ? 'gap'
+          : cropped
+            ? 'cropped'
+            : null,
     );
   }
 

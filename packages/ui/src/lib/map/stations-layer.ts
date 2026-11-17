@@ -269,6 +269,8 @@ export interface EveryStationTiles {
 const everyStation = new WeakMap<MapLibreMap, EveryStationTiles>();
 /** Layer of the railway in the tiles of every station. */
 const RAILS_SOURCE_LAYER = "rails";
+/** Layer of the ticks across the railway in the tiles of every station, laid out by the server. */
+const TICKS_SOURCE_LAYER = "rail-ticks";
 
 /**
  * Draws every station as visited from `tiles` instead of the visits of a
@@ -627,8 +629,8 @@ export function addStationLayers(
     palette.stationCasing,
     visibility(visible),
     belowLabels,
+    every && { source: SOURCES.all, "source-layer": TICKS_SOURCE_LAYER },
   );
-  if (every) layTiesFromTiles(map);
   // One line at every zoom, ticked from `TIES_MIN_ZOOM`.
   map.addLayer(
     {
@@ -732,34 +734,6 @@ export function addStationLayers(
   bubbles.get(map)?.destroy();
   bubbles.set(map, new StationBubble(map, () => stationOutline(map)));
   setSelectedStation(map, selected);
-}
-
-/** Maps whose ticks are laid out from the railway of the tiles of every station. */
-const tiesFromTiles = new WeakSet<MapLibreMap>();
-
-/**
- * Lays the ticks out from the railway of the tiles shown, as they load and
- * after each move: the tiles of every station hold no whole geometry. Not on
- * \`idle\`: laying them out renders the map again.
- */
-function layTiesFromTiles(map: MapLibreMap): void {
-  if (tiesFromTiles.has(map)) return;
-  tiesFromTiles.add(map);
-  const lay = () => {
-    if (!map.getSource(SOURCES.all)) return;
-    const lines: StationData["ties"] = { type: "FeatureCollection", features: [] };
-    if (map.getZoom() >= TIES_MIN_ZOOM) {
-      for (const { geometry } of map.querySourceFeatures(SOURCES.all, { sourceLayer: RAILS_SOURCE_LAYER })) {
-        const parts = geometry.type === "LineString" ? [geometry.coordinates] : geometry.type === "MultiLineString" ? geometry.coordinates : [];
-        for (const coordinates of parts) lines.features.push({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } });
-      }
-    }
-    setRailTies(map, lines);
-  };
-  map.on("moveend", lay);
-  map.on("sourcedata", (event) => {
-    if (event.sourceId === SOURCES.all && event.isSourceLoaded) lay();
-  });
 }
 
 /**

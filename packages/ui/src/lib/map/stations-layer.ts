@@ -528,6 +528,16 @@ function gainedColor(
 /** A station, a link or a stretch of railway of the largest network of visited stations. */
 const IN_CLUSTER: ExpressionSpecification = ["boolean", ["get", "cluster"], false];
 
+/** A station or a link gained in the period of the history, or by the activity shown. */
+const GAINED: ExpressionSpecification = ["boolean", ["get", "gained"], false];
+
+/**
+ * The railway gained is striped pink and white, its casing showing through
+ * the gaps: told apart from the pink tracks of the activities, drawn solid.
+ */
+const GAINED_DASHES: ExpressionSpecification = ["case", GAINED, ["literal", [1.4, 1.1]], ["literal", [1, 0]]];
+const GAINED_CASING = "#ffffff";
+
 /** How much bolder the railway of the largest network is drawn. */
 const CLUSTER_WIDTH = 1.4;
 
@@ -631,7 +641,7 @@ export function addStationLayers(
       ...visitedSource(map, "rails"),
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
-        "line-color": palette.stationCasing,
+        "line-color": ["case", GAINED, GAINED_CASING, palette.stationCasing],
         "line-width": clusterBolder(
           realScale([
             [ALL_MIN_ZOOM, 2.5],
@@ -662,6 +672,7 @@ export function addStationLayers(
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": gainedColor(palette.railLink, palette),
+        "line-dasharray": GAINED_DASHES,
         "line-width": clusterBolder(
           realScale([
             [ALL_MIN_ZOOM, 1.2],

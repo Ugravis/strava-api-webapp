@@ -7,6 +7,10 @@ export const ADMIN_STATION_NAME_MAX_LENGTH = 120;
 export const ADMIN_STATION_ZONE_SOURCES = ["osm", "rails", "point"] as const;
 export type AdminStationZoneSource = (typeof ADMIN_STATION_ZONE_SOURCES)[number];
 
+/** What OpenStreetMap calls it (`railway=*`): a station, or a halt without staff nor switches. */
+export const ADMIN_STATION_CATEGORIES = ["station", "halt"] as const;
+export type AdminStationCategory = (typeof ADMIN_STATION_CATEGORIES)[number];
+
 /** `GET /api/admin/stations/table`: a train station of the dataset. */
 export interface AdminStation {
   /** Id of the place, as text: the id of its row. */
@@ -33,6 +37,18 @@ export interface AdminStation {
   linksM: number;
   /** Accounts that visited a small tile of its zone. */
   holders: number;
+  category: AdminStationCategory;
+  /** A tourist or heritage train, by its tags, routes or track. */
+  tourist: boolean;
+  /** Train routes stopping at the station or in its stop areas: its importance. */
+  routes: number;
+  operator: string | null;
+  /** The network of OpenStreetMap (`network`), e.g. a regional service. */
+  network: string | null;
+  /** Code of the station for the railways (`uic_ref`). */
+  uicRef: string | null;
+  /** Wikidata item (`Q…`). */
+  wikidata: string | null;
   /** Last import or change of the team on it. */
   updatedAt: string;
 }

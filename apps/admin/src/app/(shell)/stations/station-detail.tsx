@@ -36,7 +36,7 @@ type StationPanel = Pick<RowPanelControls, "open">;
 export function StationRowPanel({ id, rights, panel, onCenter }: { id: string; rights: StationRights; panel: StationPanel; onCenter?: () => void }) {
   const version = useStationsVersion();
   return (
-    <DetailLoader id={id} load={loadStation} refreshKey={version} skeleton={<DetailSkeleton media actions={3} sections={[7, 4, 3]} />}>
+    <DetailLoader id={id} load={loadStation} refreshKey={version} skeleton={<DetailSkeleton media actions={3} sections={[9, 5, 4, 3]} />}>
       {(station) => <StationDetail station={station} rights={rights} panel={panel} version={version} onCenter={onCenter} />}
     </DetailLoader>
   );
@@ -82,7 +82,10 @@ function StationDetail({ station, rights, panel, version, onCenter }: { station:
         />
       </DetailActions>
       <DetailSection title="Gare">
-        <DetailColumnFields row={station} columns={columns} ids={["customName", "osmName", "visibility", "holders", "country", "id", "updatedAt"]} />
+        <DetailColumnFields row={station} columns={columns} ids={["customName", "osmName", "visibility", "holders", "country", "uicRef", "wikidata", "id", "updatedAt"]} />
+      </DetailSection>
+      <DetailSection title="Exploitation">
+        <DetailColumnFields row={station} columns={columns} ids={["category", "tourist", "routes", "operator", "osmNetwork"]} />
       </DetailSection>
       <DetailSection title="Géométrie">
         <DetailColumnFields row={station} columns={columns} ids={["zoneSource", "zoneTiles", "coordinates", "osm"]} />

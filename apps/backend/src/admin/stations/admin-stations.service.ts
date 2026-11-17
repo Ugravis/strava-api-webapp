@@ -1,5 +1,6 @@
 import type {
   AdminStation,
+  AdminStationCategory,
   AdminStationNeighbor,
   AdminStationsOverview,
 } from '@kilotrace/shared/admin';
@@ -18,11 +19,19 @@ import { runTableQuery, type TableSpec } from '../common/table-query';
 const NAME = 'COALESCE(place.custom_name, place.name)';
 
 const STATIONS_TABLE: TableSpec = {
-  search: ['place.name', 'place.custom_name', 'place.osm_id::text'],
+  search: [
+    'place.name',
+    'place.custom_name',
+    'place.osm_id::text',
+    'station.operator',
+    'station.uic_ref',
+  ],
   sorts: {
     name: NAME,
     holders: 'place.holders',
     country: 'place.country_code',
+    routes: 'station.routes',
+    operator: 'station.operator',
     updatedAt: 'place.updated_at',
   },
   defaultSort: { id: 'holders', desc: true },
@@ -45,11 +54,19 @@ const STATIONS_TABLE: TableSpec = {
     held: {
       options: { held: 'place.holders > 0', never: 'place.holders = 0' },
     },
+    category: { column: `COALESCE(place.category, 'station')` },
+    tourist: {
+      options: {
+        tourist: 'station.tourist',
+        regular: 'NOT COALESCE(station.tourist, false)',
+      },
+    },
   },
   groupings: {
     zoneSource: 'place.zone_source',
     country: 'place.country_code',
     visibility: `CASE WHEN place.hidden_at IS NULL THEN 'shown' ELSE 'hidden' END`,
+    category: `COALESCE(place.category, 'station')`,
   },
 };
 
@@ -65,8 +82,16 @@ const COLUMNS = [
   'countryCode',
   'zoneSource',
   'holders',
+  'category',
+  'wikidata',
   'updatedAt',
-].map((column) => `place.${column}`);
+]
+  .map((column) => `place.${column}`)
+  .concat(
+    ['tourist', 'routes', 'operator', 'network', 'uicRef'].map(
+      (column) => `station.${column}`,
+    ),
+  );
 
 /** The geometry of a point as TypeORM reads it. */
 type Point = { coordinates: [number, number] };
@@ -210,6 +235,7 @@ export class AdminStationsService {
   private base() {
     return this.places
       .createQueryBuilder('place')
+      .leftJoin('place.station', 'station')
       .select(COLUMNS)
       .where(`place.kind = 'station'`);
   }
@@ -263,6 +289,15 @@ export class AdminStationsService {
         links: link?.links ?? 0,
         linksM: Math.round(link?.length_m ?? 0),
         holders: station.holders,
+        category: (station.category === 'halt'
+          ? 'halt'
+          : 'station') satisfies AdminStationCategory,
+        tourist: station.station?.tourist ?? false,
+        routes: station.station?.routes ?? 0,
+        operator: station.station?.operator ?? null,
+        network: station.station?.network ?? null,
+        uicRef: station.station?.uicRef ?? null,
+        wikidata: station.wikidata,
         updatedAt: station.updatedAt.toISOString(),
       };
     });

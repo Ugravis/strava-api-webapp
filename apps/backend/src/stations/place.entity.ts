@@ -4,9 +4,11 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Country } from '../countries/country.entity';
+import { Station } from './station.entity';
 
 /** Kinds of the places collected on the map. */
 export type PlaceKind = 'station';
@@ -107,6 +109,10 @@ export class Place {
    */
   @Column({ type: 'varchar', length: 16, nullable: true })
   category!: string | null;
+
+  /** What only a station has, for a place of kind `station`. */
+  @OneToOne(() => Station, (station) => station.place)
+  station?: Station;
 
   /** Wikidata item (`Q…`). */
   @Column({ type: 'text', nullable: true })

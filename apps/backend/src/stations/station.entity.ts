@@ -10,7 +10,7 @@ export class Station {
   @PrimaryColumn({ name: 'place_id', type: 'integer' })
   placeId!: number;
 
-  @OneToOne(() => Place, { onDelete: 'CASCADE' })
+  @OneToOne(() => Place, (place) => place.station, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'place_id' })
   place?: Place;
 

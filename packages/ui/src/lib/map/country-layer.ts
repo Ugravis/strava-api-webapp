@@ -1,3 +1,4 @@
+import { SHAPES_MAX_ZOOM } from "@kilotrace/shared";
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
 import { belowActivityTiles, TILE_FILL_LAYER_ID } from "./layer-order";
 import { fadeIn, type MapPalette } from "./map-style";
@@ -15,8 +16,6 @@ const SOURCE_ID = "country-shapes";
 /** Layers of the vector tiles served by the backend: the merged areas and their outer borders. */
 const AREA_SOURCE_LAYER = "visited";
 const BORDER_SOURCE_LAYER = "borders";
-/** The backend serves the shapes down to this zoom; the map stretches them beyond. */
-const SHAPES_MAX_ZOOM = 10;
 const FILL_ID = "visited-countries-fill";
 /** Zoom from which the borders of the visited area fade in. */
 const BORDER_MIN_ZOOM = 7;

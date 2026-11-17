@@ -1,3 +1,4 @@
+import { STATIONS_MAX_ZOOM } from "@kilotrace/shared";
 import type { FeatureCollection, LineString, Point } from "geojson";
 import type {
   ExpressionSpecification,
@@ -135,7 +136,7 @@ const DOTS_MIN_ZOOM = 6;
  */
 const DISCREET_DOTS_MIN_ZOOM = DOTS_MIN_ZOOM - 1;
 const DISCREET_DOTS_MAX_ZOOM = DISCREET_DOTS_MIN_ZOOM + 2;
-const ALL_MAX_ZOOM = 14;
+const ALL_MAX_ZOOM = STATIONS_MAX_ZOOM;
 /** Distance from the pointer, in pixels, where a click looks for a station: a finger is not precise. */
 const PICK_TOLERANCE_PX = 8;
 

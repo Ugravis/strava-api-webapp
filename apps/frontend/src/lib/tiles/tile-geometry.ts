@@ -1,10 +1,9 @@
 import type { Feature, FeatureCollection, LineString, Polygon } from "geojson";
 import type { TileSquare } from "@kilotrace/ui/lib/api/types";
 
-/** Large tiles: slippy-map tiles at zoom 14. */
-export const TILE_ZOOM = 14;
-/** Small tiles: zoom 17, 8 × 8 per large tile. */
-export const SUBTILE_ZOOM = 17;
+import { SUBTILE_ZOOM, TILE_ZOOM } from "@kilotrace/shared";
+
+export { SUBTILE_ZOOM, TILE_ZOOM };
 
 /** Zoom of one of the two levels of tiles. */
 export type TileZoom = typeof TILE_ZOOM | typeof SUBTILE_ZOOM;

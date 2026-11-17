@@ -11,7 +11,8 @@ import {
 } from 'class-validator';
 import { PREVIEW_THEMES, type PreviewTheme } from './map-preview.service';
 import { HISTORY_MODES, type HistoryMode } from './tile-history.service';
-import { RASTER_MIN_ZOOM, TILES_MAX_ZOOM } from './user-tiles.service';
+import { TILES_MAX_ZOOM } from '@kilotrace/shared';
+import { RASTER_MIN_ZOOM } from './user-tiles.service';
 
 export class VectorTileParamsDto {
   @Type(() => Number)

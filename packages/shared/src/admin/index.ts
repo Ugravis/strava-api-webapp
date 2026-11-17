@@ -11,6 +11,7 @@ export * from "./map";
 export * from "./me";
 export * from "./navigation";
 export * from "./permissions";
+export * from "./regions";
 export * from "./release-notes";
 export * from "./reserved-usernames";
 export * from "./roles";

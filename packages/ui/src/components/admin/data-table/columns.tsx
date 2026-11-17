@@ -4,7 +4,7 @@ import { GripVerticalIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { cn } from "@kilotrace/ui/lib/utils";
-import { CodeCell, BooleanCell, BytesCell, DateCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
+import { CodeCell, BooleanCell, BytesCell, DateCell, formatShare, NumberCell, RelativeDateCell, ShareCell, type ShareLook, TextCell } from "./cells/values";
 import { type CellUser, IconsCell, type IconItem, type Look, LookCell, type Pill, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 import { type CellImage, ImageCell, ImageCover } from "./cells/image";
 import { formatBytes, formatDate, formatDateTime } from "./format";
@@ -46,6 +46,29 @@ export function numberColumn<T>({ value, zero, unit, ...base }: Base<T> & { valu
       return number === null || number === undefined || (number === 0 && !zero) ? null : String(number);
     },
     skeleton: <Skeleton className="inline-block h-4 w-12" />,
+  };
+}
+
+/**
+ * A share of a whole, from 0 to 1 (e.g. the tiles visited of a country): a
+ * ring in the table and a bar in the detail by default (`look`,
+ * `detailLook`), or the percentage alone (`number`).
+ */
+export function shareColumn<T>({
+  value,
+  look = "ring",
+  detailLook = "bar",
+  ...base
+}: Base<T> & { value: (row: T) => number | null | undefined; look?: ShareLook; detailLook?: ShareLook }): DataTableColumn<T> {
+  return {
+    ...base,
+    cell: (row) => <ShareCell value={value(row)} look={look} />,
+    detailCell: (row) => <ShareCell value={value(row)} look={detailLook} />,
+    copy: (row) => {
+      const share = value(row);
+      return share === null || share === undefined || Number.isNaN(share) ? null : formatShare(share);
+    },
+    skeleton: <Skeleton className="inline-block h-4 w-20" />,
   };
 }
 

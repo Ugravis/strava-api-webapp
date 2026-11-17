@@ -12,7 +12,7 @@ import { BadgeCard } from "./badge-card";
 import { BadgeMedal } from "./badge-medal";
 import { BadgeMiniBar } from "./badge-mini-bar";
 import { FamilyIcon } from "./family-icon";
-import { progressTier } from "./progress-tier";
+import { progressTier } from "@kilotrace/ui/lib/progress-tier";
 import { useAmount } from "./use-amount";
 
 /** Sports detailed under the total of a tab counting a single metric. */

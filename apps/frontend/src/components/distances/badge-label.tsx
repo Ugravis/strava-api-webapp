@@ -4,7 +4,7 @@ import { useAmount } from "./use-amount";
 import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { BadgeKindIcon } from "./badge-kind-icon";
-import { progressTier } from "./progress-tier";
+import { progressTier } from "@kilotrace/ui/lib/progress-tier";
 
 interface BadgeLabelProps {
   badge: DistanceBadge;

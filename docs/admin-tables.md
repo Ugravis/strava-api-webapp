@@ -157,6 +157,7 @@ Each builder applies the rules of the kit: the cell of its kind, a copy button o
 | `textColumn({ value, muted?, width? })` | Free text, e-mail (`muted`). Truncated with the whole text in a bubble. Copied. | `TextCell` |
 | `codeColumn({ value, width? })` | Id, key, hash, in monospace. Copied. | `CodeCell` |
 | `numberColumn({ value, zero?, unit? })` | A count. `0` shows as empty unless `zero`. Copied. | `NumberCell` |
+| `shareColumn({ value, look?, detailLook? })` | A share from 0 to 1, e.g. tiles visited, as Notion draws numbers: a `ring` in the table and a `bar` in the detail by default, the percentage muted beside it, or the percentage alone (`number`). Copied as « 12,5 % ». | `ShareCell` |
 | `bytesColumn({ value })` | A weight of files, e.g. « 1,4 Mo ». Copied. | `BytesCell` |
 | `dateColumn({ value, time?, relative?, now? })` | A date, a date and time, or how long ago (`relative`, exact date on hover). | `DateCell`, `RelativeDateCell` |
 | `imageColumn({ value })` | An image `{ src, alt }`: a cover, a capture. A thumbnail in a table and a list; in cards, the first one after the title is the cover at the top of the card, as the card preview of Notion, light grey without an image. A click opens it whole in a popup. | `ImageCell`, `ImageCover` |

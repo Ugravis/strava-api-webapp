@@ -11,7 +11,7 @@ import { BadgeKindIcon } from "./badge-kind-icon";
 import { BadgeLabel } from "./badge-label";
 import { BadgeMedal, type BadgeMedalProps } from "./badge-medal";
 import { BadgeMiniBar } from "./badge-mini-bar";
-import { progressTier } from "./progress-tier";
+import { progressTier } from "@kilotrace/ui/lib/progress-tier";
 import { useAmount } from "./use-amount";
 
 /** How a card lays out a badge: medal over its details, beside them, or details only. */

@@ -28,6 +28,8 @@ interface SplitPanelContextValue {
   isOpen: boolean;
   /** The `?row=` of the URL: the detail shown, or the one a shared link asks for. */
   activeId: string | null;
+  /** The id of the content the panel shows, null without any: `activeId` may name another one, e.g. after a link. */
+  shownId: string | null;
 }
 
 interface Entry extends SplitPanelOptions {
@@ -100,6 +102,7 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
   }, [mode, expanded]);
 
   const isOpen = history !== null;
+  const shownId = history?.entries[history.at]?.id ?? null;
   const { attempt, guard, asking, dialog } = useUnsavedGuard(isOpen);
 
   const show = useCallback((content: ReactNode, options: SplitPanelOptions, replacing: boolean) => {
@@ -149,7 +152,10 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen, close, asking]);
 
-  const value = useMemo(() => ({ open, replace, close, setTitle, guard, isOpen, activeId }), [open, replace, close, setTitle, guard, isOpen, activeId]);
+  const value = useMemo(
+    () => ({ open, replace, close, setTitle, guard, isOpen, activeId, shownId }),
+    [open, replace, close, setTitle, guard, isOpen, activeId, shownId],
+  );
 
   const state: SplitPanelState = {
     entry: history ? history.entries[history.at] : null,

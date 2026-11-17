@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@kilotrace/ui/lib/utils";
-import { progressTier } from "./progress-tier";
+import { progressTier } from "@kilotrace/ui/lib/progress-tier";
 import { useRevealed } from "./use-revealed";
 
 interface BadgeMiniBarProps {

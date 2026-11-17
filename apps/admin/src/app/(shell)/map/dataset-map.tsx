@@ -6,6 +6,7 @@ import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
+import { countryName } from "@kilotrace/ui/lib/countries/country-format";
 import { setCountriesVisible, setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { BASE_STYLE_URL, DEFAULT_VIEW, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import { centerStation, type MapInsets, type StationBounds, stationCut } from "@kilotrace/ui/lib/map/station-camera";
@@ -23,9 +24,11 @@ import {
   stationNear,
   type StationPick,
 } from "@kilotrace/ui/lib/map/stations-layer";
+import { loadRegion } from "../regions/actions";
+import { RegionRowPanel } from "../regions/region-detail";
 import { type StationRights, useStationsVersion } from "../stations/station-bits";
 import { StationRowPanel } from "../stations/station-detail";
-import { locateStation } from "./actions";
+import { locateRegion, locateStation } from "./actions";
 import { DEFAULT_LAYERS, MapLayersMenu, type MapLayersState } from "./map-layers-menu";
 
 // MapLibre derives its worker URL from its own location at runtime, which the
@@ -36,6 +39,11 @@ setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url)
 const HOVER_MIN_ZOOM = 8;
 /** First zoom of the tiles of every station (`AdminMapController`): the railway from the furthest out. */
 const STATIONS_MIN_ZOOM = 0;
+/** Room around a region framed, in pixels, as the public map frames a sector. */
+const REGION_PADDING = 48;
+
+/** The panel holds a region (its ISO code) or a station (its numeric id). */
+const isRegion = (id: string) => /^[A-Z]{2}$/.test(id);
 
 /** Tiles of the map of the back office, relayed by `/map-tiles` with the session. Absolute: MapLibre fetches them from its worker. */
 const tilesUrl = (source: "stations" | "countries", version: string, everyDot = false) =>
@@ -54,7 +62,8 @@ function insetsOf(map: MapLibreMap): MapInsets {
  * audit it: the hidden stations in grey, every country visited. A station
  * hovered or clicked behaves as on the public map, its detail in the side
  * panel, which `?row=` follows (a link from the stations page, back and
- * forward).
+ * forward). A region of the panel (`?row=FR`) is framed on its main
+ * landmass, as the sector tool of the public map does.
  */
 export function DatasetMap({ versions: serverVersions, rights }: { versions: AdminMapVersion; rights: StationRights }) {
   const container = useRef<HTMLDivElement>(null);
@@ -80,6 +89,8 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   /** The station just picked on the map: unlike a station reached otherwise, the camera stays. */
   const picked = useRef<string | null>(null);
   const openRef = useRef<(id: string, name?: string | null) => void>(() => {});
+  /** The bounds of the region shown, framed again by its « Centrer sur la carte ». */
+  const region = useRef<[number, number, number, number] | null>(null);
 
   /** Centers the station shown beside the panel, zoomed in like a small tile (`zoomIn`) or as it is. */
   const center = useCallback((zoomIn: boolean) => {
@@ -87,6 +98,20 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     const shown = selected.current;
     if (map && shown) centerStation(map, shown.pick, shown.bounds, insetsOf(map), zoomIn);
   }, []);
+
+  /** Frames the region shown beside the panel. */
+  const frameRegion = useCallback(() => {
+    const map = mapRef.current;
+    const bounds = region.current;
+    if (!map || !bounds) return;
+    const padding = REGION_PADDING;
+    map.fitBounds(bounds, { padding: { top: padding, bottom: padding, left: padding, right: padding + insetsOf(map).right } });
+  }, []);
+
+  const openRegion = useCallback(
+    (code: string) => open(<RegionRowPanel code={code} load={loadRegion} onCenter={frameRegion} />, { id: code, title: countryName(code, "fr") }),
+    [open, frameRegion],
+  );
 
   const openStation = useCallback(
     (id: string, name?: string | null) => {
@@ -98,7 +123,7 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   );
   useLayoutEffect(() => {
     state.current = { palette, versions, everyDot };
-    openRef.current = openStation;
+    openRef.current = (id, name) => (isRegion(id) ? openRegion(id) : openStation(id, name));
   });
 
   useEffect(() => {
@@ -176,12 +201,24 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (!selectedId) {
+    region.current = null;
+    if (!selectedId || isRegion(selectedId)) {
       selected.current = null;
       setSelectedStation(map, null);
-      return;
     }
+    if (!selectedId) return;
     let live = true;
+    if (isRegion(selectedId)) {
+      locateRegion(selectedId).then((found) => {
+        if (!live || !found?.bounds) return;
+        const { west, south, east, north } = found.bounds;
+        region.current = [west, south, east, north];
+        frameRegion();
+      });
+      return () => {
+        live = false;
+      };
+    }
     locateStation(selectedId).then((station) => {
       if (!live || !station) return;
       const pick = { id: station.id, lon: station.lon, lat: station.lat, name: station.name };
@@ -198,12 +235,12 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     return () => {
       live = false;
     };
-  }, [selectedId, center]);
+  }, [selectedId, center, frameRegion]);
 
-  // A shared link (`?row=`): the station opened on arrival.
+  // A shared link (`?row=`): the station or the region opened on arrival.
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("row");
-    if (id && /^\d+$/.test(id)) openRef.current(id);
+    if (id && (/^\d+$/.test(id) || isRegion(id))) openRef.current(id);
   }, []);
 
   return (

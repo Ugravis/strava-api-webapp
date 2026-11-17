@@ -18,3 +18,10 @@ export interface AdminMapStation {
   /** Bounds of its zone (its small tiles), in degrees; null without any. */
   bounds: { west: number; south: number; east: number; north: number } | null;
 }
+
+/** `GET /api/admin/map/region/:code`: how the map frames a region, on its main landmass. */
+export interface AdminMapRegion {
+  code: string;
+  /** In degrees; null for a region without any land. */
+  bounds: { west: number; south: number; east: number; north: number } | null;
+}

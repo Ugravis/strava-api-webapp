@@ -1,4 +1,8 @@
-import type { AdminMapStation, AdminMapVersion } from '@kilotrace/shared/admin';
+import type {
+  AdminMapRegion,
+  AdminMapStation,
+  AdminMapVersion,
+} from '@kilotrace/shared/admin';
 import { Injectable } from '@nestjs/common';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -8,6 +12,8 @@ import { RAIL_DETAIL_ZOOM } from '../../stations/import/rail-strokes';
 import { stationName } from '../../stations/shown-stations';
 import { SUBTILE_ZOOM, TILE_ZOOM } from '../../tiles/tile-grid';
 
+/** A country: ISO 3166-1 alpha-2, the only kind of region so far. */
+const COUNTRY_CODE = /^[A-Z]{2}$/;
 const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
@@ -113,6 +119,30 @@ export class AdminMapService {
    * zoomed in the footprints and zone tiles, with the properties of the
    * tiles of the public map: the same layers draw them.
    */
+  /** How the map frames a region: a country on its main landmass. */
+  async region(code: string): Promise<AdminMapRegion> {
+    const known =
+      COUNTRY_CODE.test(code) &&
+      (
+        await this.dataSource.query<unknown[]>(
+          'SELECT 1 FROM countries WHERE code = $1',
+          [code],
+        )
+      ).length > 0;
+    if (!known)
+      throw ApiErrors.notFound(ApiErrorCode.NotFound, 'Region not found');
+    const bounds = await this.countries.focusBounds(code);
+    return {
+      code,
+      bounds: bounds && {
+        west: bounds[0],
+        south: bounds[1],
+        east: bounds[2],
+        north: bounds[3],
+      },
+    };
+  }
+
   async stationsTile(
     zoom: number,
     x: number,

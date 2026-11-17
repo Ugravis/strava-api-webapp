@@ -7,7 +7,7 @@ import { cn } from "@kilotrace/ui/lib/utils";
 import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
 import { FamilyIcon } from "./family-icon";
 import { ProgressRing } from "./progress-ring";
-import { progressTier } from "./progress-tier";
+import { progressTier } from "@kilotrace/ui/lib/progress-tier";
 
 /** What a medal shows of a badge: the favorite and profile marks are optional, missing on other profiles. */
 export type MedalBadge = Pick<DistanceBadge, "name" | "icon" | "family" | "tiers" | "completions" | "progress"> &

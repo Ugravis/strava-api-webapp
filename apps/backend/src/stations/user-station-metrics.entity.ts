@@ -24,6 +24,18 @@ export class UserStationMetrics {
   })
   maxCluster!: number[];
 
+  /** Meters of railway between the stations of the largest network. */
+  @Column({ name: 'max_cluster_m', type: 'integer', default: 0 })
+  maxClusterM!: number;
+
+  /** Stations of the other networks of at least two stations. */
+  @Column({ name: 'other_clusters', type: 'integer', default: 0 })
+  otherClusters!: number;
+
+  /** Meters of railway between the stations of the other networks. */
+  @Column({ name: 'other_clusters_m', type: 'integer', default: 0 })
+  otherClustersM!: number;
+
   /** Version of the tiles (`user_tile_metrics.version`) they were computed from. */
   @Column({ name: 'tiles_version', type: 'bigint' })
   tilesVersion!: string;

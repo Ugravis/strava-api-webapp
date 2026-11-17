@@ -13,6 +13,9 @@ export class AddUserStationMetrics1796500000000 implements MigrationInterface {
       `CREATE TABLE "user_station_metrics" (
          "user_id" uuid NOT NULL,
          "max_cluster" integer array NOT NULL DEFAULT '{}',
+         "max_cluster_m" integer NOT NULL DEFAULT 0,
+         "other_clusters" integer NOT NULL DEFAULT 0,
+         "other_clusters_m" integer NOT NULL DEFAULT 0,
          "tiles_version" bigint NOT NULL,
          "gains_version" bigint,
          "stations_version" text,

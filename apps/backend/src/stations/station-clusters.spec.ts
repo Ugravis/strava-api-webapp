@@ -1,12 +1,18 @@
-import { largestStationCluster, replayStationGains } from './station-clusters';
+import {
+  replayStationGains,
+  type StationLink,
+  stationNetworks,
+} from './station-clusters';
+
+const link = (a: number, b: number, lengthM = 1000): StationLink => ({
+  a,
+  b,
+  lengthM,
+});
 
 describe('replayStationGains', () => {
   it('tells the new stations and the growth of the largest network of each activity', () => {
-    const links: [number, number][] = [
-      [1, 2],
-      [2, 3],
-      [4, 5],
-    ];
+    const links = [link(1, 2), link(2, 3), link(4, 5)];
     expect(
       replayStationGains(
         [
@@ -29,47 +35,49 @@ describe('replayStationGains', () => {
   it('ends on the largest network of every station', () => {
     const gains = replayStationGains(
       [3, 1, 2].map((stationId, i) => ({ stationId, activityId: `${i}` })),
-      [
-        [1, 2],
-        [2, 3],
-      ],
+      [link(1, 2), link(2, 3)],
     );
     expect(gains.reduce((total, gain) => total + gain.maxCluster, 0)).toBe(3);
   });
 });
 
-describe('largestStationCluster', () => {
+describe('stationNetworks', () => {
   it('is empty without stations', () => {
-    expect(largestStationCluster([], [])).toEqual([]);
+    expect(stationNetworks([], [])).toEqual({
+      maxCluster: [],
+      maxClusterM: 0,
+      otherClusters: 0,
+      otherClustersM: 0,
+    });
   });
 
-  it('counts a station without links as a network of its own', () => {
-    expect(largestStationCluster([7], [])).toEqual([7]);
+  it('counts a station without links as a network of its own, never as another cluster', () => {
+    expect(stationNetworks([7, 8], [])).toEqual({
+      maxCluster: [7],
+      maxClusterM: 0,
+      otherClusters: 0,
+      otherClustersM: 0,
+    });
   });
 
-  it('keeps the largest network of linked stations', () => {
+  it('keeps the largest network and the railway of each', () => {
     expect(
-      largestStationCluster(
-        [5, 1, 2, 3, 4],
-        [
-          [1, 2],
-          [3, 2],
-          [4, 5],
-        ],
+      stationNetworks(
+        [5, 1, 2, 3, 4, 6],
+        [link(1, 2, 1200), link(3, 2, 800), link(4, 5, 500)],
       ),
-    ).toEqual([1, 2, 3]);
+    ).toEqual({
+      maxCluster: [1, 2, 3],
+      maxClusterM: 2000,
+      otherClusters: 2,
+      otherClustersM: 500,
+    });
   });
 
   it('ignores the links towards stations not visited', () => {
     expect(
-      largestStationCluster(
-        [1, 2, 3],
-        [
-          [1, 9],
-          [9, 2],
-          [2, 3],
-        ],
-      ),
+      stationNetworks([1, 2, 3], [link(1, 9), link(9, 2), link(2, 3)])
+        .maxCluster,
     ).toEqual([2, 3]);
   });
 });

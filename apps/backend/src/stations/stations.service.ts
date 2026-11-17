@@ -64,6 +64,12 @@ export interface VisitedStations {
   stationsVersion: string | null;
   /** Ids of the stations of the largest network of visited stations, as last computed by the station metrics worker. */
   maxCluster: number[];
+  /** Meters of railway between the stations of the largest network. */
+  maxClusterM: number;
+  /** Stations of the other networks of at least two stations. */
+  otherClusters: number;
+  /** Meters of railway between the stations of the other networks. */
+  otherClustersM: number;
   /** The activities that grew the largest network, oldest first. */
   maxClusterGains: StationClusterGain[];
 }
@@ -294,13 +300,30 @@ export class StationsService {
   /** The largest network of the user and the activities that grew it, empty until first computed. */
   private async maxCluster(
     userId: string,
-  ): Promise<Pick<VisitedStations, 'maxCluster' | 'maxClusterGains'>> {
+  ): Promise<
+    Pick<
+      VisitedStations,
+      | 'maxCluster'
+      | 'maxClusterM'
+      | 'otherClusters'
+      | 'otherClustersM'
+      | 'maxClusterGains'
+    >
+  > {
     const [row]: {
-      max_cluster: number[] | null;
+      metrics: {
+        max_cluster: number[];
+        max_cluster_m: number;
+        other_clusters: number;
+        other_clusters_m: number;
+      } | null;
       gains: StationClusterGain[] | null;
     }[] = await this.dataSource.query(
       `SELECT
-         (SELECT max_cluster FROM user_station_metrics WHERE user_id = $1) AS max_cluster,
+         (SELECT json_build_object('max_cluster', max_cluster,
+            'max_cluster_m', max_cluster_m, 'other_clusters', other_clusters,
+            'other_clusters_m', other_clusters_m)
+          FROM user_station_metrics WHERE user_id = $1) AS metrics,
          (SELECT json_agg(json_build_object(
             'at', to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
             'gain', max_cluster) ORDER BY started_at)
@@ -309,7 +332,10 @@ export class StationsService {
       [userId],
     );
     return {
-      maxCluster: row?.max_cluster ?? [],
+      maxCluster: row?.metrics?.max_cluster ?? [],
+      maxClusterM: row?.metrics?.max_cluster_m ?? 0,
+      otherClusters: row?.metrics?.other_clusters ?? 0,
+      otherClustersM: row?.metrics?.other_clusters_m ?? 0,
       maxClusterGains: row?.gains ?? [],
     };
   }

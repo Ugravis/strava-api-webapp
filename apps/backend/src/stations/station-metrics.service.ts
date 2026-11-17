@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import {
-  largestStationCluster,
   replayStationGains,
   type StationFirstVisit,
+  type StationLink,
+  stationNetworks,
 } from './station-clusters';
+import { shownStation } from './shown-stations';
 import { StationsService, VISITED_STATIONS } from './stations.service';
 
 /** Delay without any change of the tiles before computing again. */
@@ -28,6 +30,8 @@ export interface ActivityStationGains {
   stations: number;
   /** Growth of the largest network of visited stations. */
   maxCluster: number;
+  /** Ids of the stations it reached first. */
+  stationIds: number[];
 }
 
 /**
@@ -86,7 +90,7 @@ export class StationMetricsService {
   }: StaleStationMetrics): Promise<number> {
     const [row]: {
       ids: number[] | null;
-      links: [number, number][] | null;
+      links: StationLink[] | null;
       first_visits: [number, string][] | null;
     }[] = await this.dataSource.query(
       `WITH visited AS MATERIALIZED (SELECT id FROM (${VISITED_STATIONS}) v),
@@ -99,7 +103,8 @@ export class StationMetricsService {
          ORDER BY t.place_id, f.visited_at, f.activity_id
        )
        SELECT (SELECT array_agg(id) FROM visited) AS ids,
-         (SELECT json_agg(json_build_array(l.station_a, l.station_b))
+         (SELECT json_agg(json_build_object(
+            'a', l.station_a, 'b', l.station_b, 'lengthM', l.length_m))
           FROM rail_links l
           WHERE l.station_a IN (SELECT id FROM visited)
             AND l.station_b IN (SELECT id FROM visited)) AS links,
@@ -109,7 +114,7 @@ export class StationMetricsService {
       [userId],
     );
     const links = row.links ?? [];
-    const cluster = largestStationCluster(row.ids ?? [], links);
+    const networks = stationNetworks(row.ids ?? [], links);
     const firstVisits = (row.first_visits ?? []).map(
       ([stationId, activityId]): StationFirstVisit => ({
         stationId,
@@ -139,18 +144,75 @@ export class StationMetricsService {
         );
       }
       await manager.query(
-        `INSERT INTO user_station_metrics (user_id, max_cluster, tiles_version,
-           gains_version, stations_version, computed_at)
-         VALUES ($1, $2, $3, $4, $5, now())
+        `INSERT INTO user_station_metrics (user_id, max_cluster, max_cluster_m,
+           other_clusters, other_clusters_m, tiles_version, gains_version,
+           stations_version, computed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
          ON CONFLICT (user_id) DO UPDATE SET max_cluster = EXCLUDED.max_cluster,
+           max_cluster_m = EXCLUDED.max_cluster_m,
+           other_clusters = EXCLUDED.other_clusters,
+           other_clusters_m = EXCLUDED.other_clusters_m,
            tiles_version = EXCLUDED.tiles_version,
            gains_version = EXCLUDED.gains_version,
            stations_version = EXCLUDED.stations_version,
            computed_at = now()`,
-        [userId, cluster, tilesVersion, gainsVersion, stationsVersion],
+        [
+          userId,
+          networks.maxCluster,
+          networks.maxClusterM,
+          networks.otherClusters,
+          networks.otherClustersM,
+          tilesVersion,
+          gainsVersion,
+          stationsVersion,
+        ],
       );
     });
-    return cluster.length;
+    return networks.maxCluster.length;
+  }
+
+  /**
+   * Ids of the stations of the largest network for the history: today's
+   * when the gains since `date` are shown apart, else the one before it.
+   */
+  async historyCluster(
+    userId: string,
+    gained: boolean,
+    date: Date,
+  ): Promise<number[]> {
+    if (!gained) return this.clusterAt(userId, date);
+    const [row]: { max_cluster: number[] }[] = await this.dataSource.query(
+      `SELECT max_cluster FROM user_station_metrics WHERE user_id = $1`,
+      [userId],
+    );
+    return row?.max_cluster ?? [];
+  }
+
+  /**
+   * Ids of the stations of the largest network as it was before `date`:
+   * the stations first visited before it, whose first visit is replayed.
+   */
+  private async clusterAt(userId: string, date: Date): Promise<number[]> {
+    const [row]: { ids: number[] | null; links: StationLink[] | null }[] =
+      await this.dataSource.query(
+        `WITH visited AS MATERIALIZED (
+           SELECT v.id FROM (${VISITED_STATIONS}) v
+           WHERE EXISTS (
+             SELECT 1 FROM place_tiles t
+             JOIN tile_first_visits f ON f.user_id = $1 AND f.x = t.x AND f.y = t.y
+               AND f.mask & (1::bigint << t.bit) <> 0
+             WHERE t.place_id = v.id AND f.visited_at < $2
+           )
+         )
+         SELECT (SELECT array_agg(id) FROM visited) AS ids,
+           (SELECT json_agg(json_build_object(
+              'a', l.station_a, 'b', l.station_b, 'lengthM', l.length_m))
+            FROM rail_links l
+            WHERE l.station_a IN (SELECT id FROM visited)
+              AND l.station_b IN (SELECT id FROM visited)) AS links`,
+        [userId, date],
+      );
+    return stationNetworks(row.ids ?? [], row.links ?? []).maxCluster;
   }
 
   /**
@@ -165,10 +227,23 @@ export class StationMetricsService {
       replayed: boolean;
       stations: number | null;
       max_cluster: number | null;
+      station_ids: number[] | null;
     }[] = await this.dataSource.query(
       `SELECT s.gains_version IS NOT NULL
            AND s.gains_version = m.gains_version AS replayed,
-         g.stations, g.max_cluster
+         g.stations, g.max_cluster,
+         (SELECT array_agg(DISTINCT t.place_id) FROM place_tiles t
+          JOIN tile_first_visits f ON f.activity_id = $2 AND f.user_id = $1
+            AND f.x = t.x AND f.y = t.y AND f.mask & (1::bigint << t.bit) <> 0
+          JOIN places p ON p.id = t.place_id AND ${shownStation()}
+          -- Reached first by this activity, not earlier through another tile of its zone.
+          WHERE NOT EXISTS (
+            SELECT 1 FROM place_tiles t2
+            JOIN tile_first_visits f2 ON f2.user_id = $1
+              AND f2.x = t2.x AND f2.y = t2.y AND f2.mask & (1::bigint << t2.bit) <> 0
+            WHERE t2.place_id = t.place_id
+              AND (f2.visited_at, f2.activity_id) < (f.visited_at, f.activity_id)
+          )) AS station_ids
        FROM user_tile_metrics m
        LEFT JOIN user_station_metrics s ON s.user_id = m.user_id
        LEFT JOIN activity_station_gains g
@@ -177,6 +252,10 @@ export class StationMetricsService {
       [userId, activityId],
     );
     if (!row?.replayed) return null;
-    return { stations: row.stations ?? 0, maxCluster: row.max_cluster ?? 0 };
+    return {
+      stations: row.stations ?? 0,
+      maxCluster: row.max_cluster ?? 0,
+      stationIds: row.station_ids ?? [],
+    };
   }
 }

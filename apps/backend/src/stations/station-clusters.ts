@@ -41,30 +41,47 @@ class Networks {
 }
 
 /** The stations linked to each station. */
-function neighborsOf(links: [number, number][]): Map<number, number[]> {
+function neighborsOf(links: StationLink[]): Map<number, number[]> {
   const neighbors = new Map<number, number[]>();
-  for (const [a, b] of links) {
+  for (const { a, b } of links) {
     neighbors.set(a, [...(neighbors.get(a) ?? []), b]);
     neighbors.set(b, [...(neighbors.get(b) ?? []), a]);
   }
   return neighbors;
 }
 
+/** A link between two stations and its length. */
+export interface StationLink {
+  a: number;
+  b: number;
+  lengthM: number;
+}
+
+/** The networks of visited stations: the largest one, and the others of two stations or more. */
+export interface StationNetworks {
+  /** Ids of the stations of the largest network, sorted; the first network found wins a tie. */
+  maxCluster: number[];
+  /** Meters of railway between the stations of the largest network. */
+  maxClusterM: number;
+  /** Stations of the other networks of at least two stations. */
+  otherClusters: number;
+  /** Meters of railway between the stations of the other networks. */
+  otherClustersM: number;
+}
+
 /**
- * The largest network of visited stations: the stations reached from one
- * another along links between two of them. A station without any link is a
- * network of its own. Ids sorted; none without stations; the first network
- * found wins a tie.
+ * The networks of visited stations: the stations reached from one another
+ * along links between two of them. A station without any link is a network
+ * of its own, never one of the other clusters.
  */
-export function largestStationCluster(
+export function stationNetworks(
   stationIds: number[],
-  links: [number, number][],
-): number[] {
+  links: StationLink[],
+): StationNetworks {
   const networks = new Networks();
   for (const id of stationIds) networks.add(id);
-  for (const [a, b] of links) {
-    if (networks.has(a) && networks.has(b)) networks.join(a, b);
-  }
+  const inside = links.filter(({ a, b }) => networks.has(a) && networks.has(b));
+  for (const { a, b } of inside) networks.join(a, b);
 
   const members = new Map<number, number[]>();
   let largest: number[] = [];
@@ -78,7 +95,23 @@ export function largestStationCluster(
     group.push(id);
     if (group.length > largest.length) largest = group;
   }
-  return [...largest].sort((a, b) => a - b);
+  const largestRoot = largest.length > 0 ? networks.root(largest[0]) : null;
+  let otherClusters = 0;
+  for (const [top, group] of members) {
+    if (top !== largestRoot && group.length >= 2) otherClusters += group.length;
+  }
+  let maxClusterM = 0;
+  let otherClustersM = 0;
+  for (const { a, lengthM } of inside) {
+    if (networks.root(a) === largestRoot) maxClusterM += lengthM;
+    else otherClustersM += lengthM;
+  }
+  return {
+    maxCluster: [...largest].sort((a, b) => a - b),
+    maxClusterM: Math.round(maxClusterM),
+    otherClusters,
+    otherClustersM: Math.round(otherClustersM),
+  };
 }
 
 /** The first visit of a station: the activity that reached it first. */
@@ -103,7 +136,7 @@ export interface StationGain {
  */
 export function replayStationGains(
   firstVisits: StationFirstVisit[],
-  links: [number, number][],
+  links: StationLink[],
 ): StationGain[] {
   const neighbors = neighborsOf(links);
   const networks = new Networks();

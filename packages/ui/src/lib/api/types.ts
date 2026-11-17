@@ -354,6 +354,8 @@ export interface ActivityTiles {
   subtiles: [number, number][];
   /** What the activity brought when it was recorded; null until computed. */
   gains: { tiles: LevelGains; subtiles: LevelGains } | null;
+  /** Stations it reached first and growth of the largest network of visited stations; null until computed. */
+  stationGains: { stations: number; maxCluster: number } | null;
 }
 
 /** A page of the activities that crossed a tile, the latest ones first. */
@@ -430,6 +432,8 @@ export interface TileHistorySummary {
   stations: number;
   /** Meters of railway unlocked since the date, or before it. */
   railwayM: number;
+  /** Growth of the largest network of visited stations since the date, or its size at the date. */
+  maxStationCluster: number;
 }
 
 /** What the activities of one day brought to the tiles. */
@@ -479,6 +483,10 @@ export interface VisitedStations {
   ties: RailTie[];
   /** Changes with each import of the stations: the vector tiles of all the stations follow it. Null without stations. */
   stationsVersion: string | null;
+  /** Ids of the stations of the largest network of visited stations linked to each other, computed in the background. */
+  maxCluster: number[];
+  /** The activities that grew the largest network: their start (ISO 8601) and the growth, oldest first. */
+  maxClusterGains: { at: string; gain: number }[];
 }
 
 /** A station next to another on the railway. */
@@ -505,6 +513,8 @@ export interface StationDetails {
   visited: boolean;
   firstVisitAt: string | null;
   neighbors: StationNeighbor[];
+  /** Part of the largest network of the stations visited by the user. */
+  inMaxCluster: boolean;
 }
 
 /** The train stations of a country and those the user visited. */
@@ -566,7 +576,7 @@ export interface TileFigures {
 export interface ProfileShowcase {
   badges: ProfileBadge[];
   tiles: { large: TileFigures; small: TileFigures };
-  stations: { visited: number; unlockedKm: number };
+  stations: { visited: number; unlockedKm: number; maxCluster: number };
 }
 
 export interface PublicProfile extends ProfileSummary {

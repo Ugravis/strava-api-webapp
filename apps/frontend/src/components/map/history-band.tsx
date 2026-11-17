@@ -201,6 +201,7 @@ export function HistoryBand({
             label={t("counts.railway")}
             accent="railLink"
           />
+          <Stat value={counted(summary?.maxStationCluster ?? 0)} label={t("counts.stationCluster")} accent="station" />
         </div>
         <div role="status" className="flex min-w-0 items-center text-xs text-muted-foreground">
           {error ? (

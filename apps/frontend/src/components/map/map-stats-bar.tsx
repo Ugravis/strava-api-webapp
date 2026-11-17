@@ -355,6 +355,27 @@ function TilesModule({
   );
 }
 
+/** A figure and the share of the total it covers; a small share keeps two significant digits rather than rounding to 0 %. */
+function WithShare({ text, part, total }: { text: string; part: number; total: number }) {
+  const format = useFormatter();
+  const share = total > 0 ? part / total : 0;
+  return (
+    <>
+      {text}
+      {total > 0 && (
+        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          {format.number(
+            share,
+            share > 0 && share < 0.01
+              ? { style: "percent", maximumSignificantDigits: 2 }
+              : { style: "percent", maximumFractionDigits: 1 },
+          )}
+        </span>
+      )}
+    </>
+  );
+}
+
 function TilesSection({
   level,
   summary,
@@ -371,25 +392,9 @@ function TilesSection({
   const format = useFormatter();
   const value = (render: (summary: TileLevelSummary) => ReactNode) => (summary ? render(summary) : <ValueSkeleton />);
   const size = (summary: TileLevelSummary) => summary.maxSquare?.size ?? 0;
-  /** A figure and the share of the visited tiles it covers; a small share keeps two significant digits rather than rounding to 0 %. */
-  const withShare = (text: string, tiles: number, { visited }: TileLevelSummary) => {
-    const share = visited > 0 ? tiles / visited : 0;
-    return (
-      <>
-        {text}
-        {visited > 0 && (
-          <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-            {format.number(
-              share,
-              share > 0 && share < 0.01
-                ? { style: "percent", maximumSignificantDigits: 2 }
-                : { style: "percent", maximumFractionDigits: 1 },
-            )}
-          </span>
-        )}
-      </>
-    );
-  };
+  const withShare = (text: string, tiles: number, { visited }: TileLevelSummary) => (
+    <WithShare text={text} part={tiles} total={visited} />
+  );
 
   return (
     <StatsSection
@@ -499,11 +504,12 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const t = useTranslations("map.stats");
   const format = useFormatter();
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
+  const maxCluster = stations?.maxCluster.length ?? 0;
   const sound = useSoundSettings();
 
   return (
-    <div className="flex h-full snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none lg:grid lg:grid-cols-3 lg:overflow-visible">
-      <StatsSection title={t("stations")}>
+    <div className="flex h-full snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none xl:grid xl:grid-cols-3 xl:overflow-visible">
+      <StatsSection title={t("stations")} columns>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
           label={t("stationCount", { count: stations?.stations.length ?? 0 })}
@@ -523,6 +529,17 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           }
           label={t("railway")}
           accent="railLink"
+        />
+        <Stat
+          value={
+            stations ? (
+              <WithShare text={format.number(maxCluster)} part={maxCluster} total={stations.stations.length} />
+            ) : (
+              <ValueSkeleton />
+            )
+          }
+          label={t("maxCluster")}
+          accent="station"
         />
       </StatsSection>
       {/* Titled from large screens only, where the band is taller: the band keeps its height below. Centered in the band. */}

@@ -13,6 +13,8 @@ export interface StationNetwork {
   stations: (Omit<VisitedStations["stations"][number], "firstVisitAt"> & { firstVisitAt?: string | null })[];
   links: VisitedStations["links"];
   ties: VisitedStations["ties"];
+  /** Ids of the stations of the largest network, highlighted on the map out of the history. */
+  maxCluster?: VisitedStations["maxCluster"];
 }
 
 /** Whether a station or a link was gained in the period of the history: drawn in the pink of the gains. */
@@ -57,6 +59,8 @@ export function stationData(
   history: StationHistory | null = null,
 ): StationData {
   if (!visited) return NO_STATION_DATA;
+  // The largest network is the one of today: not shown in the history.
+  const cluster = new Set(history ? [] : (visited.maxCluster ?? []));
   const firstVisits = new Map<number, string | null>();
   const ends = new Map<number, LinkEnd>();
   const features: StationData["stations"]["features"] = [];
@@ -76,18 +80,21 @@ export function stationData(
         id: station.id,
         name: station.name,
         gained: isGained(station.firstVisitAt, history),
+        cluster: cluster.has(station.id),
       },
       geometry: { type: "Point", coordinates: [station.lon, station.lat] },
     });
   }
   const links: StationData["links"]["features"] = [];
   const unlockedAts = new Map<number, string | null>();
+  const clusterLinks = new Set<number>();
   for (const link of visited.links) {
     const [a, b] = link.stations.map((id) => firstVisits.get(id));
     if (a === undefined || b === undefined) continue;
     const unlockedAt = a === null || b === null ? (a ?? b) : a > b ? a : b;
     if (!inHistory(unlockedAt, history)) continue;
     unlockedAts.set(link.id, unlockedAt);
+    if (link.stations.every((id) => cluster.has(id))) clusterLinks.add(link.id);
     const [first, second] = link.stations.map((id) => ends.get(id)!);
     // The station nearest the first point starts the link.
     const [lon, lat] = link.coords[0];
@@ -102,6 +109,7 @@ export function stationData(
           ? { start: first, end: second }
           : { start: second, end: first }),
         gained: isGained(unlockedAt, history),
+        cluster: clusterLinks.has(link.id),
       },
       geometry: { type: "LineString", coordinates: link.coords },
     });
@@ -115,7 +123,7 @@ export function stationData(
     const first = ats.includes(null) ? null : (ats as string[]).reduce((a, b) => (a < b ? a : b));
     ties.push({
       type: "Feature",
-      properties: { gained: isGained(first, history) },
+      properties: { gained: isGained(first, history), cluster: inPeriod.some((id) => clusterLinks.has(id)) },
       geometry: { type: "LineString", coordinates: tie.coords },
     });
   }

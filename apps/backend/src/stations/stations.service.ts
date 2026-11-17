@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { SportType } from '../activities/sport-type';
-import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
+import { SUBTILE_ZOOM, SUBTILES_PER_SIDE, TILE_ZOOM } from '../tiles/tile-grid';
 import { reachingStations } from './import/railway-network';
 import { shownStation, stationName } from './shown-stations';
 
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tolerance of the simplified links sent to the map, in degrees (about 2 m). */
 const LINK_SIMPLIFY_DEG = 0.00002;
 /** Tolerance of the simplified ties, in degrees (about 0.5 m): finer, as they are drawn from the zoom where the base map shows the rail itself. */

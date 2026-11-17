@@ -1,11 +1,9 @@
 /** `[latitude, longitude]`, the order used by Strava and polylines. */
 export type LatLng = [number, number];
 
-/** Large tiles: slippy-map tiles at zoom 14, about 1.7 km wide in France. */
-export const TILE_ZOOM = 14;
-/** Small tiles: zoom 17, 8 × 8 = 64 per large tile, about 210 m wide in France. */
-export const SUBTILE_ZOOM = 17;
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
+import { SUBTILE_ZOOM, SUBTILES_PER_SIDE } from '@kilotrace/shared';
+
+export { SUBTILE_ZOOM, SUBTILES_PER_SIDE, TILE_ZOOM } from '@kilotrace/shared';
 const SUBTILE_SHIFT = Math.log2(SUBTILES_PER_SIDE);
 
 const EARTH_RADIUS_M = 6_371_000;

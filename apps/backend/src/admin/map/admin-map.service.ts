@@ -10,11 +10,14 @@ import { DataSource } from 'typeorm';
 import { CountriesService } from '../../countries/countries.service';
 import { RAIL_DETAIL_ZOOM } from '../../stations/import/rail-strokes';
 import { stationName } from '../../stations/shown-stations';
-import { SUBTILE_ZOOM, TILE_ZOOM } from '../../tiles/tile-grid';
+import {
+  SUBTILE_ZOOM,
+  SUBTILES_PER_SIDE,
+  TILE_ZOOM,
+} from '../../tiles/tile-grid';
 
 /** A country: ISO 3166-1 alpha-2, the only kind of region so far. */
 const COUNTRY_CODE = /^[A-Z]{2}$/;
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 /** As on the site map: the footprints and zones zoomed in only. */

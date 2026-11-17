@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SUBTILES_PER_SIDE, TILES_MAX_ZOOM } from '@kilotrace/shared';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import {
@@ -15,7 +16,6 @@ import {
   layerSql,
   marginOf,
   rectanglesSql,
-  SUBTILES_PER_SIDE,
   tileRange,
   VECTOR_OUTLINE_MIN_ZOOM,
 } from './map-tile-sql';
@@ -72,12 +72,6 @@ const SETTLE_DELAY = "interval '2 seconds'";
 /** Metrics older than this are computed again even while the tiles keep changing. */
 const MAX_METRICS_AGE = "interval '30 seconds'";
 
-/**
- * Deepest zoom of the vector tiles and of the images: the map stretches
- * them beyond. At zoom 12, a small tile still spans 128 units of the 4096
- * of a vector tile, and 16 pixels of an image.
- */
-export const TILES_MAX_ZOOM = 12;
 /** The images of the small tiles are served from this zoom, where a country like France fits on a screen. */
 export const RASTER_MIN_ZOOM = 5;
 /**

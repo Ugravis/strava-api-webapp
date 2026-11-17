@@ -12,6 +12,7 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { SHAPES_MAX_ZOOM, STATIONS_MAX_ZOOM } from '@kilotrace/shared';
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
@@ -23,7 +24,10 @@ import { AnyMember } from '../access/permission.decorator';
 import { AdminMapService } from './admin-map.service';
 
 /** Zooms of the tiles: the railway from the furthest out, as the public map draws the visited one. */
-const ZOOMS = { stations: { min: 0, max: 14 }, countries: { min: 0, max: 10 } };
+const ZOOMS = {
+  stations: { min: 0, max: STATIONS_MAX_ZOOM },
+  countries: { min: 0, max: SHAPES_MAX_ZOOM },
+};
 
 function tileParams({ min, max }: { min: number; max: number }) {
   class TileParamsDto {

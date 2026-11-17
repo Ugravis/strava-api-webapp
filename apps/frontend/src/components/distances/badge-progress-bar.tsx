@@ -6,7 +6,7 @@ import { useAmount } from "./use-amount";
 import { ProgressIndicator, ProgressTrack } from "@kilotrace/ui/components/ui/progress";
 import type { DistanceBadge } from "@kilotrace/ui/lib/api/types";
 import { cn } from "@kilotrace/ui/lib/utils";
-import { progressTier } from "./progress-tier";
+import { progressTier } from "@kilotrace/ui/lib/progress-tier";
 import { useRevealed } from "./use-revealed";
 
 /** Progress of the current iteration of a badge, filling up from zero when it appears. */

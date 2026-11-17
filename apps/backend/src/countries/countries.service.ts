@@ -57,6 +57,13 @@ export interface CountrySector {
 }
 
 /** Large tiles of the user, with their small tiles. */
+/**
+ * Advisory lock between the located tiles and the changes of the tiles of
+ * the users (`refresh_user_tiles`, shared): each tile gained counted once
+ * in `user_countries`, by one side or the other.
+ */
+const TILE_COUNTRIES_LOCK = `hashtextextended('tile_countries', 0)`;
+
 const USER_CELLS = 'SELECT x, y, mask FROM user_tiles WHERE user_id = $1';
 
 /** Layers of the shape tiles: the merged areas and their outer borders. */
@@ -129,6 +136,10 @@ export class CountriesService {
            ON s.activity_id = t.activity_id AND s.updated_at >= $2`
       : '';
     return this.dataSource.transaction(async (manager) => {
+      // The tiles of the users stand still meanwhile: their countries counted once.
+      await manager.query(
+        `SELECT pg_advisory_xact_lock(${TILE_COUNTRIES_LOCK})`,
+      );
       const [row]: { located: number }[] = await manager.query(
         `WITH todo AS (
            SELECT DISTINCT t.x, t.y FROM activity_tiles t
@@ -163,6 +174,19 @@ export class CountriesService {
            INSERT INTO tile_countries (x, y, country_code, mask)
            SELECT x, y, country_code, bit_or(bit) FROM bits
            GROUP BY x, y, country_code
+           RETURNING x, y, country_code
+         ),
+         -- The holders of the tiles visit their countries.
+         visited AS (
+           SELECT u.user_id, i.country_code, count(*)::int AS tiles
+           FROM inserted i JOIN user_tiles u ON u.x = i.x AND u.y = i.y
+           GROUP BY u.user_id, i.country_code
+         ),
+         counted AS (
+           INSERT INTO user_countries (user_id, country_code, tiles)
+           SELECT user_id, country_code, tiles FROM visited
+           ON CONFLICT (user_id, country_code) DO UPDATE
+           SET tiles = user_countries.tiles + EXCLUDED.tiles
          )
          SELECT count(*)::int AS located FROM marked`,
         since ? [limit, since] : [limit],
@@ -435,6 +459,22 @@ export class CountriesService {
             [userId, code],
           );
     return row?.started_at ?? null;
+  }
+
+  /**
+   * Bounds of the main landmass of a country, in degrees, computed once:
+   * null for an unknown country, or one without any land.
+   */
+  async focusBounds(
+    code: string,
+  ): Promise<[number, number, number, number] | null> {
+    const [country]: { bounds: [number, number, number, number] | null }[] =
+      await this.dataSource.query(
+        `SELECT ${BOUNDS_IN_DEGREES} AS bounds FROM countries WHERE code = $1`,
+        [code],
+      );
+    if (!country) return null;
+    return country.bounds ?? (await this.computeFocusBounds(code));
   }
 
   /**

@@ -1588,7 +1588,7 @@
       "description": "Toutes les tables de PostgreSQL, lues dans ses catalogues, en lecture seule. Les lignes sont une estimation de Postgres ; l'activité court depuis le dernier reset de ses statistiques.",
       "error": "Impossible de lire les tables de la base pour le moment.",
       "weight": "Base de données",
-      "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index"
+      "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index · {free} libres sur le disque"
     }
   }
 }

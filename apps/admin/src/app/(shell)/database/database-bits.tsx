@@ -96,22 +96,24 @@ export async function UploadsAudit({ canEdit }: { canEdit: boolean }) {
   );
 }
 
-/** Weight of the tables of the database, indexes included. */
+/** Weight of the rows of the database, indexes included: the free space left by deleted rows aside. */
 function DatabaseTile({ tables }: { tables: AdminDatabaseTable[] | null }) {
   const t = getAdminTranslations("database.tables");
   if (!tables) {
     return <KpiTile icon={DatabaseIcon} color="yellow" label={t("weight")} value="—" detail={t("error")} />;
   }
-  const total = tables.reduce((sum, table) => sum + table.totalBytes, 0);
-  const indexes = tables.reduce((sum, table) => sum + table.indexBytes, 0);
+  const sum = (bytes: (table: AdminDatabaseTable) => number) => tables.reduce((total, table) => total + bytes(table), 0);
+  const free = sum((table) => table.freeBytes);
+  const used = sum((table) => table.totalBytes) - free;
+  const indexes = sum((table) => table.indexBytes);
   return (
     <KpiTile
       icon={DatabaseIcon}
       color="yellow"
       label={t("weight")}
-      value={formatBytes(total)}
-      detail={t("weightDetail", { count: tables.length, indexes: formatBytes(indexes) })}
-      gauge={shareOf(indexes, total)}
+      value={formatBytes(used)}
+      detail={t("weightDetail", { count: tables.length, indexes: formatBytes(indexes), free: formatBytes(free) })}
+      gauge={shareOf(indexes, used)}
     />
   );
 }

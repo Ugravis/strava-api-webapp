@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
-import type { Tone } from "@kilotrace/ui/components/admin/data-table";
+import type { ConfirmOptions, Tone } from "@kilotrace/ui/components/admin/data-table";
 
 /*
  * The kinds of values a `DetailField` edits in place: typed in its field
@@ -64,7 +64,8 @@ export interface DetailEditKinds {
   /** A text; on several lines with `multiline`, ⌘ Enter then saving. */
   text: { kind?: "text"; value: string | null; multiline?: boolean; placeholder?: string } & Saved<string | null>;
   /** A number between `min` and `max`, `unit` after it. */
-  number: { kind: "number"; value: number | null; min?: number; max?: number; step?: number; unit?: string } & Saved<number | null>;
+  /** `noneLabel`: what an empty value means, shown in its place, e.g. « Aucune limite ». */
+  number: { kind: "number"; value: number | null; min?: number; max?: number; step?: number; unit?: string; noneLabel?: string } & Saved<number | null>;
   /** A day, `YYYY-MM-DD`; with `time`, an ISO instant, typed in the time zone of the browser. */
   date: { kind: "date"; value: string | null; time?: boolean; min?: string; max?: string } & Saved<string | null>;
   /** One option of a list; `noneLabel` names the choice of none. */
@@ -81,8 +82,11 @@ export interface DetailEditKinds {
    * « Valider »; `noneLabel` removes it, `onSave` then given `null`.
    */
   image: { kind: "image"; value: string | null; accept?: string; maxSize?: number; noneLabel?: string } & Saved<File | null>;
-  /** Yes or no, saved as soon as switched. */
-  switch: { kind: "switch"; value: boolean } & Saved<boolean>;
+  /**
+   * Yes or no, saved as soon as switched; with `confirm`, asked first, its
+   * options for the value about to be saved (none: saved at once that way).
+   */
+  switch: { kind: "switch"; value: boolean; confirm?: (next: boolean) => ConfirmOptions | undefined } & Saved<boolean>;
   /** An e-mail address, refused malformed; shown as a link. */
   email: { kind: "email"; value: string | null; placeholder?: string } & Saved<string | null>;
   /** An `http` or `https` link, refused malformed; shown as a link. */

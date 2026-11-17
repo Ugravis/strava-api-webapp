@@ -7,6 +7,14 @@ export interface SetMaintenanceRequest {
   description: string | null;
 }
 
+/** `GET /api/admin/system/overview`: the figures of the maintenance page beside the settings. */
+export interface AdminSystemOverview {
+  /** Accounts on the site, against the cap of the settings. */
+  accounts: number;
+  /** Waiting for the Strava worker: webhook events not processed, and jobs queued or running. */
+  strava: { pendingEvents: number; pendingJobs: number };
+}
+
 /** A stored file uploaded by a user. */
 export interface AdminUploadFile {
   key: string;

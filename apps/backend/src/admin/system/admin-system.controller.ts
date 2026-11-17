@@ -4,6 +4,7 @@ import type {
 } from '@kilotrace/shared';
 import type {
   AdminDatabaseTable,
+  AdminSystemOverview,
   AdminUploadsAudit,
 } from '@kilotrace/shared/admin';
 import {
@@ -22,6 +23,7 @@ import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
 import { SetAppSettingDto, SetMaintenanceDto } from './admin-system.dto';
 import { AdminDatabaseService } from './admin-database.service';
+import { AdminSystemOverviewService } from './admin-system-overview.service';
 import { AdminUploadsService } from './admin-uploads.service';
 
 /** Maintenance banner, settings and storage of the site: every member reads, each action behind its permission. */
@@ -32,6 +34,7 @@ export class AdminSystemController {
     private readonly appSettings: AppSettingsService,
     private readonly uploads: AdminUploadsService,
     private readonly database: AdminDatabaseService,
+    private readonly overviews: AdminSystemOverviewService,
   ) {}
 
   @Get()
@@ -57,6 +60,12 @@ export class AdminSystemController {
   @HttpCode(HttpStatus.NO_CONTENT)
   clearMaintenance(): Promise<void> {
     return this.settings.clearMaintenance();
+  }
+
+  @Get('overview')
+  @AnyMember()
+  overview(): Promise<AdminSystemOverview> {
+    return this.overviews.overview();
   }
 
   @Get('settings')
@@ -98,7 +107,7 @@ export class AdminSystemController {
   }
 
   @Delete('uploads/orphans')
-  @Permission('system.uploads')
+  @Permission('database.uploads')
   @Audited({ action: 'system.uploads.orphans.delete', destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteOrphans(): Promise<void> {

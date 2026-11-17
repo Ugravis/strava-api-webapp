@@ -60,7 +60,8 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
   return (
     <div ref={root} className="group/toolbar flex flex-col gap-2 sm:flex-row sm:items-center sm:data-wrap:flex-wrap data-measuring:**:transition-none">
       <div className="flex min-w-0 items-center gap-2 sm:contents">
-        {config.views && <ViewMenu config={config} state={state} />}
+        {/* A single view has nothing to switch to. */}
+        {config.views && config.views.length > 1 && <ViewMenu config={config} state={state} />}
         {config.search && (
           <InputGroup className="h-7 min-w-0 flex-1 bg-background sm:w-64 sm:min-w-32 sm:flex-[0_100_16rem] [&_svg]:size-3.5">
             <InputGroupAddon className="text-foreground">
@@ -89,7 +90,7 @@ export function DataTableToolbar<T>({ config, state }: { config: DataTableConfig
         )}
       </div>
       <div className="-m-1 flex items-center gap-2 overflow-x-auto p-1 scrollbar-none sm:contents">
-        {config.facets && (config.views || config.search) && <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />}
+        {config.facets && ((config.views && config.views.length > 1) || config.search) && <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />}
         {config.facets?.map((facet) => (
           <FacetFilter
             key={facet.id}

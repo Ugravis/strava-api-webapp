@@ -10,9 +10,6 @@ import { Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import { User } from '../users/user.entity';
 import { AppSettingsService } from './app-settings.service';
-import { SystemSettings } from './system-settings.entity';
-
-const SETTINGS_ID = 1;
 
 /**
  * Read by every page of the signed-in users: kept in memory for a few
@@ -20,6 +17,7 @@ const SETTINGS_ID = 1;
  */
 const CACHE_TTL_MS = 10_000;
 
+/** The state of the site its pages read: the maintenance banner and the switches, built on the settings. */
 @Injectable()
 export class SystemSettingsService {
   private cached: {
@@ -30,8 +28,6 @@ export class SystemSettingsService {
   } | null = null;
 
   constructor(
-    @InjectRepository(SystemSettings)
-    private readonly settings: Repository<SystemSettings>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly appSettings: AppSettingsService,
   ) {}
@@ -47,7 +43,7 @@ export class SystemSettingsService {
     const version = this.appSettings.version;
     const values = await this.appSettings.values();
     const status: SystemStatusResponse = {
-      maintenance: toMaintenance(await this.read()),
+      maintenance: await this.appSettings.maintenance(),
       signupsEnabled: await this.signupsOpen(values),
       emailSignInEnabled: values.emailSignInEnabled,
       profileShowcaseEnabled: values.profileShowcaseEnabled,
@@ -73,25 +69,27 @@ export class SystemSettingsService {
     }
   }
 
+  /** Accounts on the site, against the cap of the settings. */
+  countAccounts(): Promise<number> {
+    return this.users.count();
+  }
+
   /** Shows the banner, or replaces it; its start is kept on a replacement. */
   async setMaintenance(
     title: MaintenanceTitle,
     description: string | null,
   ): Promise<void> {
-    const current = await this.read();
-    await this.write({
-      maintenanceTitle: title,
-      maintenanceDescription: description,
-      maintenanceSince: current.maintenanceSince ?? new Date(),
-    });
+    const current = await this.appSettings.maintenance();
+    const banner: MaintenanceBanner = {
+      title,
+      description,
+      since: current?.since ?? new Date().toISOString(),
+    };
+    await this.appSettings.setMaintenance(banner);
   }
 
   clearMaintenance(): Promise<void> {
-    return this.write({
-      maintenanceTitle: null,
-      maintenanceDescription: null,
-      maintenanceSince: null,
-    });
+    return this.appSettings.setMaintenance(null);
   }
 
   private async signupsOpen(values: AppSettingValues): Promise<boolean> {
@@ -100,37 +98,7 @@ export class SystemSettingsService {
     }
     return (
       values.maxAccounts === null ||
-      (await this.users.count()) < values.maxAccounts
+      (await this.countAccounts()) < values.maxAccounts
     );
   }
-
-  /** The row is inserted by the migration; the defaults stand in for it otherwise. */
-  private async read(): Promise<SystemSettings> {
-    return (
-      (await this.settings.findOneBy({ id: SETTINGS_ID })) ??
-      this.settings.create({
-        id: SETTINGS_ID,
-        maintenanceTitle: null,
-        maintenanceDescription: null,
-        maintenanceSince: null,
-      })
-    );
-  }
-
-  private async write(fields: Partial<SystemSettings>): Promise<void> {
-    await this.settings.upsert({ id: SETTINGS_ID, ...fields }, ['id']);
-    this.cached = null;
-  }
-}
-
-function toMaintenance(settings: SystemSettings): MaintenanceBanner | null {
-  const { maintenanceTitle, maintenanceDescription, maintenanceSince } =
-    settings;
-  return maintenanceTitle && maintenanceSince
-    ? {
-        title: maintenanceTitle,
-        description: maintenanceDescription,
-        since: maintenanceSince.toISOString(),
-      }
-    : null;
 }

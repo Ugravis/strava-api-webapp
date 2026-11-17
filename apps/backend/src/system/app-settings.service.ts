@@ -5,6 +5,7 @@ import {
   type AppSettingKey,
   type AppSettingValues,
   checkAppSetting,
+  type MaintenanceBanner,
 } from '@kilotrace/shared';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,7 +13,7 @@ import { Repository } from 'typeorm';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import profilesConfig, { type ProfilesConfig } from '../config/profiles.config';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
-import { AppSetting } from './app-setting.entity';
+import { AppSetting, MAINTENANCE_KEY } from './app-setting.entity';
 
 /**
  * Read on most requests: kept in memory for a few seconds, so that another
@@ -47,17 +48,12 @@ export class AppSettingsService {
   }
 
   async values(): Promise<AppSettingValues> {
-    const defaults = this.defaults();
-    const stored = new Map((await this.rows()).map((row) => [row.key, row]));
     return Object.fromEntries(
-      APP_SETTING_KEYS.map((key) => [
-        key,
-        stored.has(key) ? stored.get(key)!.value : defaults[key],
-      ]),
+      (await this.list()).map(({ key, value }) => [key, value]),
     ) as unknown as AppSettingValues;
   }
 
-  /** Every setting, its value, its default and its last change. */
+  /** Every setting of the catalog, its value, its default and its last change. */
   async list(): Promise<AdminAppSetting[]> {
     const defaults = this.defaults();
     const stored = new Map((await this.rows()).map((row) => [row.key, row]));
@@ -65,11 +61,32 @@ export class AppSettingsService {
       const row = stored.get(key);
       return {
         key,
-        value: row ? row.value : defaults[key],
+        // Written through `set`, checked against the catalog.
+        value: row
+          ? (row.value as AppSettingValues[typeof key])
+          : defaults[key],
         defaultValue: defaults[key],
         updatedAt: row ? row.updatedAt.toISOString() : null,
       };
     });
+  }
+
+  /** The banner shown above the pages of the signed-in users, null while none is. */
+  async maintenance(): Promise<MaintenanceBanner | null> {
+    const row = (await this.rows()).find(({ key }) => key === MAINTENANCE_KEY);
+    return (row?.value as MaintenanceBanner | undefined) ?? null;
+  }
+
+  /** Shows `banner`, or takes it away with null. */
+  async setMaintenance(banner: MaintenanceBanner | null): Promise<void> {
+    if (banner) {
+      await this.settings.upsert({ key: MAINTENANCE_KEY, value: banner }, [
+        'key',
+      ]);
+    } else {
+      await this.settings.delete({ key: MAINTENANCE_KEY });
+    }
+    this.changed();
   }
 
   /** Stores `value`, refused unless the catalog accepts it. */

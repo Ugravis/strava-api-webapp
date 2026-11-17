@@ -7,7 +7,7 @@ import { LOCATE_PLACES } from '../place-countries';
 import { COUNT_PLACE_HOLDERS } from '../place-holders';
 import { placeTile } from '../station-tile';
 import { parseOplLine } from './osm-opl';
-import { type RailwayData, RailwayDataBuilder } from './railway-data';
+import { osmKey, type RailwayData, RailwayDataBuilder } from './railway-data';
 import type { StationExclusion } from './railway-rules';
 import { mergeOverlappingStations } from './station-merges';
 import { saveStrokes } from './rail-strokes';
@@ -46,6 +46,7 @@ const OSMIUM_FILTERS = [
 const EXTRACT_PREFIX = 'railway-zones';
 
 interface StationSample {
+  osmType: string;
   osmId: number;
   name: string | null;
   lon: number;
@@ -232,8 +233,8 @@ export async function importStations(
   );
 
   const sample = (index: number): StationSample => {
-    const { osmId, name, point } = data.stations[index];
-    return { osmId, name, lon: point[0], lat: point[1] };
+    const { osmType, osmId, name, point } = data.stations[index];
+    return { osmType, osmId, name, lon: point[0], lat: point[1] };
   };
   const excludedSamples = {
     not_train: [],
@@ -277,7 +278,7 @@ export async function importStations(
       dataSource,
       new Map(
         kept.map((index) => [
-          data.stations[index].osmId,
+          osmKey(data.stations[index]),
           data.stations[index].routes,
         ]),
       ),
@@ -380,7 +381,8 @@ async function saveStations(
 ): Promise<void> {
   await manager.query(
     `CREATE TEMP TABLE imported_stations (
-       osm_id bigint PRIMARY KEY, name text, geom geometry(Point, 4326), x integer, y integer, bit smallint
+       osm_type char(1), osm_id bigint, name text, geom geometry(Point, 4326), x integer, y integer, bit smallint,
+       PRIMARY KEY (osm_type, osm_id)
      ) ON COMMIT DROP`,
   );
   for (let i = 0; i < kept.length; i += INSERT_BATCH) {
@@ -390,9 +392,9 @@ async function saveStations(
     const tiles = batch.map(({ point }) => placeTile(point[0], point[1]));
     await manager.query(
       `INSERT INTO imported_stations
-       SELECT id, name, ST_SetSRID(ST_MakePoint(lon, lat), 4326), x, y, bit
-       FROM unnest($1::bigint[], $2::text[], $3::float8[], $4::float8[], $5::int[], $6::int[], $7::int[])
-         AS s(id, name, lon, lat, x, y, bit)
+       SELECT type, id, name, ST_SetSRID(ST_MakePoint(lon, lat), 4326), x, y, bit
+       FROM unnest($1::bigint[], $2::text[], $3::float8[], $4::float8[], $5::int[], $6::int[], $7::int[], $8::text[])
+         AS s(id, name, lon, lat, x, y, bit, type)
        ON CONFLICT DO NOTHING`,
       [
         batch.map((station) => station.osmId),
@@ -402,17 +404,18 @@ async function saveStations(
         tiles.map((tile) => tile.x),
         tiles.map((tile) => tile.y),
         tiles.map((tile) => tile.bit),
+        batch.map((station) => station.osmType),
       ],
     );
   }
   await manager.query(
     `DELETE FROM places p WHERE p.kind = 'station' AND NOT EXISTS (
-       SELECT 1 FROM imported_stations i WHERE p.osm_type = 'n' AND i.osm_id = p.osm_id
+       SELECT 1 FROM imported_stations i WHERE i.osm_type = p.osm_type AND i.osm_id = p.osm_id
      )`,
   );
   await manager.query(
     `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit)
-     SELECT 'station', 'n', osm_id, name, geom, x, y, bit FROM imported_stations
+     SELECT 'station', osm_type, osm_id, name, geom, x, y, bit FROM imported_stations
      ON CONFLICT (osm_type, osm_id) DO UPDATE SET
        name = excluded.name, geom = excluded.geom, x = excluded.x, y = excluded.y, bit = excluded.bit,
        updated_at = now()
@@ -432,9 +435,10 @@ async function saveLinks(
     await manager.query(
       `INSERT INTO rail_links (station_a, station_b, geom, length_m)
        SELECT least(a.id, b.id), greatest(a.id, b.id), ST_GeomFromText(l.wkt, 4326), l.length_m
-       FROM unnest($1::bigint[], $2::bigint[], $3::text[], $4::float8[]) AS l(osm_a, osm_b, wkt, length_m)
-       JOIN places a ON a.osm_type = 'n' AND a.osm_id = l.osm_a
-       JOIN places b ON b.osm_type = 'n' AND b.osm_id = l.osm_b
+       FROM unnest($1::bigint[], $2::bigint[], $3::text[], $4::float8[], $5::text[], $6::text[])
+         AS l(osm_a, osm_b, wkt, length_m, type_a, type_b)
+       JOIN places a ON a.osm_type = l.type_a AND a.osm_id = l.osm_a
+       JOIN places b ON b.osm_type = l.type_b AND b.osm_id = l.osm_b
        ON CONFLICT (station_a, station_b) DO NOTHING`,
       [
         batch.map((link) => data.stations[link.a].osmId),
@@ -444,6 +448,8 @@ async function saveLinks(
             `LINESTRING(${link.coords.map(([lon, lat]) => `${lon} ${lat}`).join(',')})`,
         ),
         batch.map((link) => link.lengthM),
+        batch.map((link) => data.stations[link.a].osmType),
+        batch.map((link) => data.stations[link.b].osmType),
       ],
     );
   }

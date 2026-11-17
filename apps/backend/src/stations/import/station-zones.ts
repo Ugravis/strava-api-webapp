@@ -5,7 +5,8 @@ import {
   isTrainPlatform,
   isUnderground,
 } from './railway-rules';
-import type { NodeStore, RailwayData } from './railway-data';
+import { Column, float64, int32, uint8 } from './columns';
+import { type NodeStore, osmKey, type RailwayData } from './railway-data';
 import { metersBetween, type Point, PointIndex, project } from './railway-geo';
 
 /**
@@ -82,6 +83,16 @@ export class ZoneFeatureCollector {
   private readonly ways = new Map<number, Point[]>();
   private readonly stopAreas: string[][] = [];
   private candidates: PointIndex | null = null;
+  /**
+   * Ways far from every station known when read, as runs of node indexes:
+   * a station mapped as a way may come later and be near them.
+   */
+  private readonly pendingIds = new Column(float64(1 << 16), float64);
+  private readonly pendingStarts = new Column(int32(1 << 16), int32);
+  private readonly pendingNodes = new Column(int32(1 << 20), int32);
+  /** What each pending way may be, as `kindsOf` bits: its tags would weigh. */
+  private readonly pendingKinds = new Column(uint8(1 << 16), uint8);
+  private pending = true;
 
   constructor(
     private readonly nodes: NodeStore,
@@ -90,36 +101,63 @@ export class ZoneFeatureCollector {
 
   addNode(id: number, tags: Tags | null, point: Point): void {
     if (!isTrainPlatform(tags)) return;
-    this.features.push(feature(`n${id}`, tags, [[point]]));
+    this.features.push(feature(`n${id}`, kindsOf(tags), [[point]]));
   }
 
   addWay(id: number, tags: Tags | null, refs: number[]): void {
-    const line: Point[] = [];
-    for (const ref of refs) {
-      const index = this.nodes.indexOf(ref);
-      if (index !== -1) line.push(this.nodes.point(index));
+    const indexes = refs
+      .map((ref) => this.nodes.indexOf(ref))
+      .filter((index) => index !== -1);
+    if (indexes.length < 2) return;
+    const line = indexes.map((index) => this.nodes.point(index));
+    const kinds = kindsOf(tags);
+    if (this.nearCandidate(line)) {
+      this.keepWay(id, kinds, line);
+      return;
     }
-    if (line.length < 2 || !this.nearCandidate(line)) return;
-    this.ways.set(id, line);
-    if (
-      isTrainPlatform(tags) ||
-      isStationBuilding(tags) ||
-      isPlatformRoof(tags)
-    ) {
-      this.features.push(feature(`w${id}`, tags, [line]));
+    this.pendingIds.push(id);
+    this.pendingStarts.push(this.pendingNodes.length);
+    for (const index of indexes) this.pendingNodes.push(index);
+    this.pendingKinds.push(kinds);
+  }
+
+  /** Keeps the pending ways near the stations known once every way is read. */
+  private resolvePending(): void {
+    if (!this.pending) return;
+    this.pending = false;
+    this.candidates = null;
+    const ids = this.pendingIds.values();
+    const starts = this.pendingStarts.values();
+    const nodes = this.pendingNodes.values();
+    const kinds = this.pendingKinds.values();
+    for (let i = 0; i < ids.length; i++) {
+      const end = i + 1 < ids.length ? starts[i + 1] : nodes.length;
+      const line: Point[] = [];
+      for (let p = starts[i]; p < end; p++)
+        line.push(this.nodes.point(nodes[p]));
+      if (this.nearCandidate(line)) this.keepWay(ids[i], kinds[i], line);
     }
   }
 
+  private keepWay(id: number, kinds: number, line: Point[]): void {
+    this.ways.set(id, line);
+    if (kinds & (PLATFORM | STATION_BUILDING | ROOF))
+      this.features.push(feature(`w${id}`, kinds, [line]));
+  }
+
   addRelation(id: number, tags: Tags | null, members: OplMember[]): void {
+    this.resolvePending();
     if (!isTrainPlatform(tags)) return;
     const parts = members.flatMap((member) => {
       const line = member.type === 'w' ? this.ways.get(member.id) : undefined;
       return line ? [line] : [];
     });
-    if (parts.length > 0) this.features.push(feature(`r${id}`, tags, parts));
+    if (parts.length > 0)
+      this.features.push(feature(`r${id}`, kindsOf(tags), parts));
   }
 
   addStopArea(members: OplMember[]): void {
+    this.resolvePending();
     this.stopAreas.push(
       members
         .filter((member) => member.type !== 'r')
@@ -128,6 +166,7 @@ export class ZoneFeatureCollector {
   }
 
   finish(): ZoneFeatures {
+    this.resolvePending();
     this.ways.clear();
     return { features: this.features, stopAreas: this.stopAreas };
   }
@@ -143,19 +182,30 @@ export class ZoneFeatureCollector {
   }
 }
 
-function feature(
-  key: string,
-  tags: Tags | null,
-  parts: Point[][],
-): ZoneFeature {
+const PLATFORM = 1;
+const STATION_BUILDING = 2;
+const ROOF = 4;
+const UNDERGROUND = 8;
+
+/** What an object may be for the zone of a station, as bits. */
+function kindsOf(tags: Tags | null): number {
+  return (
+    (isTrainPlatform(tags) ? PLATFORM : 0) |
+    (isStationBuilding(tags) ? STATION_BUILDING : 0) |
+    (isPlatformRoof(tags) ? ROOF : 0) |
+    (isUnderground(tags) ? UNDERGROUND : 0)
+  );
+}
+
+function feature(key: string, kinds: number, parts: Point[][]): ZoneFeature {
   const way = key[0] === 'w';
   const building = way && isClosed(parts[0]);
   return {
     key,
-    platform: isTrainPlatform(tags),
-    stationBuilding: building && isStationBuilding(tags),
-    roof: building && isPlatformRoof(tags),
-    underground: isUnderground(tags),
+    platform: (kinds & PLATFORM) !== 0,
+    stationBuilding: building && (kinds & STATION_BUILDING) !== 0,
+    roof: building && (kinds & ROOF) !== 0,
+    underground: (kinds & UNDERGROUND) !== 0,
     parts,
   };
 }
@@ -414,18 +464,17 @@ export function stationZones(data: RailwayData, kept: number[]): ZoneInput[] {
   }
 
   // The platforms of the stop areas of a station (or of a station merged into it).
-  const keptOf = new Map<number, number>();
+  const keptOf = new Map<string, number>();
   stations.forEach((station, index) => {
     const root = station.exclusion === null ? index : station.mergedInto;
-    if (root !== null) keptOf.set(station.osmId, root);
+    if (root !== null) keptOf.set(osmKey(station), root);
   });
   for (const members of stopAreas) {
     const roots = new Set(
-      members.flatMap((m) =>
-        m[0] === 'n' && keptOf.has(Number(m.slice(1)))
-          ? [keptOf.get(Number(m.slice(1)))!]
-          : [],
-      ),
+      members.flatMap((m) => {
+        const root = keptOf.get(m);
+        return root === undefined ? [] : [root];
+      }),
     );
     for (const s of roots) {
       for (const m of members) {

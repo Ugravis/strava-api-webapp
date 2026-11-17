@@ -523,6 +523,14 @@ export class RailwayNetwork {
       for (const [track, { d, segment, t }] of candidates) {
         const link = d <= min + SNAP_TRACK_GAP_M;
         if (!link && d > BARRIER_RADIUS_M) continue;
+        // A track ending near the station (a siding off its switch) does
+        // not pass it: a barrier at its end would cut the line it joins.
+        const last = tracks.starts[track + 1] - tracks.starts[track] - 2;
+        if (
+          !link &&
+          ((segment === 0 && t === 0) || (segment === last && t === 1))
+        )
+          continue;
         const list = byTrack.get(track);
         const snap = { station, segment, t, link };
         if (list) list.push(snap);

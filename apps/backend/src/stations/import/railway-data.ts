@@ -1,7 +1,7 @@
 import type { OplObject, Tags } from './osm-opl';
 import {
   isPassengerTrack,
-  isStationNode,
+  isStation,
   isStationZoneTrack,
   isStopArea,
   isStopRole,
@@ -12,6 +12,7 @@ import {
   type StationExclusion,
   stationExclusion,
 } from './railway-rules';
+import { Column, float64, int32, uint8 } from './columns';
 import { metersBetween, type Point, PointIndex, project } from './railway-geo';
 import { ZoneFeatureCollector, type ZoneFeatures } from './station-zones';
 
@@ -33,9 +34,15 @@ export const SERVED_TRACK_RADIUS_M = 150;
 export const MERGE_RADIUS_M = 200;
 /** …and this close when one name is the other but for a level (`Stuttgart Hauptbahnhof (tief)`). */
 export const LEVEL_MERGE_RADIUS_M = 400;
+/**
+ * A station mapped as a way (its building, Charleville-Mézières) is the
+ * station of a node this close, or in a stop area with it: ignored then.
+ */
+export const WAY_STATION_RADIUS_M = 300;
 
-/** A `railway=station|halt` node of OpenStreetMap. */
+/** A `railway=station|halt` node of OpenStreetMap, or a way where no node maps the station. */
 export interface StationCandidate {
+  osmType: 'n' | 'w';
   osmId: number;
   name: string | null;
   point: Point;
@@ -49,37 +56,10 @@ export interface StationCandidate {
   mergedInto: number | null;
 }
 
-/** Growable typed array. */
-class Column<T extends Float64Array | Int32Array | Uint8Array> {
-  length = 0;
-
-  constructor(
-    private data: T,
-    private readonly make: (size: number) => T,
-  ) {}
-
-  push(value: number): void {
-    if (this.length === this.data.length) {
-      const grown = this.make(this.data.length * 2);
-      grown.set(this.data);
-      this.data = grown;
-    }
-    this.data[this.length++] = value;
-  }
-
-  get(i: number): number {
-    return this.data[i];
-  }
-
-  /** The values, trimmed. */
-  values(): T {
-    return this.data.subarray(0, this.length) as T;
-  }
+/** `n123` or `w456`: the key of a station among the members of a relation. */
+export function osmKey(station: { osmType: string; osmId: number }): string {
+  return `${station.osmType}${station.osmId}`;
 }
-
-const float64 = (size: number) => new Float64Array(size);
-const int32 = (size: number) => new Int32Array(size);
-const uint8 = (size: number) => new Uint8Array(size);
 
 /** Nodes in the order of their ids, as osmium writes them. */
 export class NodeStore {
@@ -173,11 +153,10 @@ export class RailwayDataBuilder {
   private readonly routeTracks = new Set<number>();
   /** `n123` or `w456`: the stops and platforms of the train routes. */
   private readonly routeStops = new Set<string>();
-  private readonly routeStations = new Set<number>();
   /** Train routes stopping at each stop, by `n|w|r` + id. */
   private readonly routesOfStop = new Map<string, number[]>();
-  /** Stations of the train rides of an amusement park. */
-  private readonly attractionStations = new Set<number>();
+  /** Stations of the train rides of an amusement park, by `n|w` + id. */
+  private readonly attractionStations = new Set<string>();
   private readonly stopAreas: string[][] = [];
 
   add(object: OplObject): void {
@@ -188,17 +167,11 @@ export class RailwayDataBuilder {
         }
         this.nodes.add(object.id, object.lon, object.lat);
         this.features.addNode(object.id, object.tags, [object.lon, object.lat]);
-        if (isStationNode(object.tags)) {
-          this.candidates.push({
-            osmId: object.id,
-            name: object.tags!.name?.trim() || null,
-            point: [object.lon, object.lat],
-            exclusion: null,
-            servedBy: null,
-            routes: 0,
-            mergedInto: null,
-            tags: object.tags!,
-          });
+        if (isStation(object.tags)) {
+          this.addCandidate('n', object.id, object.tags!, [
+            object.lon,
+            object.lat,
+          ]);
         }
         return;
       case 'w':
@@ -207,7 +180,8 @@ export class RailwayDataBuilder {
       case 'r':
         if (isAttractionRoute(object.tags)) {
           for (const member of object.members) {
-            if (member.type === 'n') this.attractionStations.add(member.id);
+            if (member.type !== 'r')
+              this.attractionStations.add(`${member.type}${member.id}`);
           }
         } else if (isTrainRoute(object.tags)) {
           for (const member of object.members) {
@@ -219,7 +193,6 @@ export class RailwayDataBuilder {
               const routes = this.routesOfStop.get(stop);
               if (routes) routes.push(object.id);
               else this.routesOfStop.set(stop, [object.id]);
-              if (member.type === 'n') this.routeStations.add(member.id);
             }
           }
         } else if (isStopArea(object.tags)) {
@@ -236,10 +209,33 @@ export class RailwayDataBuilder {
     }
   }
 
+  private addCandidate(
+    osmType: 'n' | 'w',
+    osmId: number,
+    tags: Tags,
+    point: Point,
+  ): void {
+    this.candidates.push({
+      osmType,
+      osmId,
+      name: tags.name?.trim() || null,
+      point,
+      exclusion: null,
+      servedBy: null,
+      routes: 0,
+      mergedInto: null,
+      tags,
+    });
+  }
+
   private addWay(id: number, tags: Tags | null, refs: number[]): void {
     if (!isTrackWay(tags)) {
       const first = refs.length > 0 ? this.nodes.indexOf(refs[0]) : -1;
       if (first !== -1) this.otherWays.set(id, first);
+      if (isStation(tags)) {
+        const center = this.centerOf(refs);
+        if (center) this.addCandidate('w', id, tags!, center);
+      }
       this.features.addWay(id, tags, refs);
       return;
     }
@@ -258,6 +254,20 @@ export class RailwayDataBuilder {
     this.trackOpen.push(isPassengerTrack(tags!, false) ? 1 : 0);
     this.trackServes.push(servesStationsNearby(tags!) ? 1 : 0);
     this.trackZone.push(isStationZoneTrack(tags!) ? 1 : 0);
+  }
+
+  /** The mean of the distinct nodes of a way, or null when none is known. */
+  private centerOf(refs: number[]): Point | null {
+    const closed = refs.length > 1 && refs[0] === refs[refs.length - 1];
+    let [lon, lat, count] = [0, 0, 0];
+    for (const ref of closed ? refs.slice(1) : refs) {
+      const index = this.nodes.indexOf(ref);
+      if (index === -1) continue;
+      lon += this.nodes.lon(index);
+      lat += this.nodes.lat(index);
+      count++;
+    }
+    return count === 0 ? null : [lon / count, lat / count];
   }
 
   finish(): RailwayData {
@@ -293,9 +303,9 @@ export class RailwayDataBuilder {
    * serves the stations nearby does.
    */
   private classifyStations(tracks: Tracks): StationCandidate[] {
-    const servedByArea = new Set<number>();
-    const routesOf = new Map<number, Set<number>>();
-    const addRoutes = (station: number, routes: Iterable<number>) => {
+    const servedByArea = new Set<string>();
+    const routesOf = new Map<string, Set<number>>();
+    const addRoutes = (station: string, routes: Iterable<number>) => {
       const known = routesOf.get(station);
       if (known) for (const route of routes) known.add(route);
       else routesOf.set(station, new Set(routes));
@@ -306,29 +316,25 @@ export class RailwayDataBuilder {
       );
       if (routes.length > 0) {
         for (const member of members) {
-          if (member[0] !== 'n') continue;
-          servedByArea.add(Number(member.slice(1)));
-          addRoutes(Number(member.slice(1)), routes);
+          servedByArea.add(member);
+          addRoutes(member, routes);
         }
       }
     }
-    for (const [stop, routes] of this.routesOfStop) {
-      if (stop[0] === 'n') addRoutes(Number(stop.slice(1)), routes);
-    }
+    for (const [stop, routes] of this.routesOfStop) addRoutes(stop, routes);
     const stopIndex = this.stopPointIndex();
     const attractions = new Set<StationCandidate>();
-    const stations = this.candidates.map(
+    const stations = this.withoutWayDuplicates().map(
       ({ tags, ...candidate }): StationCandidate => {
-        const byRoute =
-          this.routeStations.has(candidate.osmId) ||
-          servedByArea.has(candidate.osmId);
+        const key = osmKey(candidate);
+        const byRoute = this.routeStops.has(key) || servedByArea.has(key);
         let exclusion = stationExclusion(tags);
         // A metro station shared with the trains, such as a station of a
         // suburban network tagged as both.
         if (exclusion === 'not_train' && byRoute) exclusion = null;
         // An attraction (the station of a park train) is never served by
         // the stops or the tracks of the real trains next to it.
-        const attraction = this.attractionStations.has(candidate.osmId);
+        const attraction = this.attractionStations.has(key);
         const served =
           byRoute ||
           (!attraction &&
@@ -337,7 +343,7 @@ export class RailwayDataBuilder {
           ...candidate,
           exclusion: exclusion ?? (served ? null : 'not_served'),
           servedBy: exclusion === null && served ? 'route' : null,
-          routes: routesOf.get(candidate.osmId)?.size ?? 0,
+          routes: routesOf.get(key)?.size ?? 0,
         };
         if (attraction) attractions.add(station);
         return station;
@@ -356,20 +362,45 @@ export class RailwayDataBuilder {
   }
 
   /**
+   * The candidates but the ways mapping a station a node already maps:
+   * within `WAY_STATION_RADIUS_M` of a node candidate, or in its stop area.
+   */
+  private withoutWayDuplicates(): typeof this.candidates {
+    const nodes = new PointIndex();
+    const nodeKeys = new Set<string>();
+    for (const candidate of this.candidates) {
+      if (candidate.osmType !== 'n') continue;
+      nodes.add(candidate.point);
+      nodeKeys.add(osmKey(candidate));
+    }
+    const withNode = new Set(
+      this.stopAreas
+        .filter((members) => members.some((member) => nodeKeys.has(member)))
+        .flat(),
+    );
+    return this.candidates.filter(
+      (candidate) =>
+        candidate.osmType === 'n' ||
+        !(
+          withNode.has(osmKey(candidate)) ||
+          nodes.hasPointNear(candidate.point, WAY_STATION_RADIUS_M)
+        ),
+    );
+  }
+
+  /**
    * Merges the kept stations mapped twice: within `MERGE_RADIUS_M`, with
    * the same name, one name holding the other (`Brienz`, `Brienz BRB`), or
    * in the same stop area. The station kept is the one served by a route,
    * then the one with the shortest name.
    */
   private mergeDuplicates(stations: StationCandidate[]): void {
-    const areasOf = new Map<number, number[]>();
+    const areasOf = new Map<string, number[]>();
     this.stopAreas.forEach((members, area) => {
       for (const member of members) {
-        if (member[0] !== 'n') continue;
-        const id = Number(member.slice(1));
-        const areas = areasOf.get(id);
+        const areas = areasOf.get(member);
         if (areas) areas.push(area);
-        else areasOf.set(id, [area]);
+        else areasOf.set(member, [area]);
       }
     });
     const names = stations.map((station) => normalizedName(station.name));
@@ -412,8 +443,9 @@ export class RailwayDataBuilder {
             if (meters > MERGE_RADIUS_M) {
               if (!levelNamesMatch(names[a], names[b])) continue;
             } else {
-              const sameArea = (areasOf.get(stations[a].osmId) ?? []).some(
-                (area) => (areasOf.get(stations[b].osmId) ?? []).includes(area),
+              const sameArea = (areasOf.get(osmKey(stations[a])) ?? []).some(
+                (area) =>
+                  (areasOf.get(osmKey(stations[b])) ?? []).includes(area),
               );
               if (!sameArea && !namesMatch(names[a], names[b])) continue;
             }

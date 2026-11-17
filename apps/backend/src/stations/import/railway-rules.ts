@@ -27,8 +27,8 @@ const SERVICE_TRACKS = new Set(['yard', 'siding', 'spur']);
 /** Lines no passenger train runs on. */
 const NON_PASSENGER_USAGES = new Set(['industrial', 'military', 'test']);
 
-/** Whether a node is a candidate station: `railway=station|halt`. */
-export function isStationNode(tags: Tags | null): boolean {
+/** Whether a node or a way is a candidate station: `railway=station|halt`. */
+export function isStation(tags: Tags | null): boolean {
   return tags?.railway === 'station' || tags?.railway === 'halt';
 }
 

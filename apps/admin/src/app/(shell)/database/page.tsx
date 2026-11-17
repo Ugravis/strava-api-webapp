@@ -20,7 +20,7 @@ export default async function AdminDatabasePage() {
           <p className="text-sm text-muted-foreground">{t("uploads.description")}</p>
         </div>
         <Suspense fallback={<UploadsSkeleton />}>
-          <UploadsAudit canEdit={permissions.includes("system.uploads")} />
+          <UploadsAudit canEdit={permissions.includes("database.uploads")} />
         </Suspense>
       </section>
 

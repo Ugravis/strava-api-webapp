@@ -854,7 +854,7 @@
         },
         "maxAccounts": {
           "label": "Nombre max de comptes",
-          "description": "Au-delà, les inscriptions se ferment d'elles-mêmes, quelle que soit la méthode. Les comptes existants ne sont pas touchés. Vide : aucune limite."
+          "description": "Au-delà, les inscriptions se ferment d'elles-mêmes, quelle que soit la méthode. Les comptes existants ne sont pas touchés. Vide : illimité."
         },
         "profileShowcaseEnabled": {
           "label": "Vitrine des profils",
@@ -934,6 +934,7 @@
         "userTags": "Tags",
         "audit": "Logs",
         "system": "Maintenance",
+        "database": "Base de données",
         "team": "Permissions",
         "releaseNotes": "Notes de release",
         "stations": "Gares"
@@ -1012,8 +1013,10 @@
           },
           "settings": {
             "label": "Réglages du site",
-            "description": "Modifier les réglages : inscriptions, connexion par email, plafond de comptes, vitrine des profils, badges épinglés, synchronisation Strava."
-          },
+            "description": "Modifier les réglages du site."
+          }
+        },
+        "database": {
           "uploads": {
             "label": "Fichiers orphelins",
             "description": "Supprimer les fichiers stockés sans compte."

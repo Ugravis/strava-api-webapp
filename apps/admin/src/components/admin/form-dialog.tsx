@@ -58,7 +58,7 @@ export interface UserOption {
 export interface FormDialogProps {
   action: Action;
   /** Without it, `open` drives the dialog. */
-  trigger?: { label: string; icon?: ReactNode; iconOnly?: boolean; variant?: "default" | "outline" | "ghost" };
+  trigger?: { label: string; icon?: ReactNode; iconOnly?: boolean; variant?: "default" | "outline" | "ghost"; /** E.g. the colour of what it opens. */ className?: string };
   /** Opened from elsewhere, e.g. the « Nouveau » button of a table, along with `onOpenChange`. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -92,6 +92,7 @@ export function FormDialog(props: FormDialogProps) {
               size={trigger.iconOnly ? "icon-sm" : "sm"}
               aria-label={trigger.iconOnly ? trigger.label : undefined}
               title={trigger.iconOnly ? trigger.label : undefined}
+              className={trigger.className}
             />
           }
         >

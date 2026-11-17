@@ -107,7 +107,7 @@ export class AdminSystemController {
   }
 
   @Delete('uploads/orphans')
-  @Permission('system.uploads')
+  @Permission('database.uploads')
   @Audited({ action: 'system.uploads.orphans.delete', destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteOrphans(): Promise<void> {

@@ -60,7 +60,7 @@ function MaintenanceFormDialog({ maintenance }: { maintenance: MaintenanceBanner
       trigger={
         maintenance
           ? { label: t("edit"), icon: <PencilIcon />, variant: "outline" }
-          : { label: t("turnOn"), icon: <TriangleAlertIcon />, variant: "default" }
+          : { label: t("turnOn"), icon: <TriangleAlertIcon />, variant: "outline", className: "border-amber-500/30 bg-amber-500/10 text-amber-900 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-200 dark:hover:text-amber-200" }
       }
       title={t("form.title")}
       description={t("form.description")}

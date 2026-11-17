@@ -67,12 +67,13 @@ function iconOf(key: AppSettingKey) {
 
 const LOCK = "Réservé aux rôles qui modifient les réglages du site";
 
-/** A value in words: « Oui » / « Non », a number and its unit, or « Aucune limite ». */
-function shown(key: AppSettingKey, value: boolean | number | null): string {
-  const { rule } = APP_SETTINGS[key];
-  if (typeof value === "boolean") return value ? "Oui" : "Non";
-  if (value === null) return "Aucune limite";
-  return `${value.toLocaleString("fr-FR")}${rule.type === "number" && rule.unit ? ` ${rule.unit}` : ""}`;
+/** No cap, for a number left empty. */
+const UNLIMITED = "Illimité";
+
+/** A value in words: « Activé » / « Désactivé », a number, or « Illimité ». */
+function shown(value: boolean | number | null): string {
+  if (typeof value === "boolean") return value ? "Activé" : "Désactivé";
+  return value === null ? UNLIMITED : value.toLocaleString("fr-FR");
 }
 
 const changed = (row: SettingRow) => row.updatedAt !== null && row.value !== row.defaultValue;
@@ -95,7 +96,7 @@ function valueEdit(row: SettingRow, canEdit: boolean, saved: Saved): DetailField
   return {
     kind: "number",
     value: typeof row.value === "number" ? row.value : null,
-    ...(rule.type === "number" && { min: rule.min, max: rule.max, unit: rule.unit, required: rule.required, noneLabel: rule.required ? undefined : "Aucune limite" }),
+    ...(rule.type === "number" && { min: rule.min, max: rule.max, required: rule.required, noneLabel: rule.required ? undefined : UNLIMITED }),
     step: 1,
     locked,
     onSave: (value) => saved(setAppSetting(row.key, value)),
@@ -105,17 +106,21 @@ function valueEdit(row: SettingRow, canEdit: boolean, saved: Saved): DetailField
 function settingColumns(canEdit: boolean, saved: Saved): DataTableColumn<SettingRow>[] {
   return [
     lookColumn({ id: "setting", header: "Réglage", icon: <SlidersHorizontalIcon />, sortable: true, value: (row) => ({ icon: iconOf(row.key), name: row.label }) }),
-    editColumn({ id: "value", header: "Valeur", icon: <ToggleRightIcon />, edit: (row) => valueEdit(row, canEdit, saved) }),
-    textColumn({ id: "defaultValue", header: "Par défaut", icon: <RotateCcwIcon />, muted: true, value: (row) => shown(row.key, row.defaultValue) }),
+    // The switch alone, in the detail too: its place says on or off.
+    { ...editColumn({ id: "value", header: "Valeur", icon: <ToggleRightIcon />, bare: true, edit: (row) => valueEdit(row, canEdit, saved) }), detailCell: undefined },
     dateColumn({ id: "updatedAt", header: "Modifié", icon: <CalendarClockIcon />, sortable: true, relative: true, value: (row) => row.updatedAt }),
     textColumn({ id: "description", header: "Description", icon: <TextIcon />, muted: true, value: (row) => row.description }),
+    textColumn({ id: "defaultValue", header: "Par défaut", icon: <RotateCcwIcon />, muted: true, value: (row) => shown(row.defaultValue) }),
     textColumn({ id: "category", header: "Catégorie", icon: <FolderIcon />, value: (row) => row.categoryTitle }),
   ];
 }
 
 /** The settings of the site, grouped by category, edited in place or in their detail; every member reads, `canEdit` changes them. */
-export function SettingsTable({ canEdit, categories }: { canEdit: boolean; categories: Record<AppSettingCategory, string> }) {
+export function SettingsTable({ canEdit, categories: given }: { canEdit: boolean; categories: Record<AppSettingCategory, string> }) {
   const version = useSettingsVersion();
+  // A new object on every render of the page (e.g. after a change of the banner): kept while its texts are the same, so that the table is not fetched again.
+  const categoriesKey = JSON.stringify(given);
+  const categories = useMemo(() => JSON.parse(categoriesKey) as Record<AppSettingCategory, string>, [categoriesKey]);
   const router = useRouter();
   const panelRef = useRef<RowPanelControls | null>(null);
   const saved = useMemo<Saved>(
@@ -140,7 +145,7 @@ export function SettingsTable({ canEdit, categories }: { canEdit: boolean; categ
       defaultSort: { id: "setting", desc: false },
       defaultGroupBy: "category",
       groupings: [{ id: "category", label: "Catégorie", title: (key) => categories[key as AppSettingCategory] ?? key }],
-      views: [{ id: "table", label: "Table", columns: ["setting", "value", "defaultValue", "updatedAt", "description", "category"], noSelection: true }],
+      views: [{ id: "table", label: "Table", columns: ["setting", "value", "updatedAt", "description", "defaultValue", "category"], noSelection: true }],
       columns: settingColumns(canEdit, saved),
       actions: (row) => (
         <RowActions label={`Actions de ${row.label}`}>
@@ -198,7 +203,7 @@ function SettingPanel({ settingKey, canEdit, saved }: { settingKey: string; canE
               />
             </DetailActions>
             <DetailSection title="Réglage">
-              <DetailColumnFields row={row} columns={columns} ids={["value", "defaultValue", "updatedAt", { id: "description", stacked: true }]} />
+              <DetailColumnFields row={row} columns={columns} ids={["value", "updatedAt", "defaultValue", { id: "description", stacked: true }]} />
             </DetailSection>
           </>
         );

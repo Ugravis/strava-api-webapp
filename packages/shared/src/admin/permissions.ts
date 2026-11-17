@@ -1,7 +1,7 @@
 import { AdminRole } from "./roles";
 
 /** Sections of the back office with actions, in the order of the permissions table. */
-export const ADMIN_PERMISSION_CATEGORIES = ["users", "reports", "usernames", "badges", "userTags", "stations", "releaseNotes", "audit", "system", "team"] as const;
+export const ADMIN_PERMISSION_CATEGORIES = ["users", "reports", "usernames", "badges", "userTags", "stations", "releaseNotes", "audit", "system", "database", "team"] as const;
 
 export type AdminPermissionCategory = (typeof ADMIN_PERMISSION_CATEGORIES)[number];
 
@@ -40,7 +40,7 @@ export const ADMIN_PERMISSIONS = {
   "audit.hide": { category: "audit", defaults: [] },
   "system.maintenance": { category: "system", defaults: [] },
   "system.settings": { category: "system", defaults: [] },
-  "system.uploads": { category: "system", defaults: [] },
+  "database.uploads": { category: "database", defaults: [] },
   "team.manage": { category: "team", defaults: [], locked: true },
   "permissions.manage": { category: "team", defaults: [], locked: true },
 } as const satisfies Record<string, AdminPermissionDefinition>;

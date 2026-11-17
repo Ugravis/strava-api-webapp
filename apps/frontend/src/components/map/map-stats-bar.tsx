@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CircleDotIcon,
   EyeIcon,
   EyeOffIcon,
   FlagIcon,
@@ -540,6 +541,12 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
                   stations: layers.stations || dimmed,
                 })
               }
+            />
+            <SettingSwitch
+              icon={CircleDotIcon}
+              label={t("discreetDots")}
+              checked={layers.discreetDots}
+              onCheckedChange={(discreetDots) => onLayersChange({ ...layers, discreetDots })}
             />
             <SettingSwitch
               icon={Volume2Icon}

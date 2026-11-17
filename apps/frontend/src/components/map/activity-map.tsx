@@ -47,6 +47,7 @@ import { TRAIN_FOLLOW_EVENT, TrainTraffic } from "./train-traffic";
 import {
   addStationLayers,
   setAllStations,
+  setDiscreetDots,
   setHoveredStation,
   setMapDimmed,
   setSelectedStation,
@@ -97,6 +98,8 @@ interface ActivityMapProps {
   showStations: boolean;
   /** Whether the base map and the tiles are dimmed below the stations. */
   dimmed: boolean;
+  /** The station dots from a zoom sooner, discreet over their first zooms. */
+  discreetDots: boolean;
   label: string;
 }
 
@@ -121,6 +124,7 @@ export function ActivityMap({
   stations,
   showStations,
   dimmed,
+  discreetDots,
   label,
 }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
@@ -147,6 +151,7 @@ export function ActivityMap({
   const paletteRef = useRef(palette);
   const showStationsRef = useRef(showStations);
   const dimmedRef = useRef(dimmed);
+  const discreetDotsRef = useRef(discreetDots);
   // The stations as of the history when open: the visits are dated.
   const stationsData = useMemo(() => stationData(stations, mapHistory), [stations, mapHistory]);
   const stationsDataRef = useRef(stationsData);
@@ -240,6 +245,7 @@ export function ActivityMap({
         paletteRef.current,
         firstLabel,
       );
+      setDiscreetDots(map, discreetDotsRef.current);
       addStationLayers(
         map,
         stationsDataRef.current,
@@ -446,6 +452,11 @@ export function ActivityMap({
     // A layer not added yet is shown or hidden once the style is loaded.
     if (mapRef.current) setMapDimmed(mapRef.current, dimmed);
   }, [dimmed]);
+
+  useEffect(() => {
+    discreetDotsRef.current = discreetDots;
+    if (mapRef.current) setDiscreetDots(mapRef.current, discreetDots);
+  }, [discreetDots]);
 
   useEffect(() => {
     sectorRef.current = sector;

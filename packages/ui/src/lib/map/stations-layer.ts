@@ -125,13 +125,16 @@ const ALL_MIN_ZOOM = 6;
  * serves every station from there, down to the deepest; the map stretches
  * them beyond.
  */
-const DOTS_MIN_ZOOM = 5;
+const DOTS_MIN_ZOOM = 6;
 /**
- * Below this zoom, the dots are discreet: a plain disc of their color, a
- * little wider than the railway, to see the stations without hiding it.
- * Their full look, ringed, grows in over the zoom after.
+ * With the discreet dots (`setDiscreetDots`): the dots from a zoom sooner,
+ * and below `DISCREET_DOTS_MAX_ZOOM` a plain disc of their color, a little
+ * wider than the railway, to see the stations without hiding it. Their full
+ * look, ringed, grows in over the zoom after. The backend serves every
+ * station from `DISCREET_DOTS_MIN_ZOOM`.
  */
-const DISCREET_DOTS_MAX_ZOOM = DOTS_MIN_ZOOM + 2;
+const DISCREET_DOTS_MIN_ZOOM = DOTS_MIN_ZOOM - 1;
+const DISCREET_DOTS_MAX_ZOOM = DISCREET_DOTS_MIN_ZOOM + 2;
 const ALL_MAX_ZOOM = 14;
 /** Distance from the pointer, in pixels, where a click looks for a station: a finger is not precise. */
 const PICK_TOLERANCE_PX = 8;
@@ -173,15 +176,17 @@ function byZoom(
 }
 
 /**
- * Radius and ring of a dot: none and a plain disc of `discreet` pixels below
- * `DISCREET_DOTS_MAX_ZOOM` (a ring around nothing fills the disc), then the
- * full dot, from its look at zoom 6.
+ * Radius and ring of a dot, from its look at zooms 6, 10 and 14. With the
+ * discreet dots: none and a plain disc of `discreet` pixels below
+ * `DISCREET_DOTS_MAX_ZOOM` (a ring around nothing fills the disc).
  */
 function dotSizes(
+  map: MapLibreMap,
   discreet: number,
   radius: [number, number, number],
   ring: [number, number, number],
 ): { "circle-radius": ExpressionSpecification; "circle-stroke-width": ExpressionSpecification } {
+  if (!discreetDots.has(map)) return { "circle-radius": byZoom(...radius), "circle-stroke-width": byZoom(...ring) };
   const grow = (from: number, [at6, at10, at14]: [number, number, number]): ExpressionSpecification => [
     "interpolate",
     ["linear"],
@@ -285,6 +290,15 @@ function isDense(map: MapLibreMap): boolean {
   return everyStation.has(map) || (visitedIds.get(map)?.length ?? 0) > DENSE_STATIONS;
 }
 
+/** Maps drawing the discreet dots, from a zoom sooner (`DISCREET_DOTS_MIN_ZOOM`). */
+const discreetDots = new WeakSet<MapLibreMap>();
+/** Zoom from which the dots of the map show on a dense map, and the backend serves every station. */
+const dotsMinZoom = (map: MapLibreMap) => (discreetDots.has(map) ? DISCREET_DOTS_MIN_ZOOM : DOTS_MIN_ZOOM);
+const VISITED_SIZES = [1.7, [1.6, 2.8, 4], [1.4, 2.2, 3]] as const;
+const UNVISITED_SIZES = [1.4, [0.8, 1.8, 3], [1, 1.6, 2.2]] as const;
+const visitedSizes = (map: MapLibreMap) => dotSizes(map, VISITED_SIZES[0], [...VISITED_SIZES[1]], [...VISITED_SIZES[2]]);
+const unvisitedSizes = (map: MapLibreMap) => dotSizes(map, UNVISITED_SIZES[0], [...UNVISITED_SIZES[1]], [...UNVISITED_SIZES[2]]);
+
 /** Maps the back office forces every station dot onto, at every zoom: their tiles must hold them (`EveryStationTiles.url`). */
 const forcedDots = new WeakSet<MapLibreMap>();
 
@@ -292,32 +306,46 @@ const forcedDots = new WeakSet<MapLibreMap>();
 const thinDots = (map: MapLibreMap) => isDense(map) && !forcedDots.has(map);
 
 /** Opacity of the dots of the visited stations: fading in from their zoom on a dense map. */
-const dotsOpacity = (map: MapLibreMap) => (thinDots(map) ? fadeIn(DOTS_MIN_ZOOM, 1) : 1);
+const dotsOpacity = (map: MapLibreMap) => (thinDots(map) ? fadeIn(dotsMinZoom(map), 1) : 1);
 
 /** Opacity of the grey dots: fading in from where the backend serves them, like every layer of the map. */
 const unvisitedOpacity = (map: MapLibreMap): ExpressionSpecification | number =>
   thinDots(map) || !everyStation.has(map)
-    ? ["interpolate", ["linear"], ["zoom"], DOTS_MIN_ZOOM, 0, DOTS_MIN_ZOOM + FADE_ZOOMS, 0.8, 10, 0.9, 14, 0.95]
+    ? ["interpolate", ["linear"], ["zoom"], dotsMinZoom(map), 0, dotsMinZoom(map) + FADE_ZOOMS, 0.8, 10, 0.9, 14, 0.95]
     : ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 0.95];
-const unvisitedStrokeOpacity = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? fadeIn(DOTS_MIN_ZOOM, 1) : 1);
-const unvisitedMinZoom = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? DOTS_MIN_ZOOM : 0);
+const unvisitedStrokeOpacity = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? fadeIn(dotsMinZoom(map), 1) : 1);
+const unvisitedMinZoom = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? dotsMinZoom(map) : 0);
 
-/** Whether the dots of each map were thinned out when its layers were last set. */
-const dense = new WeakMap<MapLibreMap, boolean>();
+/** How the dots of each map were drawn when its layers were last set: thinned out, discreet. */
+const dense = new WeakMap<MapLibreMap, string>();
+const densityKey = (map: MapLibreMap) => `${thinDots(map)}.${discreetDots.has(map)}`;
 
-/** Sets the layers for the density of the map, once it changes with the visited stations or what is forced. */
+/** Sets the layers for the density of the map, once it changes with the visited stations, what is forced or the discreet dots. */
 function applyDensity(map: MapLibreMap): void {
-  const now = thinDots(map);
+  const now = densityKey(map);
   if (dense.get(map) === now || !map.getLayer(LAYERS.visited)) return;
   dense.set(map, now);
-  map.setLayerZoomRange(LAYERS.visited, now ? DOTS_MIN_ZOOM : 0, 24);
+  map.setLayerZoomRange(LAYERS.visited, thinDots(map) ? dotsMinZoom(map) : 0, 24);
+  const sizes = visitedSizes(map);
+  map.setPaintProperty(LAYERS.visited, "circle-radius", sizes["circle-radius"]);
+  map.setPaintProperty(LAYERS.visited, "circle-stroke-width", sizes["circle-stroke-width"]);
   map.setPaintProperty(LAYERS.visited, "circle-opacity", dotsOpacity(map));
   map.setPaintProperty(LAYERS.visited, "circle-stroke-opacity", dotsOpacity(map));
   if (map.getLayer(LAYERS.unvisited)) {
     map.setLayerZoomRange(LAYERS.unvisited, unvisitedMinZoom(map), 24);
     map.setPaintProperty(LAYERS.unvisited, "circle-opacity", unvisitedOpacity(map));
     map.setPaintProperty(LAYERS.unvisited, "circle-stroke-opacity", unvisitedStrokeOpacity(map));
+    const grey = unvisitedSizes(map);
+    map.setPaintProperty(LAYERS.unvisited, "circle-radius", grey["circle-radius"]);
+    map.setPaintProperty(LAYERS.unvisited, "circle-stroke-width", grey["circle-stroke-width"]);
   }
+}
+
+/** Draws the dots from a zoom sooner, discreet over their first zooms; kept as the layers are added again. */
+export function setDiscreetDots(map: MapLibreMap, discreet: boolean): void {
+  if (discreet) discreetDots.add(map);
+  else discreetDots.delete(map);
+  applyDensity(map);
 }
 
 /** Forces every station dot at every zoom on a dense map; the tiles must hold them. */
@@ -624,14 +652,14 @@ export function addStationLayers(
       id: LAYERS.visited,
       type: "circle",
       ...visitedSource(map, "stations"),
-      minzoom: thinDots(map) ? DOTS_MIN_ZOOM : 0,
+      minzoom: thinDots(map) ? dotsMinZoom(map) : 0,
       layout,
       paint: {
         "circle-color": palette.stationCasing,
         "circle-opacity": dotsOpacity(map),
         "circle-stroke-color": gainedColor(palette.station, palette),
         "circle-stroke-opacity": dotsOpacity(map),
-        ...dotSizes(1.7, [1.6, 2.8, 4], [1.4, 2.2, 3]),
+        ...visitedSizes(map),
       },
     },
     top,
@@ -699,7 +727,7 @@ export function addStationLayers(
     );
   }
   // The layers just added follow the density of the map.
-  dense.set(map, thinDots(map));
+  dense.set(map, densityKey(map));
   applyHiddenGroups(map);
   bubbles.get(map)?.destroy();
   bubbles.set(map, new StationBubble(map, () => stationOutline(map)));
@@ -782,7 +810,7 @@ export function setAllStations(
     map.addSource(SOURCES.all, {
       type: "vector",
       tiles: [url],
-      minzoom: DOTS_MIN_ZOOM,
+      minzoom: DISCREET_DOTS_MIN_ZOOM,
       maxzoom: ALL_MAX_ZOOM,
     });
   }
@@ -885,7 +913,7 @@ export function setAllStations(
         "circle-opacity": unvisitedOpacity(map),
         "circle-stroke-color": palette.stationUnvisited,
         "circle-stroke-opacity": unvisitedStrokeOpacity(map),
-        ...dotSizes(1.4, [0.8, 1.8, 3], [1, 1.6, 2.2]),
+        ...unvisitedSizes(map),
       },
     },
     LAYERS.visited,

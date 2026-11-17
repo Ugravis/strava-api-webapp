@@ -16,9 +16,11 @@ export interface MapLayers {
   stations: boolean;
   /** The base map and the tiles dimmed below the stations, while they are shown and selected. */
   dimmed: boolean;
+  /** The station dots from a zoom sooner, discreet over their first zooms. */
+  discreetDots: boolean;
 }
 
-export const DEFAULT_MAP_LAYERS: MapLayers = { tiles: true, tracks: true, subtiles: true, stations: true, dimmed: false };
+export const DEFAULT_MAP_LAYERS: MapLayers = { tiles: true, tracks: true, subtiles: true, stations: true, dimmed: false, discreetDots: false };
 
 /** The layers once `module` is opened from the navigation: shown, the dimming left as it was. */
 export function withModuleOpened(layers: MapLayers, module: MapModule): MapLayers {

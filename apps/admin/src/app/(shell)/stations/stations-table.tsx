@@ -46,7 +46,7 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
       empty: { title: "Aucune gare", description: "Les gares apparaîtront ici après le premier import (pnpm stations:import)." },
       defaultSort: { id: "holders", desc: true },
       views: [
-        { id: "compact", label: "Table compacte", columns: ["name", "holders", "category", "routes", "operator", "osmNetwork", "visibility"] },
+        { id: "compact", label: "Table compacte", columns: ["name", "holders", "category", "links", "operator", "osmNetwork", "visibility"] },
         {
           id: "detailed",
           label: "Table détaillée",

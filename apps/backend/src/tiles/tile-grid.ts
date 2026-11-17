@@ -123,15 +123,24 @@ function traverse(
   }
 }
 
-/** Small tiles crossed by a track. */
-export function rasterizeTrack(points: LatLng[]): TileSet {
+/**
+ * Small tiles crossed by a track. Segments longer than `maxSegmentM` are
+ * not followed.
+ */
+export function rasterizeTrack(
+  points: LatLng[],
+  maxSegmentM = Infinity,
+): TileSet {
   const set = new TileSet();
+  const add = (x: number, y: number) => set.add(x, y);
   const positions = points.map((point) => tilePosition(point, SUBTILE_ZOOM));
-  if (positions.length === 1) {
-    traverse(positions[0], positions[0], (x, y) => set.add(x, y));
+  if (positions.length > 0) {
+    traverse(positions[0], positions[0], add);
   }
   for (let i = 1; i < positions.length; i++) {
-    traverse(positions[i - 1], positions[i], (x, y) => set.add(x, y));
+    // A longer segment is a pause or a GPS glitch: only its ends count.
+    const jump = metersBetween(points[i - 1], points[i]) > maxSegmentM;
+    traverse(jump ? positions[i] : positions[i - 1], positions[i], add);
   }
   return set;
 }
@@ -140,6 +149,7 @@ export function rasterizeTrack(points: LatLng[]): TileSet {
 export function rasterizeTrackOutside(
   points: LatLng[],
   disks: { center: LatLng; radiusM: number }[],
+  maxSegmentM = Infinity,
 ): TileSet {
   const hidden = (point: LatLng) =>
     disks.some((disk) => metersBetween(disk.center, point) <= disk.radiusM);
@@ -147,7 +157,7 @@ export function rasterizeTrackOutside(
   let run: LatLng[] = [];
   const flush = () => {
     if (run.length > 0) {
-      for (const cell of rasterizeTrack(run).cells()) {
+      for (const cell of rasterizeTrack(run, maxSegmentM).cells()) {
         set.addMask(cell.x, cell.y, cell.mask);
       }
     }

@@ -1,4 +1,4 @@
-import { countSubtiles, type LatLng } from './tile-grid';
+import { countSubtiles, type LatLng, type TileSet } from './tile-grid';
 import {
   assessTrack,
   hiddenAreaRadius,
@@ -26,6 +26,16 @@ describe('track tiles', () => {
       assessTrack({ points, distanceM: 100_000, start: null, end: null })
         .sparse,
     ).toBe(true);
+  });
+
+  it('suspects a pause behind a long segment of a summary', () => {
+    const before = eastward(20, 50);
+    const after = eastward(20, 50, eastward(2, 2_000, before[19])[1]);
+    const assess = (points: LatLng[]) =>
+      assessTrack({ points, distanceM: 2_000, start: null, end: null });
+
+    expect(assess(before).suspectGap).toBe(false);
+    expect(assess([...before, ...after]).suspectGap).toBe(true);
   });
 
   it('measures the cropped start and end', () => {
@@ -58,11 +68,23 @@ describe('track tiles', () => {
     const points = eastward(30, 100);
     const tiles = tilesFromSummary(
       { points, distanceM: 3_000, start: null, end: null },
-      { sparse: false, hiddenStartM: 300, hiddenEndM: 0 },
+      { sparse: false, suspectGap: false, hiddenStartM: 300, hiddenEndM: 0 },
     );
 
     expect(tiles.hidden.isEmpty).toBe(false);
     expect(tiles.shared).toBe(tiles.visited);
+  });
+
+  it('does not cross the tiles of a pause in a full track', () => {
+    const before = eastward(20, 10);
+    const after = eastward(20, 10, eastward(2, 3_000, before[19])[1]);
+    const count = (set: TileSet) =>
+      set.cells().reduce((sum, cell) => sum + countSubtiles(cell.mask), 0);
+    const tiles = tilesFromStream([...before, ...after], 0, 0);
+
+    // Two short runs of ~190 m, not the 3 km between them.
+    expect(count(tiles.visited)).toBeLessThan(6);
+    expect(count(tiles.shared)).toBe(count(tiles.visited));
   });
 
   it('keeps the hidden parts of a full track out of the shared tiles', () => {

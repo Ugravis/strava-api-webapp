@@ -9,9 +9,22 @@ import {
 
 /**
  * Beyond this spacing between the points of a simplified track, small tiles
- * are noticeably missed (measured: about 2 % at 260 m, up to 14 % at 1.4 km).
+ * are noticeably missed or added (measured #203: under 2 tiles per activity
+ * below 100 m, 5 to 8 from 150 m, about 37 above 300 m).
  */
-export const SPARSE_SPACING_M = 300;
+export const SPARSE_SPACING_M = 100;
+/**
+ * A segment of a simplified track longer than this may hide a pause: the
+ * full track tells (measured #203: legitimate ones mostly stay under 500 m
+ * on tracks below the sparse spacing).
+ */
+export const SUSPECT_SEGMENT_M = 500;
+/**
+ * Two points of a full track (about one per second) farther apart than
+ * this are a pause or a GPS glitch, not a movement: the tiles between them
+ * are not crossed.
+ */
+export const PAUSE_GAP_M = 200;
 /** Distance between the true start (or end) and the track above which it is cropped. */
 export const CROP_THRESHOLD_M = 30;
 
@@ -36,6 +49,8 @@ export interface TrackSummary {
 export interface TrackAssessment {
   /** Points too far apart for the small tiles. */
   sparse: boolean;
+  /** A segment long enough to hide a pause. */
+  suspectGap: boolean;
   /** Straight distance hidden at the start, 0 when the start is visible. */
   hiddenStartM: number;
   hiddenEndM: number;
@@ -48,8 +63,13 @@ export function assessTrack(summary: TrackSummary): TrackAssessment {
     const meters = metersBetween(truth, visible);
     return meters > CROP_THRESHOLD_M ? meters : 0;
   };
+  let longest = 0;
+  for (let i = 1; i < points.length; i++) {
+    longest = Math.max(longest, metersBetween(points[i - 1], points[i]));
+  }
   return {
     sparse: points.length < 2 || distanceM / points.length > SPARSE_SPACING_M,
+    suspectGap: longest > SUSPECT_SEGMENT_M,
     hiddenStartM: gap(start, points[0]),
     hiddenEndM: gap(end, points[points.length - 1]),
   };
@@ -106,7 +126,7 @@ export function tilesFromStream(
     });
   }
   return {
-    visited: rasterizeTrack(points),
-    shared: rasterizeTrackOutside(points, disks),
+    visited: rasterizeTrack(points, PAUSE_GAP_M),
+    shared: rasterizeTrackOutside(points, disks, PAUSE_GAP_M),
   };
 }

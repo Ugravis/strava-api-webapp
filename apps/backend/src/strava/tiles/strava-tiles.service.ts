@@ -122,7 +122,13 @@ export class StravaTilesService {
       activityId,
       tilesFromSummary(summary, assessment),
       assessment,
-      assessment.sparse ? 'sparse' : cropped ? 'cropped' : null,
+      assessment.sparse
+        ? 'sparse'
+        : assessment.suspectGap
+          ? 'gap'
+          : cropped
+            ? 'cropped'
+            : null,
     );
   }
 

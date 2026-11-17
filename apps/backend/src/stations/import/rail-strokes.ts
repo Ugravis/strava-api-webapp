@@ -3,9 +3,8 @@ import type { DataSource } from 'typeorm';
 /**
  * The railway generalized for the zoomed-out maps. Its segments are joined
  * into lines ("strokes") where the track runs on straight enough, the
- * straightest continuation first at each junction; each line shows whole
- * from a zoom that comes earlier the longer it is. Zooming out, the short
- * lines leave, the long ones stay, and none is cut into pieces.
+ * straightest continuation first at each junction. Zoomed out, the maps
+ * draw every line, merged and simplified, rather than every segment.
  */
 
 /** A segment by its ends: where it starts and ends, and the way it leaves each end. */
@@ -21,18 +20,8 @@ export interface SegmentEnds {
 
 /** Above this bend at a junction, in degrees, two segments make two lines. */
 const MAX_DEFLECTION_DEG = 60;
-/** Side of the cells of the map that keep their longest lines, in pixels. */
-const CELL_PX = 64;
-/** Lines kept in each cell, the longest first. */
-const LINES_PER_CELL = 16;
-/** Shorter lines, in pixels, never show for their length: a line of a few pixels draws nothing. */
-const MIN_LINE_PX = 4;
-/** Lines closing a gap show with the lines they join when this short, in pixels. */
-const BRIDGE_PX = 32;
-/** Zoom from which every segment shows, whatever its line: the tiles hold the full railway from there. */
+/** Zoom from which the tiles hold the segments themselves, the lines below. */
 export const RAIL_DETAIL_ZOOM = 8;
-/** Metres in a pixel at zoom 0 (tiles of 512 pixels), at a middle latitude. */
-const METRES_PER_PIXEL_Z0 = (40_075_016.686 * Math.cos(Math.PI / 4)) / 512;
 /** Tolerance of the simplified lines, in degrees (about 200 m): finer than a pixel below `RAIL_DETAIL_ZOOM`. */
 const STROKE_SIMPLIFY_DEG = 0.002;
 
@@ -201,107 +190,13 @@ export function reversals(
   return reversed;
 }
 
-/** Metres in a pixel of the map at `zoom`, at a middle latitude. */
-const metresPerPixel = (zoom: number) => METRES_PER_PIXEL_Z0 / 2 ** zoom;
-
-/**
- * The zoom each line shows from. Zoom after zoom, the map is cut into cells
- * of `CELL_PX` pixels, and the `LINES_PER_CELL` longest lines crossing each
- * cell show, if they are `MIN_LINE_PX` long: every region keeps its main
- * lines, a dense one no more than a sparse one. Then the short lines that
- * close a gap in the lines shown show with them: as soon as both their
- * ends meet lines shown (a link between two of them), or one end does and
- * the other ends the railway (the way into a terminus). Every line from
- * `RAIL_DETAIL_ZOOM`.
- */
-export function strokeZooms(
-  { strokes, nodeOf }: Strokes,
-  segments: SegmentEnds[],
-): number[] {
-  const lengths = strokes.map((members) =>
-    members.reduce((sum, index) => sum + segments[index].lengthM, 0),
-  );
-  const zooms = strokes.map(() => RAIL_DETAIL_ZOOM);
-  /** Ends of segments at each node: 1 where the railway ends. */
-  const degree = new Map<number, number>();
-  for (const node of nodeOf) degree.set(node, (degree.get(node) ?? 0) + 1);
-  const nodesOf = strokes.map((members) =>
-    members.flatMap((segment) => [
-      nodeOf[2 * segment],
-      nodeOf[2 * segment + 1],
-    ]),
-  );
-  /** The nodes a line ends at: those met once along it, none for a loop. */
-  const endsOf = nodesOf.map((nodes) => {
-    const count = new Map<number, number>();
-    for (const node of nodes) count.set(node, (count.get(node) ?? 0) + 1);
-    return [...count].filter(([, met]) => met % 2 === 1).map(([node]) => node);
-  });
-  const pointsOf = strokes.map((members) =>
-    members.flatMap((segment) => [
-      segments[segment].start,
-      segments[segment].end,
-    ]),
-  );
-  for (let zoom = 0; zoom < RAIL_DETAIL_ZOOM; zoom += 1) {
-    const cellDeg = (CELL_PX * 360) / (512 * 2 ** zoom);
-    const longest = new Map<string, number[]>();
-    strokes.forEach((_, stroke) => {
-      const cells = new Set(
-        pointsOf[stroke].map(
-          ([x, y]) => `${Math.floor(x / cellDeg)},${Math.floor(y / cellDeg)}`,
-        ),
-      );
-      for (const cell of cells) {
-        const kept = longest.get(cell) ?? [];
-        kept.push(stroke);
-        kept.sort((a, b) => lengths[b] - lengths[a]);
-        longest.set(cell, kept.slice(0, LINES_PER_CELL));
-      }
-    });
-    const minLength = MIN_LINE_PX * metresPerPixel(zoom);
-    for (const kept of longest.values()) {
-      for (const stroke of kept) {
-        if (lengths[stroke] >= minLength)
-          zooms[stroke] = Math.min(zooms[stroke], zoom);
-      }
-    }
-    const shown = new Set<number>();
-    zooms.forEach((from, stroke) => {
-      if (from <= zoom) for (const node of nodesOf[stroke]) shown.add(node);
-    });
-    const bridge = BRIDGE_PX * metresPerPixel(zoom);
-    for (let changed = true; changed;) {
-      changed = false;
-      zooms.forEach((from, stroke) => {
-        const ends = endsOf[stroke];
-        if (from <= zoom || lengths[stroke] > bridge || ends.length !== 2)
-          return;
-        const met = ends.filter((node) => shown.has(node)).length;
-        const closes =
-          met === 2 ||
-          (met === 1 && ends.some((node) => degree.get(node) === 1));
-        if (!closes) return;
-        zooms[stroke] = zoom;
-        for (const node of nodesOf[stroke]) shown.add(node);
-        changed = true;
-      });
-    }
-  }
-  return zooms;
-}
-
 /** Direction from `from` to `to`, in radians, the degrees of longitude shrunk with the latitude. */
 function heading(from: [number, number], to: [number, number]): number {
   const shrink = Math.cos((from[1] * Math.PI) / 180);
   return Math.atan2(to[1] - from[1], (to[0] - from[0]) * shrink);
 }
 
-/**
- * Joins the segments in the database into lines, gives each segment the
- * zoom of its line, and stores the lines simplified for the tiles zoomed
- * out.
- */
+/** Joins the segments in the database into lines, and stores them simplified for the tiles zoomed out. */
 export async function saveStrokes(
   dataSource: DataSource,
 ): Promise<{ strokes: number }> {
@@ -339,39 +234,29 @@ export async function saveStrokes(
   });
   const built = buildStrokes(segments);
   const { strokes } = built;
-  const zooms = strokeZooms(built, segments);
   const ids: number[] = [];
   const strokeOf: number[] = [];
-  const zoomOf: number[] = [];
   const reversedOf: boolean[] = [];
   strokes.forEach((members, stroke) => {
-    const zoom = zooms[stroke];
     const reversed = reversals(built, stroke);
     members.forEach((index, order) => {
       ids.push(segments[index].id);
       strokeOf.push(stroke);
-      zoomOf.push(zoom);
       reversedOf.push(reversed[order]);
     });
   });
   await dataSource.transaction(async (manager) => {
-    await manager.query(
-      `UPDATE rail_segments s SET min_zoom = u.zoom
-       FROM unnest($1::int[], $2::smallint[]) AS u(id, zoom)
-       WHERE s.id = u.id`,
-      [ids, zoomOf],
-    );
     await manager.query('DELETE FROM rail_strokes');
     await manager.query(
       // One piece along the line, its segments in order and the way it runs, over the small gaps between them.
-      `INSERT INTO rail_strokes (min_zoom, geom)
-       SELECT min(u.zoom), ST_Multi(ST_Simplify(ST_MakeLine(array_agg(
-           CASE WHEN u.reversed THEN ST_Reverse(s.geom) ELSE s.geom END ORDER BY u.ord)), ${STROKE_SIMPLIFY_DEG}))
-       FROM unnest($1::int[], $2::int[], $3::smallint[], $4::boolean[]) WITH ORDINALITY AS u(id, stroke, zoom, reversed, ord)
+      // Every line, the shortest kept as a stub rather than collapsed away: the railway whole at every zoom.
+      `INSERT INTO rail_strokes (geom)
+       SELECT ST_Multi(ST_Simplify(ST_MakeLine(array_agg(
+           CASE WHEN u.reversed THEN ST_Reverse(s.geom) ELSE s.geom END ORDER BY u.ord)), ${STROKE_SIMPLIFY_DEG}, true))
+       FROM unnest($1::int[], $2::int[], $3::boolean[]) WITH ORDINALITY AS u(id, stroke, reversed, ord)
        JOIN rail_segments s ON s.id = u.id
-       WHERE u.zoom < ${RAIL_DETAIL_ZOOM}
        GROUP BY u.stroke`,
-      [ids, strokeOf, zoomOf, reversedOf],
+      [ids, strokeOf, reversedOf],
     );
   });
   await dataSource.query('ANALYZE rail_strokes');

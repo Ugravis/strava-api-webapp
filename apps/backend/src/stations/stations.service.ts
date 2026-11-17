@@ -18,7 +18,7 @@ const ZONES_LAYER = 'station-zones';
 /** The footprints and zones are served from this zoom, fading in to be whole at 13: smaller, they are a few pixels. */
 const FOOTPRINTS_MIN_ZOOM = 12;
 /** Bumped when the layers of the vector tiles change: the browser caches them for good, by version. */
-const TILE_FORMAT = 4;
+const TILE_FORMAT = 6;
 const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 
@@ -70,8 +70,6 @@ export interface RailTie {
   linkIds: number[];
   /** `[lon, lat]`, simplified. */
   coords: [number, number][];
-  /** Zoom from which its line of the railway shows, whole. */
-  minZoom: number;
 }
 
 export interface VisitedStations {
@@ -272,11 +270,11 @@ export class StationsService {
             [ids],
           );
     const linkIds = links.map((link) => link.id);
-    const ties: { link_ids: number[]; min_zoom: number; geojson: string }[] =
+    const ties: { link_ids: number[]; geojson: string }[] =
       linkIds.length === 0
         ? []
         : await this.dataSource.query(
-            `SELECT link_ids, min_zoom, ST_AsGeoJSON(ST_Simplify(geom, ${TIE_SIMPLIFY_DEG}), 6) AS geojson
+            `SELECT link_ids, ST_AsGeoJSON(ST_Simplify(geom, ${TIE_SIMPLIFY_DEG}), 6) AS geojson
              FROM rail_segments
              WHERE link_ids && $1::int[]`,
             [linkIds],
@@ -309,7 +307,6 @@ export class StationsService {
         linkIds: tie.link_ids.filter((id) => unlocked.has(id)),
         coords: (JSON.parse(tie.geojson) as { coordinates: [number, number][] })
           .coordinates,
-        minZoom: tie.min_zoom,
       })),
       stationsVersion: await this.stationsVersion(),
     };
@@ -473,8 +470,9 @@ export class StationsService {
            ST_AsMVTGeom(ST_Transform(p.geom, 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM places p, bounds b
          WHERE ${shownStation()}
-           AND p.geom && ST_Transform(ST_Expand(b.envelope,
-             (ST_XMax(b.envelope) - ST_XMin(b.envelope)) * ${MVT_BUFFER / MVT_EXTENT}), 4326)
+           -- Kept within the world: past the antimeridian, the box would wrap to the other side of it.
+           AND p.geom && ST_Transform(ST_ClipByBox2D(ST_Expand(b.envelope,
+             (ST_XMax(b.envelope) - ST_XMin(b.envelope)) * ${MVT_BUFFER / MVT_EXTENT}), ST_TileEnvelope(0, 0, 0)), 4326)
        )
        SELECT coalesce((
            SELECT ST_AsMVT(points, '${STATIONS_LAYER}', ${MVT_EXTENT}, 'geom', 'id')

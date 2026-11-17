@@ -18,10 +18,6 @@ export class RailSegment {
   })
   geom!: string;
 
-  /** Zoom from which the line of the segment shows (`rail_strokes`), whole. */
-  @Column({ name: 'min_zoom', type: 'smallint', default: 0 })
-  minZoom!: number;
-
   /** The links running over the segment. */
   @Column({ name: 'link_ids', type: 'integer', array: true })
   linkIds!: number[];

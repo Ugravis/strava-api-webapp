@@ -470,8 +470,6 @@ export interface RailTie {
   linkIds: number[];
   /** `[lon, lat]` along the tracks. */
   coords: [number, number][];
-  /** Zoom from which its line of the railway shows, whole: zoomed out, the short lines leave. */
-  minZoom: number;
 }
 
 /** Stations visited by the user and the links between them. */

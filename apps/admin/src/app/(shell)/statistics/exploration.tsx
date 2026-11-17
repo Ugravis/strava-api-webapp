@@ -70,6 +70,7 @@ export async function ExplorationTab({ view }: { view: BusinessView }) {
                   <CardFigure value={median(medians.tiles)} label={t("explorers.medianTiles")} />
                   <CardFigure value={median(medians.maxSquare)} label={t("explorers.medianSquare")} />
                   <CardFigure value={median(medians.maxCluster)} label={t("explorers.medianCluster")} />
+                  <CardFigure value={median(medians.maxStationCluster)} label={t("explorers.medianStationCluster")} />
                 </>
               }
             />

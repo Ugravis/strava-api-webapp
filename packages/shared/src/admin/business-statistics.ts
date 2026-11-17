@@ -123,7 +123,13 @@ export interface AdminBusinessExploration extends AdminBusinessMeta {
   /** Explorers by their large tiles. */
   explorers: AdminBusinessBucket[];
   /** Medians over the explorers; null while their metrics are not computed. */
-  medians: { tiles: number | null; maxSquare: number | null; maxCluster: number | null };
+  medians: {
+    tiles: number | null;
+    maxSquare: number | null;
+    maxCluster: number | null;
+    /** Stations of the largest network of visited stations. */
+    maxStationCluster: number | null;
+  };
   /** The most explored countries, most tiles first. */
   countries: { country: string; tiles: number; explorers: number; totalTiles: number | null }[];
 }

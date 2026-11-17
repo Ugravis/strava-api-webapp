@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Place } from './place.entity';
 import { PlaceTile } from './place-tile.entity';
+import { Station } from './station.entity';
 import { RailLinkCountry } from './rail-link-country.entity';
 import { RailLink } from './rail-link.entity';
 import { RailSegment } from './rail-segment.entity';
@@ -15,6 +16,7 @@ import { StationsService } from './stations.service';
     TypeOrmModule.forFeature([
       Place,
       PlaceTile,
+      Station,
       RailLink,
       RailLinkCountry,
       RailSegment,

@@ -9,6 +9,7 @@ import {
   ChartNoAxesColumnIcon,
   ColumnsIcon,
   DatabaseIcon,
+  EraserIcon,
   FileTextIcon,
   FolderIcon,
   HardDriveIcon,
@@ -83,6 +84,7 @@ type Key =
   | "totalBytes"
   | "tableBytes"
   | "indexBytes"
+  | "freeBytes"
   | "columnsCount"
   | "indexesCount"
   | "foreignKeysCount"
@@ -118,6 +120,7 @@ const COLUMNS: Record<Key, DataTableColumn<AdminDatabaseTable>> = {
   totalBytes: bytesColumn({ id: "totalBytes", header: "Poids total", icon: <HardDriveIcon />, sortable: true, value: (table) => table.totalBytes }),
   tableBytes: { ...bytesColumn({ id: "tableBytes", header: "Données", icon: <DatabaseIcon />, sortable: true, value: (table) => table.tableBytes }), extra: true },
   indexBytes: bytesColumn({ id: "indexBytes", header: "Index", icon: <ScanSearchIcon />, sortable: true, value: (table) => table.indexBytes }),
+  freeBytes: { ...bytesColumn({ id: "freeBytes", header: "Espace libre", icon: <EraserIcon />, sortable: true, value: (table) => table.freeBytes }), extra: true },
   columnsCount: numberColumn({ id: "columnsCount", header: "Colonnes", icon: <ColumnsIcon />, sortable: true, value: (table) => table.columns.length }),
   indexesCount: { ...numberColumn({ id: "indexesCount", header: "Nb d'index", icon: <KeyRoundIcon />, sortable: true, value: (table) => table.indexes.length }), extra: true },
   foreignKeysCount: numberColumn({ id: "foreignKeysCount", header: "Liens sortants", icon: <ArrowUpRightIcon />, sortable: true, value: (table) => table.foreignKeys.length }),
@@ -154,6 +157,7 @@ const sourceOf = (tables: AdminDatabaseTable[]) =>
       totalBytes: (table) => table.totalBytes,
       tableBytes: (table) => table.tableBytes,
       indexBytes: (table) => table.indexBytes,
+      freeBytes: (table) => table.freeBytes,
       columnsCount: (table) => table.columns.length,
       indexesCount: (table) => table.indexes.length,
       foreignKeysCount: (table) => table.foreignKeys.length,
@@ -237,7 +241,7 @@ function TableDetail({ table, panel, known }: { table: AdminDatabaseTable; panel
         <DetailColumnFields
           row={table}
           columns={IDS.map((id) => COLUMNS[id])}
-          ids={["name", "schema", "page", "extension", { id: "comment", stacked: true }, "rows", "totalBytes", "tableBytes", "indexBytes"]}
+          ids={["name", "schema", "page", "extension", { id: "comment", stacked: true }, "rows", "totalBytes", "tableBytes", "indexBytes", "freeBytes"]}
         />
       </DetailSection>
       <DetailSection title="Activité depuis le dernier reset des statistiques">

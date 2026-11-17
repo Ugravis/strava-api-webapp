@@ -84,6 +84,11 @@ export interface AdminDatabaseTable {
   totalBytes: number;
   tableBytes: number;
   indexBytes: number;
+  /**
+   * Free space and dead rows of the table and its TOAST: reused by Postgres,
+   * given back to the disk only by a `VACUUM FULL`. Indexes not measured.
+   */
+  freeBytes: number;
   columns: AdminDatabaseColumn[];
   indexes: AdminDatabaseIndex[];
   foreignKeys: AdminDatabaseForeignKey[];

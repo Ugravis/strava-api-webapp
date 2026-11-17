@@ -212,7 +212,15 @@ function StationsSummary({ stations }: { stations: VisitedStations | null }) {
               <span className="text-2xl font-semibold tracking-tight tabular-nums">
                 {format.number(stations.maxCluster.length)}
               </span>
-              <span className="text-xs text-zinc-400">{t("stationCluster")}</span>
+              <span className="text-xs text-zinc-400">
+                {t("stationCluster", {
+                  railway: format.number(stations.maxClusterM / 1000, {
+                    style: "unit",
+                    unit: "kilometer",
+                    maximumFractionDigits: 0,
+                  }),
+                })}
+              </span>
             </p>
           </>
         ) : (

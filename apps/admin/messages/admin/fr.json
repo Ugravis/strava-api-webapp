@@ -609,7 +609,7 @@
         "medianTiles": "Tuiles",
         "medianSquare": "Carré",
         "medianCluster": "Cluster",
-        "medianStationCluster": "Cluster de gares",
+        "medianStationCluster": "Cluster gares",
         "bucket": "{range} tuiles"
       },
       "countries": {

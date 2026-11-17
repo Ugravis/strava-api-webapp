@@ -355,8 +355,11 @@ function TilesModule({
   );
 }
 
-/** A figure and the share of the total it covers; a small share keeps two significant digits rather than rounding to 0 %. */
-function WithShare({ text, part, total }: { text: string; part: number; total: number }) {
+/**
+ * A figure and the share of the total it covers, after a detail when given;
+ * a small share keeps two significant digits rather than rounding to 0 %.
+ */
+function WithShare({ text, part, total, detail }: { text: string; part: number; total: number; detail?: string }) {
   const format = useFormatter();
   const share = total > 0 ? part / total : 0;
   return (
@@ -364,6 +367,7 @@ function WithShare({ text, part, total }: { text: string; part: number; total: n
       {text}
       {total > 0 && (
         <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          {detail && `${detail} · `}
           {format.number(
             share,
             share > 0 && share < 0.01
@@ -504,7 +508,20 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const t = useTranslations("map.stats");
   const format = useFormatter();
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
-  const maxCluster = stations?.maxCluster.length ?? 0;
+  const kilometers = (meters: number) =>
+    format.number(meters / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 });
+  /** Stations of a network, with its railway and its share of the visited stations. */
+  const network = (count: number, meters: number) =>
+    stations ? (
+      <WithShare
+        text={format.number(count)}
+        part={count}
+        total={stations.stations.length}
+        detail={kilometers(meters)}
+      />
+    ) : (
+      <ValueSkeleton />
+    );
   const sound = useSoundSettings();
 
   return (
@@ -516,30 +533,19 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           accent="station"
         />
         <Stat
-          value={
-            stations ? (
-              format.number(railwayM / 1000, {
-                style: "unit",
-                unit: "kilometer",
-                maximumFractionDigits: 0,
-              })
-            ) : (
-              <ValueSkeleton />
-            )
-          }
+          value={stations ? kilometers(railwayM) : <ValueSkeleton />}
           label={t("railway")}
           accent="railLink"
         />
         <Stat
-          value={
-            stations ? (
-              <WithShare text={format.number(maxCluster)} part={maxCluster} total={stations.stations.length} />
-            ) : (
-              <ValueSkeleton />
-            )
-          }
+          value={network(stations?.maxCluster.length ?? 0, stations?.maxClusterM ?? 0)}
           label={t("maxCluster")}
           accent="station"
+        />
+        <Stat
+          value={network(stations?.otherClusters ?? 0, stations?.otherClustersM ?? 0)}
+          label={t("otherClusters")}
+          accent="railLink"
         />
       </StatsSection>
       {/* Titled from large screens only, where the band is taller: the band keeps its height below. Centered in the band. */}

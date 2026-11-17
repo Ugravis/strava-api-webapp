@@ -34,7 +34,7 @@ export function ColumnHeader<T>({ column, sort, disabled, onSort, onHide }: { co
   return (
     <DropdownMenu modal={false}>
       {column.compact ? <Tip label={column.header}>{trigger}</Tip> : trigger}
-      <DropdownMenuContent className="w-44">
+      <DropdownMenuContent align="center" className="w-44">
         {column.sortable && (
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={() => onSort({ id: column.id, desc: false })}>

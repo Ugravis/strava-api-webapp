@@ -3,7 +3,7 @@
 import { LoaderCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { DateCell, EmptyValue, NumberCell, PILL_TONES, Tip } from "@kilotrace/ui/components/admin/data-table";
+import { DateCell, EmptyValue, NumberCell, PILL_TONES, Tip, useConfirmedAction } from "@kilotrace/ui/components/admin/data-table";
 import { Switch } from "@kilotrace/ui/components/ui/switch";
 import { cn } from "@kilotrace/ui/lib/utils";
 import type { DetailEditOption, DetailFieldEdit } from "./edit-types";
@@ -49,7 +49,7 @@ export function ColorValue({ color }: { color: string }) {
 export function EditValue({ edit, bare }: { edit: DetailFieldEdit; bare?: boolean }) {
   // Bound to a draft at rest: told, not switched.
   if (edit.kind === "switch") return edit.draft ? <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span> : <SwitchValue edit={edit} bare={bare} />;
-  if (editEmpty(edit)) return <EmptyValue />;
+  if (editEmpty(edit)) return edit.kind === "number" && edit.noneLabel ? <span className="text-muted-foreground">{edit.noneLabel}</span> : <EmptyValue />;
   switch (edit.kind) {
     case "number":
       return <NumberCell value={edit.value} zero unit={edit.unit} />;
@@ -117,9 +117,14 @@ export function EditValue({ edit, bare }: { edit: DetailFieldEdit; bare?: boolea
   }
 }
 
-/** A switch saving as soon as switched, « Oui » or « Non » beside it unless `bare`. */
+/** A switch saving as soon as switched, or once confirmed with `confirm`; « Oui » or « Non » beside it unless `bare`. */
 function SwitchValue({ edit, bare }: { edit: Extract<DetailFieldEdit, { kind: "switch" }>; bare?: boolean }) {
-  const { saving, commit, error } = useCommit(edit, () => {});
+  const { saving: committing, commit, error } = useCommit(edit, () => {});
+  const next = !edit.value;
+  const asked = edit.confirm?.(next);
+  // Its errors told in the dialog, which stays open.
+  const confirmed = useConfirmedAction(() => edit.onSave(next), asked);
+  const saving = committing || confirmed.pending;
   const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
   return (
     <span ref={setAnchor} className="flex items-center gap-2">
@@ -131,8 +136,9 @@ function SwitchValue({ edit, bare }: { edit: Extract<DetailFieldEdit, { kind: "s
           </span>
         </Tip>
       ) : (
-        <Switch checked={edit.value} disabled={saving} onCheckedChange={(next) => void commit(next)} aria-label={edit.value ? "Oui" : "Non"} className={SWITCH_ON} />
+        <Switch checked={edit.value} disabled={saving} onCheckedChange={(value) => (asked ? confirmed.trigger() : void commit(value))} aria-label={edit.value ? "Oui" : "Non"} className={SWITCH_ON} />
       )}
+      {confirmed.dialog}
       {!bare && <span className="text-muted-foreground">{edit.value ? "Oui" : "Non"}</span>}
       {saving && <LoaderCircleIcon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />}
     </span>

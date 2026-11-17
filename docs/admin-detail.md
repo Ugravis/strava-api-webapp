@@ -44,14 +44,14 @@ The content of a detail of the back office: what the split panel (`docs/split-pa
 | `kind` | Value | Edited in | Options |
 | --- | --- | --- | --- |
 | `text` (none) | `string \| null` | A field; saved by Enter, ✓ or leaving it | `multiline` (⌘ Enter saves), `placeholder` |
-| `number` | `number \| null` | A field; refused out of bounds, in a toast | `min`, `max`, `step`, `unit` (after the value) |
+| `number` | `number \| null` | A field; refused out of bounds, in a toast | `min`, `max`, `step`, `unit` (after the value), `noneLabel` (what empty means, shown in its place, e.g. « Aucune limite ») |
 | `date` | `YYYY-MM-DD`; with `time`, an ISO instant | The date field of the browser (its time zone) | `time`, `min`, `max` |
 | `select` | `string \| null` | A popover titled « (sélection unique) »: the options, a search beyond 8; a click saves | `options`, `noneLabel` (the choice of none) |
 | `multiselect` | `string[]`, in the order of the options | A popover of checks, titled « (sélection multiple) »; « Valider » or closing it saves | `options` |
 | `color` | `#rrggbb \| null` | A popover: a swatch, any hue (pipette, code) or none, saved by « Valider » only; closing it gives up | `presets`, `noneLabel` |
 | `icon` | A Lucide name, e.g. `rocket` | A popover: every Lucide icon, searched by name, 96 shown at once; a click saves | `noneLabel` |
 | `image` | The URL shown, `string \| null`; `onSave` given a `File`, or `null` once removed | A popover: the image, replaced by a file picked or dropped, refused beyond `maxSize` in the bubble, formats and weight told in its title; saved by « Valider » only, « Annuler » or closing it gives up; widened from its bottom left corner (320 to 480 px). The Server Action uploads it and answers the row with its new URL | `accept` (PNG, JPEG, WebP by default), `maxSize` (bytes), `noneLabel` (removes it) |
-| `switch` | `boolean` | The switch itself, blue once on (`SWITCH_ON`), « Oui » / « Non » beside it, saved as soon as switched; no pencil | |
+| `switch` | `boolean` | The switch itself, blue once on (`SWITCH_ON`), « Oui » / « Non » beside it, saved as soon as switched, or asked first with `confirm`; no pencil | `confirm: (next) => ConfirmOptions \| undefined`: the dialog of the table kit for the value about to be saved (e.g. closing the sign-ups), none to save at once that way |
 | `email` | `string \| null` | A field; refused malformed (« Adresse e-mail invalide… »); shown as a `mailto:` link, offered in the bubble of a phone | `placeholder` |
 | `url` | `string \| null` | A field; `http` / `https` only; shown as a link, a new tab | `placeholder` |
 | `markdown` | `string \| null` | A field of several lines (⌘ Enter saves) under a bar of shaping buttons, as tall as the buttons floating beside it (bold, italics, code, link, title, lists, quote; a second press takes it off; ⌘ B, ⌘ I, ⌘ K), an eye showing it drawn; shown drawn: titles, lists, quotes, bold, italics, code, links (`http`, `https`, `mailto`), never HTML; `highlight` adds a highlighter (`==text==`, a single colour) | `placeholder`, `highlight` |

@@ -780,7 +780,7 @@
   },
   "system": {
     "title": "Maintenance",
-    "description": "Bandeau d'information et réglages du site, chaque changement demandé d'abord.",
+    "description": "État de l'app, bandeau d'information et réglages du site.",
     "readOnly": "Lecture seule : votre rôle n'a la permission de modifier aucun de ces réglages.",
     "statusError": "Impossible de lire l'état du site pour le moment.",
     "maintenance": {
@@ -854,13 +854,7 @@
         },
         "maxAccounts": {
           "label": "Nombre max de comptes",
-          "description": "Au-delà, les inscriptions se ferment d'elles-mêmes, quelle que soit la méthode. Les comptes existants ne sont pas touchés.",
-          "form": {
-            "title": "Nombre max de comptes",
-            "description": "Laissez vide pour ne fixer aucune limite.",
-            "field": "Comptes au plus",
-            "placeholder": "Aucune limite"
-          }
+          "description": "Au-delà, les inscriptions se ferment d'elles-mêmes, quelle que soit la méthode. Les comptes existants ne sont pas touchés. Vide : aucune limite."
         },
         "profileShowcaseEnabled": {
           "label": "Vitrine des profils",
@@ -878,13 +872,7 @@
         },
         "pinnedBadgesMax": {
           "label": "Badges épinglés max",
-          "description": "Badges qu'un utilisateur peut épingler sur son profil. En baissant la limite, les badges déjà épinglés restent.",
-          "form": {
-            "title": "Badges épinglés max",
-            "description": "Entre 1 et 12 badges par profil.",
-            "field": "Badges au plus",
-            "placeholder": "5"
-          }
+          "description": "Badges qu'un utilisateur peut épingler sur son profil. En baissant la limite, les badges déjà épinglés restent."
         },
         "stravaSyncEnabled": {
           "label": "Synchronisation Strava",
@@ -900,13 +888,25 @@
             "submit": "Reprendre"
           }
         }
-      },
-      "noLimit": "Aucune limite",
-      "defaultValue": "Par défaut : {value}",
-      "edit": "Modifier",
-      "reset": "Remettre par défaut",
-      "submit": "Enregistrer",
-      "error": "Impossible de lire les réglages pour le moment."
+      }
+    },
+    "overview": {
+      "banner": "Bandeau",
+      "bannerOn": "Affiché",
+      "bannerOff": "Aucun",
+      "bannerSince": "Depuis le {date}",
+      "bannerOffDetail": "Le site s'affiche sans message",
+      "accounts": "Comptes",
+      "accountsCap": "Plafond : {max} comptes",
+      "accountsNoCap": "Aucun plafond",
+      "strava": "Synchronisation Strava",
+      "stravaOn": "Active",
+      "stravaOff": "En pause",
+      "stravaPending": "{events, plural, =0 {Aucun événement} one {# événement} other {# événements}} · {jobs, plural, =0 {aucun import} one {# import} other {# imports}} en attente",
+      "settings": "Réglages modifiés",
+      "settingsChanged": "{count} sur {total}",
+      "settingsLast": "Dernier changement {when}",
+      "settingsDefault": "Tous à leur valeur par défaut"
     }
   },
   "team": {

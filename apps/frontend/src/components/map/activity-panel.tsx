@@ -37,6 +37,9 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
     return <p className="text-muted-foreground">{t("error")}</p>;
   }
 
+  // The stations it reached first, and the railway they unlocked.
+  const stationsGained = (tiles?.stationGains?.stationIds.length ?? 0) > 0;
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
@@ -97,6 +100,12 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
             checked={view.track && hasTrack}
             disabled={!hasTrack}
             onChange={(track) => onViewChange({ ...view, track })}
+          />
+          <ViewSwitch
+            label={stationsGained ? t("showStations") : t("noStations")}
+            checked={view.stations && stationsGained}
+            disabled={!stationsGained}
+            onChange={(stations) => onViewChange({ ...view, stations })}
           />
         </div>
       </PanelSection>

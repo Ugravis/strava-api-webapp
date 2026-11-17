@@ -535,7 +535,7 @@ const GAINED: ExpressionSpecification = ["boolean", ["get", "gained"], false];
  * The railway gained is striped pink and white, its casing showing through
  * the gaps: told apart from the pink tracks of the activities, drawn solid.
  */
-const GAINED_DASHES: ExpressionSpecification = ["case", GAINED, ["literal", [1.4, 1.1]], ["literal", [1, 0]]];
+const GAINED_DASHES: ExpressionSpecification = ["case", GAINED, ["literal", [1.4, 2.6]], ["literal", [1, 0]]];
 const GAINED_CASING = "#ffffff";
 
 /** How much bolder the railway of the largest network is drawn. */

@@ -185,7 +185,13 @@ export function ActivityMap({
   const pickedRef = useRef<TileRef | null>(null);
   const activityId = entry?.kind === "activity" ? entry.activityId : null;
   const { tiles: activityTiles } = useActivityTiles(activityId);
-  const activityStations = activityTiles?.stationGains?.stationIds ?? null;
+  // Each activity opens with the default view, the small tiles as on the map.
+  const [changedView, setChangedView] = useState<{ activityId: string; view: ActivityView } | null>(null);
+  const defaultView = useMemo(() => defaultActivityView(tileMode === "both"), [tileMode]);
+  const activityView = changedView && changedView.activityId === activityId ? changedView.view : defaultView;
+  const activityViewRef = useRef(activityView);
+  // Hidden by its switch, the activity leaves the stations as they are.
+  const activityStations = activityView.stations ? (activityTiles?.stationGains?.stationIds ?? null) : null;
   // The stations as of the history when open, the visits being dated, with the gains of the activity shown.
   const stationsData = useMemo(
     () =>
@@ -197,11 +203,6 @@ export function ActivityMap({
     [stations, mapHistory, historyStationCluster, activityStations],
   );
   const stationsDataRef = useRef(stationsData);
-  // Each activity opens with the default view, the small tiles as on the map.
-  const [changedView, setChangedView] = useState<{ activityId: string; view: ActivityView } | null>(null);
-  const defaultView = useMemo(() => defaultActivityView(tileMode === "both"), [tileMode]);
-  const activityView = changedView && changedView.activityId === activityId ? changedView.view : defaultView;
-  const activityViewRef = useRef(activityView);
   const activityData = useMemo(() => {
     if (!activityTiles) return NO_ACTIVITY_TILES;
     const { gains } = activityTiles;

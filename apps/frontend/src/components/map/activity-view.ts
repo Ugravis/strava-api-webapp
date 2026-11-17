@@ -7,11 +7,13 @@ export interface ActivityView {
   tiles: boolean;
   subtiles: boolean;
   track: boolean;
+  /** The stations the activity reached first and the railway they unlocked, in pink. */
+  stations: boolean;
 }
 
-/** The gained tiles, the large tiles and the track; the small tiles only when the map shows them. */
+/** The gained tiles, the large tiles, the track and the stations gained; the small tiles only when the map shows them. */
 export function defaultActivityView(subtilesShown: boolean): ActivityView {
-  return { gainedOnly: true, tiles: true, subtiles: subtilesShown, track: true };
+  return { gainedOnly: true, tiles: true, subtiles: subtilesShown, track: true, stations: true };
 }
 
 /** Whether the activity gained any tile, once its gains are known. */

@@ -1037,6 +1037,8 @@
       "showSubtiles": "Petites tuiles",
       "showTrack": "Trace",
       "noTrack": "Trace indisponible sur cet appareil",
+      "showStations": "Gares et voies gagnées",
+      "noStations": "Aucune gare gagnée par cette activité",
       "nothingGained": "Aucune tuile gagnée par cette activité"
     },
     "activityFormat": {

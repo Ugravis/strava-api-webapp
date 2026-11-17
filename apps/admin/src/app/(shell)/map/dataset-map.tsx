@@ -16,6 +16,7 @@ import {
   type LayerGroup,
   NO_STATION_DATA,
   setAllStations,
+  setDiscreetDots,
   setHoveredStation,
   setHiddenGroups,
   setSelectedStation,
@@ -104,6 +105,7 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     const map = new MapLibreMap({ container: container.current!, ...DEFAULT_VIEW, attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false });
     mapRef.current = map;
     drawEveryStation(map, { url: (version) => tilesUrl("stations", version, state.current.everyDot), version: state.current.versions.stations, minzoom: STATIONS_MIN_ZOOM });
+    setDiscreetDots(map, true);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {

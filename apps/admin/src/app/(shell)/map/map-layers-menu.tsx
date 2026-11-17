@@ -4,7 +4,7 @@ import type { LayerGroup } from "@kilotrace/ui/lib/map/stations-layer";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { Switch } from "@kilotrace/ui/components/ui/switch";
-import { ChevronDownIcon, ChevronUpIcon, LayersIcon } from "lucide-react";
+import { LayersIcon, PinIcon } from "lucide-react";
 import { useId, useState } from "react";
 
 /** What the panel shows: the groups of layers, the countries, and the dots forced at every zoom. */
@@ -33,9 +33,13 @@ function Row({ label, checked, onChange }: { label: string; checked: boolean; on
   );
 }
 
-/** Panel docked bottom left of the dataset map, open by default: shows or hides its parts. */
+/** Panel docked bottom left of the dataset map, folded: opens on hover, kept open once pinned. Shows or hides its parts. */
 export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onChange: (next: MapLayersState) => void }) {
-  const [open, setOpen] = useState(true);
+  const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  // Opened by the focus too, for the keyboard.
+  const [focused, setFocused] = useState(false);
+  const open = pinned || hovered || focused;
   const toggle = (key: LayerGroup | "countries", on: boolean) => {
     const hidden = new Set(value.hidden);
     if (on) hidden.delete(key);
@@ -47,13 +51,26 @@ export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onCh
     <section
       className="absolute bottom-2.5 left-2.5 z-10 w-72 max-w-[calc(100%-1.25rem)] rounded-lg border bg-background/95 shadow-md backdrop-blur-sm"
       aria-label="Calques"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+      }}
     >
       <header className="flex items-center gap-2 py-1.5 pr-1.5 pl-3">
         <LayersIcon className="size-4 text-muted-foreground" />
         <h2 className="text-sm font-medium">Calques</h2>
         {changed && <span className="size-1.5 rounded-full bg-primary" aria-label="modifiés" />}
-        <Button className="ml-auto" variant="ghost" size="icon-sm" onClick={() => setOpen(!open)} aria-label={open ? "Replier" : "Déplier"} aria-expanded={open}>
-          {open ? <ChevronDownIcon /> : <ChevronUpIcon />}
+        <Button
+          className="ml-auto"
+          variant={pinned ? "secondary" : "ghost"}
+          size="icon-sm"
+          onClick={() => setPinned(!pinned)}
+          aria-label={pinned ? "Désépingler" : "Épingler ouvert"}
+          aria-pressed={pinned}
+        >
+          <PinIcon className={pinned ? "fill-current" : undefined} />
         </Button>
       </header>
       {open && (

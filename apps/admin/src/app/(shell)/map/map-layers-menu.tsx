@@ -1,0 +1,74 @@
+"use client";
+
+import type { LayerGroup } from "@kilotrace/ui/lib/map/stations-layer";
+import { Button } from "@kilotrace/ui/components/ui/button";
+import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { Switch } from "@kilotrace/ui/components/ui/switch";
+import { ChevronDownIcon, ChevronUpIcon, LayersIcon } from "lucide-react";
+import { useId, useState } from "react";
+
+/** What the panel shows: the groups of layers, the countries, and the dots forced at every zoom. */
+export interface MapLayersState {
+  hidden: ReadonlySet<LayerGroup | "countries">;
+  everyDot: boolean;
+}
+
+export const DEFAULT_LAYERS: MapLayersState = { hidden: new Set(), everyDot: false };
+
+const SHOWN: { key: LayerGroup | "countries"; label: string }[] = [
+  { key: "rails", label: "Voies" },
+  { key: "stations", label: "Gares visibles" },
+  { key: "hidden", label: "Gares masquées" },
+  { key: "zones", label: "Zones et emprises" },
+  { key: "countries", label: "Régions" },
+];
+
+function Row({ label, checked, onChange }: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
+  const id = useId();
+  return (
+    <label htmlFor={id} className="flex cursor-pointer items-center justify-between gap-4 py-1.5">
+      <span className="min-w-0 text-sm">{label}</span>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+    </label>
+  );
+}
+
+/** Panel docked bottom left of the dataset map, open by default: shows or hides its parts. */
+export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onChange: (next: MapLayersState) => void }) {
+  const [open, setOpen] = useState(true);
+  const toggle = (key: LayerGroup | "countries", on: boolean) => {
+    const hidden = new Set(value.hidden);
+    if (on) hidden.delete(key);
+    else hidden.add(key);
+    onChange({ ...value, hidden });
+  };
+  const changed = value.hidden.size > 0 || value.everyDot;
+  return (
+    <section
+      className="absolute bottom-2.5 left-2.5 z-10 w-72 max-w-[calc(100%-1.25rem)] rounded-lg border bg-background/95 shadow-md backdrop-blur-sm"
+      aria-label="Calques"
+    >
+      <header className="flex items-center gap-2 py-1.5 pr-1.5 pl-3">
+        <LayersIcon className="size-4 text-muted-foreground" />
+        <h2 className="text-sm font-medium">Calques</h2>
+        {changed && <span className="size-1.5 rounded-full bg-primary" aria-label="modifiés" />}
+        <Button className="ml-auto" variant="ghost" size="icon-sm" onClick={() => setOpen(!open)} aria-label={open ? "Replier" : "Déplier"} aria-expanded={open}>
+          {open ? <ChevronDownIcon /> : <ChevronUpIcon />}
+        </Button>
+      </header>
+      {open && (
+        <div className="border-t px-3 py-1.5">
+          {SHOWN.map(({ key, label }) => (
+            <Row key={key} label={label} checked={!value.hidden.has(key)} onChange={(on) => toggle(key, on)} />
+          ))}
+          <Separator className="my-1.5" />
+          <Row
+            label="Forcer toutes les gares"
+            checked={value.everyDot}
+            onChange={(everyDot) => onChange({ ...value, everyDot })}
+          />
+        </div>
+      )}
+    </section>
+  );
+}

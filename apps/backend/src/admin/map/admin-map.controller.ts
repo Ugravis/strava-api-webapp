@@ -4,11 +4,12 @@ import {
   Header,
   Param,
   ParseIntPipe,
+  Query,
   StreamableFile,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Type } from 'class-transformer';
-import { IsInt, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import {
   ADMIN_THROTTLE,
@@ -46,6 +47,13 @@ function tileParams({ min, max }: { min: number; max: number }) {
 class StationsTileParamsDto extends tileParams(ZOOMS.stations) {}
 class CountriesTileParamsDto extends tileParams(ZOOMS.countries) {}
 
+/** `?dots=all`: every station dot at every zoom, for the team to audit the ones thinned out. */
+class StationsTileQueryDto {
+  @IsOptional()
+  @IsIn(['all'])
+  dots?: string;
+}
+
 /** A view of the map loads a few dozen tiles at once, of two sources. */
 const TILES_THROTTLE = { default: { ...ADMIN_THROTTLE, limit: 1200 } };
 const MVT = 'application/vnd.mapbox-vector-tile';
@@ -73,9 +81,12 @@ export class AdminMapController {
   @Header('Content-Type', MVT)
   async stations(
     @Param() { zoom, x, y }: StationsTileParamsDto,
+    @Query() { dots }: StationsTileQueryDto,
   ): Promise<StreamableFile> {
     assertTile(zoom, x, y);
-    return new StreamableFile(await this.map.stationsTile(zoom, x, y));
+    return new StreamableFile(
+      await this.map.stationsTile(zoom, x, y, dots === 'all'),
+    );
   }
 
   @Get('countries/:zoom/:x/:y')

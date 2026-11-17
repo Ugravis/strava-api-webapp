@@ -14,9 +14,13 @@ const MVT_BUFFER = 64;
 /** As on the site map: the footprints and zones zoomed in only. */
 const FOOTPRINTS_MIN_ZOOM = 12;
 /** Zoom from which the public map draws the dots of the stations: none in the tiles before. */
-const DOTS_MIN_ZOOM = 6;
+const DOTS_MIN_ZOOM = 5;
+/** Up to this zoom, the countries tiles are kept in memory (341 tiles at most). */
+const COUNTRIES_CACHE_MAX_ZOOM = 4;
 /** Changes the URL of the tiles when their layers change, beyond the data. */
-const TILE_FORMAT = 6;
+const TILE_FORMAT = 9;
+/** Grid, in tile units, the dots forced below `DOTS_MIN_ZOOM` are deduplicated on: about a pixel of a 512 px tile. */
+const DOT_GRID = MVT_EXTENT / 512;
 
 /** Layers of the station tiles of the back office. */
 export const ADMIN_MAP_LAYERS = {
@@ -33,6 +37,12 @@ export const ADMIN_MAP_LAYERS = {
  */
 @Injectable()
 export class AdminMapService {
+  /** Countries tiles zoomed out, by version: at most a few hundred, each long to merge. */
+  private countriesCache: {
+    version: string;
+    tiles: Map<string, Promise<Buffer>>;
+  } = { version: '', tiles: new Map() };
+
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly countries: CountriesService,
@@ -98,32 +108,47 @@ export class AdminMapService {
    * zoomed in the footprints and zone tiles, with the properties of the
    * tiles of the public map: the same layers draw them.
    */
-  async stationsTile(zoom: number, x: number, y: number): Promise<Buffer> {
+  async stationsTile(
+    zoom: number,
+    x: number,
+    y: number,
+    everyDot = false,
+  ): Promise<Buffer> {
+    // Forced zoomed out, the stations are one per pixel: drawn the same, the tile kept light.
+    const dedupe = everyDot && zoom < DOTS_MIN_ZOOM;
     const [row]: { tile: Buffer | null }[] = await this.dataSource.query(
       `WITH bounds AS (
          SELECT ST_TileEnvelope($1, $2, $3) AS envelope, 360.0 / (${MVT_EXTENT} * 2 ^ $1) AS unit
        ),
        wide AS (
-         SELECT ST_Transform(ST_Expand(envelope,
-           (ST_XMax(envelope) - ST_XMin(envelope)) * ${MVT_BUFFER / MVT_EXTENT}), 4326) AS box
+         -- Kept within the world: past the antimeridian, the box would wrap to the other side of it.
+         SELECT ST_Transform(ST_ClipByBox2D(ST_Expand(envelope,
+           (ST_XMax(envelope) - ST_XMin(envelope)) * ${MVT_BUFFER / MVT_EXTENT}), ST_TileEnvelope(0, 0, 0)), 4326) AS box
          FROM bounds
        ),
-       -- As on the public map, the dots of the stations from their zoom only: the railway alone zoomed out.
-       points AS (
+       -- As on the public map, the dots of the stations from their zoom only, unless forced: the railway alone zoomed out.
+       all_points AS (
          SELECT p.id, ${stationName()} AS name, p.hidden_at IS NOT NULL AS hidden,
            ST_AsMVTGeom(ST_Transform(p.geom, 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM places p, bounds b, wide w
-         WHERE $1 >= ${DOTS_MIN_ZOOM} AND p.kind = 'station' AND p.geom && w.box
+         WHERE ${everyDot ? 'true' : `$1 >= ${DOTS_MIN_ZOOM}`} AND p.kind = 'station' AND p.geom && w.box
        ),
-       -- Zoomed out, the lines shown from this zoom, simplified at the import; then every segment. Each with its zoom: the map fades it in.
+       points AS (
+         ${
+           dedupe
+             ? `SELECT DISTINCT ON (ST_SnapToGrid(geom, ${DOT_GRID})) * FROM all_points
+                WHERE geom IS NOT NULL ORDER BY ST_SnapToGrid(geom, ${DOT_GRID}), hidden, id`
+             : 'SELECT * FROM all_points'
+         }
+       ),
+       -- Zoomed out, every line of the railway, simplified at the import; then every segment.
        rails AS (
-         SELECT r.min_zoom AS "minZoom",
-           ST_AsMVTGeom(ST_Transform(ST_Simplify(r.geom, b.unit), 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         -- Simplified to the pixel, the short lines kept as stubs: none lost zoomed out.
+         SELECT ST_AsMVTGeom(ST_Transform(ST_Simplify(r.geom, b.unit, true), 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM rail_strokes r, bounds b, wide w
-         WHERE $1 < ${RAIL_DETAIL_ZOOM} AND r.min_zoom <= $1 AND r.geom && w.box
+         WHERE $1 < ${RAIL_DETAIL_ZOOM} AND r.geom && w.box
          UNION ALL
-         SELECT s.min_zoom AS "minZoom",
-           ST_AsMVTGeom(ST_Transform(ST_Simplify(s.geom, b.unit), 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
+         SELECT ST_AsMVTGeom(ST_Transform(ST_Simplify(s.geom, b.unit, true), 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
          FROM rail_segments s, bounds b, wide w
          WHERE $1 >= ${RAIL_DETAIL_ZOOM} AND s.geom && w.box
        ),
@@ -170,6 +195,29 @@ export class AdminMapService {
    * countries a member visited: the same tiles, all of them visited.
    */
   async countriesTile(zoom: number, x: number, y: number): Promise<Buffer> {
-    return this.countries.shapesTile(zoom, x, y, await this.countries.codes());
+    if (zoom > COUNTRIES_CACHE_MAX_ZOOM) {
+      return this.countries.shapesTile(
+        zoom,
+        x,
+        y,
+        await this.countries.codes(),
+      );
+    }
+    // Zoomed out, every country merged is costly: each tile computed once per version, shared while it is.
+    const { countries } = await this.version();
+    if (this.countriesCache.version !== countries) {
+      this.countriesCache = { version: countries, tiles: new Map() };
+    }
+    const { tiles } = this.countriesCache;
+    const key = `${zoom}/${x}/${y}`;
+    let tile = tiles.get(key);
+    if (!tile) {
+      tile = this.countries
+        .codes()
+        .then((codes) => this.countries.shapesTile(zoom, x, y, codes));
+      tiles.set(key, tile);
+      tile.catch(() => tiles.delete(key));
+    }
+    return tile;
   }
 }

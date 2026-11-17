@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /** Below this zoom, the map shows no station: too many to tell apart. */
-export const STATIONS_MIN_ZOOM = 6;
+export const STATIONS_MIN_ZOOM = 5;
 /** Deepest zoom of the station tiles: the map stretches them beyond. */
 export const STATIONS_MAX_ZOOM = 14;
 

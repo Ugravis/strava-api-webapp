@@ -4,17 +4,20 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { AdminMapVersion } from "@kilotrace/shared/admin";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
-import { setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
+import { setCountriesVisible, setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { BASE_STYLE_URL, DEFAULT_VIEW, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import { centerStation, type MapInsets, type StationBounds, stationCut } from "@kilotrace/ui/lib/map/station-camera";
 import {
   addStationLayers,
   drawEveryStation,
+  forceEveryDot,
+  type LayerGroup,
   NO_STATION_DATA,
   setAllStations,
   setHoveredStation,
+  setHiddenGroups,
   setSelectedStation,
   stationNear,
   type StationPick,
@@ -22,6 +25,7 @@ import {
 import { type StationRights, useStationsVersion } from "../stations/station-bits";
 import { StationRowPanel } from "../stations/station-detail";
 import { locateStation } from "./actions";
+import { DEFAULT_LAYERS, MapLayersMenu, type MapLayersState } from "./map-layers-menu";
 
 // MapLibre derives its worker URL from its own location at runtime, which the
 // bundler cannot follow: the worker is declared here so that it is emitted.
@@ -33,8 +37,8 @@ const HOVER_MIN_ZOOM = 8;
 const STATIONS_MIN_ZOOM = 0;
 
 /** Tiles of the map of the back office, relayed by `/map-tiles` with the session. Absolute: MapLibre fetches them from its worker. */
-const tilesUrl = (source: "stations" | "countries", version: string) =>
-  `${window.location.origin}/map-tiles/${source}/{z}/{x}/{y}?v=${encodeURIComponent(version)}`;
+const tilesUrl = (source: "stations" | "countries", version: string, everyDot = false) =>
+  `${window.location.origin}/map-tiles/${source}/{z}/{x}/{y}?v=${encodeURIComponent(version)}${everyDot ? "&dots=all" : ""}`;
 
 /** Room the side panel takes over the map, when it floats over it: the map shrinks beside it otherwise. */
 function insetsOf(map: MapLibreMap): MapInsets {
@@ -57,13 +61,18 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   const { resolvedTheme } = useTheme();
   const palette = useMemo(() => mapPalette(resolvedTheme), [resolvedTheme]);
   const edits = useStationsVersion();
-  // A change of a station in the panel: its tiles under a new URL.
-  const versions = useMemo(() => ({ ...serverVersions, stations: `${serverVersions.stations}.${edits}` }), [serverVersions, edits]);
+  const [layers, setLayers] = useState<MapLayersState>(DEFAULT_LAYERS);
+  const everyDot = layers.everyDot;
+  // A change of a station in the panel, or of the dots forced: its tiles under a new URL.
+  const versions = useMemo(
+    () => ({ ...serverVersions, stations: `${serverVersions.stations}.${edits}${everyDot ? ".dots" : ""}` }),
+    [serverVersions, edits, everyDot],
+  );
   const { open, setTitle, isOpen, activeId } = useSplitPanel();
   const selectedId = isOpen ? activeId : null;
 
   // Read by the handlers of the map, created once with it.
-  const state = useRef({ palette, versions });
+  const state = useRef({ palette, versions, everyDot });
   /** The station shown, ringed, and the bounds of its zone. */
   const selected = useRef<{ pick: StationPick; bounds: StationBounds } | null>(null);
   const hovered = useRef<StationPick | null>(null);
@@ -87,14 +96,14 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     [open, setTitle, rights, center],
   );
   useLayoutEffect(() => {
-    state.current = { palette, versions };
+    state.current = { palette, versions, everyDot };
     openRef.current = openStation;
   });
 
   useEffect(() => {
     const map = new MapLibreMap({ container: container.current!, ...DEFAULT_VIEW, attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false });
     mapRef.current = map;
-    drawEveryStation(map, { url: (version) => tilesUrl("stations", version), version: state.current.versions.stations, minzoom: STATIONS_MIN_ZOOM });
+    drawEveryStation(map, { url: (version) => tilesUrl("stations", version, state.current.everyDot), version: state.current.versions.stations, minzoom: STATIONS_MIN_ZOOM });
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {
@@ -152,6 +161,15 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     if (map?.isStyleLoaded()) setAllStations(map, versions.stations, palette, true);
   }, [versions, palette]);
 
+  // The parts shown and the dots forced, kept by the layers as they are added again.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    forceEveryDot(map, layers.everyDot);
+    setHiddenGroups(map, new Set([...layers.hidden].filter((key): key is LayerGroup => key !== "countries")));
+    setCountriesVisible(map, !layers.hidden.has("countries"));
+  }, [layers]);
+
   // The station of the panel ringed and, unless just picked on the map whole, centered beside the panel.
   useEffect(() => {
     const map = mapRef.current;
@@ -186,5 +204,10 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     if (id && /^\d+$/.test(id)) openRef.current(id);
   }, []);
 
-  return <div ref={container} className="min-h-0 flex-1 bg-muted" />;
+  return (
+    <div className="relative flex min-h-0 flex-1">
+      <div ref={container} className="min-h-0 flex-1 bg-muted" />
+      <MapLayersMenu value={layers} onChange={setLayers} />
+    </div>
+  );
 }

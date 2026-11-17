@@ -10,12 +10,14 @@ const INTEGER = /^\d{1,5}$/;
  * with the session: the browser never reaches `/api/admin`. Its URL holds
  * the version of the data (`?v=`): cached by the browser until it changes.
  */
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ source: string; z: string; x: string; y: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ source: string; z: string; x: string; y: string }> }) {
   const { source, z, x, y } = await params;
   if (!SOURCES.has(source) || ![z, x, y].every((part) => INTEGER.test(part))) {
     return new NextResponse(null, { status: 404 });
   }
-  const response = await fetch(`${API_URL}/api/admin/map/${source}/${z}/${x}/${y}`, {
+  // Every station dot at every zoom, for the stations tiles only.
+  const query = source === "stations" && request.nextUrl.searchParams.get("dots") === "all" ? "?dots=all" : "";
+  const response = await fetch(`${API_URL}/api/admin/map/${source}/${z}/${x}/${y}${query}`, {
     headers: await backendHeaders(),
     cache: "no-store",
   });

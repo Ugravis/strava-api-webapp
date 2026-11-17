@@ -28,6 +28,14 @@ export class Station {
   @Column({ type: 'text', nullable: true })
   network!: string | null;
 
+  /** Stations linked to it by the railway, counted by the imports (`COUNT_STATION_LINKS`). */
+  @Column({ type: 'integer', default: 0 })
+  links!: number;
+
+  /** Length of these links, in metres. */
+  @Column({ name: 'links_m', type: 'integer', default: 0 })
+  linksM!: number;
+
   /** Code of the station for the railways (`uic_ref`). */
   @Column({ name: 'uic_ref', type: 'text', nullable: true })
   uicRef!: string | null;

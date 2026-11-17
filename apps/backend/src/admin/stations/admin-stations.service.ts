@@ -32,6 +32,8 @@ const STATIONS_TABLE: TableSpec = {
     name: NAME,
     holders: 'place.holders',
     country: 'place.country_code',
+    links: 'station.links',
+    linksKm: 'station.links_m',
     routes: 'station.routes',
     operator: 'station.operator',
     updatedAt: 'place.updated_at',
@@ -86,9 +88,15 @@ const COLUMNS = [
 ]
   .map((column) => `place.${column}`)
   .concat(
-    ['tourist', 'routes', 'operator', 'network', 'uicRef'].map(
-      (column) => `station.${column}`,
-    ),
+    [
+      'tourist',
+      'routes',
+      'operator',
+      'network',
+      'uicRef',
+      'links',
+      'linksM',
+    ].map((column) => `station.${column}`),
   );
 
 /** The geometry of a point as TypeORM reads it. */
@@ -259,11 +267,14 @@ export class AdminStationsService {
   }
 
   private base() {
-    return this.places
-      .createQueryBuilder('place')
-      .leftJoin('place.station', 'station')
-      .select(COLUMNS)
-      .where(`place.kind = 'station'`);
+    return (
+      this.places
+        .createQueryBuilder('place')
+        // Every station has its row: inner, so that a sort by one of its columns reads its index.
+        .innerJoin('place.station', 'station')
+        .select(COLUMNS)
+        .where(`place.kind = 'station'`)
+    );
   }
 
   private async exists(id: number): Promise<Place> {
@@ -276,29 +287,18 @@ export class AdminStationsService {
     return station;
   }
 
-  /** The stations as the API answers them, their links and zones counted for all of them at once. */
+  /** The stations as the API answers them, their zones counted for all of them at once. */
   private async rows(stations: Place[]): Promise<AdminStation[]> {
     if (stations.length === 0) return [];
     const ids = stations.map((station) => station.id);
-    const [links, zones] = await Promise.all([
-      this.places.query<{ id: number; links: number; length_m: number }[]>(
-        `SELECT s.id, count(*)::int AS links, sum(l.length_m) AS length_m
-         FROM rail_links l, unnest(ARRAY[l.station_a, l.station_b]) AS s(id)
-         WHERE (l.station_a = ANY($1) OR l.station_b = ANY($1)) AND s.id = ANY($1)
-         GROUP BY s.id`,
-        [ids],
-      ),
-      this.places.query<{ id: number; tiles: number }[]>(
-        `SELECT place_id AS id, count(*)::int AS tiles FROM place_tiles
-         WHERE place_id = ANY($1) GROUP BY place_id`,
-        [ids],
-      ),
-    ]);
-    const linksOf = new Map(links.map((row) => [row.id, row]));
+    const zones = await this.places.query<{ id: number; tiles: number }[]>(
+      `SELECT place_id AS id, count(*)::int AS tiles FROM place_tiles
+       WHERE place_id = ANY($1) GROUP BY place_id`,
+      [ids],
+    );
     const tilesOf = new Map(zones.map((row) => [row.id, row.tiles]));
     return stations.map((station) => {
       const [lon, lat] = (station.geom as unknown as Point).coordinates;
-      const link = linksOf.get(station.id);
       return {
         id: String(station.id),
         name: station.customName ?? station.name,
@@ -312,8 +312,8 @@ export class AdminStationsService {
         lat,
         zoneSource: station.zoneSource,
         zoneTiles: tilesOf.get(station.id) ?? 0,
-        links: link?.links ?? 0,
-        linksM: Math.round(link?.length_m ?? 0),
+        links: station.station?.links ?? 0,
+        linksM: station.station?.linksM ?? 0,
         holders: station.holders,
         category: (station.category === 'halt'
           ? 'halt'

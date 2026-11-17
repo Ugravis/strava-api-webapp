@@ -11,6 +11,7 @@ import { osmKey, type RailwayData, RailwayDataBuilder } from './railway-data';
 import { pruneStations } from './station-pruning';
 import type { StationExclusion } from './railway-rules';
 import { mergeOverlappingStations } from './station-merges';
+import { COUNT_STATION_LINKS } from '../station-links';
 import { saveStrokes } from './rail-strokes';
 import { type NetworkLink, RailwayNetwork } from './railway-network';
 import { stationZones } from './station-zones';
@@ -219,6 +220,7 @@ export async function importStations(
       `Zones of ${kept.length} stations: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
     );
     await timed('holders', () => dataSource.query(COUNT_PLACE_HOLDERS));
+    await timed('links', () => dataSource.query(COUNT_STATION_LINKS));
     return;
   }
   if (kept.length < MIN_STATIONS) {

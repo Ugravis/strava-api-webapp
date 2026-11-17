@@ -2,6 +2,7 @@ import type {
   AdminStation,
   AdminStationCategory,
   AdminStationNeighbor,
+  AdminStationRailway,
   AdminStationsOverview,
 } from '@kilotrace/shared/admin';
 import {
@@ -14,6 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { Place } from '../../stations/place.entity';
+import { drawRailway } from '../../stations/railway-drawing';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 
 const NAME = 'COALESCE(place.custom_name, place.name)';
@@ -45,12 +47,6 @@ const STATIONS_TABLE: TableSpec = {
         hidden: 'place.hidden_at IS NOT NULL',
       },
     },
-    naming: {
-      options: {
-        osm: 'place.custom_name IS NULL',
-        custom: 'place.custom_name IS NOT NULL',
-      },
-    },
     held: {
       options: { held: 'place.holders > 0', never: 'place.holders = 0' },
     },
@@ -67,6 +63,8 @@ const STATIONS_TABLE: TableSpec = {
     country: 'place.country_code',
     visibility: `CASE WHEN place.hidden_at IS NULL THEN 'shown' ELSE 'hidden' END`,
     category: `COALESCE(place.category, 'station')`,
+    operator: 'station.operator',
+    osmNetwork: 'station.network',
   },
 };
 
@@ -148,6 +146,34 @@ export class AdminStationsService {
       holders: row.holders,
       hidden: row.hidden,
     }));
+  }
+
+  /** The station, those linked to it by the railway and the links between it and them, for its map. */
+  async railway(id: number): Promise<AdminStationRailway> {
+    await this.exists(id);
+    const stations: {
+      id: number;
+      name: string | null;
+      lon: number;
+      lat: number;
+    }[] = await this.places.query(
+      `SELECT p.id, COALESCE(p.custom_name, p.name) AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat
+         FROM places p
+         WHERE p.id = $1 OR p.id IN (
+           SELECT CASE WHEN l.station_a = $1 THEN l.station_b ELSE l.station_a END
+           FROM rail_links l WHERE l.station_a = $1 OR l.station_b = $1)`,
+      [id],
+    );
+    const points = new Map(
+      stations.map(({ id, lon, lat }) => [id, [lon, lat] as [number, number]]),
+    );
+    const { links, ties } = await drawRailway(
+      this.places.manager,
+      'station_a = $1 OR station_b = $1',
+      id,
+      points,
+    );
+    return { stations, links, ties };
   }
 
   async overview(): Promise<AdminStationsOverview> {

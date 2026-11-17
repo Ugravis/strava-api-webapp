@@ -3,13 +3,9 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { SportType } from '../activities/sport-type';
 import { SUBTILE_ZOOM, SUBTILES_PER_SIDE, TILE_ZOOM } from '../tiles/tile-grid';
-import { reachingStations } from './import/railway-network';
+import { type DrawnLink, type DrawnTie, drawRailway } from './railway-drawing';
 import { shownStation, stationName } from './shown-stations';
 
-/** Tolerance of the simplified links sent to the map, in degrees (about 2 m). */
-const LINK_SIMPLIFY_DEG = 0.00002;
-/** Tolerance of the simplified ties, in degrees (about 0.5 m): finer, as they are drawn from the zoom where the base map shows the rail itself. */
-const TIE_SIMPLIFY_DEG = 0.000005;
 /** Layers of the vector tiles of the stations: their points, their footprints and the small tiles of their zones. */
 const STATIONS_LAYER = 'stations';
 const FOOTPRINTS_LAYER = 'station-footprints';
@@ -55,27 +51,12 @@ export interface VisitedStation {
   firstVisitAt: string | null;
 }
 
-/** Two visited stations linked by the railway. */
-export interface UnlockedLink {
-  id: number;
-  stations: [number, number];
-  lengthM: number;
-  /** `[lon, lat]` along the tracks, simplified. */
-  coords: [number, number][];
-}
-
-/** A stretch of railway, with the unlocked links running over it. */
-export interface RailTie {
-  linkIds: number[];
-  /** `[lon, lat]`, simplified. */
-  coords: [number, number][];
-}
-
 export interface VisitedStations {
   stations: VisitedStation[];
-  links: UnlockedLink[];
+  /** The links between two visited stations. */
+  links: DrawnLink[];
   /** The railway of the unlocked links cut where they diverge, drawn once for their ties. */
-  ties: RailTie[];
+  ties: DrawnTie[];
   /**
    * Changes with every import of the stations: the vector tiles of all the
    * stations can be cached until it changes. Null without stations.
@@ -251,37 +232,18 @@ export class StationsService {
       [userId],
     );
     const ids = stations.map((station) => station.id);
-    const links: {
-      id: number;
-      station_a: number;
-      station_b: number;
-      length_m: number;
-      geojson: string;
-    }[] =
-      ids.length === 0
-        ? []
-        : await this.dataSource.query(
-            `SELECT id, station_a, station_b, length_m,
-               ST_AsGeoJSON(ST_Simplify(geom, ${LINK_SIMPLIFY_DEG}), 6) AS geojson
-             FROM rail_links
-             WHERE station_a = ANY($1::int[]) AND station_b = ANY($1::int[])
-             ORDER BY id`,
-            [ids],
-          );
-    const linkIds = links.map((link) => link.id);
-    const ties: { link_ids: number[]; geojson: string }[] =
-      linkIds.length === 0
-        ? []
-        : await this.dataSource.query(
-            `SELECT link_ids, ST_AsGeoJSON(ST_Simplify(geom, ${TIE_SIMPLIFY_DEG}), 6) AS geojson
-             FROM rail_segments
-             WHERE link_ids && $1::int[]`,
-            [linkIds],
-          );
-    const unlocked = new Set(linkIds);
     const points = new Map(
       stations.map(({ id, lon, lat }) => [id, [lon, lat] as [number, number]]),
     );
+    const { links, ties } =
+      ids.length === 0
+        ? { links: [], ties: [] }
+        : await drawRailway(
+            this.dataSource,
+            'station_a = ANY($1::int[]) AND station_b = ANY($1::int[])',
+            ids,
+            points,
+          );
     return {
       stations: stations.map((station) => ({
         id: station.id,
@@ -290,23 +252,8 @@ export class StationsService {
         lat: station.lat,
         firstVisitAt: station.first_visit_at?.toISOString() ?? null,
       })),
-      links: links.map((link) => ({
-        id: link.id,
-        stations: [link.station_a, link.station_b],
-        lengthM: Math.round(link.length_m),
-        // Stored along the tracks: drawn curving from each station onto them.
-        coords: reachingStations(
-          points.get(link.station_a)!,
-          points.get(link.station_b)!,
-          (JSON.parse(link.geojson) as { coordinates: [number, number][] })
-            .coordinates,
-        ),
-      })),
-      ties: ties.map((tie) => ({
-        linkIds: tie.link_ids.filter((id) => unlocked.has(id)),
-        coords: (JSON.parse(tie.geojson) as { coordinates: [number, number][] })
-          .coordinates,
-      })),
+      links,
+      ties,
       stationsVersion: await this.stationsVersion(),
     };
   }

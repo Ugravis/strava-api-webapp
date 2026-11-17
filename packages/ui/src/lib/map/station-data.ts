@@ -1,6 +1,19 @@
-import type { VisitedStations } from "@kilotrace/ui/lib/api/types";
-import { type LinkEnd, NO_STATION_DATA, type StationData } from "@kilotrace/ui/lib/map/stations-layer";
-import type { MapHistory } from "./history-layer";
+import type { VisitedStations } from "../api/types";
+import { type LinkEnd, NO_STATION_DATA, type StationData } from "./stations-layer";
+
+/** The period of the history of the public map: the map as it was then (`state`), or all of it with the gains apart. */
+export interface StationHistory {
+  mode: string;
+  /** Instant the first visits are compared with. */
+  instant: string;
+}
+
+/** Stations and the links between them: those visited by a user, or a station and its neighbors in the back office (no first visit). */
+export interface StationNetwork {
+  stations: (Omit<VisitedStations["stations"][number], "firstVisitAt"> & { firstVisitAt?: string | null })[];
+  links: VisitedStations["links"];
+  ties: VisitedStations["ties"];
+}
 
 /** Whether a station or a link was gained in the period of the history: drawn in the pink of the gains. */
 interface Gained {
@@ -9,18 +22,18 @@ interface Gained {
 
 /** Whether a first visit falls in the period of the history; a visit not dated yet counts as an old one. */
 function isGained(
-  firstVisitAt: string | null,
-  history: MapHistory | null,
+  firstVisitAt: string | null | undefined,
+  history: StationHistory | null,
 ): boolean {
   return (
-    history !== null && firstVisitAt !== null && firstVisitAt >= history.instant
+    history !== null && firstVisitAt != null && firstVisitAt >= history.instant
   );
 }
 
 /** Whether a first visit counts for the history: the map as it was then, or all of it with the gains apart. */
 function inHistory(
-  firstVisitAt: string | null,
-  history: MapHistory | null,
+  firstVisitAt: string | null | undefined,
+  history: StationHistory | null,
 ): boolean {
   return history?.mode !== "state" || !isGained(firstVisitAt, history);
 }
@@ -40,8 +53,8 @@ function gainedLast<T extends { properties: Gained }>(features: T[]): T[] {
  * of the first visits of its stations.
  */
 export function stationData(
-  visited: VisitedStations | null,
-  history: MapHistory | null,
+  visited: StationNetwork | null,
+  history: StationHistory | null = null,
 ): StationData {
   if (!visited) return NO_STATION_DATA;
   const firstVisits = new Map<number, string | null>();
@@ -49,7 +62,7 @@ export function stationData(
   const features: StationData["stations"]["features"] = [];
   for (const station of visited.stations) {
     if (!inHistory(station.firstVisitAt, history)) continue;
-    firstVisits.set(station.id, station.firstVisitAt);
+    firstVisits.set(station.id, station.firstVisitAt ?? null);
     ends.set(station.id, {
       id: station.id,
       name: station.name,

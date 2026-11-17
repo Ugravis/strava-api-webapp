@@ -63,11 +63,14 @@ export const CATEGORIES: Record<AdminStationCategory, { label: string; tone: "gr
 
 export const TRAINS = { tourist: "Touristique", regular: "Classique" } as const;
 
-export const NAMINGS = { osm: "Nom OSM", custom: "Renommée" } as const;
 export const HELD = { held: "Visitée", never: "Jamais visitée" } as const;
 
 /** Name of a country in French, its flag first. */
 export const countryLabel = (code: string) => `${countryFlag(code)} ${countryName(code, "fr")}`;
+
+/** The flag of its country, else a train. */
+export const stationIcon = (station: { countryCode: string | null }) =>
+  station.countryCode ? <span className="text-sm leading-none">{countryFlag(station.countryCode)}</span> : <TrainFrontIcon />;
 
 /** A station without a name in OpenStreetMap. */
 export const nameOf = (station: { name: string | null }) => station.name ?? "Sans nom";
@@ -138,7 +141,7 @@ export const stationColumns = (edit: boolean): DataTableColumn<AdminStation>[] =
     header: "Gare",
     icon: <TrainFrontIcon />,
     sortable: true,
-    value: (station) => ({ icon: <TrainFrontIcon />, name: nameOf(station) }),
+    value: (station) => ({ icon: stationIcon(station), name: nameOf(station) }),
     marks: (station) => (
       <>
         {station.customName && <RenamedMark station={station} />}

@@ -57,7 +57,7 @@ import {
   type StationPick,
   trainNear,
 } from "@kilotrace/ui/lib/map/stations-layer";
-import { stationData } from "./station-data";
+import { stationData } from "@kilotrace/ui/lib/map/station-data";
 import { centerStation as centerStationOn, stationCut } from "@kilotrace/ui/lib/map/station-camera";
 import { type ActivityView, defaultActivityView, hasGains } from "./activity-view";
 import {

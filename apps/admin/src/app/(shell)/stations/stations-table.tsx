@@ -12,7 +12,7 @@ import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kil
 import { datasetMapHref } from "@/config/admin-links";
 import { stationMapHref } from "@/config/site-links";
 import { fetchStationsTable, loadStation } from "./actions";
-import { CATEGORIES, countryLabel, HELD, nameOf, NAMINGS, osmHref, stationColumns, type StationRights, TRAINS, useStationsVersion, visibilityIcon, visibilityOf, VISIBILITIES, ZONE_SOURCES } from "./station-bits";
+import { CATEGORIES, countryLabel, HELD, nameOf, osmHref, stationColumns, type StationRights, TRAINS, useStationsVersion, visibilityIcon, visibilityOf, VISIBILITIES, ZONE_SOURCES } from "./station-bits";
 import { StationRowPanel } from "./station-detail";
 
 function copy(text: string, done: string) {
@@ -46,11 +46,11 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
       empty: { title: "Aucune gare", description: "Les gares apparaîtront ici après le premier import (pnpm stations:import)." },
       defaultSort: { id: "holders", desc: true },
       views: [
-        { id: "compact", label: "Table compacte", columns: ["name", "holders", "country", "category", "routes", "operator", "links", "visibility"] },
+        { id: "compact", label: "Table compacte", columns: ["name", "holders", "category", "routes", "operator", "osmNetwork", "visibility"] },
         {
           id: "detailed",
           label: "Table détaillée",
-          columns: ["name", "holders", "country", "category", "tourist", "routes", "operator", "osmNetwork", "links", "linksKm", "zoneSource", "visibility", "zoneTiles", "osmName", "customName", "osm", "uicRef", "wikidata", "coordinates", "id", "updatedAt"],
+          columns: ["name", "holders", "category", "tourist", "routes", "operator", "osmNetwork", "links", "linksKm", "zoneSource", "visibility", "zoneTiles", "osmName", "customName", "osm", "uicRef", "wikidata", "coordinates", "id", "updatedAt"],
         },
         { id: "cards", label: "Cartes", layout: "cards", columns: ["name", "country", "category", "operator", "network", "holders"] },
       ],
@@ -62,11 +62,12 @@ export function StationsTable({ rights: given, countries: listed }: { rights: St
         { id: "zoneSource", label: "Géométrie", options: options(ZONE_SOURCES) },
         { id: "country", label: "Pays", options: countries.map((code) => ({ value: code, label: countryLabel(code) })) },
         { id: "visibility", label: "Site", options: options(VISIBILITIES) },
-        { id: "naming", label: "Nom", options: options(NAMINGS) },
       ],
       groupings: [
         { id: "country", label: "Pays", title: (key) => (key ? countryLabel(key) : "Hors pays") },
         { id: "category", label: "Type", title: (key) => CATEGORIES[key as keyof typeof CATEGORIES]?.label ?? key },
+        { id: "operator", label: "Exploitant", title: (key) => key || "Sans exploitant" },
+        { id: "osmNetwork", label: "Réseau commercial", title: (key) => key || "Sans réseau" },
         { id: "zoneSource", label: "Géométrie", title: (key) => ZONE_SOURCES[key as keyof typeof ZONE_SOURCES]?.label ?? key },
         { id: "visibility", label: "Site", title: (key) => VISIBILITIES[key as keyof typeof VISIBILITIES]?.label ?? key },
       ],

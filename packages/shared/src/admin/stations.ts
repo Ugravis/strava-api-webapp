@@ -63,6 +63,18 @@ export interface AdminStationNeighbor {
   hidden: boolean;
 }
 
+/**
+ * `GET /api/admin/stations/:id/railway`: the station and those linked to it
+ * by the railway, the links between them drawn along the tracks, the railway
+ * under them cut where they diverge (drawn once for its ties), as the public
+ * map draws them.
+ */
+export interface AdminStationRailway {
+  stations: { id: number; name: string | null; lon: number; lat: number }[];
+  links: { id: number; stations: [number, number]; lengthM: number; coords: [number, number][] }[];
+  ties: { linkIds: number[]; coords: [number, number][] }[];
+}
+
 /** `GET /api/admin/stations/overview`: the figures above the table. */
 export interface AdminStationsOverview {
   total: number;

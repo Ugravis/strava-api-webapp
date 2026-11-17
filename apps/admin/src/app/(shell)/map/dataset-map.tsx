@@ -2,7 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { AdminMapVersion } from "@kilotrace/shared/admin";
-import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
+import { Map as MapLibreMap, NavigationControl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
@@ -30,10 +30,8 @@ import { type StationRights, useStationsVersion } from "../stations/station-bits
 import { StationRowPanel } from "../stations/station-detail";
 import { locateRegion, locateStation } from "./actions";
 import { DEFAULT_LAYERS, MapLayersMenu, type MapLayersState } from "./map-layers-menu";
+import "@/lib/map/maplibre-worker";
 
-// MapLibre derives its worker URL from its own location at runtime, which the
-// bundler cannot follow: the worker is declared here so that it is emitted.
-setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href);
 
 /** As on the public map: the stations are hovered from this zoom, the zoom the tiles are clicked from. */
 const HOVER_MIN_ZOOM = 8;

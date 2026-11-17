@@ -1,6 +1,9 @@
 import type { OplObject, Tags } from './osm-opl';
 import {
   isPassengerTrack,
+  isRouteOnlyTrack,
+  isTouristTags,
+  isTouristTrack,
   isStation,
   isStationZoneTrack,
   isStopArea,
@@ -50,8 +53,12 @@ export interface StationCandidate {
   exclusion: StationExclusion | null;
   /** What shows a kept station is served: a train route, or a track beside it. */
   servedBy: 'route' | 'track' | null;
-  /** Number of train routes stopping at it or in its stop areas: its importance. */
-  routes: number;
+  /** Train routes stopping at it or in its stop areas: their number is its importance. */
+  routeIds: number[];
+  /** A tourist or heritage train: by its tags, its routes, or the track beside it. */
+  tourist: boolean;
+  /** Its tags in OpenStreetMap. */
+  tags: Tags;
   /** For a merged station: the index of the station it is merged into. */
   mergedInto: number | null;
 }
@@ -118,6 +125,8 @@ export interface Tracks {
   passenger: Uint8Array;
   /** Whether the zone of a station may follow each track. */
   zone: Uint8Array;
+  /** The train routes running on each track, by track index, when any. */
+  routes: Map<number, number[]>;
 }
 
 /** What the import keeps of the railway of OpenStreetMap. */
@@ -145,12 +154,15 @@ export class RailwayDataBuilder {
   /** Whether each track serves the stations beside it, without a route. */
   private readonly trackServes = new Column(uint8(1 << 16), uint8);
   private readonly trackZone = new Column(uint8(1 << 16), uint8);
+  private readonly trackTourist = new Column(uint8(1 << 16), uint8);
   private readonly features = new ZoneFeatureCollector(this.nodes, () =>
     this.candidates.map((candidate) => candidate.point),
   );
   /** Another way referenced by a relation, such as a platform: its first node. */
   private readonly otherWays = new Map<number, number>();
-  private readonly routeTracks = new Set<number>();
+  /** Train routes running on each way. */
+  private readonly routesOfWay = new Map<number, number[]>();
+  private readonly touristRoutes = new Set<number>();
   /** `n123` or `w456`: the stops and platforms of the train routes. */
   private readonly routeStops = new Set<string>();
   /** Train routes stopping at each stop, by `n|w|r` + id. */
@@ -184,9 +196,12 @@ export class RailwayDataBuilder {
               this.attractionStations.add(`${member.type}${member.id}`);
           }
         } else if (isTrainRoute(object.tags)) {
+          if (isTouristTags(object.tags)) this.touristRoutes.add(object.id);
           for (const member of object.members) {
             if (member.type === 'w' && !isStopRole(member.role)) {
-              this.routeTracks.add(member.id);
+              const routes = this.routesOfWay.get(member.id);
+              if (routes) routes.push(object.id);
+              else this.routesOfWay.set(member.id, [object.id]);
             } else if (member.type !== 'r') {
               const stop = `${member.type}${member.id}`;
               this.routeStops.add(stop);
@@ -222,14 +237,16 @@ export class RailwayDataBuilder {
       point,
       exclusion: null,
       servedBy: null,
-      routes: 0,
+      routeIds: [],
+      tourist: false,
       mergedInto: null,
       tags,
     });
   }
 
   private addWay(id: number, tags: Tags | null, refs: number[]): void {
-    if (!isTrackWay(tags)) {
+    const routeOnly = isRouteOnlyTrack(tags);
+    if (!isTrackWay(tags) && !routeOnly) {
       const first = refs.length > 0 ? this.nodes.indexOf(refs[0]) : -1;
       if (first !== -1) this.otherWays.set(id, first);
       if (isStation(tags)) {
@@ -251,9 +268,11 @@ export class RailwayDataBuilder {
     }
     this.trackIds.push(id);
     this.trackStarts.push(start);
-    this.trackOpen.push(isPassengerTrack(tags!, false) ? 1 : 0);
-    this.trackServes.push(servesStationsNearby(tags!) ? 1 : 0);
-    this.trackZone.push(isStationZoneTrack(tags!) ? 1 : 0);
+    // A metro or tram track counts only once a train route runs on it.
+    this.trackOpen.push(!routeOnly && isPassengerTrack(tags!, false) ? 1 : 0);
+    this.trackServes.push(!routeOnly && servesStationsNearby(tags!) ? 1 : 0);
+    this.trackZone.push(!routeOnly && isStationZoneTrack(tags!) ? 1 : 0);
+    this.trackTourist.push(isTouristTrack(tags!) ? 1 : 0);
   }
 
   /** The mean of the distinct nodes of a way, or null when none is known. */
@@ -277,9 +296,14 @@ export class RailwayDataBuilder {
     starts.set(this.trackStarts.values());
     starts[count] = this.trackNodes.length;
     const passenger = this.trackOpen.values();
+    const routes = new Map<number, number[]>();
     for (let i = 0; i < count; i++) {
-      if (this.routeTracks.has(osmIds[i])) passenger[i] = 1;
+      const ids = this.routesOfWay.get(osmIds[i]);
+      if (!ids) continue;
+      passenger[i] = 1;
+      routes.set(i, ids);
     }
+    this.routesOfWay.clear();
     const tracks = {
       count,
       osmIds,
@@ -287,6 +311,7 @@ export class RailwayDataBuilder {
       nodes: this.trackNodes.values(),
       passenger,
       zone: this.trackZone.values(),
+      routes,
     };
     return {
       nodes: this.nodes,
@@ -325,7 +350,8 @@ export class RailwayDataBuilder {
     const stopIndex = this.stopPointIndex();
     const attractions = new Set<StationCandidate>();
     const stations = this.withoutWayDuplicates().map(
-      ({ tags, ...candidate }): StationCandidate => {
+      (candidate): StationCandidate => {
+        const { tags } = candidate;
         const key = osmKey(candidate);
         const byRoute = this.routeStops.has(key) || servedByArea.has(key);
         let exclusion = stationExclusion(tags);
@@ -343,7 +369,7 @@ export class RailwayDataBuilder {
           ...candidate,
           exclusion: exclusion ?? (served ? null : 'not_served'),
           servedBy: exclusion === null && served ? 'route' : null,
-          routes: routesOf.get(key)?.size ?? 0,
+          routeIds: [...(routesOf.get(key) ?? [])],
         };
         if (attraction) attractions.add(station);
         return station;
@@ -353,12 +379,42 @@ export class RailwayDataBuilder {
       (station) =>
         station.exclusion === 'not_served' && !attractions.has(station),
     );
-    for (const station of this.nearServingTracks(unserved, tracks)) {
+    const serving = this.nearestTracks(
+      unserved,
+      tracks,
+      this.trackServes.values(),
+      SERVED_TRACK_RADIUS_M,
+    );
+    for (const station of serving.keys()) {
       station.exclusion = null;
       station.servedBy = 'track';
     }
+    this.markTourist(stations, tracks);
     this.mergeDuplicates(stations);
     return stations;
+  }
+
+  /**
+   * A kept station is a tourist one by its tags, by its routes when all are
+   * tourist ones, or by the passenger track nearest to it.
+   */
+  private markTourist(stations: StationCandidate[], tracks: Tracks): void {
+    const kept = stations.filter((station) => station.exclusion === null);
+    const nearest = this.nearestTracks(
+      kept,
+      tracks,
+      tracks.passenger,
+      SERVED_TRACK_RADIUS_M,
+    );
+    const touristTracks = this.trackTourist.values();
+    for (const station of kept) {
+      const track = nearest.get(station);
+      station.tourist =
+        isTouristTags(station.tags) ||
+        (station.routeIds.length > 0 &&
+          station.routeIds.every((route) => this.touristRoutes.has(route))) ||
+        (track !== undefined && touristTracks[track] === 1);
+    }
   }
 
   /**
@@ -463,11 +519,16 @@ export class RailwayDataBuilder {
     }
   }
 
-  /** The stations within `SERVED_TRACK_RADIUS_M` of a track serving the stations nearby. */
-  private nearServingTracks(
+  /**
+   * The nearest track to each station within `radiusM`, among the tracks
+   * `selected`.
+   */
+  private nearestTracks(
     stations: StationCandidate[],
     tracks: Tracks,
-  ): Set<StationCandidate> {
+    selected: Uint8Array,
+    radiusM: number,
+  ): Map<StationCandidate, number> {
     const index = new Map<string, StationCandidate[]>();
     for (const station of stations) {
       const key = PointIndex.key(station.point[0], station.point[1]);
@@ -475,38 +536,38 @@ export class RailwayDataBuilder {
       if (cell) cell.push(station);
       else index.set(key, [station]);
     }
-    const near = new Set<StationCandidate>();
-    if (index.size === 0) return near;
-    const serves = this.trackServes.values();
-    for (let track = 0; track < tracks.count; track++) {
-      if (!serves[track]) continue;
-      for (
-        let position = tracks.starts[track];
-        position < tracks.starts[track + 1] - 1;
-        position++
-      ) {
-        const a = this.nodes.point(tracks.nodes[position]);
-        const b = this.nodes.point(tracks.nodes[position + 1]);
-        // Cells of about 1 km: the neighbor cells cover the radius.
-        const x0 = PointIndex.cell(Math.min(a[0], b[0])) - 1;
-        const x1 = PointIndex.cell(Math.max(a[0], b[0])) + 1;
-        const y0 = PointIndex.cell(Math.min(a[1], b[1])) - 1;
-        const y1 = PointIndex.cell(Math.max(a[1], b[1])) + 1;
-        for (let x = x0; x <= x1; x++) {
-          for (let y = y0; y <= y1; y++) {
-            for (const station of index.get(`${x}/${y}`) ?? []) {
-              if (
-                !near.has(station) &&
-                project(station.point, a, b).d <= SERVED_TRACK_RADIUS_M
-              ) {
-                near.add(station);
+    const nearest = new Map<StationCandidate, { track: number; d: number }>();
+    if (index.size > 0) {
+      for (let track = 0; track < tracks.count; track++) {
+        if (!selected[track]) continue;
+        for (
+          let position = tracks.starts[track];
+          position < tracks.starts[track + 1] - 1;
+          position++
+        ) {
+          const a = this.nodes.point(tracks.nodes[position]);
+          const b = this.nodes.point(tracks.nodes[position + 1]);
+          // Cells of about 1 km: the neighbor cells cover the radius.
+          const x0 = PointIndex.cell(Math.min(a[0], b[0])) - 1;
+          const x1 = PointIndex.cell(Math.max(a[0], b[0])) + 1;
+          const y0 = PointIndex.cell(Math.min(a[1], b[1])) - 1;
+          const y1 = PointIndex.cell(Math.max(a[1], b[1])) + 1;
+          for (let x = x0; x <= x1; x++) {
+            for (let y = y0; y <= y1; y++) {
+              for (const station of index.get(`${x}/${y}`) ?? []) {
+                const { d } = project(station.point, a, b);
+                const known = nearest.get(station);
+                if (d <= radiusM && (!known || d < known.d))
+                  nearest.set(station, { track, d });
               }
             }
           }
         }
       }
     }
-    return near;
+    return new Map(
+      [...nearest].map(([station, { track }]) => [station, track]),
+    );
   }
 
   private stopPointIndex(): PointIndex {

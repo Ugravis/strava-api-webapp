@@ -8,6 +8,7 @@ import { COUNT_PLACE_HOLDERS } from '../place-holders';
 import { placeTile } from '../station-tile';
 import { parseOplLine } from './osm-opl';
 import { osmKey, type RailwayData, RailwayDataBuilder } from './railway-data';
+import { pruneStations } from './station-pruning';
 import type { StationExclusion } from './railway-rules';
 import { mergeOverlappingStations } from './station-merges';
 import { saveStrokes } from './rail-strokes';
@@ -228,8 +229,12 @@ export async function importStations(
   const result = await timed('link', () =>
     Promise.resolve(new RailwayNetwork(data).linkAll()),
   );
+  const links = pruneStations(data.stations, result.links);
+  const imported = kept.filter(
+    (index) => data.stations[index].exclusion === null,
+  );
   console.log(
-    `${result.links.length} links, ${result.detours.length} detours rejected, ${result.redundant.length} redundant`,
+    `${links.length} links, ${result.detours.length} detours rejected, ${result.redundant.length} redundant, ${kept.length - imported.length} stations unlinked or on a park train`,
   );
 
   const sample = (index: number): StationSample => {
@@ -241,12 +246,16 @@ export async function importStations(
     closed: [],
     not_served: [],
     merged: [],
+    unlinked: [],
+    park: [],
   } as Record<StationExclusion, StationSample[]>;
   const excluded = {
     not_train: 0,
     closed: 0,
     not_served: 0,
     merged: 0,
+    unlinked: 0,
+    park: 0,
   } as Record<StationExclusion, number>;
   data.stations.forEach((station, index) => {
     if (!station.exclusion) return;
@@ -256,19 +265,19 @@ export async function importStations(
     }
   });
   const neighbors = new Map<number, number>();
-  for (const { a, b } of result.links) {
+  for (const { a, b } of links) {
     neighbors.set(a, (neighbors.get(a) ?? 0) + 1);
     neighbors.set(b, (neighbors.get(b) ?? 0) + 1);
   }
 
   await timed('save', () =>
     dataSource.transaction(async (manager) => {
-      await saveStations(manager, data, kept);
-      await saveLinks(manager, data, result.links);
+      await saveStations(manager, data, imported);
+      await saveLinks(manager, data, links);
     }),
   );
   const zones = await timed('zones', () =>
-    saveZones(dataSource, data, stationZones(data, kept)),
+    saveZones(dataSource, data, stationZones(data, imported)),
   );
   console.log(
     `Zones: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
@@ -277,9 +286,9 @@ export async function importStations(
     mergeOverlappingStations(
       dataSource,
       new Map(
-        kept.map((index) => [
+        imported.map((index) => [
           osmKey(data.stations[index]),
-          data.stations[index].routes,
+          data.stations[index].routeIds.length,
         ]),
       ),
     ),
@@ -314,8 +323,8 @@ export async function importStations(
   const report: RailwayImportReport = {
     source: basename(source),
     candidates: data.stations.length,
-    kept: kept.length - merged,
-    servedByTrack: kept.filter(
+    kept: imported.length - merged,
+    servedByTrack: imported.filter(
       (index) => data.stations[index].servedBy === 'track',
     ).length,
     excluded,
@@ -324,9 +333,9 @@ export async function importStations(
       count: result.isolated.length,
       samples: result.isolated.slice(0, REPORT_SAMPLES).map(sample),
     },
-    links: result.links.length,
+    links: links.length,
     networkKm: Math.round(
-      result.links.reduce((total, link) => total + link.lengthM, 0) / 1000,
+      links.reduce((total, link) => total + link.lengthM, 0) / 1000,
     ),
     redundant: {
       count: result.redundant.length,
@@ -369,7 +378,7 @@ export async function importStations(
     [basename(source), JSON.stringify(report)],
   );
   console.log(
-    `Imported: ${kept.length - merged} stations, ${result.links.length} links, ${report.networkKm} km.`,
+    `Imported: ${imported.length - merged} stations, ${links.length} links, ${report.networkKm} km.`,
   );
 }
 
@@ -382,6 +391,8 @@ async function saveStations(
   await manager.query(
     `CREATE TEMP TABLE imported_stations (
        osm_type char(1), osm_id bigint, name text, geom geometry(Point, 4326), x integer, y integer, bit smallint,
+       category varchar(16), tourist boolean, routes integer, operator text, network text, uic_ref text,
+       wikidata text, osm_tags jsonb,
        PRIMARY KEY (osm_type, osm_id)
      ) ON COMMIT DROP`,
   );
@@ -390,11 +401,17 @@ async function saveStations(
       .slice(i, i + INSERT_BATCH)
       .map((index) => data.stations[index]);
     const tiles = batch.map(({ point }) => placeTile(point[0], point[1]));
+    const tag = (key: string) =>
+      batch.map((station) => station.tags[key]?.trim() || null);
     await manager.query(
       `INSERT INTO imported_stations
-       SELECT type, id, name, ST_SetSRID(ST_MakePoint(lon, lat), 4326), x, y, bit
-       FROM unnest($1::bigint[], $2::text[], $3::float8[], $4::float8[], $5::int[], $6::int[], $7::int[], $8::text[])
-         AS s(id, name, lon, lat, x, y, bit, type)
+       SELECT type, id, name, ST_SetSRID(ST_MakePoint(lon, lat), 4326), x, y, bit,
+         category, tourist, routes, operator, network, uic_ref, wikidata, tags::jsonb
+       FROM unnest(
+         $1::bigint[], $2::text[], $3::float8[], $4::float8[], $5::int[], $6::int[], $7::int[], $8::text[],
+         $9::text[], $10::boolean[], $11::int[], $12::text[], $13::text[], $14::text[], $15::text[], $16::text[]
+       ) AS s(id, name, lon, lat, x, y, bit, type,
+         category, tourist, routes, operator, network, uic_ref, wikidata, tags)
        ON CONFLICT DO NOTHING`,
       [
         batch.map((station) => station.osmId),
@@ -405,6 +422,14 @@ async function saveStations(
         tiles.map((tile) => tile.y),
         tiles.map((tile) => tile.bit),
         batch.map((station) => station.osmType),
+        tag('railway'),
+        batch.map((station) => station.tourist),
+        batch.map((station) => station.routeIds.length),
+        tag('operator'),
+        tag('network'),
+        tag('uic_ref'),
+        tag('wikidata'),
+        batch.map((station) => JSON.stringify(station.tags)),
       ],
     );
   }
@@ -413,13 +438,22 @@ async function saveStations(
        SELECT 1 FROM imported_stations i WHERE i.osm_type = p.osm_type AND i.osm_id = p.osm_id
      )`,
   );
+  // What OSM says is refreshed at every import; `updated_at`, which the
+  // vector tiles follow, only when the name or the point changes.
   await manager.query(
-    `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit)
-     SELECT 'station', osm_type, osm_id, name, geom, x, y, bit FROM imported_stations
+    `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit,
+       category, tourist, routes, operator, network, uic_ref, wikidata, osm_tags)
+     SELECT 'station', osm_type, osm_id, name, geom, x, y, bit,
+       category, tourist, routes, operator, network, uic_ref, wikidata, osm_tags
+     FROM imported_stations
      ON CONFLICT (osm_type, osm_id) DO UPDATE SET
        name = excluded.name, geom = excluded.geom, x = excluded.x, y = excluded.y, bit = excluded.bit,
-       updated_at = now()
-     WHERE places.name IS DISTINCT FROM excluded.name OR NOT ST_Equals(places.geom, excluded.geom)`,
+       category = excluded.category, tourist = excluded.tourist, routes = excluded.routes,
+       operator = excluded.operator, network = excluded.network, uic_ref = excluded.uic_ref,
+       wikidata = excluded.wikidata, osm_tags = excluded.osm_tags,
+       updated_at = CASE
+         WHEN places.name IS DISTINCT FROM excluded.name OR NOT ST_Equals(places.geom, excluded.geom)
+         THEN now() ELSE places.updated_at END`,
   );
 }
 

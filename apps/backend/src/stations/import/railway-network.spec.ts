@@ -466,6 +466,69 @@ describe('RailwayNetwork', () => {
     expect(linksOf(dataOf(f))).toEqual(['101-102', '102-103']);
   });
 
+  it('walks a metro-tagged track only where a train route runs on it', () => {
+    const f = empty();
+    // A suburban line in a tunnel mapped as a metro, and a real metro line.
+    track(f, 1, 1, 0, 10, 'railway=subway');
+    track(f, 2, 21, 0, 10, 'railway=subway', LAT + 0.02);
+    station(f, 101, 0.005, LAT, ',station=subway,subway=yes,train=yes');
+    station(f, 102, 0.035, LAT, ',station=subway,subway=yes,train=yes');
+    station(f, 103, 0.005, LAT + 0.02, ',train=yes');
+    station(f, 104, 0.035, LAT + 0.02, ',train=yes');
+    route(f, 1, [101, 102], [1]);
+
+    expect(linksOf(dataOf(f))).toEqual(['101-102']);
+  });
+
+  it('passes the station of another line where the routes of its track are mapped', () => {
+    const f = empty();
+    // Line 1 passes 100 m from station 102 of line 2 without stopping.
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    track(f, 2, 21, 0.02, 3, 'railway=rail', LAT + 100 * M);
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.03, LAT + 100 * M);
+    station(f, 103, 0.075, LAT);
+    route(f, 1, [101, 103], [1]);
+    route(f, 2, [102], [2]);
+
+    expect(linksOf(dataOf(f))).toContain('101-103');
+  });
+
+  it('never serves nor walks the track of an amusement park ride', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=narrow_gauge,gauge=600,attraction=train');
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.035, LAT);
+
+    const data = dataOf(f);
+    expect(data.stations.map((s) => s.exclusion)).toEqual([
+      'not_served',
+      'not_served',
+    ]);
+  });
+
+  it('tells the tourist stations by their tags, routes or track', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    track(f, 2, 21, 0, 10, 'railway=narrow_gauge,gauge=600', LAT + 0.02);
+    track(f, 3, 41, 0, 10, 'railway=rail', LAT + 0.04);
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.005, LAT + 0.02);
+    station(f, 103, 0.005, LAT + 0.04, ',usage=tourism');
+    station(f, 104, 0.035, LAT + 0.04);
+    route(f, 1, [101], [1]);
+    f.relations.push(
+      `r2 Ttype=route,route=train,service=tourism Mn104@stop,w3@`,
+    );
+
+    expect(dataOf(f).stations.map((s) => s.tourist)).toEqual([
+      false,
+      true,
+      true,
+      true,
+    ]);
+  });
+
   it('rejects a link far longer than the straight distance', () => {
     const f = empty();
     // A loop of about 20 km between two stations 1.5 km apart.

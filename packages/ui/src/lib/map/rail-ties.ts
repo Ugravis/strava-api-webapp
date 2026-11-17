@@ -11,12 +11,12 @@ import { realScale } from "./real-scale";
 /**
  * The ticks across the railway: one symbol by tick, placed from the whole
  * line rather than from its tiles, so that none is cut or shifted at their
- * borders. Only those around the view are laid out, at both spacings at
- * once: zooming in only fades the finer ones in, with no new layout.
+ * borders. Only those around the view are laid out, the finest from the
+ * zoom before they show: zooming in only fades the finer ones in.
  */
 
 /** The ticks appear from this zoom. */
-export const TIES_MIN_ZOOM = 14;
+export const TIES_MIN_ZOOM = 13;
 export const TIES_SOURCE = "rail-ties-ticks";
 export const TIES_LAYER = "rail-links-ties";
 const TIE_IMAGE = "rail-tie";
@@ -25,8 +25,12 @@ const TIE_IMAGE = "rail-tie";
 const TIE = { length: 7.5, width: 1.4, radius: 0.55 } as const;
 /** Opaque border around each tick, in pixels below the real scale. */
 const TIE_BORDER = 0.5;
-/** Metres between two ticks at `TIES_MIN_ZOOM`, halved from the next zoom level by those in between. */
-const TIE_SPACING_M = 32;
+/** Metres between two ticks at `TIES_MIN_ZOOM`, halved at each of the next two zoom levels by those in between. */
+const TIE_SPACING_M = 64;
+/** Metres between the finest ticks: their level, 0 to 2, says from which zoom they show. */
+const TIE_STEP_M = TIE_SPACING_M / 4;
+/** The finest ticks are laid out from this zoom only, before they fade in: half as many zoomed out. */
+const FINEST_ZOOM = TIES_MIN_ZOOM + 1;
 /** The ticks in between start fading in at this share of the fade of the others, and end with it. */
 const FINE_FADE_START = 0.6;
 /** The ticks are laid out over the view and this share of it on each side: a small move does not lay them out again. */
@@ -55,6 +59,8 @@ interface TieState {
   ties: Tie[];
   /** The area the ticks laid out cover, null when none are. */
   laid: [number, number, number, number] | null;
+  /** Whether the finest ticks are laid out. */
+  finest: boolean;
 }
 
 const states = new WeakMap<MapLibreMap, TieState>();
@@ -101,9 +107,12 @@ const inside = (box: Tie["box"], [lng, lat]: [number, number]) =>
 const overlaps = (a: Tie["box"], b: Tie["box"]) =>
   a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
 
-/** The ticks of `ties` in `box`, every half `TIE_SPACING_M` from the start of each line, turned with it; `fine` those in between. */
-function layOut(ties: Tie[], box: Tie["box"]): FeatureCollection<Point> {
-  const spacing = TIE_SPACING_M / 2;
+/** The level of the `n`th tick from the start of a line: 0 every `TIE_SPACING_M`, 1 in between, 2 the finest. */
+const tieLevel = (n: number): number => (n % 4 === 0 ? 0 : n % 2 === 0 ? 1 : 2);
+
+/** The ticks of `ties` in `box`, every `TIE_STEP_M` from the start of each line (the finest left out unless `finest`), turned with it. */
+function layOut(ties: Tie[], box: Tie["box"], finest: boolean): FeatureCollection<Point> {
+  const spacing = finest ? TIE_STEP_M : 2 * TIE_STEP_M;
   const features: Feature<Point>[] = [];
   for (const tie of ties) {
     if (!overlaps(tie.box, box)) continue;
@@ -123,7 +132,7 @@ function layOut(ties: Tie[], box: Tie["box"]): FeatureCollection<Point> {
         if (!inside(box, point)) continue;
         features.push({
           type: "Feature",
-          properties: { bearing, gained, fine: Math.round(d / spacing) % 2 === 1 },
+          properties: { bearing, gained, level: tieLevel(Math.round(d / TIE_STEP_M)) },
           geometry: { type: "Point", coordinates: point },
         });
       }
@@ -150,15 +159,18 @@ function refresh(map: MapLibreMap): void {
   }
   const bounds = map.getBounds();
   const { laid } = state;
+  const finest = map.getZoom() >= FINEST_ZOOM;
   if (
     laid &&
+    (state.finest || !finest) &&
     inside(laid, [bounds.getWest(), bounds.getSouth()]) &&
     inside(laid, [bounds.getEast(), bounds.getNorth()])
   )
     return;
   const box = viewBox(bounds);
   state.laid = box;
-  source.setData(layOut(state.ties, box));
+  state.finest = finest;
+  source.setData(layOut(state.ties, box, finest));
 }
 
 /** The image of a tick, as a distance field: recoloured by the layer, bordered by its halo. */
@@ -183,7 +195,8 @@ function tieImage(): ImageData {
 
 /**
  * Adds the ticks below `before`, in `color` bordered by `casing`, and lays
- * them out with the view.
+ * them out with the view; or draws those of `tiles`, laid out by the server
+ * from the start of each line, so that their tiles cut none.
  */
 export function addRailTies(
   map: MapLibreMap,
@@ -192,16 +205,19 @@ export function addRailTies(
   casing: string,
   visibility: "visible" | "none",
   before: string | undefined,
+  tiles?: { source: string; "source-layer": string },
 ): void {
   if (!map.hasImage(TIE_IMAGE)) map.addImage(TIE_IMAGE, tieImage(), { sdf: true });
-  states.set(map, { ties: prepare(lines), laid: null });
-  // No tiles finer than the first zoom of the ticks: zooming in cuts none again.
-  map.addSource(TIES_SOURCE, { type: "geojson", data: EMPTY, buffer: 0, maxzoom: TIES_MIN_ZOOM });
+  if (!tiles) {
+    states.set(map, { ties: prepare(lines), laid: null, finest: false });
+    // No tiles finer than the first zoom of the ticks: zooming in cuts none again.
+    map.addSource(TIES_SOURCE, { type: "geojson", data: EMPTY, buffer: 0, maxzoom: TIES_MIN_ZOOM });
+  }
   map.addLayer(
     {
       id: TIES_LAYER,
       type: "symbol",
-      source: TIES_SOURCE,
+      ...(tiles ?? { source: TIES_SOURCE }),
       minzoom: TIES_MIN_ZOOM,
       layout: {
         visibility,
@@ -223,17 +239,23 @@ export function addRailTies(
           "interpolate",
           ["linear"],
           ["zoom"],
+          // Each zoom level, those shown fade in whole and those in between join them late in the fade.
           TIES_MIN_ZOOM,
           0,
           TIES_MIN_ZOOM + FINE_FADE_START * FADE_ZOOMS,
-          ["case", ["get", "fine"], 0, FINE_FADE_START],
+          ["match", ["get", "level"], 0, FINE_FADE_START, 0],
           TIES_MIN_ZOOM + FADE_ZOOMS,
+          ["match", ["get", "level"], 2, 0, 1],
+          TIES_MIN_ZOOM + (1 + FINE_FADE_START) * FADE_ZOOMS,
+          ["match", ["get", "level"], 2, 0, 1],
+          TIES_MIN_ZOOM + 2 * FADE_ZOOMS,
           1,
         ],
       },
     },
     before,
   );
+  if (tiles) return;
   if (!listening.has(map)) {
     listening.add(map);
     // While moving: the ticks are there as soon as the view leaves the area laid out; the check costs nothing otherwise.

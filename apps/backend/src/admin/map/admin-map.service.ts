@@ -18,9 +18,13 @@ const DOTS_MIN_ZOOM = 5;
 /** Up to this zoom, the countries tiles are kept in memory (341 tiles at most). */
 const COUNTRIES_CACHE_MAX_ZOOM = 4;
 /** Changes the URL of the tiles when their layers change, beyond the data. */
-const TILE_FORMAT = 9;
+const TILE_FORMAT = 12;
 /** Grid, in tile units, the dots forced below `DOTS_MIN_ZOOM` are deduplicated on: about a pixel of a 512 px tile. */
 const DOT_GRID = MVT_EXTENT / 512;
+/** As `TIES_MIN_ZOOM` of the maps: the ticks across the railway from this zoom. */
+const TICKS_MIN_ZOOM = 13;
+/** As `TIE_STEP_M` of the maps: metres between the finest ticks, left out of the tiles of `TICKS_MIN_ZOOM` (shown later). */
+const TICK_STEP_M = 16;
 
 /** Layers of the station tiles of the back office. */
 export const ADMIN_MAP_LAYERS = {
@@ -28,6 +32,7 @@ export const ADMIN_MAP_LAYERS = {
   footprints: 'station-footprints',
   zones: 'station-zones',
   rails: 'rails',
+  ticks: 'rail-ticks',
 } as const;
 
 /**
@@ -152,6 +157,26 @@ export class AdminMapService {
          FROM rail_segments s, bounds b, wide w
          WHERE $1 >= ${RAIL_DETAIL_ZOOM} AND s.geom && w.box
        ),
+       -- The ticks across each segment, counted from its start: the same in every tile, never cut by them.
+       -- Along the segment in Mercator, as the maps turn them, its length scaled to its length on the ground.
+       ticks AS (
+         -- Level 0 every four steps, 1 in between, 2 the finest, as \`tieLevel\` of the maps.
+         SELECT CASE WHEN k * m.skip % 4 = 0 THEN 0 WHEN k * m.skip % 2 = 0 THEN 1 ELSE 2 END AS level, round(degrees(ST_Azimuth(
+             ST_LineInterpolatePoint(m.g, greatest(k * m.step - m.eps, 0)),
+             ST_LineInterpolatePoint(m.g, least(k * m.step + m.eps, 1)))))::int AS bearing,
+           ST_AsMVTGeom(ST_LineInterpolatePoint(m.g, least(k * m.step, 1)), b.envelope, ${MVT_EXTENT}, 0, true) AS geom
+         FROM bounds b,
+           LATERAL (
+             SELECT s.id, g, sk.skip, sk.skip * ${TICK_STEP_M} / ST_Length(s.geom::geography) AS step, 1 / ST_Length(g) AS eps
+             FROM rail_segments s, wide w, ST_Transform(s.geom, 3857) g,
+               (SELECT CASE WHEN $1 = ${TICKS_MIN_ZOOM} THEN 2 ELSE 1 END AS skip) sk
+             WHERE $1 >= ${TICKS_MIN_ZOOM} AND s.geom && w.box
+           ) m,
+           ST_Dump(ST_Intersection(m.g, b.envelope)) p,
+           LATERAL (SELECT ST_LineLocatePoint(m.g, ST_StartPoint(p.geom)) AS a, ST_LineLocatePoint(m.g, ST_EndPoint(p.geom)) AS z) f,
+           generate_series(ceil(least(f.a, f.z) / m.step)::int, floor(greatest(f.a, f.z) / m.step)::int) k
+         WHERE GeometryType(p.geom) = 'LINESTRING'
+       ),
        footprints AS (
          SELECT p.id, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat, p.hidden_at IS NOT NULL AS hidden,
            ST_AsMVTGeom(ST_Transform(p.footprint, 3857), b.envelope, ${MVT_EXTENT}, ${MVT_BUFFER}, true) AS geom
@@ -175,6 +200,9 @@ export class AdminMapService {
        SELECT coalesce((
            SELECT ST_AsMVT(rails, '${ADMIN_MAP_LAYERS.rails}', ${MVT_EXTENT}, 'geom')
            FROM rails WHERE geom IS NOT NULL
+         ), ''::bytea) || coalesce((
+           SELECT ST_AsMVT(ticks, '${ADMIN_MAP_LAYERS.ticks}', ${MVT_EXTENT}, 'geom')
+           FROM ticks WHERE geom IS NOT NULL
          ), ''::bytea) || coalesce((
            SELECT ST_AsMVT(points, '${ADMIN_MAP_LAYERS.stations}', ${MVT_EXTENT}, 'geom', 'id')
            FROM points WHERE geom IS NOT NULL

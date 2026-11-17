@@ -40,6 +40,8 @@ export interface TileHistorySummary {
   stations: number;
   /** Meters of railway unlocked between the stations of the history. */
   railwayM: number;
+  /** Largest network of visited stations at the date, or its growth since. */
+  maxStationCluster: number;
 }
 
 /** Layers of the vector tiles of the history: the large tiles merged into one area, and its outline. */
@@ -146,6 +148,7 @@ export class TileHistoryService {
       subtiles: counts.subtiles,
       stations: stations.stations,
       railwayM: stations.railwayM,
+      maxStationCluster: stations.maxCluster,
     };
   }
 

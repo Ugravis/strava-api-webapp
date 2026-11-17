@@ -20,6 +20,8 @@ interface Gained {
   gained?: boolean;
   /** Part of the largest network of visited stations: its railway drawn bolder. */
   cluster?: boolean;
+  /** Railway drawn without its ticks: the one an activity shown gained. */
+  bare?: boolean;
 }
 
 /** What the stations layer draws: the visited stations and the links unlocked between them. */

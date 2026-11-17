@@ -63,6 +63,12 @@ interface TieState {
   finest: boolean;
 }
 
+/** A line of railway: gained in the period shown, and drawn without ticks when `bare`. */
+interface TiedLine {
+  gained?: boolean;
+  bare?: boolean;
+}
+
 const states = new WeakMap<MapLibreMap, TieState>();
 const listening = new WeakSet<MapLibreMap>();
 
@@ -74,8 +80,9 @@ function metres(a: [number, number], b: [number, number]): number {
   return Math.hypot((b[0] - a[0]) * cos, b[1] - a[1]) * METRES_PER_DEGREE;
 }
 
-function prepare(lines: FeatureCollection<LineString, { gained?: boolean }>): Tie[] {
-  return lines.features.map(({ geometry, properties }) => {
+/** The lines with ticks: those marked `bare` have none. */
+function prepare(lines: FeatureCollection<LineString, TiedLine>): Tie[] {
+  return lines.features.filter(({ properties }) => !properties.bare).map(({ geometry, properties }) => {
     const coords = geometry.coordinates as [number, number][];
     const along = [0];
     const box: Tie["box"] = [Infinity, Infinity, -Infinity, -Infinity];
@@ -200,7 +207,7 @@ function tieImage(): ImageData {
  */
 export function addRailTies(
   map: MapLibreMap,
-  lines: FeatureCollection<LineString, { gained?: boolean }>,
+  lines: FeatureCollection<LineString, TiedLine>,
   color: ExpressionSpecification,
   casing: string,
   visibility: "visible" | "none",
@@ -267,7 +274,7 @@ export function addRailTies(
 /** Lays the ticks out again from new lines. */
 export function setRailTies(
   map: MapLibreMap,
-  lines: FeatureCollection<LineString, { gained?: boolean }>,
+  lines: FeatureCollection<LineString, TiedLine>,
 ): void {
   const state = states.get(map);
   if (!state) return;

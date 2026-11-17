@@ -134,7 +134,12 @@ export function stationData(
     const first = ats.includes(null) ? null : (ats as string[]).reduce((a, b) => (a < b ? a : b));
     ties.push({
       type: "Feature",
-      properties: { gained: gainedAt(first), cluster: inPeriod.some((id) => clusterLinks.has(id)) },
+      properties: {
+        gained: gainedAt(first),
+        cluster: inPeriod.some((id) => clusterLinks.has(id)),
+        // The railway an activity gained has no ticks: its stripes stay clear.
+        bare: reached !== null && gainedAt(first),
+      },
       geometry: { type: "LineString", coordinates: tie.coords },
     });
   }

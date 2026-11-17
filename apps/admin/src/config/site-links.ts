@@ -12,3 +12,6 @@ export const userProfileHref = (username: string): string => siteUrl(`/profiles?
 
 /** A station opened in the panel of the public map. */
 export const stationMapHref = (id: string): string => siteUrl(`/map?station=${encodeURIComponent(id)}`);
+
+/** A country opened with the sector tool of the public map. */
+export const regionMapHref = (code: string): string => siteUrl(`/map?sector=${encodeURIComponent(code)}`);

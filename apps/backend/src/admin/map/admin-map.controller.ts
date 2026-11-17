@@ -1,4 +1,8 @@
-import type { AdminMapStation, AdminMapVersion } from '@kilotrace/shared/admin';
+import type {
+  AdminMapRegion,
+  AdminMapStation,
+  AdminMapVersion,
+} from '@kilotrace/shared/admin';
 import {
   Get,
   Header,
@@ -73,6 +77,12 @@ export class AdminMapController {
   @AnyMember()
   station(@Param('id', ParseIntPipe) id: number): Promise<AdminMapStation> {
     return this.map.station(id);
+  }
+
+  @Get('region/:code')
+  @AnyMember()
+  region(@Param('code') code: string): Promise<AdminMapRegion> {
+    return this.map.region(code);
   }
 
   @Get('stations/:zoom/:x/:y')

@@ -43,6 +43,7 @@
     "releaseNotes": "Notes de release",
     "siteActivity": "Activité du site",
     "stations": "Gares",
+    "regions": "Régions",
     "datasetMap": "Carte"
   },
   "roles": {
@@ -1505,5 +1506,9 @@
   "stations": {
     "title": "Gares",
     "description": "Les gares importées d'OpenStreetMap, visitées par les membres sur la carte. Un nom custom ou un masquage tient au fil des imports."
+  },
+  "regions": {
+    "title": "Régions",
+    "description": "Les régions du dataset, groupées par type : pour l'instant les pays importés d'Overture Maps, avec leurs tuiles, leurs gares et les membres qui y sont passés."
   }
 }

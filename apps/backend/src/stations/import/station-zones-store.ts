@@ -97,8 +97,9 @@ WITH m AS MATERIALIZED (
     ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.clusters), 4326), s.srid) AS clusters,
     ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.buildings), 4326), s.srid) AS buildings,
     ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.rails), 4326), s.srid) AS rails
-  FROM unnest($1::bigint[], $2::text[], $3::text[], $4::text[]) AS i(osm_id, clusters, buildings, rails)
-  JOIN places p ON p.osm_type = 'n' AND p.osm_id = i.osm_id
+  FROM unnest($1::bigint[], $2::text[], $3::text[], $4::text[], $5::text[])
+    AS i(osm_id, clusters, buildings, rails, osm_type)
+  JOIN places p ON p.osm_type = i.osm_type AND p.osm_id = i.osm_id
   CROSS JOIN LATERAL (SELECT ${UTM_SRID} AS srid) AS s
 ),
 f AS MATERIALIZED (
@@ -237,6 +238,7 @@ async function insertShapes(
     inputs.map((input) => input.clusters),
     inputs.map((input) => input.buildings),
     inputs.map((input) => input.rails),
+    zones.map((zone) => data.stations[zone.station].osmType),
   ]);
 }
 

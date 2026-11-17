@@ -101,6 +101,36 @@ export class Place {
   @Column({ name: 'hidden_at', type: 'timestamptz', nullable: true })
   hiddenAt!: Date | null;
 
+  /** What OpenStreetMap calls it: `station` or `halt` (`railway=*`) for a station. */
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  category!: string | null;
+
+  /** A tourist or heritage train, by its tags, routes or track. */
+  @Column({ type: 'boolean', default: false })
+  tourist!: boolean;
+
+  /** Train routes stopping at the station or in its stop areas: its importance. */
+  @Column({ type: 'integer', default: 0 })
+  routes!: number;
+
+  @Column({ type: 'text', nullable: true })
+  operator!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  network!: string | null;
+
+  /** Code of the station for the railways (`uic_ref`). */
+  @Column({ name: 'uic_ref', type: 'text', nullable: true })
+  uicRef!: string | null;
+
+  /** Wikidata item (`Q…`). */
+  @Column({ type: 'text', nullable: true })
+  wikidata!: string | null;
+
+  /** Every tag of the place in OpenStreetMap, at the last import. */
+  @Column({ name: 'osm_tags', type: 'jsonb', default: () => "'{}'" })
+  osmTags!: Record<string, string>;
+
   /** Last import or change of the team on the place: the vector tiles of the places follow it. */
   @Column({ name: 'updated_at', type: 'timestamptz', default: () => 'now()' })
   updatedAt!: Date;

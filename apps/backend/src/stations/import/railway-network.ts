@@ -509,6 +509,17 @@ export class RailwayNetwork {
         }
       }
     }
+    // The routes of each kept station, with those of the stations merged into it.
+    const routesOf = new Map<number, Set<number>>(
+      kept.map((station) => [
+        station,
+        new Set(data.stations[station].routeIds),
+      ]),
+    );
+    data.stations.forEach(({ mergedInto, routeIds }) => {
+      if (mergedInto === null) return;
+      for (const route of routeIds) routesOf.get(mergedInto)?.add(route);
+    });
     const byTrack = new Map<
       number,
       { station: number; segment: number; t: number; link: boolean }[]
@@ -523,6 +534,23 @@ export class RailwayNetwork {
       for (const [track, { d, segment, t }] of candidates) {
         const link = d <= min + SNAP_TRACK_GAP_M;
         if (!link && d > BARRIER_RADIUS_M) continue;
+        // A track ending near the station (a siding off its switch) does
+        // not pass it: a barrier at its end would cut the line it joins.
+        const last = tracks.starts[track + 1] - tracks.starts[track] - 2;
+        if (
+          !link &&
+          ((segment === 0 && t === 0) || (segment === last && t === 1))
+        )
+          continue;
+        // Where the routes of a track are mapped, it passes the stations
+        // none of them stops at: the line of Marylebone by West Hampstead.
+        const routes = tracks.routes.get(track);
+        if (
+          !link &&
+          routes &&
+          !routes.some((route) => routesOf.get(station)!.has(route))
+        )
+          continue;
         const list = byTrack.get(track);
         const snap = { station, segment, t, link };
         if (list) list.push(snap);

@@ -55,6 +55,25 @@ function station(
   f.nodes.push(`n${id} Trailway=station,name=S${id}${tags} x${lon} y${lat}`);
 }
 
+/** A station mapped as its building only: a 40 m square way `wayId` centered on the point. */
+function building(f: Fixture, wayId: number, lon: number, lat: number): void {
+  const dLon = 20 / (111_320 * Math.cos((lat * Math.PI) / 180));
+  const dLat = 20 * M;
+  const corners = [
+    [-dLon, -dLat],
+    [dLon, -dLat],
+    [dLon, dLat],
+    [-dLon, dLat],
+  ];
+  const ids = corners.map((_, i) => 900 + wayId * 10 + i);
+  corners.forEach(([x, y], i) =>
+    f.nodes.push(`n${ids[i]} T x${lon + x} y${lat + y}`),
+  );
+  f.ways.push(
+    `w${wayId} Tbuilding=train_station,railway=station,name=S${wayId} N${[...ids, ids[0]].map((id) => `n${id}`).join(',')}`,
+  );
+}
+
 /** A passenger train route serving the stations. */
 function route(
   f: Fixture,
@@ -213,6 +232,47 @@ describe('RailwayNetwork', () => {
     );
 
     expect(dataOf(f).stations.map((s) => s.exclusion)).toEqual([null, null]);
+  });
+
+  it('keeps a station mapped as its building only, at its center', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    station(f, 101, 0.005, LAT);
+    building(f, 9, 0.035, LAT + 50 * M);
+    f.nodes.push(`n201 Tpublic_transport=stop_position x0.035 y${LAT}`);
+    f.relations.push(`r1 Ttype=route,route=train Mn101@stop,n201@stop,w1@`);
+    f.relations.push(
+      `r2 Ttype=public_transport,public_transport=stop_area Mw9@,n201@stop`,
+    );
+    const data = dataOf(f);
+
+    expect(
+      data.stations.map((s) => [s.osmType, s.osmId, s.exclusion, s.servedBy]),
+    ).toEqual([
+      ['n', 101, null, 'route'],
+      ['w', 9, null, 'route'],
+    ]);
+    expect(data.stations[1].point[0]).toBeCloseTo(0.035, 6);
+    expect(data.stations[1].point[1]).toBeCloseTo(LAT + 50 * M, 6);
+    // Its building outlines it, though no station node was near when read.
+    expect(data.features.features.map((feature) => feature.key)).toContain(
+      'w9',
+    );
+    expect(linksOf(data)).toEqual(['9-101']);
+  });
+
+  it('ignores the building of a station mapped as a node', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.035, LAT);
+    building(f, 9, 0.036, LAT + 150 * M);
+    route(f, 1, [101, 102], [1]);
+
+    expect(dataOf(f).stations.map((s) => `${s.osmType}${s.osmId}`)).toEqual([
+      'n101',
+      'n102',
+    ]);
   });
 
   it('never stops a walk at its own station, beside its other tracks', () => {
@@ -387,6 +447,86 @@ describe('RailwayNetwork', () => {
     route(f, 1, [101, 102, 103], [1]);
 
     expect(linksOf(dataOf(f))).toEqual(['101-102', '102-103']);
+  });
+
+  it('never cuts a line at the switch of a track ending beside a station', () => {
+    const f = empty();
+    const main = track(f, 1, 1, 0, 10, 'railway=rail');
+    // Tracks leaving the line 100 m from stations 101 and 102, away from
+    // them: their nearest point to the station is their switch, on the line.
+    f.nodes.push(`n51 T x0.012 y${LAT + 0.003}`);
+    f.nodes.push(`n52 T x0.028 y${LAT + 0.003}`);
+    f.ways.push(`w2 Trailway=rail Nn${main[1]},n51`);
+    f.ways.push(`w3 Trailway=rail Nn${main[3]},n52`);
+    station(f, 101, 0.00873, LAT);
+    station(f, 102, 0.03127, LAT);
+    station(f, 103, 0.075, LAT);
+    route(f, 1, [101, 102, 103], [1]);
+
+    expect(linksOf(dataOf(f))).toEqual(['101-102', '102-103']);
+  });
+
+  it('walks a metro-tagged track only where a train route runs on it', () => {
+    const f = empty();
+    // A suburban line in a tunnel mapped as a metro, and a real metro line.
+    track(f, 1, 1, 0, 10, 'railway=subway');
+    track(f, 2, 21, 0, 10, 'railway=subway', LAT + 0.02);
+    station(f, 101, 0.005, LAT, ',station=subway,subway=yes,train=yes');
+    station(f, 102, 0.035, LAT, ',station=subway,subway=yes,train=yes');
+    station(f, 103, 0.005, LAT + 0.02, ',train=yes');
+    station(f, 104, 0.035, LAT + 0.02, ',train=yes');
+    route(f, 1, [101, 102], [1]);
+
+    expect(linksOf(dataOf(f))).toEqual(['101-102']);
+  });
+
+  it('passes the station of another line where the routes of its track are mapped', () => {
+    const f = empty();
+    // Line 1 passes 100 m from station 102 of line 2 without stopping.
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    track(f, 2, 21, 0.02, 3, 'railway=rail', LAT + 100 * M);
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.03, LAT + 100 * M);
+    station(f, 103, 0.075, LAT);
+    route(f, 1, [101, 103], [1]);
+    route(f, 2, [102], [2]);
+
+    expect(linksOf(dataOf(f))).toContain('101-103');
+  });
+
+  it('never serves nor walks the track of an amusement park ride', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=narrow_gauge,gauge=600,attraction=train');
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.035, LAT);
+
+    const data = dataOf(f);
+    expect(data.stations.map((s) => s.exclusion)).toEqual([
+      'not_served',
+      'not_served',
+    ]);
+  });
+
+  it('tells the tourist stations by their tags, routes or track', () => {
+    const f = empty();
+    track(f, 1, 1, 0, 10, 'railway=rail');
+    track(f, 2, 21, 0, 10, 'railway=narrow_gauge,gauge=600', LAT + 0.02);
+    track(f, 3, 41, 0, 10, 'railway=rail', LAT + 0.04);
+    station(f, 101, 0.005, LAT);
+    station(f, 102, 0.005, LAT + 0.02);
+    station(f, 103, 0.005, LAT + 0.04, ',usage=tourism');
+    station(f, 104, 0.035, LAT + 0.04);
+    route(f, 1, [101], [1]);
+    f.relations.push(
+      `r2 Ttype=route,route=train,service=tourism Mn104@stop,w3@`,
+    );
+
+    expect(dataOf(f).stations.map((s) => s.tourist)).toEqual([
+      false,
+      true,
+      true,
+      true,
+    ]);
   });
 
   it('rejects a link far longer than the straight distance', () => {

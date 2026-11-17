@@ -82,14 +82,14 @@ const OVERLAPS = `
     WHERE a.kind = 'station' AND b.kind = 'station'
       AND a.zone_source = 'osm' AND b.zone_source = 'osm'
   ), areas AS MATERIALIZED (
-    SELECT p.id, p.osm_id, p.name, ST_Area(p.footprint::geography) AS area_m2
+    SELECT p.id, p.osm_type || p.osm_id AS osm_key, p.name, ST_Area(p.footprint::geography) AS area_m2
     FROM places p
     WHERE p.id IN (SELECT a FROM pairs UNION SELECT b FROM pairs)
   )
   SELECT pairs.a, pairs.b,
          pairs.shared_m2 / nullif(least(sa.area_m2, sb.area_m2), 0) AS share,
-         sa.osm_id AS osm_a, sa.name AS name_a, sa.area_m2 AS area_a,
-         sb.osm_id AS osm_b, sb.name AS name_b, sb.area_m2 AS area_b
+         sa.osm_key AS osm_a, sa.name AS name_a, sa.area_m2 AS area_a,
+         sb.osm_key AS osm_b, sb.name AS name_b, sb.area_m2 AS area_b
   FROM pairs
   JOIN areas sa ON sa.id = pairs.a
   JOIN areas sb ON sb.id = pairs.b
@@ -100,11 +100,11 @@ const OVERLAPS = `
  * the station kept takes the footprint and the small tiles of the others,
  * and their links, the shortest kept between two stations. Returns the
  * number of stations merged. `routes`: the number of train routes of the
- * stations, by OSM id.
+ * stations, by `osmKey`.
  */
 export async function mergeOverlappingStations(
   dataSource: DataSource,
-  routes: Map<number, number>,
+  routes: Map<string, number>,
 ): Promise<number> {
   const rows: {
     a: number;
@@ -127,7 +127,7 @@ export async function mergeOverlappingStations(
         id,
         name,
         areaM2,
-        routes: routes.get(Number(osm)) ?? 0,
+        routes: routes.get(osm) ?? 0,
       });
     }
   }

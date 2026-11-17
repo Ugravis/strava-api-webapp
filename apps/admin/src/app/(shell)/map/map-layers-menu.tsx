@@ -37,7 +37,7 @@ function Row({ label, checked, onChange }: { label: string; checked: boolean; on
 export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onChange: (next: MapLayersState) => void }) {
   const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
-  // Opened by the focus too, for the keyboard.
+  // Opened by the focus too, for the keyboard; the pointer leaving closes it all the same, after a click inside.
   const [focused, setFocused] = useState(false);
   const open = pinned || hovered || focused;
   const toggle = (key: LayerGroup | "countries", on: boolean) => {
@@ -52,7 +52,10 @@ export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onCh
       className="absolute bottom-2.5 left-2.5 z-10 w-72 max-w-[calc(100%-1.25rem)] rounded-lg border bg-background/95 shadow-md backdrop-blur-sm"
       aria-label="Calques"
       onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
+      onPointerLeave={() => {
+        setHovered(false);
+        setFocused(false);
+      }}
       onFocus={() => setFocused(true)}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
@@ -70,7 +73,7 @@ export function MapLayersMenu({ value, onChange }: { value: MapLayersState; onCh
           aria-label={pinned ? "Désépingler" : "Épingler ouvert"}
           aria-pressed={pinned}
         >
-          <PinIcon className={pinned ? "fill-current" : undefined} />
+          <PinIcon />
         </Button>
       </header>
       {open && (

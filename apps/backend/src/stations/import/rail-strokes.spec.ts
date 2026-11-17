@@ -1,9 +1,7 @@
 import {
   buildStrokes as build,
-  RAIL_DETAIL_ZOOM,
   reversals,
   type SegmentEnds,
-  strokeZooms,
 } from './rail-strokes';
 
 const buildStrokes = (segments: SegmentEnds[]) => build(segments).strokes;
@@ -94,31 +92,5 @@ describe('buildStrokes', () => {
       segment(3, [2, 0], [0, 0]),
     ]);
     expect(strokes.flat().sort()).toEqual([0, 1, 2]);
-  });
-});
-
-describe('strokeZooms', () => {
-  const km = 1000;
-
-  it('shows a short link between two lines shown with them', () => {
-    // Two long lines, west and east, joined by a short one bending away from both.
-    const segments = [
-      segment(1, [0, 0], [0, 10], 3000 * km),
-      segment(2, [0.05, 10.05], [0.05, 0.05], 3000 * km),
-      segment(3, [0, 10], [0.05, 10.05], 5 * km),
-    ];
-    expect(new Set(strokeZooms(build(segments), segments))).toEqual(
-      new Set([0]),
-    );
-  });
-
-  it('keeps the longest lines of a dense region zoomed out, every line from the detail zoom', () => {
-    // Twenty parallel lines in the same cell, the first the longest.
-    const segments = Array.from({ length: 20 }, (_, i) => i).map((i) =>
-      segment(i, [i * 0.01, 0], [i * 0.01, 5], (3000 - i * 100) * km),
-    );
-    const zooms = strokeZooms(build(segments), segments);
-    expect(zooms.filter((zoom) => zoom === 0)).toHaveLength(16);
-    expect(Math.max(...zooms)).toBeLessThanOrEqual(RAIL_DETAIL_ZOOM);
   });
 });

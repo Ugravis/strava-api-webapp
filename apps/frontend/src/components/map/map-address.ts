@@ -32,7 +32,8 @@ export interface MapAddress {
  * Search parameters of the map: `?sector=FR`, `?history=gained&date=3m` (a
  * step, or a day `yyyy-mm-dd`), `module=stations` for the module selected,
  * `tiles=0`, `tracks=0`, `subtiles=0` or `stations=0` for a hidden layer,
- * and `dim=1` for the dimming, off by default, on. Defaults
+ * `dim=1` for the dimming and `dots=1` for the discreet station dots, off
+ * by default, on. Defaults
  * are left out.
  */
 const PARAMS = {
@@ -45,9 +46,10 @@ const PARAMS = {
   subtiles: "subtiles",
   stations: "stations",
   dimmed: "dim",
+  discreetDots: "dots",
 } as const;
 
-const LAYER_NAMES = ["tiles", "tracks", "subtiles", "stations", "dimmed"] as const satisfies readonly (keyof MapLayers &
+const LAYER_NAMES = ["tiles", "tracks", "subtiles", "stations", "dimmed", "discreetDots"] as const satisfies readonly (keyof MapLayers &
   keyof typeof PARAMS)[];
 
 const HIDDEN = "0";
@@ -106,6 +108,7 @@ export function addressFromSearch(search: string, today: string): { address: Map
     subtiles: layer("subtiles"),
     stations: layer("stations"),
     dimmed: layer("dimmed"),
+    discreetDots: layer("discreetDots"),
   };
 
   const selected = moduleOf(params);

@@ -208,6 +208,7 @@ export function TracksMap() {
           stations={stations}
           showStations={layers.stations}
           dimmed={mapDimmed(layers, module)}
+          discreetDots={layers.discreetDots}
           label={t("label")}
         />
       </div>

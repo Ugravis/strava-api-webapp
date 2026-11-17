@@ -27,8 +27,7 @@ export interface StationData {
   >;
   links: FeatureCollection<LineString, LinkProperties & Gained>;
   /** The links cut where they diverge: their ties are drawn once. */
-  /** `minZoom`: the zoom its line of the railway shows from, whole. */
-  ties: FeatureCollection<LineString, Gained & { minZoom?: number }>;
+  ties: FeatureCollection<LineString, Gained>;
 }
 
 /** A station at an end of a link. */
@@ -127,6 +126,15 @@ const ALL_MIN_ZOOM = 6;
  * them beyond.
  */
 const DOTS_MIN_ZOOM = 6;
+/**
+ * With the discreet dots (`setDiscreetDots`): the dots from a zoom sooner,
+ * and below `DISCREET_DOTS_MAX_ZOOM` a plain disc of their color, a little
+ * wider than the railway, to see the stations without hiding it. Their full
+ * look, ringed, grows in over the zoom after. The backend serves every
+ * station from `DISCREET_DOTS_MIN_ZOOM`.
+ */
+const DISCREET_DOTS_MIN_ZOOM = DOTS_MIN_ZOOM - 1;
+const DISCREET_DOTS_MAX_ZOOM = DISCREET_DOTS_MIN_ZOOM + 2;
 const ALL_MAX_ZOOM = 14;
 /** Distance from the pointer, in pixels, where a click looks for a station: a finger is not precise. */
 const PICK_TOLERANCE_PX = 8;
@@ -165,6 +173,34 @@ function byZoom(
     14,
     at14,
   ];
+}
+
+/**
+ * Radius and ring of a dot, from its look at zooms 6, 10 and 14. With the
+ * discreet dots: none and a plain disc of `discreet` pixels below
+ * `DISCREET_DOTS_MAX_ZOOM` (a ring around nothing fills the disc).
+ */
+function dotSizes(
+  map: MapLibreMap,
+  discreet: number,
+  radius: [number, number, number],
+  ring: [number, number, number],
+): { "circle-radius": ExpressionSpecification; "circle-stroke-width": ExpressionSpecification } {
+  if (!discreetDots.has(map)) return { "circle-radius": byZoom(...radius), "circle-stroke-width": byZoom(...ring) };
+  const grow = (from: number, [at6, at10, at14]: [number, number, number]): ExpressionSpecification => [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    DISCREET_DOTS_MAX_ZOOM,
+    from,
+    DISCREET_DOTS_MAX_ZOOM + 1,
+    at6,
+    10,
+    at10,
+    14,
+    at14,
+  ];
+  return { "circle-radius": grow(0, radius), "circle-stroke-width": grow(discreet, ring) };
 }
 
 /** Halo around the dot of the station under the pointer, then of the one shown: a soft disc, edged for the latter. */
@@ -243,35 +279,8 @@ export function drawEveryStation(map: MapLibreMap, tiles: EveryStationTiles): vo
 }
 
 /**
- * The railway of the lines long enough to show at the zoom of the tile:
- * zoomed out, the short ones leave, each whole. The tiles of every station
- * hold those lines only.
- */
-const RAIL_SHOWN: ExpressionSpecification = ["<=", ["coalesce", ["get", "minZoom"], 0], ["zoom"]];
-
-/** Zooms the lines of the railway are given: every one shows from the last. */
-const RAIL_ZOOMS = 8;
-
-/**
- * Opacity of the railway: each line fades in over the zoom after its own,
- * like every layer of the map (`fadeIn`).
- */
-const RAIL_OPACITY: ExpressionSpecification = [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  ...Array.from({ length: RAIL_ZOOMS + 2 }, (_, zoom) => [
-    zoom,
-    // The lines of the furthest zoom out show whole from it.
-    ["case", ["<=", ["coalesce", ["get", "minZoom"], 0], Math.max(0, zoom - FADE_ZOOMS)], 1, 0],
-  ]).flat(),
-] as ExpressionSpecification;
-
-/**
  * Visited stations past which a map is dense: its dots show from
- * `DOTS_MIN_ZOOM` only, and its railway is thinned out zoomed out (`RAIL_SHOWN`,
- * `RAIL_OPACITY`). Below, every visited station and every rail shows at
- * every zoom: the measures are for the maps holding an outsize network,
+ * `DOTS_MIN_ZOOM` only. Below, every visited station shows at every zoom: the measures are for the maps holding an outsize network,
  * such as the one of the back office with every station.
  */
 const DENSE_STATIONS = 3000;
@@ -281,24 +290,106 @@ function isDense(map: MapLibreMap): boolean {
   return everyStation.has(map) || (visitedIds.get(map)?.length ?? 0) > DENSE_STATIONS;
 }
 
+/** Maps drawing the discreet dots, from a zoom sooner (`DISCREET_DOTS_MIN_ZOOM`). */
+const discreetDots = new WeakSet<MapLibreMap>();
+/** Zoom from which the dots of the map show on a dense map, and the backend serves every station. */
+const dotsMinZoom = (map: MapLibreMap) => (discreetDots.has(map) ? DISCREET_DOTS_MIN_ZOOM : DOTS_MIN_ZOOM);
+const VISITED_SIZES = [1.7, [1.6, 2.8, 4], [1.4, 2.2, 3]] as const;
+const UNVISITED_SIZES = [1.4, [0.8, 1.8, 3], [1, 1.6, 2.2]] as const;
+const visitedSizes = (map: MapLibreMap) => dotSizes(map, VISITED_SIZES[0], [...VISITED_SIZES[1]], [...VISITED_SIZES[2]]);
+const unvisitedSizes = (map: MapLibreMap) => dotSizes(map, UNVISITED_SIZES[0], [...UNVISITED_SIZES[1]], [...UNVISITED_SIZES[2]]);
+
+/** Maps the back office forces every station dot onto, at every zoom: their tiles must hold them (`EveryStationTiles.url`). */
+const forcedDots = new WeakSet<MapLibreMap>();
+
+/** Whether the dots show from `DOTS_MIN_ZOOM` only: on a dense map, unless forced at every zoom. */
+const thinDots = (map: MapLibreMap) => isDense(map) && !forcedDots.has(map);
+
 /** Opacity of the dots of the visited stations: fading in from their zoom on a dense map. */
-const dotsOpacity = (map: MapLibreMap) => (isDense(map) ? fadeIn(DOTS_MIN_ZOOM, 1) : 1);
+const dotsOpacity = (map: MapLibreMap) => (thinDots(map) ? fadeIn(dotsMinZoom(map), 1) : 1);
 
-/** Whether each map was dense when its layers were last set. */
-const dense = new WeakMap<MapLibreMap, boolean>();
+/** Opacity of the grey dots: fading in from where the backend serves them, like every layer of the map. */
+const unvisitedOpacity = (map: MapLibreMap): ExpressionSpecification | number =>
+  thinDots(map) || !everyStation.has(map)
+    ? ["interpolate", ["linear"], ["zoom"], dotsMinZoom(map), 0, dotsMinZoom(map) + FADE_ZOOMS, 0.8, 10, 0.9, 14, 0.95]
+    : ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 0.95];
+const unvisitedStrokeOpacity = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? fadeIn(dotsMinZoom(map), 1) : 1);
+const unvisitedMinZoom = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? dotsMinZoom(map) : 0);
 
-/** Sets the layers for the density of the map, once it changes with the visited stations. */
+/** How the dots of each map were drawn when its layers were last set: thinned out, discreet. */
+const dense = new WeakMap<MapLibreMap, string>();
+const densityKey = (map: MapLibreMap) => `${thinDots(map)}.${discreetDots.has(map)}`;
+
+/** Sets the layers for the density of the map, once it changes with the visited stations, what is forced or the discreet dots. */
 function applyDensity(map: MapLibreMap): void {
-  const now = isDense(map);
+  const now = densityKey(map);
   if (dense.get(map) === now || !map.getLayer(LAYERS.visited)) return;
   dense.set(map, now);
-  map.setLayerZoomRange(LAYERS.visited, now ? DOTS_MIN_ZOOM : 0, 24);
+  map.setLayerZoomRange(LAYERS.visited, thinDots(map) ? dotsMinZoom(map) : 0, 24);
+  const sizes = visitedSizes(map);
+  map.setPaintProperty(LAYERS.visited, "circle-radius", sizes["circle-radius"]);
+  map.setPaintProperty(LAYERS.visited, "circle-stroke-width", sizes["circle-stroke-width"]);
   map.setPaintProperty(LAYERS.visited, "circle-opacity", dotsOpacity(map));
   map.setPaintProperty(LAYERS.visited, "circle-stroke-opacity", dotsOpacity(map));
-  for (const id of [LAYERS.linksCasing, LAYERS.links]) {
-    map.setFilter(id, now ? RAIL_SHOWN : null);
-    map.setPaintProperty(id, "line-opacity", now ? RAIL_OPACITY : 1);
+  if (map.getLayer(LAYERS.unvisited)) {
+    map.setLayerZoomRange(LAYERS.unvisited, unvisitedMinZoom(map), 24);
+    map.setPaintProperty(LAYERS.unvisited, "circle-opacity", unvisitedOpacity(map));
+    map.setPaintProperty(LAYERS.unvisited, "circle-stroke-opacity", unvisitedStrokeOpacity(map));
+    const grey = unvisitedSizes(map);
+    map.setPaintProperty(LAYERS.unvisited, "circle-radius", grey["circle-radius"]);
+    map.setPaintProperty(LAYERS.unvisited, "circle-stroke-width", grey["circle-stroke-width"]);
   }
+}
+
+/** Draws the dots from a zoom sooner, discreet over their first zooms; kept as the layers are added again. */
+export function setDiscreetDots(map: MapLibreMap, discreet: boolean): void {
+  if (discreet) discreetDots.add(map);
+  else discreetDots.delete(map);
+  applyDensity(map);
+}
+
+/** Forces every station dot at every zoom on a dense map; the tiles must hold them. */
+export function forceEveryDot(map: MapLibreMap, forced: boolean): void {
+  if (forced) forcedDots.add(map);
+  else forcedDots.delete(map);
+  applyDensity(map);
+}
+
+/** Groups of layers the back office shows or hides, to audit one part of the map. */
+export const LAYER_GROUPS = {
+  rails: [LAYERS.linksCasing, LAYERS.ties, LAYERS.links],
+  stations: [LAYERS.visited, LAYERS.names],
+  hidden: [LAYERS.unvisited, LAYERS.unvisitedNames],
+  zones: [
+    LAYERS.zones,
+    LAYERS.zoneOutlines,
+    LAYERS.zoneHatch,
+    LAYERS.zoneShadow,
+    LAYERS.zoneSelected,
+    LAYERS.footprints,
+    LAYERS.footprintOutlines,
+    LAYERS.footprintShadow,
+    LAYERS.footprintSelected,
+  ],
+} as const;
+export type LayerGroup = keyof typeof LAYER_GROUPS;
+
+/** Groups hidden on each map: kept as its layers are added again. */
+const hiddenGroups = new WeakMap<MapLibreMap, ReadonlySet<LayerGroup>>();
+
+/** Hides the layers of the groups of `hidden`, shows the others; kept for the layers added later. */
+export function setHiddenGroups(map: MapLibreMap, hidden: ReadonlySet<LayerGroup>): void {
+  hiddenGroups.set(map, hidden);
+  applyHiddenGroups(map);
+}
+
+function applyHiddenGroups(map: MapLibreMap): void {
+  const hidden = hiddenGroups.get(map);
+  if (!hidden) return;
+  for (const [group, ids] of Object.entries(LAYER_GROUPS) as [LayerGroup, readonly string[]][]) {
+    for (const id of ids) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility(!hidden.has(group)));
+  }
+  refreshRailTies(map);
 }
 
 /** Whether a feature of the tiles of every station was hidden by the team. */
@@ -516,11 +607,9 @@ export function addStationLayers(
       id: LAYERS.linksCasing,
       type: "line",
       ...visitedSource(map, "rails"),
-      ...(isDense(map) && { filter: RAIL_SHOWN }),
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": palette.stationCasing,
-        "line-opacity": isDense(map) ? RAIL_OPACITY : 1,
         "line-width": realScale([
           [ALL_MIN_ZOOM, 2.5],
           [10, 3.6],
@@ -546,11 +635,9 @@ export function addStationLayers(
       id: LAYERS.links,
       type: "line",
       ...visitedSource(map, "rails"),
-      ...(isDense(map) && { filter: RAIL_SHOWN }),
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": gainedColor(palette.railLink, palette),
-        "line-opacity": isDense(map) ? RAIL_OPACITY : 1,
         "line-width": realScale([
           [ALL_MIN_ZOOM, 1.2],
           [10, 2],
@@ -565,15 +652,14 @@ export function addStationLayers(
       id: LAYERS.visited,
       type: "circle",
       ...visitedSource(map, "stations"),
-      minzoom: isDense(map) ? DOTS_MIN_ZOOM : 0,
+      minzoom: thinDots(map) ? dotsMinZoom(map) : 0,
       layout,
       paint: {
         "circle-color": palette.stationCasing,
         "circle-opacity": dotsOpacity(map),
-        "circle-radius": byZoom(1.6, 2.8, 4),
         "circle-stroke-color": gainedColor(palette.station, palette),
         "circle-stroke-opacity": dotsOpacity(map),
-        "circle-stroke-width": byZoom(1.4, 2.2, 3),
+        ...visitedSizes(map),
       },
     },
     top,
@@ -641,7 +727,8 @@ export function addStationLayers(
     );
   }
   // The layers just added follow the density of the map.
-  dense.set(map, isDense(map));
+  dense.set(map, densityKey(map));
+  applyHiddenGroups(map);
   bubbles.get(map)?.destroy();
   bubbles.set(map, new StationBubble(map, () => stationOutline(map)));
   setSelectedStation(map, selected);
@@ -723,7 +810,7 @@ export function setAllStations(
     map.addSource(SOURCES.all, {
       type: "vector",
       tiles: [url],
-      minzoom: DOTS_MIN_ZOOM,
+      minzoom: DISCREET_DOTS_MIN_ZOOM,
       maxzoom: ALL_MAX_ZOOM,
     });
   }
@@ -819,28 +906,14 @@ export function setAllStations(
       type: "circle",
       source: SOURCES.all,
       "source-layer": ALL_SOURCE_LAYER,
-      minzoom: DOTS_MIN_ZOOM,
+      minzoom: unvisitedMinZoom(map),
       layout: { visibility: visibility(visible) },
       paint: {
         "circle-color": palette.stationCasing,
-        // Fading in from where the backend serves them, like every layer of the map.
-        "circle-opacity": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          DOTS_MIN_ZOOM,
-          0,
-          DOTS_MIN_ZOOM + FADE_ZOOMS,
-          0.8,
-          10,
-          0.9,
-          14,
-          0.95,
-        ],
-        "circle-radius": byZoom(0.8, 1.8, 3),
+        "circle-opacity": unvisitedOpacity(map),
         "circle-stroke-color": palette.stationUnvisited,
-        "circle-stroke-opacity": fadeIn(DOTS_MIN_ZOOM, 1),
-        "circle-stroke-width": byZoom(1, 1.6, 2.2),
+        "circle-stroke-opacity": unvisitedStrokeOpacity(map),
+        ...unvisitedSizes(map),
       },
     },
     LAYERS.visited,
@@ -866,6 +939,7 @@ export function setAllStations(
     },
     LAYERS.names,
   );
+  applyHiddenGroups(map);
 }
 
 /** Shows the visited stations and the links of `data`; ignored until the layers are added. */
@@ -1085,12 +1159,8 @@ export function stationNear(
     LAYERS.names,
     LAYERS.unvisited,
     LAYERS.unvisitedNames,
-  ].filter((id) => map.getLayer(id));
-  if (
-    layers.length === 0 ||
-    map.getLayoutProperty(LAYERS.visited, "visibility") === "none"
-  )
-    return null;
+  ].filter((id) => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+  if (layers.length === 0) return null;
   const features: MapGeoJSONFeature[] = map.queryRenderedFeatures(
     [
       [point.x - PICK_TOLERANCE_PX, point.y - PICK_TOLERANCE_PX],

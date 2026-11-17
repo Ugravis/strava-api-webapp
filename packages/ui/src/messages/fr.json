@@ -929,6 +929,7 @@
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
       "railway": "Voies débloquées",
       "dim": "Atténuer la carte",
+      "discreetDots": "Gares vues de loin",
       "trainSpeed": "Vitesse des trains",
       "speedValue": "×{factor, number}",
       "realSpeed": "réelle",

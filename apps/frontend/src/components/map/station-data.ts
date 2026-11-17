@@ -102,7 +102,7 @@ export function stationData(
     const first = ats.includes(null) ? null : (ats as string[]).reduce((a, b) => (a < b ? a : b));
     ties.push({
       type: "Feature",
-      properties: { gained: isGained(first, history), minZoom: tie.minZoom },
+      properties: { gained: isGained(first, history) },
       geometry: { type: "LineString", coordinates: tie.coords },
     });
   }

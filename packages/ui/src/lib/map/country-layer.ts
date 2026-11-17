@@ -87,8 +87,17 @@ export function setVisitedCountries(map: MapLibreMap, countries: VisitedCountrie
   const source = map.getSource<VectorTileSource>(SOURCE_ID);
   if (!source) {
     addCountryLayers(map, { ...countries, shapesVersion }, palette, url);
+    if (hiddenCountries.has(map)) setCountriesVisible(map, false);
     return;
   }
   const tiles = url({ ...countries, shapesVersion });
   if (source.tiles[0] !== tiles) source.setTiles([tiles]);
+}
+
+/** Shows or hides the countries; kept when their layers are added again. */
+const hiddenCountries = new WeakSet<MapLibreMap>();
+export function setCountriesVisible(map: MapLibreMap, visible: boolean): void {
+  if (visible) hiddenCountries.delete(map);
+  else hiddenCountries.add(map);
+  for (const id of [FILL_ID, LINE_ID]) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
 }

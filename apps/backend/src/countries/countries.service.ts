@@ -74,6 +74,8 @@ const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 /** Snapping grid of the tile shapes, in meters: tile edges computed at different zooms meet exactly. */
 const SHAPE_GRID_M = 1;
+/** Width of the Web Mercator world, in meters: a pixel of a tile is this over its extent and its count. */
+const WORLD_M = 40_075_016.686;
 /** Large tiles touching the country `$2`, with their small tiles touching it. */
 const COUNTRY_ZONE =
   'SELECT x, y, mask FROM tile_countries WHERE country_code = $2';
@@ -529,6 +531,10 @@ export class CountriesService {
   ): Promise<Buffer> {
     // The shapes are clipped beyond the buffer of the tile: the edges added
     // by the clipping fall outside the buffer, where the borders are cut.
+    // Snapped to the pixel of the tile before the union, which the tile rounds
+    // to anyway: zoomed out, the union of every country drops from tens of
+    // seconds to a few.
+    const grid = Math.max(SHAPE_GRID_M, WORLD_M / (MVT_EXTENT * 2 ** zoom));
     const [row]: { tile: Buffer }[] = await this.dataSource.query(
       `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
        clip AS (
@@ -537,7 +543,7 @@ export class CountriesService {
          FROM bounds
        ),
        merged AS (
-         SELECT ST_Union(ST_ClipByBox2D(c.tile_shape, clip.box), ${SHAPE_GRID_M}) AS geom
+         SELECT ST_Union(ST_ReducePrecision(ST_ClipByBox2D(c.tile_shape, clip.box), ${grid}), ${grid}) AS geom
          FROM countries c, clip
          WHERE c.code = ANY($4) AND c.tile_shape && clip.box
        ),

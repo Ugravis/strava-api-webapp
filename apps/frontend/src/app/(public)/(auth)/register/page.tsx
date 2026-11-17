@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
+import { EmailSignInGate } from "@/components/auth/email-sign-in-gate";
 import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { RegisterForm } from "@/components/auth/register-form";
 import { SignupsGate } from "@/components/auth/signups-gate";
@@ -31,7 +32,9 @@ export default function RegisterPage() {
         }
       >
         <GoogleSignIn />
-        <RegisterForm />
+        <EmailSignInGate>
+          <RegisterForm />
+        </EmailSignInGate>
       </AuthCard>
     </SignupsGate>
   );

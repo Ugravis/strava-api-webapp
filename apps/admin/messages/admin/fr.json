@@ -281,7 +281,11 @@
       "username": "Pseudo : @{username}",
       "category": "Catégorie : {category}",
       "sanction": "Sanction : {sanction}",
-      "showcase": "{enabled, select, true {Vitrine des profils affichée} other {Vitrine des profils masquée}}"
+      "showcase": "{enabled, select, true {Vitrine des profils affichée} other {Vitrine des profils masquée}}",
+      "setting": "Réglage : {name}",
+      "value": "Valeur : {value}",
+      "valueBoolean": "{value, select, true {Valeur : activé} other {Valeur : désactivé}}",
+      "valueNone": "Valeur : aucune limite"
     },
     "actions": {
       "users": {
@@ -340,7 +344,11 @@
             "delete": "Fichiers orphelins supprimés"
           }
         },
-        "showcase": "Vitrine des profils affichée ou masquée"
+        "showcase": "Vitrine des profils affichée ou masquée",
+        "settings": {
+          "set": "Réglage modifié",
+          "reset": "Réglage remis par défaut"
+        }
       },
       "releaseNotes": {
         "create": "Note de release écrite à l'avance",
@@ -860,6 +868,28 @@
       "error": "Impossible de lire les tables de la base pour le moment.",
       "weight": "Base de données",
       "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index"
+    },
+    "settings": {
+      "items": {
+        "signupsEnabled": {
+          "label": "Inscriptions"
+        },
+        "emailSignInEnabled": {
+          "label": "Connexion par email"
+        },
+        "maxAccounts": {
+          "label": "Nombre max de comptes"
+        },
+        "profileShowcaseEnabled": {
+          "label": "Vitrine des profils"
+        },
+        "pinnedBadgesMax": {
+          "label": "Badges épinglés max"
+        },
+        "stravaSyncEnabled": {
+          "label": "Synchronisation Strava"
+        }
+      }
     }
   },
   "team": {
@@ -963,13 +993,9 @@
             "label": "Bannière de maintenance",
             "description": "Publier ou retirer la bannière."
           },
-          "signups": {
-            "label": "Inscriptions",
-            "description": "Ouvrir ou fermer les inscriptions."
-          },
-          "showcase": {
-            "label": "Vitrine des profils",
-            "description": "Afficher ou masquer les tuiles, gares et badges épinglés des profils."
+          "settings": {
+            "label": "Réglages du site",
+            "description": "Modifier les réglages : inscriptions, connexion par email, plafond de comptes, vitrine des profils, badges épinglés, synchronisation Strava."
           },
           "uploads": {
             "label": "Fichiers orphelins",

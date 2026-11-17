@@ -20,7 +20,10 @@ export interface MaintenanceBanner {
 /** `GET /api/system/status`: the switches the site reads, public. */
 export interface SystemStatusResponse {
   maintenance: MaintenanceBanner | null;
+  /** Accounts can be created: sign-ups open and the cap of accounts not reached. */
   signupsEnabled: boolean;
+  /** Email and password sign-in of the public site. */
+  emailSignInEnabled: boolean;
   /** Second part of the profiles: tiles, stations and pinned badges. */
   profileShowcaseEnabled: boolean;
 }

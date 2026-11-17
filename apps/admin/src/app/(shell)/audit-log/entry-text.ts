@@ -21,7 +21,8 @@ function detailsOf(entry: AuditLogEntry): string[] {
   const titles = getAdminTranslations("system.maintenance.titles");
   const categories = getAdminTranslations("reservedUsernames.categories");
   const sanctions = getAdminTranslations("auditLog.sanctions");
-  const { until, fields: reset, kind, name, active, title, description, enabled, username, category, sanction } = entry.details ?? {};
+  const settings = getAdminTranslations("system.settings.items");
+  const { key, value, until, fields: reset, kind, name, active, title, description, enabled, username, category, sanction } = entry.details ?? {};
   return [
     typeof sanction === "string" && t("sanction", { sanction: sanctions.has(sanction as never) ? sanctions(sanction as never) : sanction }),
     typeof until === "string" && t("until", { date: formatDateTime(until) }),
@@ -35,6 +36,9 @@ function detailsOf(entry: AuditLogEntry): string[] {
     typeof title === "string" && t("title", { title: titles.has(title as never) ? titles(title as never) : title }),
     typeof description === "string" && t("description", { description }),
     typeof enabled === "boolean" && t(entry.action === "system.showcase" ? "showcase" : "signups", { enabled: String(enabled) }),
+    typeof key === "string" && t("setting", { name: settings.has(`${key}.label` as never) ? settings(`${key}.label` as never) : key }),
+    entry.details && "value" in entry.details &&
+      (typeof value === "boolean" ? t("valueBoolean", { value: String(value) }) : value === null ? t("valueNone") : t("value", { value: String(value) })),
     typeof username === "string" && t("username", { username }),
     typeof category === "string" &&
       t("category", { category: categories.has(category as never) ? categories(category as never) : category }),

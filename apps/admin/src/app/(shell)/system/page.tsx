@@ -13,19 +13,19 @@ import { DatabaseSection, DatabaseSkeleton, MaintenanceCard, SwitchesCard, Uploa
  */
 export default async function AdminSystemPage() {
   const { permissions } = await requireAdminMember();
-  const can = (permission: "system.maintenance" | "system.signups" | "system.showcase" | "system.uploads") => permissions.includes(permission);
+  const can = (permission: "system.maintenance" | "system.settings" | "system.uploads") => permissions.includes(permission);
   const t = getAdminTranslations("system");
   const result = await adminApi<SystemStatusResponse>("/system");
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t("title")} description={t("description")} />
-      {!can("system.maintenance") && !can("system.signups") && !can("system.showcase") && !can("system.uploads") && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {!can("system.maintenance") && !can("system.settings") && !can("system.uploads") && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
 
       {result.ok ? (
         <div className="grid gap-4 lg:grid-cols-2">
           <MaintenanceCard maintenance={result.data.maintenance} canEdit={can("system.maintenance")} />
-          <SwitchesCard status={result.data} can={can} />
+          <SwitchesCard status={result.data} canEdit={can("system.settings")} />
         </div>
       ) : (
         <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("statusError")}</p>

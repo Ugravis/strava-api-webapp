@@ -27,6 +27,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/token.dto';
+import { AppSettingsService } from '../system/app-settings.service';
 import { GoogleOAuthService } from './google/google-oauth.service';
 import { requestMetadata } from './request-metadata';
 import { SessionCookie } from './session-cookie';
@@ -39,6 +40,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly sessionCookie: SessionCookie,
     private readonly google: GoogleOAuthService,
+    private readonly settings: AppSettingsService,
   ) {}
 
   /** Sign-in methods available, so the frontend only shows working buttons. */
@@ -56,7 +58,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserResponse> {
-    this.assertEmailSignIn();
+    await this.assertEmailSignIn();
     const { user, session } = await this.auth.register(
       dto,
       requestMetadata(request),
@@ -74,7 +76,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserResponse> {
-    this.assertEmailSignIn();
+    await this.assertEmailSignIn();
     try {
       const { user, session } = await this.auth.login(
         dto,
@@ -125,8 +127,8 @@ export class AuthController {
   @SensitiveThrottle()
   @Post('password/forgot')
   @HttpCode(HttpStatus.NO_CONTENT)
-  forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
-    this.assertEmailSignIn();
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
+    await this.assertEmailSignIn();
     return this.auth.requestPasswordReset(dto.email);
   }
 
@@ -134,14 +136,14 @@ export class AuthController {
   @SensitiveThrottle()
   @Post('password/reset')
   @HttpCode(HttpStatus.NO_CONTENT)
-  resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
-    this.assertEmailSignIn();
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    await this.assertEmailSignIn();
     return this.auth.resetPassword(dto.token, dto.password);
   }
 
-  /** Email and password accounts can be turned off while their flows are unfinished. */
-  private assertEmailSignIn(): void {
-    if (!this.config.emailSignInEnabled) {
+  /** Email and password accounts of the public site, turned off from the back office. */
+  private async assertEmailSignIn(): Promise<void> {
+    if (!(await this.settings.get('emailSignInEnabled'))) {
       throw ApiErrors.forbidden(
         ApiErrorCode.EmailSignInDisabled,
         'Email sign-in is disabled',

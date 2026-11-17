@@ -1,3 +1,4 @@
+import { AppSettingsService } from '../system/app-settings.service';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -62,9 +63,6 @@ type MetricTimelines = Record<
   Record<DistanceFamily, FamilyTimeline>
 >;
 
-/** Badges a profile shows at most. */
-export const PROFILE_BADGES_MAX = 5;
-
 /** A badge shown on a profile, as other users see it: no amount nor date. */
 export type ProfileBadge = Pick<
   BadgeView,
@@ -115,6 +113,7 @@ export class DistancesService {
     @InjectRepository(UserProfileBadge)
     private readonly profileBadges: Repository<UserProfileBadge>,
     private readonly dataSource: DataSource,
+    private readonly settings: AppSettingsService,
   ) {}
 
   async overview(userId: string): Promise<DistancesOverview> {
@@ -221,7 +220,6 @@ export class DistancesService {
       where: { userId, badge: { active: true } },
       relations: { badge: true },
       order: { addedAt: 'ASC' },
-      take: PROFILE_BADGES_MAX,
     });
     if (shown.length === 0) {
       return [];
@@ -247,8 +245,9 @@ export class DistancesService {
   }
 
   /**
-   * Shows a badge on the profile of the user, up to `PROFILE_BADGES_MAX`;
-   * showing it again changes nothing.
+   * Shows a badge on the profile of the user, up to the `pinnedBadgesMax`
+   * setting; showing it again changes nothing. Lowering the setting keeps
+   * the badges already shown.
    */
   async addToProfile(userId: string, badgeId: string): Promise<void> {
     await this.findBadge(badgeId);
@@ -256,10 +255,11 @@ export class DistancesService {
     if (shown.has(badgeId)) {
       return;
     }
-    if (shown.size >= PROFILE_BADGES_MAX) {
+    const max = await this.settings.get('pinnedBadgesMax');
+    if (shown.size >= max) {
       throw ApiErrors.conflict(
         ApiErrorCode.ProfileBadgesFull,
-        `At most ${PROFILE_BADGES_MAX} badges are shown on a profile`,
+        `At most ${max} badges are shown on a profile`,
       );
     }
     await this.profileBadges

@@ -441,19 +441,24 @@ async function saveStations(
   // What OSM says is refreshed at every import; `updated_at`, which the
   // vector tiles follow, only when the name or the point changes.
   await manager.query(
-    `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit,
-       category, tourist, routes, operator, network, uic_ref, wikidata, osm_tags)
-     SELECT 'station', osm_type, osm_id, name, geom, x, y, bit,
-       category, tourist, routes, operator, network, uic_ref, wikidata, osm_tags
+    `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit, category, wikidata, osm_tags)
+     SELECT 'station', osm_type, osm_id, name, geom, x, y, bit, category, wikidata, osm_tags
      FROM imported_stations
      ON CONFLICT (osm_type, osm_id) DO UPDATE SET
        name = excluded.name, geom = excluded.geom, x = excluded.x, y = excluded.y, bit = excluded.bit,
-       category = excluded.category, tourist = excluded.tourist, routes = excluded.routes,
-       operator = excluded.operator, network = excluded.network, uic_ref = excluded.uic_ref,
-       wikidata = excluded.wikidata, osm_tags = excluded.osm_tags,
+       category = excluded.category, wikidata = excluded.wikidata, osm_tags = excluded.osm_tags,
        updated_at = CASE
          WHEN places.name IS DISTINCT FROM excluded.name OR NOT ST_Equals(places.geom, excluded.geom)
          THEN now() ELSE places.updated_at END`,
+  );
+  await manager.query(
+    `INSERT INTO stations (place_id, tourist, routes, operator, network, uic_ref)
+     SELECT p.id, i.tourist, i.routes, i.operator, i.network, i.uic_ref
+     FROM imported_stations i
+     JOIN places p ON p.osm_type = i.osm_type AND p.osm_id = i.osm_id
+     ON CONFLICT (place_id) DO UPDATE SET
+       tourist = excluded.tourist, routes = excluded.routes, operator = excluded.operator,
+       network = excluded.network, uic_ref = excluded.uic_ref`,
   );
 }
 

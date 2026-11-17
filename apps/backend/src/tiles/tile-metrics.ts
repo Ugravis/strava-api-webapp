@@ -1,6 +1,5 @@
-import { SUBTILE_ZOOM, TILE_ZOOM, type TileCell } from './tile-grid';
+import { SUBTILES_PER_SIDE, type TileCell } from './tile-grid';
 
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 /** Tile coordinates stay below 2^17: a pair fits in one safe integer. */
 const KEY_BASE = 2 ** 18;
 

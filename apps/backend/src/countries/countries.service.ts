@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
+import { SUBTILE_ZOOM, SUBTILES_PER_SIDE, TILE_ZOOM } from '../tiles/tile-grid';
 import { addLevel, type TileTotals } from './tile-totals';
-
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 
 export interface LevelCompletion {
   visited: number;

@@ -34,6 +34,19 @@ describe('table query', () => {
     });
   });
 
+  it('keeps an empty value and commas in a list', () => {
+    const query = tableQueryFromSearch({ group: 'operator' });
+    const folded = ['', 'Govia Thameslink (Southern, GTR)', '100%'];
+    const wire = new URLSearchParams(
+      tableQueryToSearch({ ...query, folded, filters: { tag: [''] } }),
+    );
+    expect(tableQueryFromSearch(Object.fromEntries(wire))).toMatchObject({
+      folded,
+      filters: { tag: [''] },
+    });
+    expect(tableQueryFromSearch({ fold: '' }).folded).toEqual([]);
+  });
+
   it('falls back on the defaults', () => {
     expect(tableQueryFromSearch({ page: '-2', size: 'x' })).toMatchObject({
       q: '',

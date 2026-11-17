@@ -21,7 +21,7 @@ A detail panel on the right of the pages of a section, e.g. the row of a table o
 - **Closing.** The X, `Esc` (unless a menu or a dialog handled it first; out of full screen first), or a change of page.
 - **Work not saved.** A content calling `useSplitPanelGuard(dirty)` (a draft of the detail kit) is not left while `dirty` without asking, « Abandonner la saisie ? » (« Continuer la saisie » / « Abandonner »): closing, opening another content (a row clicked, ↑ / ↓), back and forward, a link of the page followed. Closing or reloading the tab, the browser asks. Outside a panel, the hook only makes the browser ask.
 - **Fresh contents.** Each content opened starts afresh, even of the same component: a draft opened again is blank.
-- **URL.** `open(content, { id })` writes `?row=<id>&panel=<mode>` through the history (no server round trip); `close()` removes both. A link with `?row=` is shared: the page opens that row on arrival, in the mode of `?panel=`.
+- **URL.** `open(content, { id })` writes `?row=<id>&panel=<mode>` through the history (no server round trip); `close()` removes both. A link with `?row=` is shared: the page opens that row on arrival, in the mode of `?panel=`. With `useRowPanel`, a link of the page itself to another `?row=` (e.g. a figure of its header) opens that row too.
 - **Header.** Icon buttons, each named in a bubble after 400 ms.
 - **Content.** Pages hand only the content, scrolled with the thin scrollbar of the tables; the panel draws the header (back, forward, title, fold, full screen, mode, close) and scrolls its body (the wheel over the panel scrolls the panel only, never the page: at its edges or with nothing to scroll, the page stays), a column at least as tall as the panel (so that a sticky row of buttons sits at the bottom).
 
@@ -41,6 +41,7 @@ open(<Detail row={row} />, { id: row.id, title: "@username" });
 | `useSplitPanelGuard(dirty)` | In a content: asks before leaving it while `dirty`. |
 | `isOpen` | Whether it shows something. |
 | `activeId` | The `?row=` of the URL. |
+| `shownId` | The id of the content shown, null without any: differs from `activeId` right after a link. |
 
 ## With a data table
 

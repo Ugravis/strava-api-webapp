@@ -52,7 +52,7 @@ export interface RowPanelOptions<T> {
  */
 export function useRowPanel<T>(options: RowPanelOptions<T>) {
   const { config, create } = options;
-  const { open, replace, close, setTitle, isOpen, activeId } = useSplitPanel();
+  const { open, replace, close, setTitle, isOpen, activeId, shownId } = useSplitPanel();
   // The options of the last render, read by the controls, which stay stable.
   const latest = useRef(options);
   useLayoutEffect(() => {
@@ -101,6 +101,21 @@ export function useRowPanel<T>(options: RowPanelOptions<T>) {
     else void load(id).then((row) => row && controls.open(id));
   });
   useEffect(() => arrive(), []);
+
+  // A link of the page to another row (`?row=`, e.g. a figure of its header): that row opened. Only
+  // on a change of the URL, which follows the panel a render later when it opens a row itself.
+  const linked = useRef(activeId);
+  const follow = useEffectEvent((id: string) => {
+    if (id === shownId || id === create?.id) return;
+    const { load } = latest.current;
+    if (!load) controls.open(id);
+    else void load(id).then((row) => row && controls.open(id));
+  });
+  useEffect(() => {
+    if (activeId === linked.current) return;
+    linked.current = activeId;
+    if (activeId) follow(activeId);
+  }, [activeId]);
 
   const onRowClick = useCallback((row: T) => controls.open(config.rowId(row)), [controls, config]);
   const onRows = useCallback((shown: T[]) => void (rows.current = shown), []);

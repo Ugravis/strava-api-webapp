@@ -1,6 +1,7 @@
 import {
   type AdminStation,
   type AdminStationNeighbor,
+  type AdminStationRailway,
   type AdminStationsOverview,
   STATION_RULES,
 } from '@kilotrace/shared/admin';
@@ -56,6 +57,12 @@ export class AdminStationsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<AdminStationNeighbor[]> {
     return this.stations.neighbors(id);
+  }
+
+  @Get(':id/railway')
+  @AnyMember()
+  railway(@Param('id', ParseIntPipe) id: number): Promise<AdminStationRailway> {
+    return this.stations.railway(id);
   }
 
   @Patch(':id')

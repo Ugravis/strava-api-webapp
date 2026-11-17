@@ -1,6 +1,6 @@
 "use server";
 
-import type { AdminStation, AdminStationNeighbor, HideStationRequest, RenameStationRequest } from "@kilotrace/shared/admin";
+import type { AdminStation, AdminStationNeighbor, AdminStationRailway, HideStationRequest, RenameStationRequest } from "@kilotrace/shared/admin";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { runAdminAction } from "@/lib/admin/actions";
@@ -29,6 +29,13 @@ export async function loadStation(id: string): Promise<AdminStation | null> {
 export async function loadStationNeighbors(id: string): Promise<AdminStationNeighbor[]> {
   const result = await adminApi<AdminStationNeighbor[]>(`/stations/${checkedId(id)}/neighbors`);
   if (!result.ok) throw new Error(`Admin station neighbors ${id}: ${result.status}`);
+  return result.data;
+}
+
+/** The station, its neighbors on the railway and the links to them, for its map. */
+export async function loadStationRailway(id: string): Promise<AdminStationRailway> {
+  const result = await adminApi<AdminStationRailway>(`/stations/${checkedId(id)}/railway`);
+  if (!result.ok) throw new Error(`Admin station railway ${id}: ${result.status}`);
   return result.data;
 }
 

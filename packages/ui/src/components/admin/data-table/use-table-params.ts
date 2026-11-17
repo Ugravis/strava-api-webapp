@@ -1,5 +1,6 @@
 "use client";
 
+import { decodeTableList, encodeTableList } from "@kilotrace/shared/table";
 import { useSearchParams } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
@@ -15,7 +16,7 @@ export function useTableParams(id: string) {
   const get = (key: string) => params.get(`${id}.${key}`);
   const list = (key: string) => {
     const raw = get(key);
-    return raw === null ? null : raw.split(",").filter(Boolean);
+    return raw === null ? null : decodeTableList(raw);
   };
   return { get, list, set: (changes: Changes) => writeTableParams(id, changes) };
 }
@@ -25,7 +26,7 @@ export function writeTableParams(id: string, changes: Changes) {
   const next = new URLSearchParams(window.location.search);
   for (const [key, value] of Object.entries(changes)) {
     if (value === null) next.delete(`${id}.${key}`);
-    else next.set(`${id}.${key}`, Array.isArray(value) ? value.join(",") : value);
+    else next.set(`${id}.${key}`, Array.isArray(value) ? encodeTableList(value) : value);
   }
   const search = next.toString();
   window.history.replaceState(null, "", search ? `?${search}` : window.location.pathname);

@@ -20,6 +20,7 @@ import {
 import { datasetMapHref, stationPanelHref } from "@/config/admin-links";
 import { stationMapHref } from "@/config/site-links";
 import { loadStation, loadStationNeighbors } from "./actions";
+import { StationRailwayMap } from "./station-railway-map";
 import { countryLabel, HiddenMark, LOCK, nameOf, osmHref, RenamedMark, stationColumns, type StationRights, useStationsVersion, visibilityIcon, visibilityOf } from "./station-bits";
 
 /** Neighbors shown at once, the next ones behind « Voir plus ». */
@@ -36,13 +37,13 @@ type StationPanel = Pick<RowPanelControls, "open">;
 export function StationRowPanel({ id, rights, panel, onCenter }: { id: string; rights: StationRights; panel: StationPanel; onCenter?: () => void }) {
   const version = useStationsVersion();
   return (
-    <DetailLoader id={id} load={loadStation} refreshKey={version} skeleton={<DetailSkeleton media actions={3} sections={[7, 4, 3]} />}>
+    <DetailLoader id={id} load={loadStation} refreshKey={version} skeleton={<DetailSkeleton cover={!onCenter} media actions={3} sections={[9, 5, 4, 3]} />}>
       {(station) => <StationDetail station={station} rights={rights} panel={panel} version={version} onCenter={onCenter} />}
     </DetailLoader>
   );
 }
 
-/** Everything about a station: its custom name in place, its geometry, and the stations the railway links it to, opened in the panel. */
+/** Everything about a station: its map with its neighbors (but beside the map of the dataset), its custom name in place, its geometry, and the stations the railway links it to, opened in the panel. */
 function StationDetail({ station, rights, panel, version, onCenter }: { station: AdminStation; rights: StationRights; panel: StationPanel; version: number; onCenter?: () => void }) {
   const router = useRouter();
   const columns = useMemo(() => stationColumns(rights.edit), [rights.edit]);
@@ -50,6 +51,7 @@ function StationDetail({ station, rights, panel, version, onCenter }: { station:
 
   return (
     <>
+      {!onCenter && <StationRailwayMap id={station.id} onOpen={panel.open} />}
       <DetailHeader
         media={<DetailMedia icon={<TrainFrontIcon />} />}
         title={nameOf(station)}
@@ -82,7 +84,10 @@ function StationDetail({ station, rights, panel, version, onCenter }: { station:
         />
       </DetailActions>
       <DetailSection title="Gare">
-        <DetailColumnFields row={station} columns={columns} ids={["customName", "osmName", "visibility", "holders", "country", "id", "updatedAt"]} />
+        <DetailColumnFields row={station} columns={columns} ids={["customName", "osmName", "visibility", "holders", "country", "uicRef", "wikidata", "id", "updatedAt"]} />
+      </DetailSection>
+      <DetailSection title="Exploitation">
+        <DetailColumnFields row={station} columns={columns} ids={["category", "tourist", "routes", "operator", "osmNetwork"]} />
       </DetailSection>
       <DetailSection title="Géométrie">
         <DetailColumnFields row={station} columns={columns} ids={["zoneSource", "zoneTiles", "coordinates", "osm"]} />

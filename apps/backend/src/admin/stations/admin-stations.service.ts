@@ -1,6 +1,8 @@
 import type {
   AdminStation,
+  AdminStationCategory,
   AdminStationNeighbor,
+  AdminStationRailway,
   AdminStationsOverview,
 } from '@kilotrace/shared/admin';
 import {
@@ -13,16 +15,27 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { Place } from '../../stations/place.entity';
+import { drawRailway } from '../../stations/railway-drawing';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 
 const NAME = 'COALESCE(place.custom_name, place.name)';
 
 const STATIONS_TABLE: TableSpec = {
-  search: ['place.name', 'place.custom_name', 'place.osm_id::text'],
+  search: [
+    'place.name',
+    'place.custom_name',
+    'place.osm_id::text',
+    'station.operator',
+    'station.uic_ref',
+  ],
   sorts: {
     name: NAME,
     holders: 'place.holders',
     country: 'place.country_code',
+    links: 'station.links',
+    linksKm: 'station.links_m',
+    routes: 'station.routes',
+    operator: 'station.operator',
     updatedAt: 'place.updated_at',
   },
   defaultSort: { id: 'holders', desc: true },
@@ -36,20 +49,24 @@ const STATIONS_TABLE: TableSpec = {
         hidden: 'place.hidden_at IS NOT NULL',
       },
     },
-    naming: {
-      options: {
-        osm: 'place.custom_name IS NULL',
-        custom: 'place.custom_name IS NOT NULL',
-      },
-    },
     held: {
       options: { held: 'place.holders > 0', never: 'place.holders = 0' },
+    },
+    category: { column: `COALESCE(place.category, 'station')` },
+    tourist: {
+      options: {
+        tourist: 'station.tourist',
+        regular: 'NOT COALESCE(station.tourist, false)',
+      },
     },
   },
   groupings: {
     zoneSource: 'place.zone_source',
     country: 'place.country_code',
     visibility: `CASE WHEN place.hidden_at IS NULL THEN 'shown' ELSE 'hidden' END`,
+    category: `COALESCE(place.category, 'station')`,
+    operator: 'station.operator',
+    osmNetwork: 'station.network',
   },
 };
 
@@ -65,8 +82,22 @@ const COLUMNS = [
   'countryCode',
   'zoneSource',
   'holders',
+  'category',
+  'wikidata',
   'updatedAt',
-].map((column) => `place.${column}`);
+]
+  .map((column) => `place.${column}`)
+  .concat(
+    [
+      'tourist',
+      'routes',
+      'operator',
+      'network',
+      'uicRef',
+      'links',
+      'linksM',
+    ].map((column) => `station.${column}`),
+  );
 
 /** The geometry of a point as TypeORM reads it. */
 type Point = { coordinates: [number, number] };
@@ -123,6 +154,34 @@ export class AdminStationsService {
       holders: row.holders,
       hidden: row.hidden,
     }));
+  }
+
+  /** The station, those linked to it by the railway and the links between it and them, for its map. */
+  async railway(id: number): Promise<AdminStationRailway> {
+    await this.exists(id);
+    const stations: {
+      id: number;
+      name: string | null;
+      lon: number;
+      lat: number;
+    }[] = await this.places.query(
+      `SELECT p.id, COALESCE(p.custom_name, p.name) AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat
+         FROM places p
+         WHERE p.id = $1 OR p.id IN (
+           SELECT CASE WHEN l.station_a = $1 THEN l.station_b ELSE l.station_a END
+           FROM rail_links l WHERE l.station_a = $1 OR l.station_b = $1)`,
+      [id],
+    );
+    const points = new Map(
+      stations.map(({ id, lon, lat }) => [id, [lon, lat] as [number, number]]),
+    );
+    const { links, ties } = await drawRailway(
+      this.places.manager,
+      'station_a = $1 OR station_b = $1',
+      id,
+      points,
+    );
+    return { stations, links, ties };
   }
 
   async overview(): Promise<AdminStationsOverview> {
@@ -208,10 +267,14 @@ export class AdminStationsService {
   }
 
   private base() {
-    return this.places
-      .createQueryBuilder('place')
-      .select(COLUMNS)
-      .where(`place.kind = 'station'`);
+    return (
+      this.places
+        .createQueryBuilder('place')
+        // Every station has its row: inner, so that a sort by one of its columns reads its index.
+        .innerJoin('place.station', 'station')
+        .select(COLUMNS)
+        .where(`place.kind = 'station'`)
+    );
   }
 
   private async exists(id: number): Promise<Place> {
@@ -224,29 +287,18 @@ export class AdminStationsService {
     return station;
   }
 
-  /** The stations as the API answers them, their links and zones counted for all of them at once. */
+  /** The stations as the API answers them, their zones counted for all of them at once. */
   private async rows(stations: Place[]): Promise<AdminStation[]> {
     if (stations.length === 0) return [];
     const ids = stations.map((station) => station.id);
-    const [links, zones] = await Promise.all([
-      this.places.query<{ id: number; links: number; length_m: number }[]>(
-        `SELECT s.id, count(*)::int AS links, sum(l.length_m) AS length_m
-         FROM rail_links l, unnest(ARRAY[l.station_a, l.station_b]) AS s(id)
-         WHERE (l.station_a = ANY($1) OR l.station_b = ANY($1)) AND s.id = ANY($1)
-         GROUP BY s.id`,
-        [ids],
-      ),
-      this.places.query<{ id: number; tiles: number }[]>(
-        `SELECT place_id AS id, count(*)::int AS tiles FROM place_tiles
-         WHERE place_id = ANY($1) GROUP BY place_id`,
-        [ids],
-      ),
-    ]);
-    const linksOf = new Map(links.map((row) => [row.id, row]));
+    const zones = await this.places.query<{ id: number; tiles: number }[]>(
+      `SELECT place_id AS id, count(*)::int AS tiles FROM place_tiles
+       WHERE place_id = ANY($1) GROUP BY place_id`,
+      [ids],
+    );
     const tilesOf = new Map(zones.map((row) => [row.id, row.tiles]));
     return stations.map((station) => {
       const [lon, lat] = (station.geom as unknown as Point).coordinates;
-      const link = linksOf.get(station.id);
       return {
         id: String(station.id),
         name: station.customName ?? station.name,
@@ -260,9 +312,18 @@ export class AdminStationsService {
         lat,
         zoneSource: station.zoneSource,
         zoneTiles: tilesOf.get(station.id) ?? 0,
-        links: link?.links ?? 0,
-        linksM: Math.round(link?.length_m ?? 0),
+        links: station.station?.links ?? 0,
+        linksM: station.station?.linksM ?? 0,
         holders: station.holders,
+        category: (station.category === 'halt'
+          ? 'halt'
+          : 'station') satisfies AdminStationCategory,
+        tourist: station.station?.tourist ?? false,
+        routes: station.station?.routes ?? 0,
+        operator: station.station?.operator ?? null,
+        network: station.station?.network ?? null,
+        uicRef: station.station?.uicRef ?? null,
+        wikidata: station.wikidata,
         updatedAt: station.updatedAt.toISOString(),
       };
     });

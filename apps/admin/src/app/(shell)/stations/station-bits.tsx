@@ -1,8 +1,12 @@
 "use client";
 
-import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH, type AdminStation, type AdminStationZoneSource, STATION_RULES } from "@kilotrace/shared/admin";
+import { ADMIN_REASON_MAX_LENGTH, ADMIN_REASON_MIN_LENGTH, type AdminStation, type AdminStationCategory, type AdminStationZoneSource, STATION_RULES } from "@kilotrace/shared/admin";
 import {
+  BadgeCheckIcon,
+  BookOpenIcon,
+  BuildingIcon,
   CalendarClockIcon,
+  CameraIcon,
   EarthIcon,
   EyeIcon,
   EyeOffIcon,
@@ -10,15 +14,18 @@ import {
   Grid2x2Icon,
   MapPinIcon,
   MapPinnedIcon,
+  NetworkIcon,
   PencilLineIcon,
   RouteIcon,
   ShapesIcon,
+  SignpostIcon,
   TrainFrontIcon,
   TrainTrackIcon,
   TypeIcon,
   UsersIcon,
+  WaypointsIcon,
 } from "lucide-react";
-import { codeColumn, formatNumber, type ConfirmOptions, type DataTableColumn, dateColumn, lookColumn, Mark, numberColumn, statusColumn, textColumn } from "@kilotrace/ui/components/admin/data-table";
+import { booleanColumn, codeColumn, formatNumber, type ConfirmOptions, type DataTableColumn, dateColumn, lookColumn, Mark, numberColumn, statusColumn, textColumn } from "@kilotrace/ui/components/admin/data-table";
 import { fromRule } from "@kilotrace/ui/components/admin/detail";
 import { countryFlag, countryName } from "@kilotrace/ui/lib/countries/country-format";
 import { createVersion } from "@/lib/admin/version";
@@ -49,14 +56,27 @@ export const VISIBILITIES = {
   hidden: { label: "Masquée", tone: "gray" },
 } as const;
 
-export const NAMINGS = { osm: "Nom OSM", custom: "Renommée" } as const;
+export const CATEGORIES: Record<AdminStationCategory, { label: string; tone: "green" | "blue" }> = {
+  station: { label: "Gare", tone: "green" },
+  halt: { label: "Halte", tone: "blue" },
+};
+
+export const TRAINS = { tourist: "Touristique", regular: "Classique" } as const;
+
 export const HELD = { held: "Visitée", never: "Jamais visitée" } as const;
 
 /** Name of a country in French, its flag first. */
 export const countryLabel = (code: string) => `${countryFlag(code)} ${countryName(code, "fr")}`;
 
+/** The flag of its country, else a train. */
+export const stationIcon = (station: { countryCode: string | null }) =>
+  station.countryCode ? <span className="text-sm leading-none">{countryFlag(station.countryCode)}</span> : <TrainFrontIcon />;
+
 /** A station without a name in OpenStreetMap. */
 export const nameOf = (station: { name: string | null }) => station.name ?? "Sans nom";
+
+/** The page of its item in Wikidata. */
+const wikidataHref = (station: AdminStation) => (station.wikidata ? `https://www.wikidata.org/wiki/${station.wikidata}` : null);
 
 /** The page of the object in OpenStreetMap. */
 export function osmHref(station: AdminStation): string {
@@ -121,7 +141,7 @@ export const stationColumns = (edit: boolean): DataTableColumn<AdminStation>[] =
     header: "Gare",
     icon: <TrainFrontIcon />,
     sortable: true,
-    value: (station) => ({ icon: <TrainFrontIcon />, name: nameOf(station) }),
+    value: (station) => ({ icon: stationIcon(station), name: nameOf(station) }),
     marks: (station) => (
       <>
         {station.customName && <RenamedMark station={station} />}
@@ -137,8 +157,13 @@ export const stationColumns = (edit: boolean): DataTableColumn<AdminStation>[] =
     icon: <TrainTrackIcon />,
     value: (station) => `${formatNumber(station.links)} · ${formatNumber(Math.round(station.linksM / 100) / 10)} km`,
   }),
-  numberColumn({ id: "links", header: "Liaisons", icon: <TrainTrackIcon />, value: (station) => station.links }),
-  numberColumn({ id: "linksKm", header: "Voies reliées", icon: <RouteIcon />, unit: "km", value: (station) => (station.linksM ? Math.round(station.linksM / 100) / 10 : null) }),
+  numberColumn({ id: "links", header: "Liaisons", icon: <TrainTrackIcon />, sortable: true, value: (station) => station.links }),
+  numberColumn({ id: "linksKm", header: "Voies reliées", icon: <RouteIcon />, unit: "km", sortable: true, value: (station) => (station.linksM ? Math.round(station.linksM / 100) / 10 : null) }),
+  statusColumn({ id: "category", header: "Type", icon: <SignpostIcon />, value: (station) => station.category, statuses: CATEGORIES }),
+  booleanColumn({ id: "tourist", header: "Touristique", icon: <CameraIcon />, value: (station) => station.tourist }),
+  numberColumn({ id: "routes", header: "Lignes", icon: <WaypointsIcon />, sortable: true, value: (station) => station.routes }),
+  textColumn({ id: "operator", header: "Exploitant", icon: <BuildingIcon />, sortable: true, value: (station) => station.operator }),
+  textColumn({ id: "osmNetwork", header: "Réseau commercial", icon: <NetworkIcon />, value: (station) => station.network }),
   statusColumn({ id: "zoneSource", header: "Géométrie", icon: <ShapesIcon />, value: (station) => station.zoneSource, statuses: ZONE_SOURCES }),
   statusColumn({ id: "visibility", header: "Site", icon: <EyeIcon />, value: (station) => (station.hiddenAt ? "hidden" : "shown"), statuses: VISIBILITIES }),
   numberColumn({ id: "zoneTiles", header: "Tuiles de géométrie", icon: <Grid2x2Icon />, value: (station) => station.zoneTiles }),
@@ -158,6 +183,8 @@ export const stationColumns = (edit: boolean): DataTableColumn<AdminStation>[] =
     }),
   }),
   codeColumn({ id: "osm", header: "OpenStreetMap", icon: <MapPinnedIcon />, value: (station) => `${station.osmType}${station.osmId}`, href: osmHref }),
+  codeColumn({ id: "uicRef", header: "Code UIC", icon: <BadgeCheckIcon />, value: (station) => station.uicRef }),
+  codeColumn({ id: "wikidata", header: "Wikidata", icon: <BookOpenIcon />, value: (station) => station.wikidata, href: wikidataHref }),
   codeColumn({ id: "coordinates", header: "Coordonnées", icon: <MapPinIcon />, value: (station) => `${station.lat.toFixed(5)}, ${station.lon.toFixed(5)}` }),
   codeColumn({ id: "id", header: "Identifiant", icon: <FingerprintIcon />, value: (station) => station.id }),
   dateColumn({ id: "updatedAt", header: "Mise à jour", icon: <CalendarClockIcon />, sortable: true, relative: true, value: (station) => station.updatedAt }),

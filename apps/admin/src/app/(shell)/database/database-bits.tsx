@@ -103,8 +103,8 @@ function DatabaseTile({ tables }: { tables: AdminDatabaseTable[] | null }) {
     return <KpiTile icon={DatabaseIcon} color="yellow" label={t("weight")} value="—" detail={t("error")} />;
   }
   const sum = (bytes: (table: AdminDatabaseTable) => number) => tables.reduce((total, table) => total + bytes(table), 0);
-  const free = sum((table) => table.freeBytes);
-  const used = sum((table) => table.totalBytes) - free;
+  const disk = sum((table) => table.totalBytes);
+  const used = disk - sum((table) => table.freeBytes);
   const indexes = sum((table) => table.indexBytes);
   return (
     <KpiTile
@@ -112,7 +112,7 @@ function DatabaseTile({ tables }: { tables: AdminDatabaseTable[] | null }) {
       color="yellow"
       label={t("weight")}
       value={formatBytes(used)}
-      detail={t("weightDetail", { count: tables.length, indexes: formatBytes(indexes), free: formatBytes(free) })}
+      detail={t("weightDetail", { count: tables.length, indexes: formatBytes(indexes), disk: formatBytes(disk) })}
       gauge={shareOf(indexes, used)}
     />
   );

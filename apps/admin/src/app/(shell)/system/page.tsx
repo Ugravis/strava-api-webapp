@@ -1,57 +1,40 @@
 import type { SystemStatusResponse } from "@kilotrace/shared";
 import { Suspense } from "react";
 import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
-import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { DatabaseSection, DatabaseSkeleton, MaintenanceCard, SwitchesCard, UploadsAudit, UploadsSkeleton } from "./system-bits";
+import { SettingsCards } from "./settings-cards";
+import { MaintenanceCard } from "./system-bits";
 
-/**
- * Switches of the whole site, audit of the stored files and tables of the
- * database, each action behind its own permission.
- */
+/** The maintenance banner and the settings of the site, each action behind its own permission. */
 export default async function AdminSystemPage() {
   const { permissions } = await requireAdminMember();
-  const can = (permission: "system.maintenance" | "system.settings" | "system.uploads") => permissions.includes(permission);
+  const can = (permission: "system.maintenance" | "system.settings") => permissions.includes(permission);
   const t = getAdminTranslations("system");
   const result = await adminApi<SystemStatusResponse>("/system");
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t("title")} description={t("description")} />
-      {!can("system.maintenance") && !can("system.settings") && !can("system.uploads") && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
+      {!can("system.maintenance") && !can("system.settings") && <p className="text-sm text-muted-foreground">{t("readOnly")}</p>}
 
-      {result.ok ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {result.ok ? (
           <MaintenanceCard maintenance={result.data.maintenance} canEdit={can("system.maintenance")} />
-          <SwitchesCard status={result.data} canEdit={can("system.settings")} />
-        </div>
-      ) : (
-        <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("statusError")}</p>
-      )}
-
-      <Separator />
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-base font-semibold">{t("uploads.title")}</h2>
-          <p className="text-sm text-muted-foreground">{t("uploads.description")}</p>
-        </div>
-        <Suspense fallback={<UploadsSkeleton />}>
-          <UploadsAudit canEdit={can("system.uploads")} />
+        ) : (
+          <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t("statusError")}</p>
+        )}
+        <Suspense fallback={<SettingsSkeleton />}>
+          <SettingsCards canEdit={can("system.settings")} />
         </Suspense>
-      </section>
-
-      <Separator />
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-base font-semibold">{t("database.title")}</h2>
-          <p className="text-sm text-muted-foreground">{t("database.description")}</p>
-        </div>
-        <Suspense fallback={<DatabaseSkeleton />}>
-          <DatabaseSection />
-        </Suspense>
-      </section>
+      </div>
     </div>
   );
+}
+
+/** The three cards of the settings, while they load. */
+function SettingsSkeleton() {
+  return Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-64 w-full rounded-xl" />);
 }

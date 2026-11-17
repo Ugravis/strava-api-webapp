@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, EarthIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, MapIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, DatabaseIcon, EarthIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, MapIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -20,6 +20,7 @@ export const adminRoutes = {
   reservedUsernames: "/reserved-usernames",
   auditLog: "/audit-log",
   system: "/system",
+  database: "/database",
   team: "/team",
   dev: "/dev",
   development: "/development",
@@ -29,7 +30,7 @@ export const adminRoutes = {
 } as const;
 
 interface AdminNavItem {
-  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "stations" | "regions" | "datasetMap" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
+  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "stations" | "regions" | "datasetMap" | "auditLog" | "system" | "database" | "releaseNotes" | "team" | "dev" | "development";
   href: string;
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
@@ -74,6 +75,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     key: "infrastructure",
     items: [
       { key: "system", href: adminRoutes.system, icon: BoltIcon },
+      { key: "database", href: adminRoutes.database, icon: DatabaseIcon },
       { key: "releaseNotes", href: adminRoutes.releaseNotes, icon: ReceiptTextIcon },
       { key: "dev", href: adminRoutes.dev, icon: PackageIcon },
       { key: "development", href: adminRoutes.development, icon: GitCommitHorizontalIcon },

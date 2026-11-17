@@ -37,6 +37,8 @@ export type FormField = BaseField &
   (
     | { kind: "textarea"; defaultValue?: string; required?: boolean; maxLength?: number }
     | { kind: "select"; defaultValue: string; options: Option[] }
+    /** An integer; left empty when not `required`. */
+    | { kind: "number"; defaultValue?: number | null; required?: boolean; min?: number; max?: number; placeholder?: string }
     /** One user among the results of a search, posted by id. */
     | {
         kind: "user";
@@ -191,6 +193,24 @@ function FieldInput({
             required={field.required}
             maxLength={field.maxLength}
             rows={3}
+          />
+        </>
+      );
+    case "number":
+      return (
+        <>
+          {label}
+          <Input
+            id={id}
+            name={field.name}
+            type="number"
+            inputMode="numeric"
+            step={1}
+            min={field.min}
+            max={field.max}
+            required={field.required}
+            placeholder={field.placeholder}
+            defaultValue={field.defaultValue ?? ""}
           />
         </>
       );

@@ -202,6 +202,7 @@ export function TracksMap() {
           tileMode={tileModeOf(layers)}
           showTracks={tracksShown(layers)}
           history={mapHistory}
+          historyStationCluster={history.summary?.stationCluster ?? null}
           sector={mapSector}
           sectorFrame={sectorFrame}
           onCenterChange={onCenterChange}

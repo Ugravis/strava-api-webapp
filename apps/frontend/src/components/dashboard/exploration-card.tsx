@@ -208,6 +208,20 @@ function StationsSummary({ stations }: { stations: VisitedStations | null }) {
               </span>
               <span className="text-xs text-zinc-400">{t("railway")}</span>
             </p>
+            <p className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-semibold tracking-tight tabular-nums">
+                {format.number(stations.maxCluster.length)}
+              </span>
+              <span className="text-xs text-zinc-400">
+                {t("stationCluster", {
+                  railway: format.number(stations.maxClusterM / 1000, {
+                    style: "unit",
+                    unit: "kilometer",
+                    maximumFractionDigits: 0,
+                  }),
+                })}
+              </span>
+            </p>
           </>
         ) : (
           <Skeleton className="h-8 w-40 bg-white/10" />

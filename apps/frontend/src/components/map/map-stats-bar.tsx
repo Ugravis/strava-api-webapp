@@ -355,6 +355,31 @@ function TilesModule({
   );
 }
 
+/**
+ * A figure and the share of the total it covers, after a detail when given;
+ * a small share keeps two significant digits rather than rounding to 0 %.
+ */
+function WithShare({ text, part, total, detail }: { text: string; part: number; total: number; detail?: string }) {
+  const format = useFormatter();
+  const share = total > 0 ? part / total : 0;
+  return (
+    <>
+      {text}
+      {total > 0 && (
+        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          {detail && `${detail} · `}
+          {format.number(
+            share,
+            share > 0 && share < 0.01
+              ? { style: "percent", maximumSignificantDigits: 2 }
+              : { style: "percent", maximumFractionDigits: 1 },
+          )}
+        </span>
+      )}
+    </>
+  );
+}
+
 function TilesSection({
   level,
   summary,
@@ -371,25 +396,9 @@ function TilesSection({
   const format = useFormatter();
   const value = (render: (summary: TileLevelSummary) => ReactNode) => (summary ? render(summary) : <ValueSkeleton />);
   const size = (summary: TileLevelSummary) => summary.maxSquare?.size ?? 0;
-  /** A figure and the share of the visited tiles it covers; a small share keeps two significant digits rather than rounding to 0 %. */
-  const withShare = (text: string, tiles: number, { visited }: TileLevelSummary) => {
-    const share = visited > 0 ? tiles / visited : 0;
-    return (
-      <>
-        {text}
-        {visited > 0 && (
-          <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-            {format.number(
-              share,
-              share > 0 && share < 0.01
-                ? { style: "percent", maximumSignificantDigits: 2 }
-                : { style: "percent", maximumFractionDigits: 1 },
-            )}
-          </span>
-        )}
-      </>
-    );
-  };
+  const withShare = (text: string, tiles: number, { visited }: TileLevelSummary) => (
+    <WithShare text={text} part={tiles} total={visited} />
+  );
 
   return (
     <StatsSection
@@ -499,29 +508,43 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
   const t = useTranslations("map.stats");
   const format = useFormatter();
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
+  const kilometers = (meters: number) =>
+    format.number(meters / 1000, { style: "unit", unit: "kilometer", maximumFractionDigits: 0 });
+  /** Stations of a network, with its railway and its share of the visited stations. */
+  const network = (count: number, meters: number) =>
+    stations ? (
+      <WithShare
+        text={format.number(count)}
+        part={count}
+        total={stations.stations.length}
+        detail={kilometers(meters)}
+      />
+    ) : (
+      <ValueSkeleton />
+    );
   const sound = useSoundSettings();
 
   return (
-    <div className="flex h-full snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none lg:grid lg:grid-cols-3 lg:overflow-visible">
-      <StatsSection title={t("stations")}>
+    <div className="flex h-full snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none xl:grid xl:grid-cols-3 xl:overflow-visible">
+      <StatsSection title={t("stations")} columns>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
           label={t("stationCount", { count: stations?.stations.length ?? 0 })}
           accent="station"
         />
         <Stat
-          value={
-            stations ? (
-              format.number(railwayM / 1000, {
-                style: "unit",
-                unit: "kilometer",
-                maximumFractionDigits: 0,
-              })
-            ) : (
-              <ValueSkeleton />
-            )
-          }
+          value={stations ? kilometers(railwayM) : <ValueSkeleton />}
           label={t("railway")}
+          accent="railLink"
+        />
+        <Stat
+          value={network(stations?.maxCluster.length ?? 0, stations?.maxClusterM ?? 0)}
+          label={t("maxCluster")}
+          accent="station"
+        />
+        <Stat
+          value={network(stations?.otherClusters ?? 0, stations?.otherClustersM ?? 0)}
+          label={t("otherClusters")}
           accent="railLink"
         />
       </StatsSection>

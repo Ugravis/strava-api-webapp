@@ -83,6 +83,8 @@ interface ActivityMapProps {
   showTracks: boolean;
   /** What the history tool draws; null while it is closed. */
   history: MapHistory | null;
+  /** Ids of the stations of the largest network of the history, once loaded. */
+  historyStationCluster: number[] | null;
   /** The sector picked with its tool; null while it is closed. */
   sector: MapSector | null;
   /** Incremented to frame the sector, once its bounds are known. */
@@ -118,6 +120,7 @@ export function ActivityMap({
   tileMode,
   showTracks,
   history: mapHistory,
+  historyStationCluster,
   sector,
   sectorFrame,
   onCenterChange,
@@ -152,9 +155,6 @@ export function ActivityMap({
   const showStationsRef = useRef(showStations);
   const dimmedRef = useRef(dimmed);
   const discreetDotsRef = useRef(discreetDots);
-  // The stations as of the history when open: the visits are dated.
-  const stationsData = useMemo(() => stationData(stations, mapHistory), [stations, mapHistory]);
-  const stationsDataRef = useRef(stationsData);
   const stationsVersion = stations?.stationsVersion ?? null;
   const stationsVersionRef = useRef(stationsVersion);
   // The station shown in the panel, ringed on the map.
@@ -190,6 +190,19 @@ export function ActivityMap({
   const defaultView = useMemo(() => defaultActivityView(tileMode === "both"), [tileMode]);
   const activityView = changedView && changedView.activityId === activityId ? changedView.view : defaultView;
   const activityViewRef = useRef(activityView);
+  // Hidden by its switch, the activity leaves the stations as they are.
+  const activityStations = activityView.stations ? (activityTiles?.stationGains?.stationIds ?? null) : null;
+  // The stations as of the history when open, the visits being dated, with the gains of the activity shown.
+  const stationsData = useMemo(
+    () =>
+      stationData(
+        stations,
+        mapHistory && { ...mapHistory, cluster: historyStationCluster ?? [] },
+        activityStations,
+      ),
+    [stations, mapHistory, historyStationCluster, activityStations],
+  );
+  const stationsDataRef = useRef(stationsData);
   const activityData = useMemo(() => {
     if (!activityTiles) return NO_ACTIVITY_TILES;
     const { gains } = activityTiles;

@@ -18,6 +18,10 @@ import { addStationIcons, glyphUrl, HATCH_LEVELS, STATION_ICONS } from "./statio
 /** Whether a station or a link was gained in the period of the history: drawn in the pink of the gains. */
 interface Gained {
   gained?: boolean;
+  /** Part of the largest network of visited stations: its railway drawn bolder. */
+  cluster?: boolean;
+  /** Railway drawn without its ticks: the one an activity shown gained. */
+  bare?: boolean;
 }
 
 /** What the stations layer draws: the visited stations and the links unlocked between them. */
@@ -523,6 +527,33 @@ function gainedColor(
   ];
 }
 
+/** A station, a link or a stretch of railway of the largest network of visited stations. */
+const IN_CLUSTER: ExpressionSpecification = ["boolean", ["get", "cluster"], false];
+
+/** A station or a link gained in the period of the history, or by the activity shown. */
+const GAINED: ExpressionSpecification = ["boolean", ["get", "gained"], false];
+
+/**
+ * The railway gained is striped pink and white, its casing showing through
+ * the gaps: told apart from the pink tracks of the activities, drawn solid.
+ */
+const GAINED_DASHES: ExpressionSpecification = ["case", GAINED, ["literal", [1.4, 2.6]], ["literal", [1, 0]]];
+const GAINED_CASING = "#ffffff";
+
+/** How much bolder the railway of the largest network is drawn. */
+const CLUSTER_WIDTH = 1.4;
+
+/** The widths of `scale` by zoom, bolder on the features of the largest network. */
+function clusterBolder(scale: ExpressionSpecification): ExpressionSpecification {
+  const [operator, curve, input, ...stops] = scale as unknown[];
+  return [
+    operator,
+    curve,
+    input,
+    ...stops.map((value, i) => (i % 2 === 1 ? ["case", IN_CLUSTER, (value as number) * CLUSTER_WIDTH, value] : value)),
+  ] as ExpressionSpecification;
+}
+
 /** The version is part of the URL: the browser caches the stations of each import. */
 function allStationsUrl(version: string): string {
   // Absolute: MapLibre fetches the tiles from its worker.
@@ -612,12 +643,14 @@ export function addStationLayers(
       ...visitedSource(map, "rails"),
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
-        "line-color": palette.stationCasing,
-        "line-width": realScale([
-          [ALL_MIN_ZOOM, 2.5],
-          [10, 3.6],
-          [TIES_MIN_ZOOM, TRACK.line + 2 * LINE_BORDER],
-        ]),
+        "line-color": ["case", GAINED, GAINED_CASING, palette.stationCasing],
+        "line-width": clusterBolder(
+          realScale([
+            [ALL_MIN_ZOOM, 2.5],
+            [10, 3.6],
+            [TIES_MIN_ZOOM, TRACK.line + 2 * LINE_BORDER],
+          ]),
+        ),
       },
     },
     belowLabels,
@@ -641,11 +674,14 @@ export function addStationLayers(
       layout: { ...layout, "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": gainedColor(palette.railLink, palette),
-        "line-width": realScale([
-          [ALL_MIN_ZOOM, 1.2],
-          [10, 2],
-          [TIES_MIN_ZOOM, TRACK.line],
-        ]),
+        "line-dasharray": GAINED_DASHES,
+        "line-width": clusterBolder(
+          realScale([
+            [ALL_MIN_ZOOM, 1.2],
+            [10, 2],
+            [TIES_MIN_ZOOM, TRACK.line],
+          ]),
+        ),
       },
     },
     belowLabels,

@@ -74,10 +74,11 @@ export function StationPanel({ stationId, onLocated, onCenter, onOpenStation, on
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <h2 className="text-lg leading-tight font-semibold wrap-break-word">{station.name ?? t("unnamed")}</h2>
-            <div>
+            <div className="flex flex-wrap gap-1.5">
               <Badge variant={station.visited ? "default" : "outline"}>
                 {station.visited ? t("visited") : t("notVisited")}
               </Badge>
+              {station.inMaxCluster && <Badge variant="outline">{t("inMaxCluster")}</Badge>}
             </div>
           </div>
           <Button variant="outline" size="icon-sm" onClick={onCenter} aria-label={t("center")} title={t("center")}>

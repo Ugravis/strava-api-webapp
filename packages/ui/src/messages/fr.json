@@ -349,6 +349,7 @@
       "badges": "Badges épinglés",
       "noBadges": "Aucun badge épinglé. Choisissez ceux à afficher depuis la page <link>Succès</link>.",
       "stationsVisited": "Gares visitées",
+      "stationCluster": "Cluster max",
       "previousLevel": "Grandes tuiles",
       "nextLevel": "Petites tuiles",
       "badgeLevel": "Niveau {level}",
@@ -638,6 +639,7 @@
       "stations": "Gares et voies",
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
       "railway": "de voies débloquées",
+      "stationCluster": "cluster max ({railway})",
       "lastStation": "Dernière : {name}",
       "stationsError": "Impossible de charger vos gares pour le moment.",
       "openTiles": "Voir les tuiles sur la carte",
@@ -670,6 +672,7 @@
       },
       "stationModes": {
         "stations": "Gares visitées",
+        "maxCluster": "Plus grand cluster",
         "railway": "Voies débloquées"
       },
       "squareSize": "{size} × {size}",
@@ -1020,6 +1023,8 @@
       "newTiles": "Nouvelles",
       "maxCluster": "Cluster principal",
       "otherClusters": "Autres clusters",
+      "stations": "Gares",
+      "newStations": "Nouvelles",
       "gainsPending": "Les gains de cette activité sont en cours de calcul.",
       "gainedOnly": "Uniquement les tuiles gagnées",
       "elapsedTime": "Temps écoulé",
@@ -1032,6 +1037,8 @@
       "showSubtiles": "Petites tuiles",
       "showTrack": "Trace",
       "noTrack": "Trace indisponible sur cet appareil",
+      "showStations": "Gares et voies gagnées",
+      "noStations": "Aucune gare gagnée par cette activité",
       "nothingGained": "Aucune tuile gagnée par cette activité"
     },
     "activityFormat": {
@@ -1063,7 +1070,8 @@
         "tiles": "Grandes tuiles",
         "subtiles": "Petites tuiles",
         "stations": "Gares",
-        "railway": "Voies"
+        "railway": "Voies",
+        "stationCluster": "Cluster de gares"
       },
       "pending": "Mise à jour de l'historique…",
       "error": "Impossible de charger l'historique.",
@@ -1107,6 +1115,7 @@
       "unnamed": "Gare sans nom",
       "visited": "Visitée",
       "notVisited": "Pas encore visitée",
+      "inMaxCluster": "Plus grand cluster",
       "visitedDescription": "Une de vos activités a traversé une des petites tuiles de cette gare, surlignées sur la carte.",
       "notVisitedDescription": "Traversez une des petites tuiles de cette gare, surlignées sur la carte, pour la débloquer.",
       "firstVisit": "Première visite",

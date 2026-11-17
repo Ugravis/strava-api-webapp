@@ -1,4 +1,8 @@
 import {
+  type ActivityStationGains,
+  StationMetricsService,
+} from '../stations/station-metrics.service';
+import {
   Controller,
   Get,
   Param,
@@ -67,6 +71,8 @@ export interface TileStats {
 export interface ActivityTilesResponse extends ActivityTileSets {
   /** Null until the gains of the user are replayed. */
   gains: ActivityGainsResponse | null;
+  /** What it brought to the stations; null until replayed. */
+  stationGains: ActivityStationGains | null;
 }
 
 /** A tile and the activities that crossed it. */
@@ -90,6 +96,7 @@ export class TilesController {
     private readonly userTiles: UserTilesService,
     private readonly tileHistory: TileHistoryService,
     private readonly mapPreview: MapPreviewService,
+    private readonly stationMetrics: StationMetricsService,
   ) {}
 
   /** Counters and achievements of the user, and the version of the tiles for the vector tiles. */
@@ -286,14 +293,15 @@ export class TilesController {
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ActivityTilesResponse> {
-    const [tiles, gains] = await Promise.all([
+    const [tiles, gains, stationGains] = await Promise.all([
       this.tiles.activityTiles(user.id, id),
       this.gains.forActivity(user.id, id),
+      this.stationMetrics.forActivity(user.id, id),
     ]);
     if (!tiles) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No such activity');
     }
-    return { ...tiles, gains };
+    return { ...tiles, gains, stationGains };
   }
 
   /** The activities that crossed one tile, the latest ones first, one page at a time. */

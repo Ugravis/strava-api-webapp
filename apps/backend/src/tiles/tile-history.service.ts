@@ -9,6 +9,7 @@ import {
   tileRange,
   VECTOR_OUTLINE_MIN_ZOOM,
 } from './map-tile-sql';
+import { StationMetricsService } from '../stations/station-metrics.service';
 import { StationsService } from '../stations/stations.service';
 import { encodePng, rasterIndices, type Rgba } from './subtile-raster';
 import { fromSignedMask, TILE_ZOOM } from './tile-grid';
@@ -40,6 +41,10 @@ export interface TileHistorySummary {
   stations: number;
   /** Meters of railway unlocked between the stations of the history. */
   railwayM: number;
+  /** Largest network of visited stations at the date, or its growth since. */
+  maxStationCluster: number;
+  /** Ids of the stations of the largest network: at the date, or today when the gains are apart. */
+  stationCluster: number[];
 }
 
 /** Layers of the vector tiles of the history: the large tiles merged into one area, and its outline. */
@@ -83,6 +88,7 @@ export class TileHistoryService {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly stations: StationsService,
+    private readonly stationMetrics: StationMetricsService,
   ) {}
 
   /**
@@ -133,10 +139,11 @@ export class TileHistoryService {
          (SELECT min(visited_at) FROM tile_first_visits WHERE user_id = $1) AS first_visit_at`,
       [userId, date],
     );
-    const [[versions], [counts], stations] = await Promise.all([
+    const [[versions], [counts], stations, stationCluster] = await Promise.all([
       versionsQuery,
       countsQuery,
       this.stations.historyTotals(userId, mode === 'gained', date),
+      this.stationMetrics.historyCluster(userId, mode === 'gained', date),
     ]);
     return {
       version: versions?.gains_version ?? null,
@@ -146,6 +153,8 @@ export class TileHistoryService {
       subtiles: counts.subtiles,
       stations: stations.stations,
       railwayM: stations.railwayM,
+      maxStationCluster: stations.maxCluster,
+      stationCluster,
     };
   }
 

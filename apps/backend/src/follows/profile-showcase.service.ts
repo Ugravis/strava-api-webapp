@@ -19,7 +19,7 @@ export interface TileFigures {
 export interface ProfileShowcase {
   badges: ProfileBadge[];
   tiles: { large: TileFigures; small: TileFigures };
-  stations: { visited: number; unlockedKm: number };
+  stations: { visited: number; unlockedKm: number; maxCluster: number };
 }
 
 const figuresOf = (level: StoredLevelMetrics): TileFigures => ({
@@ -58,6 +58,7 @@ export class ProfileShowcaseService {
       stations: {
         visited: stations.visited,
         unlockedKm: Math.round(stations.unlockedM / 1000),
+        maxCluster: stations.maxCluster,
       },
     };
   }

@@ -24,7 +24,7 @@ const TILE_MODES = [
 
 type TileMode = (typeof TILE_MODES)[number];
 
-const STATION_MODES = ["stations", "railway"] as const;
+const STATION_MODES = ["stations", "maxCluster", "railway"] as const;
 
 type StationMode = (typeof STATION_MODES)[number];
 
@@ -44,10 +44,18 @@ function tilePoints(timeline: TileTimelineDay[], mode: TileMode): EvolutionPoint
 }
 
 /**
- * Stations visited, or kilometers of railway unlocked, over time: a link is
- * unlocked once both of its stations are visited.
+ * Stations visited, size of their largest network (grown by the activities
+ * replayed in the background), or kilometers of railway unlocked, over
+ * time: a link is unlocked once both of its stations are visited.
  */
 function stationPoints(stations: VisitedStations, mode: StationMode): EvolutionPoint[] {
+  if (mode === "maxCluster") {
+    let value = 0;
+    return stations.maxClusterGains.map(({ at, gain }) => {
+      value += gain;
+      return { time: Date.parse(at), value };
+    });
+  }
   const visitedAt = new Map(
     stations.stations.flatMap((station) =>
       station.firstVisitAt ? [[station.id, Date.parse(station.firstVisitAt)] as const] : [],

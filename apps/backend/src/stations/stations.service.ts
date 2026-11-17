@@ -62,6 +62,16 @@ export interface VisitedStations {
    * stations can be cached until it changes. Null without stations.
    */
   stationsVersion: string | null;
+  /** Ids of the stations of the largest network of visited stations, as last computed by the station metrics worker. */
+  maxCluster: number[];
+  /** Meters of railway between the stations of the largest network. */
+  maxClusterM: number;
+  /** Stations of the other networks of at least two stations. */
+  otherClusters: number;
+  /** Meters of railway between the stations of the other networks. */
+  otherClustersM: number;
+  /** The activities that grew the largest network, oldest first. */
+  maxClusterGains: StationClusterGain[];
 }
 
 export interface StationNeighbor {
@@ -86,17 +96,30 @@ export interface StationDetails {
   visited: boolean;
   firstVisitAt: string | null;
   neighbors: StationNeighbor[];
+  /** Part of the largest network of the stations visited by the user. */
+  inMaxCluster: boolean;
 }
 
 export interface StationTotals {
   visited: number;
   unlockedM: number;
+  /** Stations of the largest network of visited stations. */
+  maxCluster: number;
 }
 
 /** Stations and railway of the history at a date: gained since it, or visited before it. */
 export interface StationHistoryTotals {
   stations: number;
   railwayM: number;
+  /** Growth of the largest network since the date, or its size at the date. */
+  maxCluster: number;
+}
+
+/** Growth of the largest network of visited stations brought by an activity. */
+export interface StationClusterGain {
+  /** Start of the activity, ISO 8601. */
+  at: string;
+  gain: number;
 }
 
 /** The railway network of a country and the part the user unlocked. */
@@ -121,7 +144,7 @@ const PLACE_VISITED = `EXISTS (
 )`;
 
 /** Stations visited by the user `$1`: a small tile of their zone at least. */
-const VISITED_STATIONS = `SELECT p.id, ${stationName()} AS name, p.geom FROM places p
+export const VISITED_STATIONS = `SELECT p.id, ${stationName()} AS name, p.geom FROM places p
   WHERE p.id IN (
     SELECT t.place_id FROM user_tiles u
     JOIN place_tiles t ON t.x = u.x AND t.y = u.y AND u.mask & (1::bigint << t.bit) <> 0
@@ -178,9 +201,12 @@ export class StationsService {
     date: Date,
   ): Promise<StationHistoryTotals> {
     const inPeriod = (at: string) => `${at} ${gained ? '>=' : '<'} $2`;
-    const [row]: { stations: number; railway_m: number | null }[] =
-      await this.dataSource.query(
-        `WITH visited AS (${VISITED_STATIONS}),
+    const [row]: {
+      stations: number;
+      railway_m: number | null;
+      max_cluster: number;
+    }[] = await this.dataSource.query(
+      `WITH visited AS (${VISITED_STATIONS}),
          first_visits AS (
            SELECT v.id, min(f.visited_at) AS at
            FROM visited v
@@ -191,27 +217,39 @@ export class StationsService {
            (SELECT sum(l.length_m) FROM rail_links l
             JOIN first_visits a ON a.id = l.station_a
             JOIN first_visits b ON b.id = l.station_b
-            WHERE ${inPeriod('greatest(a.at, b.at)')}) AS railway_m`,
-        [userId, date],
-      );
+            WHERE ${inPeriod('greatest(a.at, b.at)')}) AS railway_m,
+           (SELECT COALESCE(sum(g.max_cluster), 0)::int FROM activity_station_gains g
+            WHERE g.user_id = $1 AND ${inPeriod('g.started_at')}) AS max_cluster`,
+      [userId, date],
+    );
     return {
       stations: row.stations,
       railwayM: Math.round(row.railway_m ?? 0),
+      maxCluster: row.max_cluster,
     };
   }
 
   /** Number of stations visited by the user, and length of the railway unlocked between them. */
   async totals(userId: string): Promise<StationTotals> {
-    const [row]: { visited: number; unlocked_m: number | null }[] =
-      await this.dataSource.query(
-        `WITH visited AS (${VISITED_STATIONS})
-         SELECT (SELECT count(*)::int FROM visited) AS visited,
-           (SELECT sum(l.length_m) FROM rail_links l
-            WHERE l.station_a IN (SELECT id FROM visited)
-              AND l.station_b IN (SELECT id FROM visited)) AS unlocked_m`,
-        [userId],
-      );
-    return { visited: row.visited, unlockedM: Math.round(row.unlocked_m ?? 0) };
+    const [row]: {
+      visited: number;
+      unlocked_m: number | null;
+      max_cluster: number | null;
+    }[] = await this.dataSource.query(
+      `WITH visited AS (${VISITED_STATIONS})
+       SELECT (SELECT count(*)::int FROM visited) AS visited,
+         (SELECT sum(l.length_m) FROM rail_links l
+          WHERE l.station_a IN (SELECT id FROM visited)
+            AND l.station_b IN (SELECT id FROM visited)) AS unlocked_m,
+         (SELECT cardinality(max_cluster) FROM user_station_metrics
+          WHERE user_id = $1) AS max_cluster`,
+      [userId],
+    );
+    return {
+      visited: row.visited,
+      unlockedM: Math.round(row.unlocked_m ?? 0),
+      maxCluster: row.max_cluster ?? 0,
+    };
   }
 
   /** Stations visited by the user, with their first visit, and the links between them. */
@@ -255,6 +293,50 @@ export class StationsService {
       links,
       ties,
       stationsVersion: await this.stationsVersion(),
+      ...(await this.maxCluster(userId)),
+    };
+  }
+
+  /** The largest network of the user and the activities that grew it, empty until first computed. */
+  private async maxCluster(
+    userId: string,
+  ): Promise<
+    Pick<
+      VisitedStations,
+      | 'maxCluster'
+      | 'maxClusterM'
+      | 'otherClusters'
+      | 'otherClustersM'
+      | 'maxClusterGains'
+    >
+  > {
+    const [row]: {
+      metrics: {
+        max_cluster: number[];
+        max_cluster_m: number;
+        other_clusters: number;
+        other_clusters_m: number;
+      } | null;
+      gains: StationClusterGain[] | null;
+    }[] = await this.dataSource.query(
+      `SELECT
+         (SELECT json_build_object('max_cluster', max_cluster,
+            'max_cluster_m', max_cluster_m, 'other_clusters', other_clusters,
+            'other_clusters_m', other_clusters_m)
+          FROM user_station_metrics WHERE user_id = $1) AS metrics,
+         (SELECT json_agg(json_build_object(
+            'at', to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+            'gain', max_cluster) ORDER BY started_at)
+          FROM activity_station_gains
+          WHERE user_id = $1 AND max_cluster > 0) AS gains`,
+      [userId],
+    );
+    return {
+      maxCluster: row?.metrics?.max_cluster ?? [],
+      maxClusterM: row?.metrics?.max_cluster_m ?? 0,
+      otherClusters: row?.metrics?.other_clusters ?? 0,
+      otherClustersM: row?.metrics?.other_clusters_m ?? 0,
+      maxClusterGains: row?.gains ?? [],
     };
   }
 
@@ -262,7 +344,7 @@ export class StationsService {
    * Id of the latest import of the stations, and of the latest change of
    * their zones (recomputed alone by `--zones-only`); null without any.
    */
-  private async stationsVersion(): Promise<string | null> {
+  async stationsVersion(): Promise<string | null> {
     const [row]: { id: number | null; changed: string | null }[] =
       await this.dataSource.query(
         `SELECT (SELECT max(id) FROM railway_imports) AS id,
@@ -287,13 +369,16 @@ export class StationsService {
       visited: boolean;
       first_visit_at: Date | null;
       tiles: [number, number, number][];
+      in_max_cluster: boolean;
     }[] = await this.dataSource.query(
       `SELECT p.id, ${stationName()} AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat, p.x, p.y, p.bit,
          ${PLACE_VISITED} AS visited,
          (SELECT min(f.visited_at) FROM ${ZONE_FIRST_VISITS}
           WHERE t.place_id = p.id) AS first_visit_at,
          (SELECT json_agg(json_build_array(t.x, t.y, t.bit) ORDER BY t.y, t.bit, t.x)
-          FROM place_tiles t WHERE t.place_id = p.id) AS tiles
+          FROM place_tiles t WHERE t.place_id = p.id) AS tiles,
+         COALESCE((SELECT p.id = ANY(s.max_cluster) FROM user_station_metrics s
+          WHERE s.user_id = $1), false) AS in_max_cluster
        FROM places p WHERE p.id = $2 AND ${shownStation()}`,
       [userId, id],
     );
@@ -326,6 +411,7 @@ export class StationsService {
       tiles: station.tiles.map(([x, y, bit]) => subtile(x, y, bit)),
       visited: station.visited,
       firstVisitAt: station.first_visit_at?.toISOString() ?? null,
+      inMaxCluster: station.in_max_cluster,
       neighbors: neighbors.map((neighbor) => ({
         id: neighbor.id,
         name: neighbor.name,

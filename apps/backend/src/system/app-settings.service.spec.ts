@@ -13,7 +13,6 @@ import type { AuthConfig } from '../config/auth.config';
 import { User } from '../users/user.entity';
 import type { AppSetting } from './app-setting.entity';
 import { AppSettingsService } from './app-settings.service';
-import type { SystemSettings } from './system-settings.entity';
 import { SystemSettingsService } from './system-settings.service';
 
 function setup(rows: Partial<AppSetting>[] = [], env = { email: true }) {
@@ -109,12 +108,7 @@ describe('SystemSettingsService sign-ups', () => {
   function system(rows: Partial<AppSetting>[], accounts: number) {
     const { service: appSettings } = setup(rows);
     const users = { count: jest.fn().mockResolvedValue(accounts) };
-    const settings = {
-      findOneBy: jest.fn().mockResolvedValue(null),
-      create: jest.fn((row: Partial<SystemSettings>) => row),
-    };
     return new SystemSettingsService(
-      settings as unknown as Repository<SystemSettings>,
       users as unknown as Repository<User>,
       appSettings,
     );
@@ -146,5 +140,54 @@ describe('SystemSettingsService sign-ups', () => {
       0,
     );
     expect((await service.status()).signupsEnabled).toBe(false);
+  });
+});
+
+describe('SystemSettingsService maintenance', () => {
+  it('keeps the start of the banner on a replacement, and takes it away', async () => {
+    const since = '2026-11-17T08:00:00.000Z';
+    const { service: appSettings, repository } = setup([
+      {
+        key: 'maintenance',
+        value: { title: 'ongoing', description: null, since },
+        updatedAt: new Date(since),
+      },
+    ]);
+    const users = { count: jest.fn().mockResolvedValue(0) };
+    const service = new SystemSettingsService(
+      users as unknown as Repository<User>,
+      appSettings,
+    );
+    expect((await service.status()).maintenance).toEqual({
+      title: 'ongoing',
+      description: null,
+      since,
+    });
+    await service.setMaintenance('strava', 'Strava ne répond plus');
+    expect(repository.upsert).toHaveBeenCalledWith(
+      {
+        key: 'maintenance',
+        value: { title: 'strava', description: 'Strava ne répond plus', since },
+      },
+      ['key'],
+    );
+    await service.clearMaintenance();
+    expect(repository.delete).toHaveBeenCalledWith({ key: 'maintenance' });
+  });
+
+  it('leaves the banner out of the settings', async () => {
+    const { service } = setup([
+      {
+        key: 'maintenance',
+        value: { title: 'ongoing', description: null, since: 'x' },
+        updatedAt: new Date(),
+      },
+    ]);
+    expect((await service.list()).map(({ key }) => key)).not.toContain(
+      'maintenance',
+    );
+    await expect(service.set('maintenance', true)).rejects.toMatchObject({
+      response: { code: 'NOT_FOUND' },
+    });
   });
 });

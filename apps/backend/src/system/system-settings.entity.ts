@@ -1,7 +1,7 @@
 import type { MaintenanceTitle } from '@kilotrace/shared';
 import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
-/** Switches of the whole site, set from the back office: a single row. */
+/** The maintenance banner, set from the back office: a single row. The other switches are settings (`app_settings`). */
 @Entity('system_settings')
 export class SystemSettings {
   @PrimaryColumn({
@@ -9,13 +9,6 @@ export class SystemSettings {
     primaryKeyConstraintName: 'PK_system_settings',
   })
   id!: number;
-
-  @Column({ name: 'signups_enabled', type: 'boolean', default: true })
-  signupsEnabled!: boolean;
-
-  /** Tiles, stations and pinned badges shown on the profiles to other users. */
-  @Column({ name: 'profile_showcase_enabled', type: 'boolean', default: true })
-  profileShowcaseEnabled!: boolean;
 
   /** Null while no banner is shown. */
   @Column({

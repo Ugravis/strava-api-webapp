@@ -19,7 +19,7 @@ import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { adminApi } from "@/lib/admin/api";
 import { formatBytes, formatDateTime } from "@/lib/admin/format";
 import { getAdminTranslations } from "@/lib/admin/messages";
-import { clearMaintenance, deleteOrphans, setMaintenance, setShowcase, setSignups } from "./actions";
+import { clearMaintenance, deleteOrphans, setAppSetting, setMaintenance } from "./actions";
 import { SiteSwitch, type SiteSwitchTexts } from "./site-switch";
 import { DatabaseTable } from "./database-table";
 import { HeaviestTable, OrphansTable } from "./uploads-tables";
@@ -103,7 +103,7 @@ function MaintenanceFormDialog({ maintenance }: { maintenance: MaintenanceBanner
 }
 
 /** Switches of the whole site, each asked first both ways. */
-export function SwitchesCard({ status, can }: { status: SystemStatusResponse; can: (permission: "system.signups" | "system.showcase") => boolean }) {
+export function SwitchesCard({ status, canEdit }: { status: SystemStatusResponse; canEdit: boolean }) {
   const t = getAdminTranslations("system.switches");
   const cancel = getAdminTranslations("common")("cancel");
   const texts = (key: "signups" | "showcase"): SiteSwitchTexts => ({
@@ -122,14 +122,14 @@ export function SwitchesCard({ status, can }: { status: SystemStatusResponse; ca
       <CardContent className="flex flex-col divide-y">
         <SiteSwitch
           checked={status.signupsEnabled}
-          action={setSignups.bind(null, !status.signupsEnabled)}
-          canEdit={can("system.signups")}
+          action={setAppSetting.bind(null, "signupsEnabled", !status.signupsEnabled)}
+          canEdit={canEdit}
           texts={texts("signups")}
         />
         <SiteSwitch
           checked={status.profileShowcaseEnabled}
-          action={setShowcase.bind(null, !status.profileShowcaseEnabled)}
-          canEdit={can("system.showcase")}
+          action={setAppSetting.bind(null, "profileShowcaseEnabled", !status.profileShowcaseEnabled)}
+          canEdit={canEdit}
           texts={texts("showcase")}
         />
       </CardContent>

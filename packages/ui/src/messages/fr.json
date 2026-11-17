@@ -275,7 +275,7 @@
     "NOT_FOUND": "Introuvable.",
     "PRIVATE_PROFILE": "Ce profil est privé.",
     "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
-    "PROFILE_BADGES_FULL": "Vous avez déjà épinglé 5 badges.",
+    "PROFILE_BADGES_FULL": "Vous avez déjà épinglé le nombre maximum de badges.",
     "CANNOT_LIKE_SELF": "Vous ne pouvez pas aimer votre propre profil.",
     "SIGNUPS_DISABLED": "Les inscriptions sont fermées pour le moment.",
     "CANNOT_REPORT_SELF": "Vous ne pouvez pas vous signaler vous-même.",
@@ -826,7 +826,7 @@
       "addToProfile": "Afficher sur le profil",
       "removeFromProfile": "Retirer du profil",
       "profileError": "Impossible de modifier votre profil pour le moment.",
-      "profileFull": "Vous avez déjà épinglé 5 badges : retirez-en un de votre profil pour en épingler un autre."
+      "profileFull": "Vous avez déjà épinglé le nombre maximum de badges : retirez-en un de votre profil pour en épingler un autre."
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",

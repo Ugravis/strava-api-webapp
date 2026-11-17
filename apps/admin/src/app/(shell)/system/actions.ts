@@ -1,7 +1,8 @@
 "use server";
 
 import { MAINTENANCE_TITLES, type MaintenanceTitle } from "@kilotrace/shared";
-import type { SetMaintenanceRequest, SetShowcaseRequest, SetSignupsRequest } from "@kilotrace/shared/admin";
+import type { AppSettingKey, SetAppSettingRequest } from "@kilotrace/shared";
+import type { SetMaintenanceRequest } from "@kilotrace/shared/admin";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { reasonOf, runAdminAction } from "@/lib/admin/actions";
 
@@ -23,14 +24,13 @@ export async function clearMaintenance(): Promise<ActionResult> {
   return runAdminAction("/system/maintenance", "DELETE");
 }
 
-export async function setSignups(enabled: boolean): Promise<ActionResult> {
-  const body: SetSignupsRequest = { enabled };
-  return runAdminAction("/system/signups", "PUT", body);
+export async function setAppSetting(key: AppSettingKey, value: SetAppSettingRequest["value"]): Promise<ActionResult> {
+  const body: SetAppSettingRequest = { value };
+  return runAdminAction(`/system/settings/${key}`, "PUT", body);
 }
 
-export async function setShowcase(enabled: boolean): Promise<ActionResult> {
-  const body: SetShowcaseRequest = { enabled };
-  return runAdminAction("/system/showcase", "PUT", body);
+export async function resetAppSetting(key: AppSettingKey): Promise<ActionResult> {
+  return runAdminAction(`/system/settings/${key}`, "DELETE");
 }
 
 export async function deleteOrphans(_: ActionResult | null, formData: FormData): Promise<ActionResult> {

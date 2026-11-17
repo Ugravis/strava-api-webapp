@@ -1,5 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import profilesConfig, { type ProfilesConfig } from '../config/profiles.config';
+import { Injectable } from '@nestjs/common';
 import {
   DistancesService,
   type ProfileBadge,
@@ -32,19 +31,15 @@ const figuresOf = (level: StoredLevelMetrics): TileFigures => ({
 @Injectable()
 export class ProfileShowcaseService {
   constructor(
-    @Inject(profilesConfig.KEY) private readonly config: ProfilesConfig,
     private readonly distances: DistancesService,
     private readonly userTiles: UserTilesService,
     private readonly stations: StationsService,
     private readonly system: SystemSettingsService,
   ) {}
 
-  /** Off by the environment, or from the maintenance page of the back office. */
+  /** Set from the maintenance page of the back office, its default by the environment. */
   async enabled(): Promise<boolean> {
-    return (
-      this.config.showcaseEnabled &&
-      (await this.system.status()).profileShowcaseEnabled
-    );
+    return (await this.system.status()).profileShowcaseEnabled;
   }
 
   /** Null when showcases are disabled. */

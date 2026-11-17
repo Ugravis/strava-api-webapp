@@ -7,16 +7,6 @@ export interface SetMaintenanceRequest {
   description: string | null;
 }
 
-/** `PUT /api/admin/system/signups`: the kill switch of the sign-ups. */
-export interface SetSignupsRequest {
-  enabled: boolean;
-}
-
-/** `PUT /api/admin/system/showcase`: the second part of the profiles, shown or not. */
-export interface SetShowcaseRequest {
-  enabled: boolean;
-}
-
 /** A stored file uploaded by a user. */
 export interface AdminUploadFile {
   key: string;

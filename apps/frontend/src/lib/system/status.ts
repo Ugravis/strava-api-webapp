@@ -10,6 +10,12 @@ export async function signupsEnabled(): Promise<boolean> {
   return !result?.ok || result.data.signupsEnabled;
 }
 
+/** False while the back office has turned off the email sign-in; on when the API cannot tell. */
+export async function emailSignInEnabled(): Promise<boolean> {
+  const result = await status();
+  return !result?.ok || result.data.emailSignInEnabled;
+}
+
 /** False while the back office has turned off the showcase of the profiles; on when the API cannot tell. */
 export async function profileShowcaseEnabled(): Promise<boolean> {
   const result = await status();

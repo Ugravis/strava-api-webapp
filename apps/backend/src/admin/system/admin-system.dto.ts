@@ -3,13 +3,7 @@ import {
   MAINTENANCE_TITLES,
   type MaintenanceTitle,
 } from '@kilotrace/shared';
-import {
-  IsBoolean,
-  IsIn,
-  IsString,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { Allow, IsIn, IsString, MaxLength, ValidateIf } from 'class-validator';
 import { TrimToNull } from '../../common/transformers';
 
 export class SetMaintenanceDto {
@@ -23,12 +17,8 @@ export class SetMaintenanceDto {
   description!: string | null;
 }
 
-export class SetSignupsDto {
-  @IsBoolean()
-  enabled!: boolean;
-}
-
-export class SetShowcaseDto {
-  @IsBoolean()
-  enabled!: boolean;
+/** Checked against the catalog of the settings by the service. */
+export class SetAppSettingDto {
+  @Allow()
+  value!: boolean | number | null;
 }

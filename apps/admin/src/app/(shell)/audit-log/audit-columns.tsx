@@ -51,7 +51,9 @@ import {
   UserXIcon,
   ZapIcon,
   ImageIcon,
+  RotateCcwIcon,
   SendIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -143,6 +145,8 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   "system.maintenance.clear": <MegaphoneOffIcon />,
   "system.signups": <UserLockIcon />,
   "system.showcase": <IdCardIcon />,
+  "system.settings.set": <SlidersHorizontalIcon />,
+  "system.settings.reset": <RotateCcwIcon />,
   "system.uploads.orphans.delete": <FileXIcon />,
 };
 

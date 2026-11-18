@@ -5,7 +5,7 @@ import type { AdminMapVersion } from "@kilotrace/shared/admin";
 import { Map as MapLibreMap, NavigationControl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type SplitPanelMode, useSplitPanel } from "@kilotrace/ui/components/split-panel";
+import { useSplitPanel, useSplitPanelPageMode } from "@kilotrace/ui/components/split-panel";
 import { countryName } from "@kilotrace/ui/lib/countries/country-format";
 import { setCountriesVisible, setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { BASE_STYLE_URL, DEFAULT_VIEW, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
@@ -74,6 +74,8 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     [serverVersions, edits, everyDot],
   );
   const { open, setTitle, isOpen, activeId } = useSplitPanel();
+  // The detail floats over the map until switched beside it here, whatever the mode kept on the other pages.
+  useSplitPanelPageMode("overlay");
   const selectedId = isOpen ? activeId : null;
 
   // Read by the handlers of the map, created once with it.
@@ -84,14 +86,6 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   /** The station just picked on the map: unlike a station reached otherwise, the camera stays. */
   const picked = useRef<string | null>(null);
   const openRef = useRef<(id: string, name?: string | null) => void>(() => {});
-  /** No detail opened since the page loaded: the first one floats over the map, whatever the mode kept on the other pages. */
-  const firstOpen = useRef(true);
-  /** The mode of the next detail: floating the first time, the one kept afterwards. */
-  const nextMode = useCallback((): SplitPanelMode | undefined => {
-    const first = firstOpen.current;
-    firstOpen.current = false;
-    return first ? "overlay" : undefined;
-  }, []);
   /** The bounds of the region shown, framed again by its « Centrer sur la carte ». */
   const region = useRef<[number, number, number, number] | null>(null);
 
@@ -112,17 +106,17 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
   }, []);
 
   const openRegion = useCallback(
-    (code: string) => open(<RegionRowPanel code={code} load={loadRegion} onCenter={frameRegion} />, { id: code, title: countryName(code, "fr"), mode: nextMode() }),
-    [open, frameRegion, nextMode],
+    (code: string) => open(<RegionRowPanel code={code} load={loadRegion} onCenter={frameRegion} />, { id: code, title: countryName(code, "fr") }),
+    [open, frameRegion],
   );
 
   const openStation = useCallback(
     (id: string, name?: string | null) => {
       const panel = { open: (next: string) => openRef.current(next) };
-      open(<StationRowPanel id={id} rights={rights} panel={panel} onCenter={() => center(true)} />, { id, title: name ?? "Gare", mode: nextMode() });
+      open(<StationRowPanel id={id} rights={rights} panel={panel} onCenter={() => center(true)} />, { id, title: name ?? "Gare" });
       if (name === undefined) locateStation(id).then((station) => station && setTitle(id, station.name ?? "Sans nom"));
     },
-    [open, setTitle, rights, center, nextMode],
+    [open, setTitle, rights, center],
   );
   useLayoutEffect(() => {
     state.current = { palette, versions, everyDot };
@@ -245,10 +239,7 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
 
   // A shared link (`?row=`): the station or the region opened on arrival.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("row");
-    // A link naming its mode (`?panel=`) opens in it.
-    if (params.has("panel")) firstOpen.current = false;
+    const id = new URLSearchParams(window.location.search).get("row");
     if (id && (/^\d+$/.test(id) || isRegion(id))) openRef.current(id);
   }, []);
 

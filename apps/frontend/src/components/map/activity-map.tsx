@@ -252,7 +252,7 @@ export function ActivityMap({
       if (event.originalEvent)
         map.getContainer().querySelector(".maplibregl-compact-show")?.classList.remove("maplibregl-compact-show");
     });
-    // Added after the credits: MapLibre puts it at their right. Not a `maplibregl-ctrl`, whose
+    // At the right of the credits (see `globals.css`). Not a `maplibregl-ctrl`, whose
     // stylesheet would turn the hover of its button translucent.
     const controlElement = document.createElement("div");
     controlElement.className = "pointer-events-auto flex";

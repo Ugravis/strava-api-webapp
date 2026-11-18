@@ -314,13 +314,17 @@ const thinDots = (map: MapLibreMap) => isDense(map) && !forcedDots.has(map);
 /** Opacity of the dots of the visited stations: fading in from their zoom on a dense map. */
 const dotsOpacity = (map: MapLibreMap) => (thinDots(map) ? fadeIn(dotsMinZoom(map), 1) : 1);
 
-/** Opacity of the grey dots: fading in from where the backend serves them, like every layer of the map. */
+/**
+ * Opacity of the grey dots: fading in from `DOTS_MIN_ZOOM`, like every layer
+ * of the map. The discreet dots bring the visited ones sooner only: the grey
+ * ones show from the same zoom either way.
+ */
 const unvisitedOpacity = (map: MapLibreMap): ExpressionSpecification | number =>
   thinDots(map) || !everyStation.has(map)
-    ? ["interpolate", ["linear"], ["zoom"], dotsMinZoom(map), 0, dotsMinZoom(map) + FADE_ZOOMS, 0.8, 10, 0.9, 14, 0.95]
+    ? ["interpolate", ["linear"], ["zoom"], DOTS_MIN_ZOOM, 0, DOTS_MIN_ZOOM + FADE_ZOOMS, 0.8, 10, 0.9, 14, 0.95]
     : ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 0.95];
-const unvisitedStrokeOpacity = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? fadeIn(dotsMinZoom(map), 1) : 1);
-const unvisitedMinZoom = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? dotsMinZoom(map) : 0);
+const unvisitedStrokeOpacity = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? fadeIn(DOTS_MIN_ZOOM, 1) : 1);
+const unvisitedMinZoom = (map: MapLibreMap) => (thinDots(map) || !everyStation.has(map) ? DOTS_MIN_ZOOM : 0);
 
 /** How the dots of each map were drawn when its layers were last set: thinned out, discreet. */
 const dense = new WeakMap<MapLibreMap, string>();

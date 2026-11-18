@@ -21,17 +21,17 @@ export function ReleaseNoteCard({ note, footer, framed = false }: { note: Public
   const Description = framed ? DialogDescription : "p";
   return (
     <>
-      <ReleaseNoteCover url={note.bannerUrl} className="border-b" />
-      <div className="flex flex-col gap-2 border-b px-5 pt-5 pb-4">
+      <ReleaseNoteCover url={note.bannerUrl} className="shrink-0 border-b" />
+      <div className="flex shrink-0 flex-col gap-2 border-b px-5 pt-5 pb-4">
         <ReleaseNoteMeta note={note} className={framed ? "pr-8" : undefined} />
         <Title className="text-lg leading-snug font-semibold">{title}</Title>
         <Description className={note.summary ? "text-sm text-muted-foreground" : "sr-only"}>{note.summary || title}</Description>
       </div>
-      <div className="max-h-[min(60vh,32rem)] overflow-y-auto overscroll-contain px-5 py-4 [scrollbar-width:thin]">
+      <div className="max-h-[min(60vh,32rem)] min-h-0 overflow-y-auto overscroll-contain px-5 py-4 [scrollbar-width:thin]">
         {/* The team part, always last, takes the whole width of the frame. */}
         <ReleaseNoteSections note={note} teamClassName="-mx-5 rounded-none px-5 py-4" />
       </div>
-      <div className="flex flex-col-reverse items-center gap-2 border-t bg-muted/50 px-5 py-3 sm:flex-row sm:justify-between">{footer}</div>
+      <div className="flex shrink-0 flex-col-reverse items-center gap-2 border-t bg-muted/50 px-5 py-3 sm:flex-row sm:justify-between">{footer}</div>
     </>
   );
 }
@@ -74,13 +74,13 @@ export function ReleaseNoteFooter({
   return (
     <>
       <Pager index={index} count={count} onChange={onIndexChange} />
-      <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+      <div className="flex w-full gap-2 sm:w-auto">
         {historyHref && (
-          <Button variant="ghost" nativeButton={false} render={<Link href={historyHref} onClick={onDone} />}>
+          <Button variant="ghost" className="flex-1 sm:flex-none" nativeButton={false} render={<Link href={historyHref} onClick={onDone} />}>
             {t("history")}
           </Button>
         )}
-        <Button ref={doneRef} onClick={onDone}>
+        <Button ref={doneRef} className="flex-1 sm:flex-none" onClick={onDone}>
           {t("done")}
         </Button>
       </div>
@@ -110,7 +110,7 @@ export function ReleaseNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-lg" initialFocus={doneRef}>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg" initialFocus={doneRef}>
         <ReleaseNoteCard
           framed
           note={note}

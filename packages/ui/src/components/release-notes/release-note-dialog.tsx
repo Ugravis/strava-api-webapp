@@ -74,13 +74,13 @@ export function ReleaseNoteFooter({
   return (
     <>
       <Pager index={index} count={count} onChange={onIndexChange} />
-      <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+      <div className="flex w-full gap-2 sm:w-auto">
         {historyHref && (
-          <Button variant="ghost" nativeButton={false} render={<Link href={historyHref} onClick={onDone} />}>
+          <Button variant="ghost" className="flex-1 sm:flex-none" nativeButton={false} render={<Link href={historyHref} onClick={onDone} />}>
             {t("history")}
           </Button>
         )}
-        <Button ref={doneRef} onClick={onDone}>
+        <Button ref={doneRef} className="flex-1 sm:flex-none" onClick={onDone}>
           {t("done")}
         </Button>
       </div>

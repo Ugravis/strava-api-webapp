@@ -169,7 +169,13 @@ function SettingSwitch({
         {label}
         {count !== undefined && <span className="text-muted-foreground tabular-nums">({format.number(count)})</span>}
       </label>
-      <Switch id={id} size="sm" checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch
+        id={id}
+        size="sm"
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        className="data-checked:bg-blue-600 dark:data-checked:bg-blue-500 [&_[data-slot=switch-thumb]]:data-checked:bg-white"
+      />
     </div>
   );
 }

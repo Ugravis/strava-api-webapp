@@ -1,11 +1,12 @@
 "use client";
 
 import { type PublicReleaseNote, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection, TEAM_RELEASE_NOTE_SECTION } from "@kilotrace/shared";
-import { CirclePlusIcon, InfoIcon, type LucideIcon, ShieldIcon, TrendingUpIcon, WrenchIcon } from "lucide-react";
+import { CirclePlusIcon, InfoIcon, LockIcon, type LucideIcon, ShieldIcon, TrendingUpIcon, WrenchIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Fragment } from "react";
 import { Markdown } from "@kilotrace/ui/components/markdown/markdown";
 import { Separator } from "@kilotrace/ui/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
 import { cn } from "@kilotrace/ui/lib/utils";
 
 /** The look of each part of a note. */
@@ -38,8 +39,12 @@ export function ReleaseNoteMeta({ note, className }: { note: Pick<PublicReleaseN
   );
 }
 
-/** The parts of a note that have something to say, each under its icon and title, a line between them. */
-export function ReleaseNoteSections({ note }: { note: Pick<PublicReleaseNote, "sections"> }) {
+/**
+ * The parts of a note that have something to say, each under its icon and
+ * title, a line between them. `teamClassName` stretches the ground of the team
+ * part to the edges of its frame, its text kept in line with the others.
+ */
+export function ReleaseNoteSections({ note, teamClassName }: { note: Pick<PublicReleaseNote, "sections">; teamClassName?: string }) {
   const t = useTranslations("releaseNotes.sections");
   const parts = RELEASE_NOTE_SECTIONS.filter((section) => note.sections[section]?.trim());
   if (parts.length === 0) return null;
@@ -55,7 +60,7 @@ export function ReleaseNoteSections({ note }: { note: Pick<PublicReleaseNote, "s
             <section
               className={cn(
                 "flex flex-col gap-2",
-                team && "rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-50",
+                team && cn("-mx-3 rounded-lg bg-amber-50 px-3 py-3 text-amber-950 dark:bg-amber-400/10 dark:text-amber-50", teamClassName),
               )}
             >
               <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -63,7 +68,18 @@ export function ReleaseNoteSections({ note }: { note: Pick<PublicReleaseNote, "s
                   <Icon className="size-3.5" aria-hidden />
                 </span>
                 {t(section)}
-                {team && <span className="ml-auto text-xs font-normal text-amber-800/80 dark:text-amber-200/80">{t("teamHint")}</span>}
+                {team && (
+                  <Tooltip>
+                    <TooltipTrigger
+                      delay={200}
+                      aria-label={t("teamHint")}
+                      render={<button type="button" className="ml-auto rounded-sm text-amber-700 outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 dark:text-amber-300" />}
+                    >
+                      <LockIcon className="size-3.5" aria-hidden />
+                    </TooltipTrigger>
+                    <TooltipContent>{t("teamHint")}</TooltipContent>
+                  </Tooltip>
+                )}
               </h3>
               <div className={cn("text-sm", team ? "text-amber-950/90 dark:text-amber-50/90" : "text-foreground/90")}>
                 <Markdown source={note.sections[section]!} highlight />

@@ -156,9 +156,15 @@
 .map-with-panel .maplibregl-ctrl-top-right .maplibregl-ctrl {
   margin: 0.75rem 0.75rem 0 0;
 }
-/* In a row, centered on each other: the first added, the credits, on the left of the next ones. */
+/*
+ * In a row, centered on each other: the credits on the left of the other
+ * controls, whatever order MapLibre inserted them in.
+ */
 .map-with-panel .maplibregl-ctrl-bottom-right {
-  @apply flex flex-row-reverse items-center;
+  @apply flex flex-row items-center justify-end;
+}
+.map-with-panel .maplibregl-ctrl-bottom-right > .maplibregl-ctrl-attrib {
+  order: -1;
 }
 .map-with-panel .maplibregl-ctrl-bottom-right > *,
 .map-with-panel .maplibregl-ctrl-bottom-right > .maplibregl-ctrl-attrib.maplibregl-compact {

@@ -13,6 +13,8 @@ export interface SplitPanelOptions {
   id?: string;
   /** Above the content, in the header of the panel. */
   title?: string;
+  /** Opens in this mode instead of the one kept, without changing the one kept (`localStorage`). */
+  mode?: SplitPanelMode;
 }
 
 interface SplitPanelContextValue {
@@ -112,7 +114,7 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
       return { entries, at: entries.length - 1 };
     });
     setFolded(false);
-    writeParams({ [ROW_PARAM]: options.id ?? null, [MODE_PARAM]: modeRef.current });
+    writeParams({ [ROW_PARAM]: options.id ?? null, [MODE_PARAM]: options.mode ?? modeRef.current });
   }, []);
   const open = useCallback((content: ReactNode, options: SplitPanelOptions = {}) => attempt(() => show(content, options, false)), [attempt, show]);
   const setTitle = useCallback(

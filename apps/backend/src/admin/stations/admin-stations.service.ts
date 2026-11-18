@@ -164,8 +164,10 @@ export class AdminStationsService {
       name: string | null;
       lon: number;
       lat: number;
+      footprint: [number, number][][][] | null;
     }[] = await this.places.query(
-      `SELECT p.id, COALESCE(p.custom_name, p.name) AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat
+      `SELECT p.id, COALESCE(p.custom_name, p.name) AS name, ST_X(p.geom) AS lon, ST_Y(p.geom) AS lat,
+         ST_AsGeoJSON(p.footprint, 6)::json->'coordinates' AS footprint
          FROM places p
          WHERE p.id = $1 OR p.id IN (
            SELECT CASE WHEN l.station_a = $1 THEN l.station_b ELSE l.station_a END

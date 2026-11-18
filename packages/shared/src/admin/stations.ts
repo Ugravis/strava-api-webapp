@@ -70,7 +70,14 @@ export interface AdminStationNeighbor {
  * map draws them.
  */
 export interface AdminStationRailway {
-  stations: { id: number; name: string | null; lon: number; lat: number }[];
+  stations: {
+    id: number;
+    name: string | null;
+    lon: number;
+    lat: number;
+    /** Polygons of its footprint (GeoJSON MultiPolygon coordinates), null without one. */
+    footprint: [number, number][][][] | null;
+  }[];
   links: { id: number; stations: [number, number]; lengthM: number; coords: [number, number][] }[];
   ties: { linkIds: number[]; coords: [number, number][] }[];
 }

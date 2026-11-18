@@ -2,7 +2,8 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { AdminStationRailway } from "@kilotrace/shared/admin";
-import { LngLatBounds, Map as MapLibreMap, NavigationControl } from "maplibre-gl";
+import type { FeatureCollection, MultiPolygon } from "geojson";
+import { type ExpressionSpecification, LngLatBounds, Map as MapLibreMap, NavigationControl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
@@ -19,6 +20,40 @@ import { loadStationRailway } from "./actions";
 const PADDING = { top: 56, bottom: 24, left: 32, right: 56 };
 /** Deepest zoom of the frame: a station alone, or its neighbors at a few metres, shown with its tracks around. */
 const MAX_ZOOM = 15;
+/** Source and layers of the footprints of the stations framed. */
+const FOOTPRINTS = { source: "railway-footprints", fill: "railway-footprints-fill", line: "railway-footprints-line" } as const;
+
+/** The footprints of the stations framed, the one shown flagged `selected`. */
+function footprintData(railway: AdminStationRailway, id: string): FeatureCollection<MultiPolygon, { selected: boolean }> {
+  return {
+    type: "FeatureCollection",
+    features: railway.stations.flatMap((station) =>
+      station.footprint
+        ? [{ type: "Feature", properties: { selected: String(station.id) === id }, geometry: { type: "MultiPolygon", coordinates: station.footprint } }]
+        : [],
+    ),
+  };
+}
+
+/** The footprints below the stations, as on the map of the dataset: the one of the station shown darker and outlined in white. */
+function addFootprints(map: MapLibreMap, railway: AdminStationRailway, id: string, color: string, before: string | undefined) {
+  map.addSource(FOOTPRINTS.source, { type: "geojson", data: footprintData(railway, id) });
+  const selected: ExpressionSpecification = ["get", "selected"];
+  map.addLayer(
+    { id: FOOTPRINTS.fill, type: "fill", source: FOOTPRINTS.source, paint: { "fill-color": color, "fill-opacity": ["case", selected, 0.35, 0.15] } },
+    before,
+  );
+  map.addLayer(
+    {
+      id: FOOTPRINTS.line,
+      type: "line",
+      source: FOOTPRINTS.source,
+      layout: { "line-join": "round" },
+      paint: { "line-color": ["case", selected, "#ffffff", color], "line-width": ["case", selected, 2, 1.25], "line-opacity": 0.9 },
+    },
+    before,
+  );
+}
 
 /**
  * The banner of a station: the station and those the railway links it to,
@@ -57,6 +92,9 @@ export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: str
     if (!railway || !container.current) return;
     const bounds = new LngLatBounds();
     for (const { lon, lat } of railway.stations) bounds.extend([lon, lat]);
+    // The footprint of the station shown whole in the frame.
+    for (const polygon of railway.stations.find((one) => String(one.id) === id)?.footprint ?? [])
+      for (const ring of polygon) for (const point of ring) bounds.extend(point);
     const map = new MapLibreMap({
       container: container.current,
       bounds,
@@ -78,6 +116,7 @@ export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: str
       const firstLabel = map.getStyle().layers.find((layer) => layer.type === "symbol")?.id;
       // Every country in its colour, as on the map of the dataset.
       setVisitedCountries(map, { codes: [], shapesVersion: railway.countries }, palette, ({ shapesVersion }) => adminTilesUrl("countries", shapesVersion));
+      addFootprints(map, railway, id, palette.station, firstLabel);
       addStationLayers(map, stationData(railway), selected, null, palette, true, false, firstLabel);
     });
     map.on("click", (event) => {

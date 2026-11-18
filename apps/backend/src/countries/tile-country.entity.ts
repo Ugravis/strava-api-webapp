@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
 import { Country } from './country.entity';
 
 /**
@@ -14,6 +21,8 @@ export class TileCountry {
   @PrimaryColumn({ type: 'integer' })
   y!: number;
 
+  /** Indexed apart: the primary key starts with the tile, not the country. */
+  @Index('IDX_tile_countries_country_code')
   @PrimaryColumn({ name: 'country_code', type: 'char', length: 2 })
   countryCode!: string;
 

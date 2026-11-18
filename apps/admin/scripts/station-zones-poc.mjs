@@ -71,6 +71,8 @@ const TRACK_ALONG = 6;
 const TRACK_MARGIN = 12;
 /** A platform is kept when a passenger track of its level runs this close to it (m). */
 const PLATFORM_TRACK = 15;
+/** Plans footprint: spikes of the platforms and tracks narrower than twice this are trimmed (m). */
+const SPIKE_OPENING = 6;
 /** Tracks looked at around a station (m): its platforms reach that far at most. */
 const TRACK_RADIUS = 1000;
 /** Plans footprint: gaps narrower than twice this are closed between the platforms and the buildings... */
@@ -454,9 +456,11 @@ b AS (
     -- The platforms of each level, the tracks between them filled: a closing with mitre
     -- joins, which keeps the outer edges along the platforms, their corners square. Every
     -- track running along them is then taken in, TRACK_MARGIN on each side, square ends; then
-    -- every track inside the shape so grown, cut to it: the tails do not grow.
+    -- every track inside the shape so grown, cut to it: the tails do not grow. The square ends
+    -- of tracks fanning out leave spikes at the ends: an opening (mitre joins) trims them.
     ST_Union(ARRAY(
-      SELECT ${alongTracks("g1.shape", "g1.tracks", "g1.shape")}
+      SELECT ST_Buffer(ST_Buffer(${alongTracks("g1.shape", "g1.tracks", "g1.shape")},
+        -${SPIKE_OPENING}, 'join=mitre mitre_limit=5'), ${SPIKE_OPENING}, 'join=mitre mitre_limit=5')
       FROM (
         SELECT l.tracks, ${alongTracks("l.closed", "l.tracks", `ST_Buffer(l.closed, ${TRACK_ALONG}, 'join=mitre mitre_limit=5')`)} AS shape
         FROM (

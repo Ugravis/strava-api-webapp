@@ -24,6 +24,7 @@ import {
   footprintFill,
   footprints,
   type PocDepartment,
+  type PlansSource,
   type Precision,
   type Proposal,
   network,
@@ -34,7 +35,7 @@ import {
 } from "./station-zones-geometry";
 
 /** Built by `scripts/station-zones-poc.mjs`, one file per département. */
-const DEPARTMENTS = ["fr-13", "fr-18", "fr-75"] as const;
+const DEPARTMENTS = ["fr-13", "fr-18", "fr-48", "fr-75"] as const;
 const dataUrl = (key: string) => `/development/station-zones/${key}.json`;
 const VIOLET = "#7c3aed";
 const HATCH = "station-zone-hatch";
@@ -57,6 +58,8 @@ export interface StationZonesLabels {
   zoneArea: string;
   tileArea: string;
   tileCount: string;
+  /** What the Plans footprint is drawn from, when no platform nor building is mapped. */
+  sources_: Record<Exclude<PlansSource, "osm">, string>;
 }
 
 /** Violet diagonal hatching, drawn once into the style. */
@@ -297,6 +300,7 @@ export function StationZonesMap({ labels }: { labels: StationZonesLabels }) {
                     onClick={() => mapRef.current?.flyTo({ center: s.point as [number, number], zoom: 16 })}
                   >
                     <span className="font-medium">{s.name ?? `#${s.id}`}</span>
+                    {s.plansSource !== "osm" && <span className="text-xs text-violet-700 dark:text-violet-300">{labels.sources_[s.plansSource]}</span>}
                     <span className="text-xs text-muted-foreground">
                       {asTiles
                         ? `${f?.tiles ?? 0} ${labels.tileCount}`

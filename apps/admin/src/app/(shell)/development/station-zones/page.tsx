@@ -36,6 +36,7 @@ export default async function StationZonesPocPage() {
           zoneArea: z("zoneArea"),
           tileArea: z("tileArea"),
           tileCount: z("tileCount"),
+          sources_: { rails: z("plansSources.rails"), point: z("plansSources.point") },
         }}
       />
     </>

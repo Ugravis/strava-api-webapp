@@ -5,7 +5,7 @@
  *
  * Usage: node apps/admin/scripts/station-zones-poc.mjs [<ISO 3166-2 code> [<overpass.json> <out.json>]]
  *
- * - Without arguments, the three départements of the page (DEPARTMENTS).
+ * - Without arguments, every département of the page (DEPARTMENTS).
  * - The code: FR-13, FR-18, FR-75C (Paris is a collectivité in OSM)...
  * - overpass.json: answer of overpassQuery(code) (`out geom`); fetched and
  *   written there when the file does not exist yet. By default kept in
@@ -95,7 +95,7 @@ const OVERPASS_CACHE = join(HERE, ".station-zones-cache");
 /** Files read by the page (not versioned). */
 const OUT_DIR = join(HERE, "../public/development/station-zones");
 /** Départements of the page: ISO 3166-2 code and the name of its file. */
-const DEPARTMENTS = { "FR-13": "fr-13", "FR-18": "fr-18", "FR-75C": "fr-75" };
+const DEPARTMENTS = { "FR-13": "fr-13", "FR-18": "fr-18", "FR-48": "fr-48", "FR-75C": "fr-75" };
 
 const [code, overpassArg, outArg] = process.argv.slice(2);
 if (!code) {
@@ -444,6 +444,15 @@ const platformAreas = (geojson) => `ST_Union(ARRAY(
 const alongTracks = (shape, tracks, within) => `ST_Union(${shape}, coalesce(ST_Buffer(
         ST_CollectionExtract(ST_Intersection(${tracks}, ${within}), 2),
         ${TRACK_MARGIN}, 'endcap=flat join=mitre mitre_limit=5'), ${shape}))`;
+/** The Plans finish: gaps closed with square corners, grown by PLANS_PADDING. */
+const finish = (g) => `ST_Buffer(ST_Buffer(${g}, ${PLANS_CLOSING}, 'join=mitre mitre_limit=5'), ${PLANS_PADDING - PLANS_CLOSING}, 'join=mitre mitre_limit=5')`;
+/** A shape without holes nor crumbs (parts under a tenth of the largest one). */
+const solid = (g) => `(
+    SELECT ST_Collect(ST_MakePolygon(ST_ExteriorRing(part.geom)))
+    FROM (SELECT ${g} AS blob) AS x
+    CROSS JOIN LATERAL ST_Dump(ST_SimplifyPreserveTopology(x.blob, 0.5)) AS part
+    WHERE ST_Area(part.geom) >= 0.1 * (SELECT max(ST_Area(y.geom)) FROM ST_Dump(x.blob) AS y)
+  )`;
 const shape = (g) => `json_build_object('shape', ${json(g)}, 'area', round(ST_Area(${g})), 'tiles', ${tilesOf(g)})`;
 
 const shapes = psqlJson(`
@@ -451,6 +460,8 @@ WITH s(id, features, buildings, surface, surface_tracks, below, below_tracks, ra
 b AS (
   SELECT s.id, ${L93("s.pt")} AS pt,
     CASE WHEN s.rails IS NULL THEN NULL ELSE ${L93("s.rails")} END AS rails,
+    -- Every track around the station: those of the underground platforms.
+    CASE WHEN s.below_tracks IS NULL THEN NULL ELSE ${L93("s.below_tracks")} END AS tracks,
     ${L93("s.features")} AS features,
     ST_Union(ARRAY(SELECT ST_MakeValid(d.geom) FROM ST_Dump(${L93("s.buildings")}) AS d WHERE ST_Dimension(d.geom) = 2)) AS buildings,
     -- The platforms of each level, the tracks between them filled: a closing with mitre
@@ -483,20 +494,23 @@ base AS MATERIALIZED (
       SELECT CASE ST_Dimension(d.geom) WHEN 2 THEN ST_MakeValid(d.geom) WHEN 1 THEN ST_Buffer(d.geom, 2, 'quad_segs=8') ELSE ST_Buffer(d.geom, 4, 'quad_segs=8') END
       FROM ST_Dump(ST_Collect(b.features, b.pt)) AS d
     )), ${CLOSING}, 'quad_segs=8'), -${CLOSING}, 'quad_segs=8')) AS fine,
-    -- Plans: the blocks of platforms joined to the buildings, straight edges kept (mitre
-    -- joins), grown a little; holes filled and crumbs dropped in plans_shape.
-    -- Nothing mapped: a small square on the point.
-    ST_Buffer(ST_Buffer(
-      coalesce(ST_Union(b.blocks, b.buildings), b.blocks, b.buildings, ST_Buffer(b.pt, 15, 'endcap=square')),
-      ${PLANS_CLOSING}, 'join=mitre mitre_limit=5'), ${PLANS_PADDING - PLANS_CLOSING}, 'join=mitre mitre_limit=5') AS blob
+    -- The tracks walked RAIL_REACH metres on each side, drawn as the tracks of the Plans
+    -- footprint: TRACK_MARGIN on each side, square ends, then every track inside, spikes trimmed.
+    CASE WHEN b.rails IS NULL THEN NULL ELSE ST_Buffer(ST_Buffer(
+      ${alongTracks("r.walked", "b.tracks", "r.walked")},
+      -${SPIKE_OPENING}, 'join=mitre mitre_limit=5'), ${SPIKE_OPENING}, 'join=mitre mitre_limit=5') END AS rail_block,
+    -- What the Plans footprint is drawn from: the platforms and buildings mapped, else the tracks.
+    CASE WHEN coalesce(b.blocks, b.buildings) IS NOT NULL THEN 'osm' WHEN b.rails IS NOT NULL THEN 'rails' ELSE 'point' END AS source,
+    b.blocks, b.buildings
   FROM b
+  CROSS JOIN LATERAL (SELECT ST_Buffer(b.rails, ${TRACK_MARGIN}, 'endcap=flat join=mitre mitre_limit=5') AS walked) AS r
 ),
-plans_shape AS MATERIALIZED (
-  SELECT base.*, (
-    SELECT ST_Collect(ST_MakePolygon(ST_ExteriorRing(part.geom)))
-    FROM ST_Dump(ST_SimplifyPreserveTopology(base.blob, 0.5)) AS part
-    WHERE ST_Area(part.geom) >= 0.1 * (SELECT max(ST_Area(x.geom)) FROM ST_Dump(base.blob) AS x)
-  ) AS plans
+shapes AS MATERIALIZED (
+  SELECT base.*,
+    -- Plans: the blocks of platforms joined to the buildings; nothing mapped, the tracks;
+    -- no track either, a small square on the point.
+    ${solid(finish("coalesce(ST_Union(blocks, buildings), blocks, buildings, rail_block, ST_Buffer(pt, 15, 'endcap=square'))"))} AS plans,
+    ${solid(finish("coalesce(rail_block, ST_Buffer(pt, 15, 'endcap=square'))"))} AS rails_shape
   FROM base
 ),
 w(r) AS (SELECT generate_series(0, ${WIDEN_MAX}, ${WIDEN_STEP})),
@@ -504,10 +518,10 @@ g AS (
   SELECT base.id, w.r,
     CASE WHEN w.r = 0 THEN hull ELSE ST_Buffer(hull, w.r, 'quad_segs=8') END AS hull,
     CASE WHEN w.r = 0 THEN fine ELSE ST_Buffer(fine, w.r, 'quad_segs=8') END AS fine,
-    CASE WHEN w.r = 0 THEN plans ELSE ST_Buffer(plans, w.r, 'quad_segs=8') END AS plans,
-    -- A zero-width buffer of the tracks is empty: they get one metre at least.
-    ST_Buffer(coalesce(rails, pt), greatest(w.r, 1), 'quad_segs=8') AS rails
-  FROM plans_shape AS base CROSS JOIN w
+    -- Plans and rails widened with square corners, as they are drawn.
+    CASE WHEN w.r = 0 THEN plans ELSE ST_Buffer(plans, w.r, 'join=mitre mitre_limit=5') END AS plans,
+    CASE WHEN w.r = 0 THEN rails_shape ELSE ST_Buffer(rails_shape, w.r, 'join=mitre mitre_limit=5') END AS rails
+  FROM shapes AS base CROSS JOIN w
 ),
 -- Each shape is read three times (outline, area, tiles): computed once.
 u AS MATERIALIZED (
@@ -524,9 +538,11 @@ SELECT json_build_object(
   'plans', json_build_object('osm', ${shape("plans")}, 'both', ${shape("plans_both")})
 ) ORDER BY id, r) FROM u),
   -- Footprints of all the stations merged: overlapping ones are filled once.
-  'footprints', (SELECT json_build_object('hull', ${json("ST_Union(hull)")}, 'fine', ${json("ST_Union(fine)")}, 'plans', ${json("ST_Union(plans)")}) FROM plans_shape)
+  'footprints', (SELECT json_build_object('hull', ${json("ST_Union(hull)")}, 'fine', ${json("ST_Union(fine)")}, 'plans', ${json("ST_Union(plans)")}) FROM shapes),
+  -- What the Plans footprint of each station is drawn from.
+  'sources', (SELECT json_object_agg(id, source) FROM shapes)
 );`);
-const { zones, footprints } = shapes;
+const { zones, footprints, sources } = shapes;
 
 // --- Département boundary, for the map only ---------------------------------------------------
 const boundary = elements.find((e) => e.type === "relation" && tags(e).boundary === "administrative");
@@ -571,10 +587,13 @@ writeFileSync(
       tileArea: s.tileArea,
       rails: s.rails,
       osmParts: s.features.geometries.length,
+      plansSource: sources[s.id],
     })),
     zones,
     footprints,
     network,
   }),
 );
+const fromRails = out.filter((s) => sources[s.id] !== "osm").map((s) => `${s.name} (${sources[s.id]})`);
+if (fromRails.length) console.log(`  Plans footprint without platforms nor buildings: ${fromRails.join(", ")}`);
 console.log(`${code} ${border.name}: ${out.length} stations, ${out.filter((s) => s.rails.length).length} with tracks, ${zones.length} zones`);

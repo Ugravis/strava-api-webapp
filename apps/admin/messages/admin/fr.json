@@ -1126,7 +1126,7 @@
       "stationZones": {
         "title": "Zones des gares",
         "description": "Nouvelles zones d'obtention des gares, à la place du carré z17 du point : emprise OSM de la gare et/ou 100 m de rails de chaque côté, en forme libre ou en carrés z17.",
-        "pageDescription": "Bouches-du-Rhône, Cher et Paris. Violet hachuré : zone d'obtention ; violet plein : polygone de la gare (visuel seulement) ; rails et gares comme sur la carte du site ; orange pointillé : carré z17 initial ; noir pointillé : limite du département.",
+        "pageDescription": "Bouches-du-Rhône, Cher, Lozère et Paris. Violet hachuré : zone d'obtention ; violet plein : polygone de la gare (visuel seulement) ; rails et gares comme sur la carte du site ; orange pointillé : carré z17 initial ; noir pointillé : limite du département.",
         "live": "Ouvrir la carte",
         "liveHint": "Données OSM figées (Overpass), formes calculées par PostGIS : scripts/station-zones-poc.mjs.",
         "proposal": "Proposition",
@@ -1143,6 +1143,10 @@
         "tileArea": "carré",
         "asTiles": "Carrés z17 polygone",
         "tileCount": "carré(s) z17 (1 aujourd'hui)",
+        "plansSources": {
+          "rails": "Sans quai ni bâtiment OSM : polygone des rails",
+          "point": "Sans quai, bâtiment ni rail : carré sur le point"
+        },
         "department": "Département",
         "precision": "Précision de l'emprise",
         "precisions": {

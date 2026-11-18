@@ -13,8 +13,11 @@ export interface PocStation {
   rails: Position[][];
   /** Number of OSM geometries the footprint is made of. */
   osmParts: number;
+  /** What its Plans footprint is drawn from: platforms and buildings, else the tracks, else the point. */
+  plansSource: PlansSource;
 }
 
+export type PlansSource = "osm" | "rails" | "point";
 export type Proposal = "osm" | "rails" | "both";
 /** How the OSM footprint is drawn: its convex hull, an Apple Plans-like blob, or the features themselves. */
 export type Precision = "hull" | "plans" | "fine";

@@ -21,7 +21,7 @@ const hourOf = new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h
 
 /** The frame of the dashboard of the site, its tiles in blue to tell the back office apart. */
 const FRAME =
-  "relative isolate overflow-hidden rounded-2xl bg-linear-to-br from-card via-card to-blue-50 p-5 text-foreground ring-1 ring-blue-200 sm:p-7 dark:to-blue-950/40 dark:ring-blue-900/60";
+  "relative isolate overflow-hidden rounded-2xl bg-linear-to-br from-blue-50 via-card to-blue-50 p-5 text-foreground sm:p-7 dark:from-blue-950/40 dark:to-blue-950/40";
 
 /** The colors of the roles of the team page. */
 const ROLE_PILLS: Record<AdminRole, string> = {

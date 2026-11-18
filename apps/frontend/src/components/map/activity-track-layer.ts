@@ -1,7 +1,7 @@
 import type { FeatureCollection, LineString } from "geojson";
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
-import type { MapPalette } from "./map-style";
+import type { MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 const SOURCE_ID = "activity-track";
 const LAYER_IDS = ["activity-track-casing", "activity-track-line"] as const;

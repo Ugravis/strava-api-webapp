@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
 import { User } from '../users/user.entity';
 
 /**
@@ -7,6 +14,8 @@ import { User } from '../users/user.entity';
  * date by a trigger on it. Masks are signed in PostgreSQL: see `toSignedMask`.
  */
 @Entity('user_tiles')
+/** The holders of a tile, read as its countries are located. */
+@Index('IDX_user_tiles_xy', ['x', 'y'])
 export class UserTile {
   @PrimaryColumn({ name: 'user_id', type: 'uuid' })
   userId!: string;

@@ -1,7 +1,7 @@
 import type { FeatureCollection, Polygon } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { tileCollection, type TileZoom } from "@/lib/tiles/tile-geometry";
-import type { MapPalette } from "./map-style";
+import type { MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 /** The tile under the pointer, a click opens it; the tile shown in the panel. */
 const OUTLINES = {

@@ -7,14 +7,12 @@ export interface SetMaintenanceRequest {
   description: string | null;
 }
 
-/** `PUT /api/admin/system/signups`: the kill switch of the sign-ups. */
-export interface SetSignupsRequest {
-  enabled: boolean;
-}
-
-/** `PUT /api/admin/system/showcase`: the second part of the profiles, shown or not. */
-export interface SetShowcaseRequest {
-  enabled: boolean;
+/** `GET /api/admin/system/overview`: the figures of the maintenance page beside the settings. */
+export interface AdminSystemOverview {
+  /** Accounts on the site, against the cap of the settings. */
+  accounts: number;
+  /** Waiting for the Strava worker: webhook events not processed, and jobs queued or running. */
+  strava: { pendingEvents: number; pendingJobs: number };
 }
 
 /** A stored file uploaded by a user. */
@@ -86,6 +84,11 @@ export interface AdminDatabaseTable {
   totalBytes: number;
   tableBytes: number;
   indexBytes: number;
+  /**
+   * Free space and dead rows of the table and its TOAST: reused by Postgres,
+   * given back to the disk only by a `VACUUM FULL`. Indexes not measured.
+   */
+  freeBytes: number;
   columns: AdminDatabaseColumn[];
   indexes: AdminDatabaseIndex[];
   foreignKeys: AdminDatabaseForeignKey[];

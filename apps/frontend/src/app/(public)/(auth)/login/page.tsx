@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";
+import { EmailSignInGate } from "@/components/auth/email-sign-in-gate";
 import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { LoginForm } from "@/components/auth/login-form";
 import { routes } from "@/config/routes";
@@ -30,9 +31,11 @@ export default function LoginPage() {
       }
     >
       <GoogleSignIn />
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+      <EmailSignInGate>
+        <Suspense>
+          <LoginForm />
+        </Suspense>
+      </EmailSignInGate>
     </AuthCard>
   );
 }

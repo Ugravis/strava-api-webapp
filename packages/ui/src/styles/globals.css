@@ -152,6 +152,25 @@
 .map-with-panel[data-panel="open"] .maplibregl-ctrl-bottom-right {
   right: var(--map-panel-width);
 }
+/* The right controls keep from the edges the gap of the floating panel, which is also their gap from it. */
+.map-with-panel .maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 0.75rem 0.75rem 0 0;
+}
+/*
+ * In a row, centered on each other: the credits on the left of the other
+ * controls, whatever order MapLibre inserted them in.
+ */
+.map-with-panel .maplibregl-ctrl-bottom-right {
+  @apply flex flex-row items-center justify-end;
+}
+.map-with-panel .maplibregl-ctrl-bottom-right > .maplibregl-ctrl-attrib {
+  order: -1;
+}
+.map-with-panel .maplibregl-ctrl-bottom-right > *,
+.map-with-panel .maplibregl-ctrl-bottom-right > .maplibregl-ctrl-attrib.maplibregl-compact {
+  @apply float-none clear-none;
+  margin: 0 0.75rem 0.75rem 0;
+}
 /* The bands cover the bottom of the map: its bottom controls stay above them. */
 .map-with-panel .maplibregl-ctrl-bottom-left,
 .map-with-panel .maplibregl-ctrl-bottom-right {
@@ -176,6 +195,46 @@
 }
 .maplibregl-map .maplibregl-ctrl-attrib a {
   @apply text-foreground;
+}
+/*
+ * The credits on one line, cut short on narrow maps, unfolding sideways: the
+ * text stays rendered, folded to no width, and the closed content of their
+ * `details` waits for the end of the fold before it is hidden.
+ */
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact {
+  transition: padding 200ms ease-out;
+}
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact::details-content {
+  transition: content-visibility 200ms allow-discrete;
+}
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    max-width 200ms ease-out,
+    opacity 200ms ease-out;
+}
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner {
+  max-width: min(22rem, calc(100vw - 7.5rem));
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact,
+  .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact::details-content,
+  .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner {
+    transition: none;
+  }
+}
+/* No blue halo once clicked: a ring for the keyboard only. */
+.maplibregl-map .maplibregl-ctrl-attrib-button:focus {
+  box-shadow: none;
+}
+.maplibregl-map .maplibregl-ctrl-attrib-button:focus-visible {
+  @apply ring-2 ring-ring/50;
 }
 /* The icons are dark images: they are inverted on the dark theme. */
 .dark .maplibregl-map .maplibregl-ctrl-icon,
@@ -233,4 +292,49 @@
       translate: 0 var(--head-travel, 0px);
     }
   }
+}
+
+/*
+ * Position of the user: a blue dot ringed in white, with no gap between
+ * them and no pulse, and its button in the same blue while shown, struck through otherwise.
+ */
+.maplibregl-map {
+  --user-location: #2563eb;
+}
+.dark .maplibregl-map {
+  --user-location: #3b82f6;
+}
+.maplibregl-map .maplibregl-user-location-dot {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #fff;
+  background-color: var(--user-location);
+  box-shadow: 0 0 3px rgb(0 0 0 / 0.35);
+}
+.maplibregl-map .maplibregl-user-location-dot::before,
+.maplibregl-map .maplibregl-user-location-dot::after {
+  display: none;
+}
+.maplibregl-map .maplibregl-user-location-dot-stale {
+  background-color: #aaa;
+}
+.maplibregl-map .maplibregl-user-location-accuracy-circle {
+  background-color: rgb(37 99 235 / 0.15);
+}
+/* A mask in the colors of the theme: not inverted as the other icons. */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-group button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
+  filter: none;
+  background-image: none;
+  background-color: var(--foreground);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Cpath d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E")
+    center / 29px 29px no-repeat;
+}
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-group button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon {
+  background-color: var(--muted-foreground);
+}
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-group button.maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon,
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-group button.maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon {
+  background-color: var(--user-location);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E");
 }

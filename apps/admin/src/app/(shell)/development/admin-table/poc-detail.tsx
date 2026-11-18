@@ -236,7 +236,7 @@ export function PocUserDetail({ user, panel, version }: { user: PocUser; panel?:
               <>
                 <DetailSection title="Activité">
                   {/* Drawn by its column, several picked in a list, saved as the list closes. */}
-                  <DetailColumnFields row={user} columns={USERS.columns} ids={["activities", "storage", "categories"]} />
+                  <DetailColumnFields row={user} columns={USERS.columns} ids={["activities", "storage", "quota", "categories"]} />
                 </DetailSection>
                 <DetailSection title="Technique">
                   <DetailColumnFields row={user} columns={USERS.columns} ids={["id", "avatarKey"]} />

@@ -9,7 +9,11 @@ export type StationExclusion =
   /** No passenger train route serves it: a park train, a closed station still mapped… */
   | 'not_served'
   /** The same station as a kept one next to it, mapped twice: merged into it. */
-  | 'merged';
+  | 'merged'
+  /** Linked to no other station along the tracks: no train reaches it. */
+  | 'unlinked'
+  /** On a small tourist network, a park train: `isParkNetwork`. */
+  | 'park';
 
 const NOT_TRAIN_STATIONS = new Set([
   'subway',
@@ -22,13 +26,20 @@ const NOT_TRAIN_STATIONS = new Set([
 
 /** Railways walked between stations, heritage lines included. */
 const TRACK_RAILWAYS = new Set(['rail', 'narrow_gauge', 'preserved']);
+/**
+ * Railways walked only where a train route runs on them: the tunnels of a
+ * suburban line mapped as a metro (FGC in Barcelona), a tram-train.
+ */
+const ROUTE_ONLY_RAILWAYS = new Set(['subway', 'light_rail', 'tram']);
+/** Gauges below this, in millimetres, are those of park and tourist trains. */
+const SMALL_GAUGE_MM = 750;
 /** Tracks of the yards and depots, never between two stations. */
 const SERVICE_TRACKS = new Set(['yard', 'siding', 'spur']);
 /** Lines no passenger train runs on. */
 const NON_PASSENGER_USAGES = new Set(['industrial', 'military', 'test']);
 
-/** Whether a node is a candidate station: `railway=station|halt`. */
-export function isStationNode(tags: Tags | null): boolean {
+/** Whether a node or a way is a candidate station: `railway=station|halt`. */
+export function isStation(tags: Tags | null): boolean {
   return tags?.railway === 'station' || tags?.railway === 'halt';
 }
 
@@ -62,9 +73,20 @@ export function stationExclusion(tags: Tags): StationExclusion | null {
   return null;
 }
 
-/** Passenger train routes, heritage and tourist trains included. */
+/** The train ride of an amusement park (`attraction=train`: Disneyland Railroad). */
+export function isAttractionRoute(tags: Tags | null): boolean {
+  return (
+    tags?.type === 'route' &&
+    tags.route === 'train' &&
+    tags.attraction !== undefined
+  );
+}
+
+/** Passenger train routes, heritage and tourist trains included, but the rides of an amusement park. */
 export function isTrainRoute(tags: Tags | null): boolean {
-  return tags?.type === 'route' && tags.route === 'train';
+  return (
+    tags?.type === 'route' && tags.route === 'train' && !isAttractionRoute(tags)
+  );
 }
 
 export function isStopArea(tags: Tags | null): boolean {
@@ -83,6 +105,11 @@ export function isTrackWay(tags: Tags | null): boolean {
   return tags !== null && TRACK_RAILWAYS.has(tags.railway ?? '');
 }
 
+/** Whether a way is a track only when a train route runs on it, see `ROUTE_ONLY_RAILWAYS`. */
+export function isRouteOnlyTrack(tags: Tags | null): boolean {
+  return tags !== null && ROUTE_ONLY_RAILWAYS.has(tags.railway ?? '');
+}
+
 /**
  * Whether passenger trains can run on a track, so that the walks between
  * stations follow it. A track of a passenger train route always can; other
@@ -94,11 +121,72 @@ export function isPassengerTrack(tags: Tags, inTrainRoute: boolean): boolean {
     return true;
   }
   return !(
+    // The track of an amusement park ride (`attraction=train`).
+    tags.attraction !== undefined ||
     SERVICE_TRACKS.has(tags.service ?? '') ||
     NON_PASSENGER_USAGES.has(tags.usage ?? '') ||
     tags['railway:traffic_mode'] === 'freight' ||
     tags.passenger === 'no'
   );
+}
+
+/**
+ * Whether the zone of a station may follow a track: a main or narrow gauge
+ * line, neither heritage nor a yard, siding or spur track, nor an
+ * industrial, military or test line.
+ */
+export function isStationZoneTrack(tags: Tags): boolean {
+  return (
+    (tags.railway === 'rail' || tags.railway === 'narrow_gauge') &&
+    tags.attraction === undefined &&
+    !SERVICE_TRACKS.has(tags.service ?? '') &&
+    !NON_PASSENGER_USAGES.has(tags.usage ?? '')
+  );
+}
+
+/** Whether an object is a train platform: not a tram, bus or metro one. */
+export function isTrainPlatform(tags: Tags | null): boolean {
+  if (!tags || tags.tram === 'yes' || tags.bus === 'yes') return false;
+  if (tags.subway === 'yes') return false;
+  return (
+    tags.railway === 'platform' ||
+    (tags.public_transport === 'platform' && tags.train === 'yes')
+  );
+}
+
+/** Whether a building is the building of a station. */
+export function isStationBuilding(tags: Tags | null): boolean {
+  return (
+    tags?.building !== undefined &&
+    (tags.railway === 'station' ||
+      tags.public_transport === 'station' ||
+      tags.building === 'train_station')
+  );
+}
+
+const ROOF_BUILDINGS = new Set(['roof', 'train_station', 'transportation']);
+
+/** Whether a building may be a roof over the platforms of a station. */
+export function isPlatformRoof(tags: Tags | null): boolean {
+  return ROOF_BUILDINGS.has(tags?.building ?? '');
+}
+
+/**
+ * Whether an object lies under the ground: an RER or metro line under the
+ * city. The level says it when given: tracks in a covered trench (Austerlitz)
+ * are tagged as a tunnel at level 0, as their platforms. A negative layer
+ * alone is not enough: they are drawn below the streets.
+ */
+export function isUnderground(tags: Tags | null): boolean {
+  if (!tags) return false;
+  const level = Number.parseFloat(tags.level ?? '');
+  if (!Number.isNaN(level)) return level < 0;
+  return isInTunnel(tags);
+}
+
+/** Whether a track runs in a tunnel, whatever its level. */
+export function isInTunnel(tags: Tags | null): boolean {
+  return tags?.tunnel === 'yes' || tags?.location === 'underground';
 }
 
 /**
@@ -112,4 +200,31 @@ export function servesStationsNearby(tags: Tags): boolean {
     tags.railway !== 'preserved' &&
     tags.usage !== 'tourism'
   );
+}
+
+/** `tourism` values of a tourist train: not `information` or `hotel` on a station. */
+const TOURIST_TOURISM = new Set([
+  'attraction',
+  'preserved_railway',
+  'heritage_railway',
+  'miniature_railway',
+  'museum',
+]);
+
+/** Whether the tags of a station, a route or a track show a tourist or heritage train. */
+export function isTouristTags(tags: Tags | null): boolean {
+  if (!tags) return false;
+  return (
+    tags.usage === 'tourism' ||
+    tags.service === 'tourism' ||
+    tags.railway === 'preserved' ||
+    tags['railway:preserved'] === 'yes' ||
+    TOURIST_TOURISM.has(tags.tourism ?? '')
+  );
+}
+
+/** Whether a track is the track of a tourist or heritage train, or of a park train by its gauge. */
+export function isTouristTrack(tags: Tags): boolean {
+  const gauge = Number.parseFloat(tags.gauge ?? '');
+  return isTouristTags(tags) || (gauge > 0 && gauge < SMALL_GAUGE_MM);
 }

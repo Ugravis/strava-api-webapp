@@ -80,15 +80,22 @@ export function FollowRequestsDialog({ onAnswered }: { onAnswered?: (username: s
             ))}
           </TabsList>
         </Tabs>
+        {/* Of a fixed height, so that the dialog does not jump while a list loads or between the tabs. */}
         <div
-          className="-mx-4 min-h-40 flex-1 overflow-y-auto px-4"
+          className="-mx-4 h-80 min-h-0 shrink overflow-y-auto px-4"
           aria-live="polite"
           // Following a link to a profile closes the dialog.
           onClickCapture={(event) => {
             if ((event.target as HTMLElement).closest("a")) setOpen(false);
           }}
         >
-          {tab === "received" ? <ReceivedRequests onAnswered={onAnswered} /> : <SentRequests />}
+          {/* Both kept mounted, so that switching tabs shows the list already loaded. */}
+          <div hidden={tab !== "received"}>
+            <ReceivedRequests onAnswered={onAnswered} />
+          </div>
+          <div hidden={tab !== "sent"}>
+            <SentRequests />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

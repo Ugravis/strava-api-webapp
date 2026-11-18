@@ -58,25 +58,44 @@ export interface TablePage<T> {
 /*
  * Wire format, the same in the URL of the API:
  * `?q=marie&sort=-createdAt&group=status&fold=active&page=2&size=30&f.status=active,suspended`.
- * Keys and values are identifiers: no commas inside.
+ * A list joins its values by commas, each escaped (`encodeTableList`): a
+ * value may hold a comma, or be empty (a group without value, e.g. « Sans
+ * réseau »).
  */
+
+/** An empty value in a list, apart from an empty list (`""`). */
+const EMPTY_VALUE = "%0";
+
+/** Values joined by commas, `%` and `,` escaped in each, an empty one told by `%0`. */
+export function encodeTableList(values: readonly string[]): string {
+  return values.map((value) => (value === "" ? EMPTY_VALUE : value.replaceAll("%", "%25").replaceAll(",", "%2C"))).join(",");
+}
+
+/** The values of `encodeTableList`. */
+export function decodeTableList(raw: string): string[] {
+  if (raw === "") return [];
+  return raw.split(",").map((value) => (value === EMPTY_VALUE ? "" : value.replaceAll("%2C", ",").replaceAll("%25", "%")));
+}
 
 export function tableQueryToSearch(query: TableQuery): string {
   const params = new URLSearchParams();
   if (query.q.trim()) params.set("q", query.q.trim());
   params.set("sort", `${query.sort.desc ? "-" : ""}${query.sort.id}`);
   if (query.groupBy) params.set("group", query.groupBy);
-  if (query.folded.length > 0) params.set("fold", query.folded.join(","));
+  if (query.folded.length > 0) params.set("fold", encodeTableList(query.folded));
   params.set("page", String(query.page));
   params.set("size", String(query.pageSize));
   for (const [facet, values] of Object.entries(query.filters)) {
-    if (values.length > 0) params.set(`f.${facet}`, values.join(","));
+    if (values.length > 0) params.set(`f.${facet}`, encodeTableList(values));
   }
   return params.toString();
 }
 
 const first = (value: unknown): string | undefined => (Array.isArray(value) ? first(value[0]) : typeof value === "string" ? value : undefined);
-const list = (value: unknown): string[] => (first(value) ?? "").split(",").filter(Boolean);
+const list = (value: unknown): string[] => {
+  const raw = first(value);
+  return raw === undefined ? [] : decodeTableList(raw);
+};
 const integer = (value: unknown, fallback: number, max: number) => Math.min(Math.max(Math.trunc(Number(first(value))) || fallback, 1), max);
 
 /**

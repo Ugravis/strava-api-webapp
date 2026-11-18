@@ -78,7 +78,8 @@ function NavEntry({ item }: { item: NavigationItem }) {
           />
         }
       >
-        <item.icon className={cn(inSection && item.activeIconClass)} />
+        {/* Coloured in the section, and on hover with the same colour. */}
+        <item.icon className={cn(item.accentClass, inSection ? "text-(--nav-accent)" : "group-hover/menu-button:text-(--nav-accent)")} />
         <span>{label}</span>
         {count !== null && <span className="sr-only">{t("cards", { count })}</span>}
       </SidebarMenuButton>

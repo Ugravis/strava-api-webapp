@@ -1,3 +1,4 @@
+import { SystemModule } from '../system/system.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivitiesModule } from '../activities/activities.module';
@@ -21,6 +22,7 @@ import { StravaWebhookService } from './webhooks/strava-webhook.service';
 
 @Module({
   imports: [
+    SystemModule,
     TypeOrmModule.forFeature([StravaApiUsage, StravaWebhookEvent]),
     ActivitiesModule,
     ConnectionsModule,

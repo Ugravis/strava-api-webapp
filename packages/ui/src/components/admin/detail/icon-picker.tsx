@@ -72,7 +72,8 @@ export function IconGrid({ value, disabled, onPick }: { value: string | null; di
       ) : shown.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">Aucune icône</p>
       ) : (
-        <div className="grid max-h-64 grid-cols-8 gap-1 overflow-y-auto">
+        // Padded, so that the scroll does not cut the ring of an icon on the edge.
+        <div className="-m-1 grid max-h-64 grid-cols-8 gap-1 overflow-y-auto p-1">
           {shown.map((name) => (
             <Tooltip key={name}>
               <TooltipTrigger
@@ -86,7 +87,7 @@ export function IconGrid({ value, disabled, onPick }: { value: string | null; di
                     onClick={() => onPick(name)}
                     className={cn(
                       "flex aspect-square items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 [&_svg]:size-4",
-                      isPicked(name) && "bg-primary/10 text-primary ring-1 ring-primary/40",
+                      isPicked(name) && "bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/40 ring-inset hover:bg-blue-500/15 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400",
                     )}
                   >
                     <LucideIconByName name={name} />

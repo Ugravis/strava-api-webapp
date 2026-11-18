@@ -3,6 +3,7 @@ import {
   diskTiles,
   fromSignedMask,
   type LatLng,
+  metersBetween,
   rasterizeTrack,
   rasterizeTrackOutside,
   SUBTILE_ZOOM,
@@ -72,6 +73,18 @@ describe('tile grid', () => {
     expect(tiles).toContain('1003/2003');
     // A connected path from one corner to the other: 3 steps on each axis.
     expect(tiles).toHaveLength(7);
+  });
+
+  it('does not follow segments longer than the gap, only their ends', () => {
+    const track = [centerOf(1000, 2000), centerOf(1004, 2000)];
+
+    const lengthM = metersBetween(track[0], track[1]);
+
+    expect(subtiles(rasterizeTrack(track, lengthM - 1))).toEqual([
+      '1000/2000',
+      '1004/2000',
+    ]);
+    expect(subtiles(rasterizeTrack(track, lengthM + 1))).toHaveLength(5);
   });
 
   it('counts a single point as one tile', () => {

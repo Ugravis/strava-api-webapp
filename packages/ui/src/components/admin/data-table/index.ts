@@ -17,6 +17,7 @@ export {
   imageColumn,
   lookColumn,
   numberColumn,
+  shareColumn,
   orderColumn,
   pillsColumn,
   statusColumn,
@@ -24,7 +25,7 @@ export {
   userColumn,
 } from "./columns";
 export { CopyButton, drawCell, FLOATING_BUTTON, EmptyValue, IconBox, MoreCount, Truncate, useShownCount, WholeCells } from "./cells/base";
-export { BooleanCell, BytesCell, CodeCell, DateCell, LinkCell, NumberCell, RelativeDateCell, TextCell } from "./cells/values";
+export { BooleanCell, BytesCell, CodeCell, DateCell, formatShare, LinkCell, NumberCell, RelativeDateCell, ShareCell, type ShareLook, TextCell } from "./cells/values";
 export { type CellUser, IconsCell, type IconItem, type Look, LookCell, lookStyle, Mark, type Pill, PILL_TONES, PillsCell, StatusCell, type Tone, UserCell } from "./cells/marks";
 export { type CellImage, ImageCell, ImageCover } from "./cells/image";
 export { CellButton, CellButtons, RowActions } from "./cells/actions";

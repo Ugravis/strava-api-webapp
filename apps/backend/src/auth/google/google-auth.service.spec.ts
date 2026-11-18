@@ -107,6 +107,7 @@ describe('GoogleAuthService', () => {
     system.status.mockResolvedValue({
       maintenance: null,
       signupsEnabled: false,
+      emailSignInEnabled: true,
       profileShowcaseEnabled: true,
     });
 

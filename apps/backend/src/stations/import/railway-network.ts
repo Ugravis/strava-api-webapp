@@ -158,12 +158,7 @@ export class RailwayNetwork {
         }
       }
     }
-    const { links, redundant } = withoutRedundant(
-      [...best.values()].map((link) => ({
-        ...link,
-        coords: this.reachingStations(link),
-      })),
-    );
+    const { links, redundant } = withoutRedundant([...best.values()]);
     return {
       links,
       detours: [...detours.values()],
@@ -306,17 +301,6 @@ export class RailwayNetwork {
     });
     for (const vertex of touched) dist[vertex] = Infinity;
     return links;
-  }
-
-  /**
-   * The path of a link from one station to the other: the tracks stop where
-   * the stations stand on them, up to `SNAP_MAX_M` away, or at a point
-   * merged into them, so each end curves from its station onto the tracks.
-   * Its length stays the one along the tracks.
-   */
-  private reachingStations({ a, b, coords }: NetworkLink): Point[] {
-    const fromStart = joinStation(this.stationPoints[a], coords);
-    return joinStation(this.stationPoints[b], fromStart.reverse()).reverse();
   }
 
   /** The first stop met along a chain in a direction, but those of `from`. */
@@ -525,6 +509,17 @@ export class RailwayNetwork {
         }
       }
     }
+    // The routes of each kept station, with those of the stations merged into it.
+    const routesOf = new Map<number, Set<number>>(
+      kept.map((station) => [
+        station,
+        new Set(data.stations[station].routeIds),
+      ]),
+    );
+    data.stations.forEach(({ mergedInto, routeIds }) => {
+      if (mergedInto === null) return;
+      for (const route of routeIds) routesOf.get(mergedInto)?.add(route);
+    });
     const byTrack = new Map<
       number,
       { station: number; segment: number; t: number; link: boolean }[]
@@ -539,6 +534,23 @@ export class RailwayNetwork {
       for (const [track, { d, segment, t }] of candidates) {
         const link = d <= min + SNAP_TRACK_GAP_M;
         if (!link && d > BARRIER_RADIUS_M) continue;
+        // A track ending near the station (a siding off its switch) does
+        // not pass it: a barrier at its end would cut the line it joins.
+        const last = tracks.starts[track + 1] - tracks.starts[track] - 2;
+        if (
+          !link &&
+          ((segment === 0 && t === 0) || (segment === last && t === 1))
+        )
+          continue;
+        // Where the routes of a track are mapped, it passes the stations
+        // none of them stops at: the line of Marylebone by West Hampstead.
+        const routes = tracks.routes.get(track);
+        if (
+          !link &&
+          routes &&
+          !routes.some((route) => routesOf.get(station)!.has(route))
+        )
+          continue;
         const list = byTrack.get(track);
         const snap = { station, segment, t, link };
         if (list) list.push(snap);
@@ -684,11 +696,27 @@ export class RailwayNetwork {
 
 /** Points of each curve joining a station to its tracks. */
 const JOIN_STEPS = 12;
-/** A curve joins the tracks this many times its distance from them away, along them… */
-const JOIN_ALONG_RATIO = 2;
-const JOIN_MIN_M = 60;
+/** A curve joins the tracks this many times its distance from them away, along them, for a gentle bend… */
+const JOIN_ALONG_RATIO = 3;
+const JOIN_MIN_M = 100;
 /** …but never beyond this share of the link. */
 const JOIN_MAX_SHARE = 1 / 3;
+
+/**
+ * The path drawn for a link between the stations `a` and `b`, kept along the
+ * tracks only, which stop where the stations stand on them: each end curves
+ * from its station onto the tracks. Its length stays the one along them.
+ */
+export function reachingStations(a: Point, b: Point, coords: Point[]): Point[] {
+  if (coords.length < 2) return coords;
+  // Stored from either station: the end nearest `a` comes first.
+  const fromA =
+    metersBetween(a, coords[0]) <= metersBetween(a, coords[coords.length - 1])
+      ? coords
+      : [...coords].reverse();
+  const fromStart = joinStation(a, fromA);
+  return joinStation(b, fromStart.reverse()).reverse();
+}
 
 /**
  * Replaces the start of a path along the tracks with a curve from the

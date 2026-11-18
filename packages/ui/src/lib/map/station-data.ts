@@ -1,0 +1,152 @@
+import type { VisitedStations } from "../api/types";
+import { type LinkEnd, NO_STATION_DATA, type StationData } from "./stations-layer";
+
+/** The period of the history of the public map: the map as it was then (`state`), or all of it with the gains apart. */
+export interface StationHistory {
+  mode: string;
+  /** Instant the first visits are compared with. */
+  instant: string;
+  /** Ids of the stations of the largest network of the history: at the instant, or today with the gains apart. */
+  cluster?: number[];
+}
+
+/** Stations and the links between them: those visited by a user, or a station and its neighbors in the back office (no first visit). */
+export interface StationNetwork {
+  stations: (Omit<VisitedStations["stations"][number], "firstVisitAt"> & { firstVisitAt?: string | null })[];
+  links: VisitedStations["links"];
+  ties: VisitedStations["ties"];
+  /** Ids of the stations of the largest network, highlighted on the map out of the history. */
+  maxCluster?: VisitedStations["maxCluster"];
+}
+
+/** Whether a station or a link was gained in the period of the history: drawn in the pink of the gains. */
+interface Gained {
+  gained?: boolean;
+}
+
+/** Whether a first visit falls in the period of the history; a visit not dated yet counts as an old one. */
+function isGained(
+  firstVisitAt: string | null | undefined,
+  history: StationHistory | null,
+): boolean {
+  return (
+    history !== null && firstVisitAt != null && firstVisitAt >= history.instant
+  );
+}
+
+/** Whether a first visit counts for the history: the map as it was then, or all of it with the gains apart. */
+function inHistory(
+  firstVisitAt: string | null | undefined,
+  history: StationHistory | null,
+): boolean {
+  return history?.mode !== "state" || !isGained(firstVisitAt, history);
+}
+
+/** The earlier features first: the gained ones are drawn over them. */
+function gainedLast<T extends { properties: Gained }>(features: T[]): T[] {
+  return features.sort(
+    (a, b) =>
+      Number(a.properties.gained ?? false) -
+      Number(b.properties.gained ?? false),
+  );
+}
+
+/**
+ * The visited stations and the links between them, as of the history when
+ * open, or all of them with the gains apart: a link is unlocked by the later
+ * of the first visits of its stations. With an activity shown, the stations
+ * it reached first and the links they unlocked are the gains. The largest
+ * network is today's, or the one of the history.
+ */
+export function stationData(
+  visited: StationNetwork | null,
+  history: StationHistory | null = null,
+  activityStations: number[] | null = null,
+): StationData {
+  if (!visited) return NO_STATION_DATA;
+  const cluster = new Set(history ? (history.cluster ?? []) : (visited.maxCluster ?? []));
+  // An activity shown: what it reached first is gained, whatever the history.
+  const reached = activityStations && new Set(activityStations);
+  const activityAt = reached
+    ? (visited.stations.find((station) => reached.has(station.id))?.firstVisitAt ?? null)
+    : null;
+  const gainedAt = (at: string | null | undefined) =>
+    reached ? activityAt !== null && at === activityAt : isGained(at, history);
+  const firstVisits = new Map<number, string | null>();
+  const ends = new Map<number, LinkEnd>();
+  const features: StationData["stations"]["features"] = [];
+  for (const station of visited.stations) {
+    if (!inHistory(station.firstVisitAt, history)) continue;
+    firstVisits.set(station.id, station.firstVisitAt ?? null);
+    ends.set(station.id, {
+      id: station.id,
+      name: station.name,
+      lon: station.lon,
+      lat: station.lat,
+    });
+    features.push({
+      type: "Feature",
+      id: station.id,
+      properties: {
+        id: station.id,
+        name: station.name,
+        gained: reached ? reached.has(station.id) : isGained(station.firstVisitAt, history),
+        cluster: cluster.has(station.id),
+      },
+      geometry: { type: "Point", coordinates: [station.lon, station.lat] },
+    });
+  }
+  const links: StationData["links"]["features"] = [];
+  const unlockedAts = new Map<number, string | null>();
+  const clusterLinks = new Set<number>();
+  for (const link of visited.links) {
+    const [a, b] = link.stations.map((id) => firstVisits.get(id));
+    if (a === undefined || b === undefined) continue;
+    const unlockedAt = a === null || b === null ? (a ?? b) : a > b ? a : b;
+    if (!inHistory(unlockedAt, history)) continue;
+    unlockedAts.set(link.id, unlockedAt);
+    if (link.stations.every((id) => cluster.has(id))) clusterLinks.add(link.id);
+    const [first, second] = link.stations.map((id) => ends.get(id)!);
+    // The station nearest the first point starts the link.
+    const [lon, lat] = link.coords[0];
+    const startsAtFirst =
+      Math.hypot(first.lon - lon, first.lat - lat) <=
+      Math.hypot(second.lon - lon, second.lat - lat);
+    links.push({
+      type: "Feature",
+      id: link.id,
+      properties: {
+        ...(startsAtFirst
+          ? { start: first, end: second }
+          : { start: second, end: first }),
+        gained: gainedAt(unlockedAt) && (!reached || link.stations.some((id) => reached.has(id))),
+        cluster: clusterLinks.has(link.id),
+      },
+      geometry: { type: "LineString", coordinates: link.coords },
+    });
+  }
+  const ties: StationData["ties"]["features"] = [];
+  for (const tie of visited.ties) {
+    // Shown from the first link in the history over it.
+    const inPeriod = tie.linkIds.filter((id) => unlockedAts.has(id));
+    if (inPeriod.length === 0) continue;
+    const ats = inPeriod.map((id) => unlockedAts.get(id) ?? null);
+    const first = ats.includes(null) ? null : (ats as string[]).reduce((a, b) => (a < b ? a : b));
+    ties.push({
+      type: "Feature",
+      properties: {
+        gained: gainedAt(first),
+        cluster: inPeriod.some((id) => clusterLinks.has(id)),
+        // The railway an activity gained has no ticks: its stripes stay clear.
+        bare: reached !== null && gainedAt(first),
+      },
+      geometry: { type: "LineString", coordinates: tie.coords },
+    });
+  }
+  return {
+    stations: { type: "FeatureCollection", features: gainedLast(features) },
+    links: { type: "FeatureCollection", features: gainedLast(links) },
+    ties: { type: "FeatureCollection", features: gainedLast(ties) },
+  };
+}
+

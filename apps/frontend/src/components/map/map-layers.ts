@@ -14,11 +14,13 @@ export interface MapLayers {
   subtiles: boolean;
   /** The stations module: the train stations and the railway between the visited ones. */
   stations: boolean;
-  /** The base map and the tiles dimmed below the stations, while they are shown and selected. */
+  /** The base map and the tiles dimmed below the stations, while they are shown. */
   dimmed: boolean;
+  /** The station dots from a zoom sooner, discreet over their first zooms. */
+  discreetDots: boolean;
 }
 
-export const DEFAULT_MAP_LAYERS: MapLayers = { tiles: true, tracks: true, subtiles: true, stations: true, dimmed: false };
+export const DEFAULT_MAP_LAYERS: MapLayers = { tiles: true, tracks: true, subtiles: true, stations: true, dimmed: false, discreetDots: false };
 
 /** The layers once `module` is opened from the navigation: shown, the dimming left as it was. */
 export function withModuleOpened(layers: MapLayers, module: MapModule): MapLayers {
@@ -33,6 +35,5 @@ export function tileModeOf({ tiles, subtiles }: MapLayers): TileMode {
 /** Whether the tracks are drawn: an optional layer of the tiles module. */
 export const tracksShown = ({ tiles, tracks }: MapLayers): boolean => tiles && tracks;
 
-/** Whether the map is dimmed: an option of the stations module, applied while it is shown and selected. */
-export const mapDimmed = ({ stations, dimmed }: MapLayers, module: MapModule): boolean =>
-  module === "stations" && stations && dimmed;
+/** Whether the map is dimmed: a setting of the map, applied while the stations are shown, whichever module is selected. */
+export const mapDimmed = ({ stations, dimmed }: MapLayers): boolean => stations && dimmed;

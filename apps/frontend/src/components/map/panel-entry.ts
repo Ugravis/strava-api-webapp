@@ -12,11 +12,15 @@ export interface TilePick {
   zoom: TileZoom;
 }
 
-/** What the side panel shows: a tile picked on the map, an activity opened from it, a train station or a train. */
+/**
+ * What the side panel shows: a tile picked on the map, an activity opened
+ * from it, a train station or a train. A tile and a station picked at the
+ * same place each know the other, shown by a tab.
+ */
 export type PanelEntry =
-  | ({ kind: "tile" } & TilePick)
+  | ({ kind: "tile"; stationId?: number } & TilePick)
   | { kind: "activity"; activityId: string }
-  | { kind: "station"; stationId: number }
+  | { kind: "station"; stationId: number; pick?: TilePick }
   | { kind: "train"; trainId: number };
 
 /** The tile of the level shown. */

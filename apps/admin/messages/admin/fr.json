@@ -25,6 +25,7 @@
     "groups": {
       "general": "Général",
       "community": "Communauté",
+      "dataset": "Dataset",
       "infrastructure": "Infrastructure",
       "security": "Sécurité"
     },
@@ -40,7 +41,11 @@
     "development": "Développement",
     "reservedUsernames": "Pseudos",
     "releaseNotes": "Notes de release",
-    "siteActivity": "Activité du site"
+    "siteActivity": "Activité du site",
+    "stations": "Gares",
+    "regions": "Régions",
+    "datasetMap": "Carte",
+    "database": "Base de données"
   },
   "roles": {
     "support": "Support",
@@ -72,7 +77,8 @@
       "suspended": "{count, plural, one {# compte suspendu} other {# comptes suspendus}}",
       "suspendedDetail": "Masqués du site le temps de leur suspension.",
       "reports": "{count, plural, one {# signalement à traiter} other {# signalements à traiter}}",
-      "reportsDetail": "{today, plural, =0 {Aucun nouveau depuis 24 h.} one {# nouveau depuis 24 h.} other {# nouveaux depuis 24 h.}}"
+      "reportsDetail": "{today, plural, =0 {Aucun nouveau depuis 24 h.} one {# nouveau depuis 24 h.} other {# nouveaux depuis 24 h.}}",
+      "stationReports": "{count, plural, one {# signalement de gare à traiter} other {# signalements de gare à traiter}}"
     },
     "kpis": {
       "unavailable": "–",
@@ -277,7 +283,11 @@
       "username": "Pseudo : @{username}",
       "category": "Catégorie : {category}",
       "sanction": "Sanction : {sanction}",
-      "showcase": "{enabled, select, true {Vitrine des profils affichée} other {Vitrine des profils masquée}}"
+      "showcase": "{enabled, select, true {Vitrine des profils affichée} other {Vitrine des profils masquée}}",
+      "setting": "Réglage : {name}",
+      "value": "Valeur : {value}",
+      "valueBoolean": "{value, select, true {Valeur : activé} other {Valeur : désactivé}}",
+      "valueNone": "Valeur : aucune limite"
     },
     "actions": {
       "users": {
@@ -336,7 +346,11 @@
             "delete": "Fichiers orphelins supprimés"
           }
         },
-        "showcase": "Vitrine des profils affichée ou masquée"
+        "showcase": "Vitrine des profils affichée ou masquée",
+        "settings": {
+          "set": "Réglage modifié",
+          "reset": "Réglage remis par défaut"
+        }
       },
       "releaseNotes": {
         "create": "Note de release écrite à l'avance",
@@ -349,6 +363,15 @@
       "reports": {
         "sanction": "Signalement sanctionné",
         "dismiss": "Signalement rejeté"
+      },
+      "stationReports": {
+        "accept": "Signalement de gare accepté",
+        "dismiss": "Signalement de gare classé sans suite",
+        "complete": "Signalement de gare rendu effectif"
+      },
+      "stations": {
+        "rename": "Gare renommée",
+        "hide": "Gare masquée ou affichée"
       }
     },
     "overview": {
@@ -592,6 +615,7 @@
         "medianTiles": "Tuiles",
         "medianSquare": "Carré",
         "medianCluster": "Cluster",
+        "medianStationCluster": "Cluster gares",
         "bucket": "{range} tuiles"
       },
       "countries": {
@@ -652,7 +676,10 @@
           "release_note": "Note de mise à jour",
           "report_received": "Signalement à traiter",
           "report_closed": "Signalement traité",
-          "report_sent": "Signalement envoyé"
+          "report_sent": "Signalement envoyé",
+          "station_report_received": "Signalement de gare à traiter",
+          "station_report_closed": "Signalement de gare traité",
+          "station_report_sent": "Signalement de gare envoyé"
         }
       },
       "profiles": {
@@ -763,7 +790,7 @@
   },
   "system": {
     "title": "Maintenance",
-    "description": "Bandeau d'information, interrupteurs du site, fichiers stockés et tables de la base.",
+    "description": "État de l'app, bandeau d'information et réglages du site.",
     "readOnly": "Lecture seule : votre rôle n'a la permission de modifier aucun de ces réglages.",
     "statusError": "Impossible de lire l'état du site pour le moment.",
     "maintenance": {
@@ -791,67 +818,105 @@
         "submit": "Afficher"
       }
     },
-    "switches": {
-      "title": "Interrupteurs",
-      "description": "Fonctions du site coupées pour tous d'un coup, chaque changement demandé d'abord.",
-      "signups": {
-        "label": "Inscriptions",
-        "description": "Création de comptes, par email et par Google. Les comptes existants se connectent normalement.",
-        "off": {
-          "title": "Fermer les inscriptions ?",
-          "description": "Plus aucun compte ne pourra être créé, par email ou par Google, jusqu'à la réouverture.",
-          "submit": "Fermer"
+    "settings": {
+      "categories": {
+        "access": {
+          "title": "Accès",
+          "description": "Qui peut créer un compte, et comment se connecter."
         },
-        "on": {
-          "title": "Rouvrir les inscriptions ?",
-          "description": "La création de comptes redevient possible immédiatement.",
-          "submit": "Rouvrir"
+        "profiles": {
+          "title": "Profils",
+          "description": "Ce que les profils montrent aux autres."
+        },
+        "strava": {
+          "title": "Strava",
+          "description": "Lecture des activités depuis Strava."
         }
       },
-      "showcase": {
-        "label": "Vitrine des profils",
-        "description": "Deuxième partie des profils : tuiles, gares et badges épinglés. Coupée, elle n'est plus mentionnée et laisse place à un motif à la couleur du profil.",
-        "off": {
-          "title": "Masquer la vitrine des profils ?",
-          "description": "Les tuiles, les gares et les badges épinglés disparaissent de tous les profils, le sien compris, sans être mentionnés.",
-          "submit": "Masquer"
+      "items": {
+        "signupsEnabled": {
+          "label": "Inscriptions",
+          "description": "Création de comptes, par email et par Google. Les comptes existants se connectent normalement.",
+          "off": {
+            "title": "Fermer les inscriptions ?",
+            "description": "Plus aucun compte ne pourra être créé, par email ou par Google, jusqu'à la réouverture.",
+            "submit": "Fermer"
+          },
+          "on": {
+            "title": "Rouvrir les inscriptions ?",
+            "description": "La création de comptes redevient possible immédiatement.",
+            "submit": "Rouvrir"
+          }
         },
-        "on": {
-          "title": "Réafficher la vitrine des profils ?",
-          "description": "Les tuiles, les gares et les badges épinglés reviennent sur les profils visibles.",
-          "submit": "Réafficher"
+        "emailSignInEnabled": {
+          "label": "Connexion par email",
+          "description": "Inscription, connexion et mot de passe oublié par email sur le site. Google reste disponible ; le back-office garde sa propre connexion.",
+          "off": {
+            "title": "Couper la connexion par email ?",
+            "description": "Le formulaire email disparaît des pages de connexion et d'inscription. Les comptes sans Google ne pourront plus se connecter jusqu'à la réactivation.",
+            "submit": "Couper"
+          },
+          "on": {
+            "title": "Réactiver la connexion par email ?",
+            "description": "Le formulaire email revient sur les pages de connexion et d'inscription.",
+            "submit": "Réactiver"
+          }
+        },
+        "maxAccounts": {
+          "label": "Nombre max de comptes",
+          "description": "Au-delà, les inscriptions se ferment d'elles-mêmes, quelle que soit la méthode. Les comptes existants ne sont pas touchés. Vide : illimité."
+        },
+        "profileShowcaseEnabled": {
+          "label": "Vitrine des profils",
+          "description": "Deuxième partie des profils : tuiles, gares et badges épinglés. Coupée, elle n'est plus mentionnée et laisse place à un motif à la couleur du profil.",
+          "off": {
+            "title": "Masquer la vitrine des profils ?",
+            "description": "Les tuiles, les gares et les badges épinglés disparaissent de tous les profils, le sien compris, sans être mentionnés.",
+            "submit": "Masquer"
+          },
+          "on": {
+            "title": "Réafficher la vitrine des profils ?",
+            "description": "Les tuiles, les gares et les badges épinglés reviennent sur les profils visibles.",
+            "submit": "Réafficher"
+          }
+        },
+        "pinnedBadgesMax": {
+          "label": "Badges épinglés max",
+          "description": "Badges qu'un utilisateur peut épingler sur son profil. En baissant la limite, les badges déjà épinglés restent."
+        },
+        "stravaSyncEnabled": {
+          "label": "Synchronisation Strava",
+          "description": "Imports et mises à jour des activités. En pause, rien n'est demandé à Strava : les événements reçus attendent la reprise.",
+          "off": {
+            "title": "Mettre la synchronisation en pause ?",
+            "description": "Plus aucune activité n'est importée ni mise à jour. Les révocations d'accès Strava attendent aussi la reprise.",
+            "submit": "Mettre en pause"
+          },
+          "on": {
+            "title": "Reprendre la synchronisation ?",
+            "description": "Les événements en attente sont traités, puis les imports reprennent.",
+            "submit": "Reprendre"
+          }
         }
       }
     },
-    "uploads": {
-      "title": "Audit du stockage",
-      "description": "Poids de la base de données et des images importées par les utilisateurs dans le stockage.",
-      "error": "Le stockage est injoignable pour le moment.",
-      "avatars": "Avatars",
-      "orphans": "Orphelins",
-      "previews": "Aperçus de carte",
-      "files": "{count, plural, =0 {Aucun fichier} one {# fichier} other {# fichiers}}",
-      "previewsHint": "Cache, régénéré à la demande",
-      "heaviest": "Avatars les plus lourds",
-      "orphansTitle": "Fichiers orphelins",
-      "orphansDescription": "Avatars qu'aucun compte n'utilise plus (remplacés ou comptes supprimés), importés il y a plus d'une heure.",
-      "orphansMore": "… et {count, plural, one {# autre} other {# autres}}",
-      "delete": {
-        "trigger": "Supprimer les orphelins",
-        "title": "Supprimer les fichiers orphelins ?",
-        "description": "Les fichiers orphelins sont supprimés définitivement du stockage. Ceux importés il y a moins d'une heure sont gardés.",
-        "submit": "Supprimer",
-        "presets": [
-          "Nettoyage du stockage"
-        ]
-      }
-    },
-    "database": {
-      "title": "Tables de la base",
-      "description": "Toutes les tables de PostgreSQL, lues dans ses catalogues, en lecture seule. Les lignes sont une estimation de Postgres ; l'activité court depuis le dernier reset de ses statistiques.",
-      "error": "Impossible de lire les tables de la base pour le moment.",
-      "weight": "Base de données",
-      "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index"
+    "overview": {
+      "banner": "Bandeau",
+      "bannerOn": "Affiché",
+      "bannerOff": "Aucun",
+      "bannerSince": "Depuis le {date}",
+      "bannerOffDetail": "Le site s'affiche sans message",
+      "accounts": "Comptes",
+      "accountsCap": "Plafond : {max} comptes",
+      "accountsNoCap": "Aucun plafond",
+      "strava": "Synchronisation Strava",
+      "stravaOn": "Active",
+      "stravaOff": "En pause",
+      "stravaPending": "{events, plural, =0 {Aucun événement} one {# événement} other {# événements}} · {jobs, plural, =0 {aucun import} one {# import} other {# imports}} en attente",
+      "settings": "Réglages modifiés",
+      "settingsChanged": "{count} sur {total}",
+      "settingsLast": "Dernier changement {when}",
+      "settingsDefault": "Tous à leur valeur par défaut"
     }
   },
   "team": {
@@ -879,8 +944,10 @@
         "userTags": "Tags",
         "audit": "Logs",
         "system": "Maintenance",
+        "database": "Base de données",
         "team": "Permissions",
-        "releaseNotes": "Notes de release"
+        "releaseNotes": "Notes de release",
+        "stations": "Gares"
       },
       "list": {
         "users": {
@@ -954,14 +1021,12 @@
             "label": "Bannière de maintenance",
             "description": "Publier ou retirer la bannière."
           },
-          "signups": {
-            "label": "Inscriptions",
-            "description": "Ouvrir ou fermer les inscriptions."
-          },
-          "showcase": {
-            "label": "Vitrine des profils",
-            "description": "Afficher ou masquer les tuiles, gares et badges épinglés des profils."
-          },
+          "settings": {
+            "label": "Réglages du site",
+            "description": "Modifier les réglages du site."
+          }
+        },
+        "database": {
           "uploads": {
             "label": "Fichiers orphelins",
             "description": "Supprimer les fichiers stockés sans compte."
@@ -1001,6 +1066,16 @@
           "handle": {
             "label": "Traiter les signalements",
             "description": "Sanctionner ou rejeter un signalement. Une sanction demande aussi la permission de son action."
+          }
+        },
+        "stations": {
+          "edit": {
+            "label": "Modifier",
+            "description": "Renommer ou masquer une gare du site."
+          },
+          "reports": {
+            "label": "Traiter les signalements",
+            "description": "Accepter, classer sans suite ou rendre effectif un signalement de gare ou de voie ferrée. Les membres qui l'ont sont prévenus de chaque nouveau signalement."
           }
         }
       }
@@ -1060,6 +1135,41 @@
           "cards": "Cartes",
           "mobile": "Mobile"
         }
+      },
+      "stationZones": {
+        "title": "Zones des gares",
+        "description": "Nouvelles zones d'obtention des gares, à la place du carré z17 du point : emprise OSM de la gare et/ou 100 m de rails de chaque côté, en forme libre ou en carrés z17.",
+        "pageDescription": "Bouches-du-Rhône, Cher, Lozère et Paris. Violet hachuré : zone d'obtention ; violet plein : polygone de la gare (visuel seulement) ; rails et gares comme sur la carte du site ; orange pointillé : carré z17 initial ; noir pointillé : limite du département.",
+        "live": "Ouvrir la carte",
+        "liveHint": "Données OSM figées (Overpass), formes calculées par PostGIS : scripts/station-zones-poc.mjs.",
+        "proposal": "Proposition",
+        "proposals": {
+          "osm": "Emprise OSM",
+          "rails": "Rails ±100 m",
+          "both": "Les deux"
+        },
+        "widen": "Élargissement",
+        "tile": "Carré z17 initial",
+        "sources": "Rails parcourus",
+        "stations": "Gares",
+        "zoneArea": "Zone",
+        "tileArea": "carré",
+        "asTiles": "Carrés z17 polygone",
+        "tileCount": "carré(s) z17 (1 aujourd'hui)",
+        "plansSources": {
+          "rails": "Sans quai ni bâtiment OSM : polygone des rails",
+          "point": "Sans quai, bâtiment ni rail : carré sur le point"
+        },
+        "department": "Département",
+        "precision": "Précision de l'emprise",
+        "precisions": {
+          "hull": "Enveloppe convexe",
+          "plans": "Type Plans",
+          "fine": "Forme précise"
+        },
+        "footprint": "Polygone de la gare",
+        "railLinks": "Rails",
+        "noData": "Données absentes : les générer avec node apps/admin/scripts/station-zones-poc.mjs (non versionnées, réponses Overpass gardées dans apps/admin/scripts/.station-zones-cache/)."
       }
     }
   },
@@ -1455,6 +1565,49 @@
       "withAdmin": "Pages admin incluses",
       "withoutAdmin": "Pages admin exclues",
       "adminExcluded": "pages /admin exclues des vues et des sessions"
+    }
+  },
+  "stations": {
+    "title": "Gares",
+    "description": "Les gares importées d'OpenStreetMap, visitées par les membres sur la carte. Un nom custom ou un masquage tient au fil des imports.",
+    "reports": "Signalements"
+  },
+  "regions": {
+    "title": "Régions",
+    "description": "Les régions du dataset, groupées par type : pour l'instant les pays importés d'Overture Maps, avec leurs tuiles, leurs gares et les membres qui y sont passés."
+  },
+  "database": {
+    "title": "Base de données",
+    "description": "Fichiers stockés et tables de la base.",
+    "uploads": {
+      "title": "Audit du stockage",
+      "description": "Poids de la base de données et des images importées par les utilisateurs dans le stockage.",
+      "error": "Le stockage est injoignable pour le moment.",
+      "avatars": "Avatars",
+      "orphans": "Orphelins",
+      "previews": "Aperçus de carte",
+      "files": "{count, plural, =0 {Aucun fichier} one {# fichier} other {# fichiers}}",
+      "previewsHint": "Cache, régénéré à la demande",
+      "heaviest": "Avatars les plus lourds",
+      "orphansTitle": "Fichiers orphelins",
+      "orphansDescription": "Avatars qu'aucun compte n'utilise plus (remplacés ou comptes supprimés), importés il y a plus d'une heure.",
+      "orphansMore": "… et {count, plural, one {# autre} other {# autres}}",
+      "delete": {
+        "trigger": "Supprimer les orphelins",
+        "title": "Supprimer les fichiers orphelins ?",
+        "description": "Les fichiers orphelins sont supprimés définitivement du stockage. Ceux importés il y a moins d'une heure sont gardés.",
+        "submit": "Supprimer",
+        "presets": [
+          "Nettoyage du stockage"
+        ]
+      }
+    },
+    "tables": {
+      "title": "Tables de la base",
+      "description": "Toutes les tables de PostgreSQL, lues dans ses catalogues, en lecture seule. Les lignes sont une estimation de Postgres ; l'activité court depuis le dernier reset de ses statistiques.",
+      "error": "Impossible de lire les tables de la base pour le moment.",
+      "weight": "Base de données",
+      "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index · {disk} réels sur le disque"
     }
   }
 }

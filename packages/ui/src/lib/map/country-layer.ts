@@ -1,0 +1,102 @@
+import { SHAPES_MAX_ZOOM } from "@kilotrace/shared";
+import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
+import { belowActivityTiles, TILE_FILL_LAYER_ID } from "./layer-order";
+import { fadeIn, type MapPalette } from "./map-style";
+
+/** Countries visited by the user and the version of the shapes, from the completion. */
+export interface VisitedCountries {
+  codes: string[];
+  /** Null while no shape is computed. */
+  shapesVersion: string | null;
+}
+
+export const NO_COUNTRIES: VisitedCountries = { codes: [], shapesVersion: null };
+
+const SOURCE_ID = "country-shapes";
+/** Layers of the vector tiles served by the backend: the merged areas and their outer borders. */
+const AREA_SOURCE_LAYER = "visited";
+const BORDER_SOURCE_LAYER = "borders";
+const FILL_ID = "visited-countries-fill";
+/** Zoom from which the borders of the visited area fade in. */
+const BORDER_MIN_ZOOM = 7;
+const LINE_ID = "visited-countries-line";
+
+/** URL of the tiles of the shapes of `countries`. */
+export type CountryTilesUrl = (countries: VisitedCountries & { shapesVersion: string }) => string;
+
+/** The countries are part of the URL, sorted: the browser caches each set of countries. */
+const tilesUrl: CountryTilesUrl = ({ codes, shapesVersion }) => {
+  const countries = [...codes].sort().join(",");
+  // Absolute: MapLibre fetches the tiles from its worker.
+  return `${window.location.origin}/api/countries/shapes/{z}/{x}/{y}?countries=${countries}&v=${shapesVersion}`;
+};
+
+/**
+ * Adds the visited countries, merged by the backend into one area made of
+ * the large tiles touching them, as the ground of the map: only the borders
+ * with the countries not visited follow the tiles, and the water of the
+ * base map, drawn over them, hides the parts of the border tiles at sea.
+ */
+function addCountryLayers(
+  map: MapLibreMap,
+  countries: VisitedCountries & { shapesVersion: string },
+  palette: MapPalette,
+  url: CountryTilesUrl,
+): void {
+  // Below the tiles when they are drawn first.
+  const beforeId = map.getLayer(TILE_FILL_LAYER_ID) ? TILE_FILL_LAYER_ID : belowActivityTiles(map);
+  map.addSource(SOURCE_ID, {
+    type: "vector",
+    tiles: [url(countries)],
+    maxzoom: SHAPES_MAX_ZOOM,
+  });
+  map.addLayer(
+    {
+      id: FILL_ID,
+      type: "fill",
+      source: SOURCE_ID,
+      "source-layer": AREA_SOURCE_LAYER,
+      paint: { "fill-color": palette.country, "fill-opacity": palette.countryOpacity },
+    },
+    beforeId,
+  );
+  map.addLayer(
+    {
+      id: LINE_ID,
+      type: "line",
+      source: SOURCE_ID,
+      "source-layer": BORDER_SOURCE_LAYER,
+      // At the scale of a continent, the borders following the tiles along the
+      // coasts would be a scribble: they appear once the tiles are visible.
+      minzoom: BORDER_MIN_ZOOM,
+      paint: {
+        "line-color": palette.countryBorder,
+        "line-opacity": fadeIn(BORDER_MIN_ZOOM, 0.35),
+        "line-width": 0.8,
+      },
+    },
+    beforeId,
+  );
+}
+
+/** Shows the visited countries, adding the layers once there are shapes; `url` serves them from elsewhere (the back office). */
+export function setVisitedCountries(map: MapLibreMap, countries: VisitedCountries, palette: MapPalette, url: CountryTilesUrl = tilesUrl): void {
+  const { shapesVersion } = countries;
+  if (!shapesVersion) return;
+  const source = map.getSource<VectorTileSource>(SOURCE_ID);
+  if (!source) {
+    addCountryLayers(map, { ...countries, shapesVersion }, palette, url);
+    if (hiddenCountries.has(map)) setCountriesVisible(map, false);
+    return;
+  }
+  const tiles = url({ ...countries, shapesVersion });
+  if (source.tiles[0] !== tiles) source.setTiles([tiles]);
+}
+
+/** Shows or hides the countries; kept when their layers are added again. */
+const hiddenCountries = new WeakSet<MapLibreMap>();
+export function setCountriesVisible(map: MapLibreMap, visible: boolean): void {
+  if (visible) hiddenCountries.delete(map);
+  else hiddenCountries.add(map);
+  for (const id of [FILL_ID, LINE_ID]) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+}

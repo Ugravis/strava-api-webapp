@@ -7,6 +7,7 @@ import type {
   RasterTileSource,
   VectorTileSource,
 } from "maplibre-gl";
+import { TILES_MAX_ZOOM } from "@kilotrace/shared";
 import type { TilesSummary } from "@kilotrace/ui/lib/api/types";
 import {
   gridCollection,
@@ -16,7 +17,7 @@ import {
   type TileZoom,
 } from "@/lib/tiles/tile-geometry";
 import { belowHistory } from "./history-layer";
-import { FADE_ZOOMS, fadeIn, type MapPalette } from "./map-style";
+import { FADE_ZOOMS, fadeIn, type MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 /** Which levels of tiles the map shows: none while the tiles module is hidden, the large tiles, or both levels. */
 export type TileMode = "none" | "tiles" | "both";
@@ -32,8 +33,6 @@ const VECTOR_SOURCE = "user-tiles";
  * whatever the density of the tiles, down to the zoom of a whole country.
  */
 const RASTER_SOURCE = "user-subtiles";
-/** The backend serves the tiles down to this zoom; the map stretches them beyond. */
-const TILES_MAX_ZOOM = 12;
 /** Layers of the vector tiles: merged areas, and the small tiles at the deepest zoom, to pick them. */
 const SOURCE_LAYERS = {
   tiles: "tiles",
@@ -86,8 +85,9 @@ const LEVEL_LAYERS = {
 } as const;
 const ALL_LAYERS = [...LEVEL_LAYERS.tiles, ...LEVEL_LAYERS.subtiles, "tile-grid-line"];
 
-/** Lowest layer of the tiles: the visited countries go below it. */
-export const TILE_FILL_LAYER_ID = "visited-tiles-fill";
+import { TILE_FILL_LAYER_ID } from "@kilotrace/ui/lib/map/layer-order";
+
+export { TILE_FILL_LAYER_ID };
 /**
  * Fills drawn as the ground of the map, right over its bare land: they
  * hide none of the vegetation, water, buildings, roads and names.

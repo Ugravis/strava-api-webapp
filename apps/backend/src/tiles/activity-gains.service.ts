@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import type { ActivityGains, LevelGains } from './activity-gains';
-import { SUBTILE_ZOOM, TILE_ZOOM } from './tile-grid';
+import { SUBTILE_ZOOM, SUBTILES_PER_SIDE, TILE_ZOOM } from './tile-grid';
 
 /** Small tiles per side of a large tile, whose bits are laid out row by row. */
 const SUBTILE_SHIFT = SUBTILE_ZOOM - TILE_ZOOM;
-const SUBTILE_SIDE = 2 ** SUBTILE_SHIFT;
 
 /** Changes this recent are left to settle: an import saves many activities in a row. */
 const SETTLE_DELAY = "interval '2 seconds'";
@@ -206,7 +205,7 @@ export class ActivityGainsService {
           `INSERT INTO tile_first_visits (activity_id, user_id, x, y, visited_at, mask)
            SELECT g.activity_id, g.user_id, s.x >> ${SUBTILE_SHIFT}, s.y >> ${SUBTILE_SHIFT},
              a.started_at, bit_or(1::bigint << (
-               (s.y & ${SUBTILE_SIDE - 1}) * ${SUBTILE_SIDE} + (s.x & ${SUBTILE_SIDE - 1})))
+               (s.y & ${SUBTILES_PER_SIDE - 1}) * ${SUBTILES_PER_SIDE} + (s.x & ${SUBTILES_PER_SIDE - 1})))
            FROM activity_gains g
            JOIN activities a ON a.id = g.activity_id
            CROSS JOIN LATERAL (

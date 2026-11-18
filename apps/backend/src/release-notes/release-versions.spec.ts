@@ -86,7 +86,13 @@ describe('release versions', () => {
   });
 
   it('finds no content in blank texts', () => {
-    const sections = { new: null, improved: '  ', fixed: null, other: null };
+    const sections = {
+      new: null,
+      improved: '  ',
+      fixed: null,
+      other: null,
+      team: null,
+    };
     expect(hasReleaseNoteContent({ title: ' ', summary: null, sections })).toBe(
       false,
     );
@@ -97,5 +103,21 @@ describe('release versions', () => {
         sections: { ...sections, fixed: '- Bug' },
       }),
     ).toBe(true);
+  });
+
+  it('finds no content in the team part alone', () => {
+    expect(
+      hasReleaseNoteContent({
+        title: null,
+        summary: null,
+        sections: {
+          new: null,
+          improved: null,
+          fixed: null,
+          other: null,
+          team: '- Note',
+        },
+      }),
+    ).toBe(false);
   });
 });

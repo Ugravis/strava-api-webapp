@@ -1,4 +1,3 @@
-import { ADMIN_ROLES } from '@kilotrace/shared/admin';
 import { USER_REPORT_CUSTOM_REASON } from '@kilotrace/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +8,7 @@ import { isUniqueViolation } from '../common/database-errors';
 import { NotificationsService } from '../notifications/notifications.service';
 import { isSuspended, User } from '../users/user.entity';
 import type { ReportUserDto } from './reports.dto';
+import { reportHandlers } from './report-team';
 import { UserReport } from './user-report.entity';
 
 /** Where a member opens a report, as the routes of the back office name it. */
@@ -77,19 +77,12 @@ export class ReportsService {
     report: UserReport,
     except: string[],
   ): Promise<void> {
-    const members = await this.users
-      .createQueryBuilder('user')
-      .where('user.roles && :roles', { roles: [...ADMIN_ROLES] })
-      .getMany();
-    const handlers: User[] = [];
-    for (const member of members) {
-      if (
-        !except.includes(member.id) &&
-        (await this.permissions.can(member.roles, 'reports.handle'))
-      ) {
-        handlers.push(member);
-      }
-    }
+    const handlers = await reportHandlers(
+      this.users,
+      this.permissions,
+      'reports.handle',
+      except,
+    );
     await Promise.all(
       handlers.map((member) =>
         this.notifications.notifyFromTeam(member.id, 'report_received', {

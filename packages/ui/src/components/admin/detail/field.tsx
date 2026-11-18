@@ -74,15 +74,16 @@ export function DetailField<K extends DetailEditKind = "text">({
   const required = drafting && !!edit?.required;
   return (
     <div className="contents">
-      <dt className={cn("flex min-h-8 items-center gap-1.5 self-start text-muted-foreground", stacked && "col-span-2")}>
+      {/* On the first line of its label, which may wrap: the icon, and the value beside it. */}
+      <dt className={cn("flex min-h-8 items-start gap-1.5 self-start py-1.5 leading-5 text-muted-foreground", stacked && "col-span-2")}>
         {/* The dot of an editable field at the top right of its icon, as a badge on an icon; after the label without one. */}
         {icon && (
-          <span className="relative inline-flex shrink-0 text-muted-foreground/70 [&_svg]:size-3.5">
+          <span className="relative inline-flex h-5 shrink-0 items-center text-muted-foreground/70 [&_svg]:size-3.5">
             {icon}
             {marked && <EditableMark className="absolute -top-0.5 -right-0.5" />}
           </span>
         )}
-        {label}
+        <span className="min-w-0">{label}</span>
         {required && (
           <span className="-ml-1 text-destructive" aria-hidden>
             *
@@ -92,7 +93,7 @@ export function DetailField<K extends DetailEditKind = "text">({
       </dt>
       <dd
         className={cn(
-          "group/cell relative flex min-h-8 min-w-0 items-center",
+          "group/cell relative flex min-h-8 min-w-0 items-center self-start",
           // Its text wraps, cut nowhere.
           stacked && "col-span-2 mb-2 [&_.truncate]:whitespace-normal",
         )}

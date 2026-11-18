@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Polygon } from "geojson";
 import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
 import { SUBTILE_ZOOM, TILE_ZOOM, tilesCollection } from "@/lib/tiles/tile-geometry";
-import { fadeIn, firstGroundLayerId, type MapPalette } from "./map-style";
+import { fadeIn, firstGroundLayerId, type MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 const SOURCES = { tiles: "activity-tiles", subtiles: "activity-subtiles" } as const;
 
@@ -18,18 +18,13 @@ const SUBTILE_MIN_ZOOM = SUBTILE_ZOOM - PIXELS_LEVELS;
 
 const SUBTILE_LAYER_ID = "activity-subtiles-fill";
 
-/** Lowest layer of the activity: the tiles of the user, added later, go below it. */
-export const ACTIVITY_GROUND_LAYER_ID = "activity-tiles-fill-9";
+import { ACTIVITY_GROUND_LAYER_ID } from "@kilotrace/ui/lib/map/layer-order";
+
+export { ACTIVITY_GROUND_LAYER_ID, belowActivityTiles } from "@kilotrace/ui/lib/map/layer-order";
 /** Layers of the large tiles, one per grouping level, then the tiles themselves. */
 const TILE_LAYER_IDS = [...GROUPING_LEVELS, TILE_ZOOM].map((level) =>
   level === GROUPING_LEVELS[0] ? ACTIVITY_GROUND_LAYER_ID : `activity-tiles-fill-${level}`,
 );
-
-/** Where the ground layers of the user go: below the activity shown, whenever they are added. */
-export function belowActivityTiles(map: MapLibreMap): string | undefined {
-  return map.getLayer(ACTIVITY_GROUND_LAYER_ID) ? ACTIVITY_GROUND_LAYER_ID : firstGroundLayerId(map);
-}
-
 /** Tiles of the activity shown in the panel: large tiles with their groupings, and small tiles. */
 export interface ActivityTileData {
   tiles: FeatureCollection<Polygon>;

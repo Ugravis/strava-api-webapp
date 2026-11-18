@@ -1,3 +1,4 @@
+import { SystemModule } from '../system/system.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ActivitiesModule } from '../activities/activities.module';
@@ -11,6 +12,7 @@ import { UserProfileBadge } from './user-profile-badge.entity';
 
 @Module({
   imports: [
+    SystemModule,
     ActivitiesModule,
     StationsModule,
     TypeOrmModule.forFeature([

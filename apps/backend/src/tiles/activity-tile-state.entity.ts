@@ -18,8 +18,11 @@ import { Activity } from '../activities/activity.entity';
 export type TileStatus = 'no_track' | 'pending_stream' | 'done';
 /** Track the tiles were computed from. */
 export type TilePrecision = 'summary' | 'stream';
-/** `sparse`: points too far apart; `cropped`: hidden start or end not covered yet. */
-export type StreamReason = 'sparse' | 'cropped';
+/**
+ * `sparse`: points too far apart; `gap`: a segment may hide a pause;
+ * `cropped`: hidden start or end not covered yet.
+ */
+export type StreamReason = 'sparse' | 'gap' | 'cropped';
 
 /** Tile computation state of an activity. No location data is kept here. */
 @Entity('activity_tile_states')

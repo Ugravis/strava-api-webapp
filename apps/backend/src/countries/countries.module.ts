@@ -16,5 +16,6 @@ import { TileCountry } from './tile-country.entity';
   ],
   controllers: [CountriesController],
   providers: [CountriesService, CountriesWorker],
+  exports: [CountriesService],
 })
 export class CountriesModule {}

@@ -1,28 +1,40 @@
-import type { SystemStatusResponse } from '@kilotrace/shared';
+import type {
+  AdminAppSettingsResponse,
+  SystemStatusResponse,
+} from '@kilotrace/shared';
 import type {
   AdminDatabaseTable,
+  AdminSystemOverview,
   AdminUploadsAudit,
 } from '@kilotrace/shared/admin';
-import { Body, Delete, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
+import {
+  Body,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Put,
+} from '@nestjs/common';
+import { AppSettingsService } from '../../system/app-settings.service';
 import { SystemSettingsService } from '../../system/system-settings.service';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
-import {
-  SetMaintenanceDto,
-  SetShowcaseDto,
-  SetSignupsDto,
-} from './admin-system.dto';
+import { SetAppSettingDto, SetMaintenanceDto } from './admin-system.dto';
 import { AdminDatabaseService } from './admin-database.service';
+import { AdminSystemOverviewService } from './admin-system-overview.service';
 import { AdminUploadsService } from './admin-uploads.service';
 
-/** Switches of the whole site: support reads, super-admins act. */
+/** Maintenance banner, settings and storage of the site: every member reads, each action behind its permission. */
 @AdminController('system')
 export class AdminSystemController {
   constructor(
     private readonly settings: SystemSettingsService,
+    private readonly appSettings: AppSettingsService,
     private readonly uploads: AdminUploadsService,
     private readonly database: AdminDatabaseService,
+    private readonly overviews: AdminSystemOverviewService,
   ) {}
 
   @Get()
@@ -50,20 +62,35 @@ export class AdminSystemController {
     return this.settings.clearMaintenance();
   }
 
-  @Put('signups')
-  @Permission('system.signups')
-  @Audited({ action: 'system.signups', details: ['enabled'] })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  setSignups(@Body() dto: SetSignupsDto): Promise<void> {
-    return this.settings.setSignupsEnabled(dto.enabled);
+  @Get('overview')
+  @AnyMember()
+  overview(): Promise<AdminSystemOverview> {
+    return this.overviews.overview();
   }
 
-  @Put('showcase')
-  @Permission('system.showcase')
-  @Audited({ action: 'system.showcase', details: ['enabled'] })
+  @Get('settings')
+  @AnyMember()
+  appSettingsList(): Promise<AdminAppSettingsResponse> {
+    return this.appSettings.list();
+  }
+
+  @Put('settings/:key')
+  @Permission('system.settings')
+  @Audited({ action: 'system.settings.set', details: ['key', 'value'] })
   @HttpCode(HttpStatus.NO_CONTENT)
-  setShowcase(@Body() dto: SetShowcaseDto): Promise<void> {
-    return this.settings.setProfileShowcaseEnabled(dto.enabled);
+  setAppSetting(
+    @Param('key') key: string,
+    @Body() dto: SetAppSettingDto,
+  ): Promise<void> {
+    return this.appSettings.set(key, dto.value);
+  }
+
+  @Delete('settings/:key')
+  @Permission('system.settings')
+  @Audited({ action: 'system.settings.reset', details: ['key'] })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resetAppSetting(@Param('key') key: string): Promise<void> {
+    return this.appSettings.reset(key);
   }
 
   /** The tables of the database and their figures, read only. */
@@ -80,7 +107,7 @@ export class AdminSystemController {
   }
 
   @Delete('uploads/orphans')
-  @Permission('system.uploads')
+  @Permission('database.uploads')
   @Audited({ action: 'system.uploads.orphans.delete', destructive: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteOrphans(): Promise<void> {

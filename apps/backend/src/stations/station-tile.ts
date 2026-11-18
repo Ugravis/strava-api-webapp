@@ -1,6 +1,8 @@
-import { SUBTILE_ZOOM, TILE_ZOOM, tilePosition } from '../tiles/tile-grid';
-
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
+import {
+  SUBTILE_ZOOM,
+  SUBTILES_PER_SIDE,
+  tilePosition,
+} from '../tiles/tile-grid';
 
 /** Small tile holding a point: its large tile and its bit in the mask, as in `TileSet`. */
 export function placeTile(

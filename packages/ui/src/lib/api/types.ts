@@ -1,3 +1,4 @@
+import type { StationReportDismissal } from "@kilotrace/shared";
 import type { AdminRole } from "@kilotrace/shared/admin";
 
 export interface User {
@@ -354,6 +355,8 @@ export interface ActivityTiles {
   subtiles: [number, number][];
   /** What the activity brought when it was recorded; null until computed. */
   gains: { tiles: LevelGains; subtiles: LevelGains } | null;
+  /** Stations it reached first and growth of the largest network of visited stations; null until computed. */
+  stationGains: { stations: number; maxCluster: number; stationIds: number[] } | null;
 }
 
 /** A page of the activities that crossed a tile, the latest ones first. */
@@ -430,6 +433,10 @@ export interface TileHistorySummary {
   stations: number;
   /** Meters of railway unlocked since the date, or before it. */
   railwayM: number;
+  /** Growth of the largest network of visited stations since the date, or its size at the date. */
+  maxStationCluster: number;
+  /** Ids of the stations of the largest network: at the date, or today when the gains are apart. */
+  stationCluster: number[];
 }
 
 /** What the activities of one day brought to the tiles. */
@@ -465,12 +472,30 @@ export interface UnlockedLink {
   coords: [number, number][];
 }
 
+/** A stretch of railway shared by unlocked links, drawn once for their ties. */
+export interface RailTie {
+  linkIds: number[];
+  /** `[lon, lat]` along the tracks. */
+  coords: [number, number][];
+}
+
 /** Stations visited by the user and the links between them. */
 export interface VisitedStations {
   stations: VisitedStation[];
   links: UnlockedLink[];
+  ties: RailTie[];
   /** Changes with each import of the stations: the vector tiles of all the stations follow it. Null without stations. */
   stationsVersion: string | null;
+  /** Ids of the stations of the largest network of visited stations linked to each other, computed in the background. */
+  maxCluster: number[];
+  /** Meters of railway between the stations of the largest network. */
+  maxClusterM: number;
+  /** Stations of the other networks of at least two stations. */
+  otherClusters: number;
+  /** Meters of railway between the stations of the other networks. */
+  otherClustersM: number;
+  /** The activities that grew the largest network: their start (ISO 8601) and the growth, oldest first. */
+  maxClusterGains: { at: string; gain: number }[];
 }
 
 /** A station next to another on the railway. */
@@ -490,11 +515,15 @@ export interface StationDetails {
   name: string | null;
   lon: number;
   lat: number;
-  /** Small tile (zoom 17) holding the station: visiting it visits the station. */
+  /** Small tile (zoom 17) holding the station point. */
   tile: { zoom: 17; x: number; y: number };
+  /** Small tiles of its zone (footprint, tracks or point): visiting any of them visits the station. */
+  tiles: { zoom: 17; x: number; y: number }[];
   visited: boolean;
   firstVisitAt: string | null;
   neighbors: StationNeighbor[];
+  /** Part of the largest network of the stations visited by the user. */
+  inMaxCluster: boolean;
 }
 
 /** The train stations of a country and those the user visited. */
@@ -556,7 +585,7 @@ export interface TileFigures {
 export interface ProfileShowcase {
   badges: ProfileBadge[];
   tiles: { large: TileFigures; small: TileFigures };
-  stations: { visited: number; unlockedKm: number };
+  stations: { visited: number; unlockedKm: number; maxCluster: number };
 }
 
 export interface PublicProfile extends ProfileSummary {
@@ -618,7 +647,10 @@ export type NotificationType =
   | "release_note"
   | "report_received"
   | "report_sent"
-  | "report_closed";
+  | "report_closed"
+  | "station_report_received"
+  | "station_report_sent"
+  | "station_report_closed";
 
 /** Back-office role told by a `role_changed` notification. */
 export type TeamRole = "support" | "admin" | "super-admin";
@@ -632,7 +664,19 @@ export interface AppNotification {
   /** Null for an anonymous kind (who liked a profile is never told) and for the team. */
   actor: PublicUser | null;
   /** Said by the team: the reason, and the fields reset by a moderation. */
-  details: { reason?: string; fields?: ModeratedField[]; role?: TeamRole | null; version?: string; username?: string; href?: string; outcome?: "sanctioned" | "dismissed" } | null;
+  details: {
+    reason?: string;
+    fields?: ModeratedField[];
+    role?: TeamRole | null;
+    version?: string;
+    username?: string;
+    href?: string;
+    /** The decision on a report: `sanctioned` or `dismissed` for a profile; `accepted`, `dismissed`, then `done` for the railway data. */
+    outcome?: "sanctioned" | "dismissed" | "accepted" | "done";
+    /** The station of a report of the railway data, null for a general one. */
+    station?: string | null;
+    dismissal?: StationReportDismissal;
+  } | null;
   read: boolean;
   createdAt: string;
   /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */

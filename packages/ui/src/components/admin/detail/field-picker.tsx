@@ -98,9 +98,15 @@ export function PickerField({
         aria-label={label}
       >
         <div className="flex h-5 items-center justify-between px-1 text-xs font-medium text-muted-foreground">
-          <span>
-            {label}
-            {(edit.kind === "select" || edit.kind === "multiselect" || edit.kind === "image" || edit.kind === "tags") && (
+          {edit.kind === "icon" ? (
+            // The icons credited in place of the label.
+            <a href="https://lucide.dev/icons" target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-foreground hover:underline">
+              Powered by Lucide icons
+            </a>
+          ) : (
+            <span>
+              {label}
+              {(edit.kind === "select" || edit.kind === "multiselect" || edit.kind === "image" || edit.kind === "tags") && (
               <span className="font-normal text-muted-foreground/70">
                 {" "}
                 (
@@ -113,8 +119,9 @@ export function PickerField({
                       : imageRules(edit.accept ?? IMAGE_TYPES, edit.maxSize)}
                 )
               </span>
-            )}
-          </span>
+              )}
+            </span>
+          )}
           {saving && <LoaderCircleIcon className="size-3.5 animate-spin" aria-label="Enregistrement" />}
         </div>
         {edit.kind === "select" && (

@@ -37,6 +37,9 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
     return <p className="text-muted-foreground">{t("error")}</p>;
   }
 
+  // The stations it reached first, and the railway they unlocked.
+  const stationsGained = (tiles?.stationGains?.stationIds.length ?? 0) > 0;
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
@@ -71,6 +74,7 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
           <>
             <LevelGainsFigures title={t("tiles")} crossed={tiles.tiles.length} gains={tiles.gains.tiles} />
             <LevelGainsFigures title={t("subtiles")} crossed={tiles.subtiles.length} gains={tiles.gains.subtiles} />
+            {tiles.stationGains && <StationGainsFigures gains={tiles.stationGains} />}
           </>
         ) : (
           <p className="text-muted-foreground">{t("gainsPending")}</p>
@@ -96,6 +100,12 @@ export function ActivityPanel({ activityId, tiles, hasTrack, view, onViewChange 
             checked={view.track && hasTrack}
             disabled={!hasTrack}
             onChange={(track) => onViewChange({ ...view, track })}
+          />
+          <ViewSwitch
+            label={stationsGained ? t("showStations") : t("noStations")}
+            checked={view.stations && stationsGained}
+            disabled={!stationsGained}
+            onChange={(stations) => onViewChange({ ...view, stations })}
           />
         </div>
       </PanelSection>
@@ -157,6 +167,23 @@ function LevelGainsFigures({ title, crossed, gains }: LevelGainsFiguresProps) {
         <PanelFigure bare label={t("maxSquare")} value={gain(gains.maxSquare)} />
         <PanelFigure bare label={t("maxCluster")} value={gain(gains.maxCluster)} />
         <PanelFigure bare label={t("otherClusters")} value={gain(gains.otherClusters)} />
+      </PanelFigures>
+    </div>
+  );
+}
+
+/** What the activity brought to the train stations, aligned on the figures of the tiles. */
+function StationGainsFigures({ gains }: { gains: NonNullable<ActivityTiles["stationGains"]> }) {
+  const t = useTranslations("map.activityPanel");
+  const formatter = useFormatter();
+  const gain = (value: number) => (value > 0 ? `+${formatter.number(value)}` : formatter.number(value));
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border px-3 py-2.5">
+      <p className="font-medium">{t("stations")}</p>
+      <PanelFigures className="grid-cols-4 gap-3">
+        <PanelFigure bare label={t("newStations")} value={gain(gains.stations)} />
+        <PanelFigure bare label={t("maxCluster")} value={gain(gains.maxCluster)} />
       </PanelFigures>
     </div>
   );

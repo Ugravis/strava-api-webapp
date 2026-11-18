@@ -23,7 +23,7 @@ import {
   historyInstant,
   withinSteps,
 } from "@/lib/tiles/history-period";
-import { NO_COUNTRIES, type VisitedCountries } from "./country-layer";
+import { NO_COUNTRIES, type VisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { HistoryBand } from "./history-band";
 import { addressFromSearch, type AddressedTool, searchWithAddress } from "./map-address";
 import { MapBands } from "./map-bands";
@@ -38,6 +38,7 @@ import {
   withModuleOpened,
 } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
+import { MapSettings } from "./map-settings";
 import { MapStatsBar } from "./map-stats-bar";
 import { entryFromSearch } from "./panel-entry";
 import { SectorBand } from "./sector-band";
@@ -202,13 +203,16 @@ export function TracksMap() {
           tileMode={tileModeOf(layers)}
           showTracks={tracksShown(layers)}
           history={mapHistory}
+          historyStationCluster={history.summary?.stationCluster ?? null}
           sector={mapSector}
           sectorFrame={sectorFrame}
           onCenterChange={onCenterChange}
           stations={stations}
           showStations={layers.stations}
-          dimmed={mapDimmed(layers, module)}
+          dimmed={mapDimmed(layers)}
+          discreetDots={layers.discreetDots}
           label={t("label")}
+          control={<MapSettings tracks={tracks} layers={layers} onLayersChange={setLayers} />}
         />
       </div>
       <MapBands>

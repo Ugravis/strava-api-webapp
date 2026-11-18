@@ -4,6 +4,10 @@ export interface AdminNavigationCounts {
   badges: number;
   userTags: number;
   reservedUsernames: number;
-  /** Reports waiting for a decision, in a red pill. */
+  stations: number;
+  regions: number;
+  /** Reports of profiles waiting for a decision, in a red pill. */
   openReports: number;
+  /** Reports of the railway data waiting for a decision, in a red pill. */
+  openStationReports: number;
 }

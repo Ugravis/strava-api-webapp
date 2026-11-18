@@ -1,6 +1,6 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
-import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, DatabaseIcon, EarthIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, MapIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
@@ -13,19 +13,24 @@ export const adminRoutes = {
   users: "/users",
   badges: "/badges",
   userTags: "/user-tags",
+  stations: "/stations",
+  regions: "/regions",
+  datasetMap: "/map",
   releaseNotes: "/release-notes",
   reservedUsernames: "/reserved-usernames",
   auditLog: "/audit-log",
   system: "/system",
+  database: "/database",
   team: "/team",
   dev: "/dev",
   development: "/development",
   /** Prototypes of the back office, kept as showcases. */
   adminTablePoc: "/development/admin-table",
+  stationZonesPoc: "/development/station-zones",
 } as const;
 
 interface AdminNavItem {
-  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "auditLog" | "system" | "releaseNotes" | "team" | "dev" | "development";
+  key: "dashboard" | "statistics" | "siteActivity" | "users" | "reservedUsernames" | "badges" | "userTags" | "stations" | "regions" | "datasetMap" | "auditLog" | "system" | "database" | "releaseNotes" | "team" | "dev" | "development";
   href: string;
   icon: LucideIcon;
   /** Figure shown in a pill next to the entry. */
@@ -35,7 +40,7 @@ interface AdminNavItem {
 }
 
 interface AdminNavGroup {
-  key: "general" | "community" | "infrastructure" | "security";
+  key: "general" | "community" | "dataset" | "infrastructure" | "security";
   items: readonly AdminNavItem[];
 }
 
@@ -59,9 +64,18 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     ],
   },
   {
+    key: "dataset",
+    items: [
+      { key: "datasetMap", href: adminRoutes.datasetMap, icon: MapIcon },
+      { key: "regions", href: adminRoutes.regions, icon: EarthIcon, count: "regions" },
+      { key: "stations", href: adminRoutes.stations, icon: TrainFrontIcon, count: "stations", alert: "openStationReports" },
+    ],
+  },
+  {
     key: "infrastructure",
     items: [
       { key: "system", href: adminRoutes.system, icon: BoltIcon },
+      { key: "database", href: adminRoutes.database, icon: DatabaseIcon },
       { key: "releaseNotes", href: adminRoutes.releaseNotes, icon: ReceiptTextIcon },
       { key: "dev", href: adminRoutes.dev, icon: PackageIcon },
       { key: "development", href: adminRoutes.development, icon: GitCommitHorizontalIcon },

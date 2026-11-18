@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 /** Speeds of the trains offered on the slider, as a factor of the real one; the second is the real speed. */
-export const TRAIN_SPEED_STEPS = [0.5, 1, 2, 5, 10] as const;
+export const TRAIN_SPEED_STEPS = [0.5, 1, 2, 5, 10, 20] as const;
 export const REAL_TRAIN_SPEED = 1;
 /** Bounds of a speed entered manually. */
 export const MIN_TRAIN_SPEED = 0.1;

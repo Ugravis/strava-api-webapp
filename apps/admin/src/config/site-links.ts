@@ -9,3 +9,9 @@ export const siteUrl = (path: string): string => new URL(path, siteConfig.url).t
 export const siteHomeHref = siteUrl("/dashboard");
 
 export const userProfileHref = (username: string): string => siteUrl(`/profiles?user=${encodeURIComponent(username)}`);
+
+/** A station opened in the panel of the public map. */
+export const stationMapHref = (id: string): string => siteUrl(`/map?station=${encodeURIComponent(id)}`);
+
+/** A country opened with the sector tool of the public map. */
+export const regionMapHref = (code: string): string => siteUrl(`/map?sector=${encodeURIComponent(code)}`);

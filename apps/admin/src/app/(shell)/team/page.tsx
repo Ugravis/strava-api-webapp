@@ -7,7 +7,7 @@ import {
   type AdminTeamMember,
   permissionDefinition,
 } from "@kilotrace/shared/admin";
-import { FlagIcon, AtSignIcon, BoltIcon, ListClockIcon, type LucideIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrophyIcon, UsersIcon } from "lucide-react";
+import { FlagIcon, AtSignIcon, BoltIcon, DatabaseIcon, ListClockIcon, type LucideIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
 import { KpiGrid } from "@/components/admin/kpi-tile";
 import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
 import { Separator } from "@kilotrace/ui/components/ui/separator";
@@ -87,9 +87,11 @@ const CATEGORY_ICONS: Record<AdminPermissionCategory, LucideIcon> = {
   usernames: AtSignIcon,
   badges: TrophyIcon,
   userTags: TagIcon,
+  stations: TrainFrontIcon,
   releaseNotes: ReceiptTextIcon,
   audit: ListClockIcon,
   system: BoltIcon,
+  database: DatabaseIcon,
   team: ShieldCogCornerIcon,
 };
 

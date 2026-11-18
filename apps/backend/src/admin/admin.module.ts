@@ -16,6 +16,8 @@ import { ProviderConnection } from '../connections/provider-connection.entity';
 import { Follow } from '../follows/follow.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReleaseNote } from '../release-notes/release-note.entity';
+import { CountriesModule } from '../countries/countries.module';
+import { Country } from '../countries/country.entity';
 import { ReleaseNotesModule } from '../release-notes/release-notes.module';
 import { StorageModule } from '../storage/storage.module';
 import { StravaModule } from '../strava/strava.module';
@@ -41,6 +43,13 @@ import {
   AdminBadgeThemesController,
 } from './badges/admin-badges.controller';
 import { AdminBadgesService } from './badges/admin-badges.service';
+import { Place } from '../stations/place.entity';
+import { AdminMapController } from './map/admin-map.controller';
+import { AdminMapService } from './map/admin-map.service';
+import { AdminRegionsController } from './regions/admin-regions.controller';
+import { AdminRegionsService } from './regions/admin-regions.service';
+import { AdminStationsController } from './stations/admin-stations.controller';
+import { AdminStationsService } from './stations/admin-stations.service';
 import { AdminUserTagsController } from './user-tags/admin-user-tags.controller';
 import { AdminUserTagsService } from './user-tags/admin-user-tags.service';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
@@ -65,8 +74,13 @@ import { AdminSystemController } from './system/admin-system.controller';
 import { AdminTeamController } from './team/admin-team.controller';
 import { AdminTeamService } from './team/admin-team.service';
 import { AdminDatabaseService } from './system/admin-database.service';
+import { AdminSystemOverviewService } from './system/admin-system-overview.service';
 import { AdminUploadsService } from './system/admin-uploads.service';
+import { Report } from '../reports/report.entity';
+import { StationReport } from '../reports/station-report.entity';
 import { UserReport } from '../reports/user-report.entity';
+import { AdminStationReportsController } from './station-reports/admin-station-reports.controller';
+import { AdminStationReportsService } from './station-reports/admin-station-reports.service';
 import { AdminUserReportsController } from './user-reports/admin-user-reports.controller';
 import { AdminUserReportsService } from './user-reports/admin-user-reports.service';
 import { AdminUsersController } from './users/admin-users.controller';
@@ -99,7 +113,11 @@ export const ADMIN_ROUTES = [
       ReservedUsername,
       AdminRolePermission,
       ReleaseNote,
+      Report,
       UserReport,
+      StationReport,
+      Place,
+      Country,
     ]),
     AuthModule,
     UsersModule,
@@ -108,6 +126,7 @@ export const ADMIN_ROUTES = [
     StorageModule,
     SystemModule,
     ReleaseNotesModule,
+    CountriesModule,
   ],
   controllers: [
     AdminAuthController,
@@ -123,6 +142,10 @@ export const ADMIN_ROUTES = [
     AdminBadgesController,
     AdminBadgeThemesController,
     AdminUserTagsController,
+    AdminMapController,
+    AdminStationsController,
+    AdminStationReportsController,
+    AdminRegionsController,
     AdminSystemController,
     AdminTeamController,
     AdminPermissionsController,
@@ -142,8 +165,13 @@ export const ADMIN_ROUTES = [
     AdminBusinessStatisticsService,
     AdminBadgesService,
     AdminUserTagsService,
+    AdminMapService,
+    AdminStationsService,
+    AdminStationReportsService,
+    AdminRegionsService,
     AdminUploadsService,
     AdminDatabaseService,
+    AdminSystemOverviewService,
     AdminTeamService,
     AdminReservedUsernamesService,
     AdminDevService,

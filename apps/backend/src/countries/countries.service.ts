@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { SUBTILE_ZOOM, TILE_ZOOM } from '../tiles/tile-grid';
+import { SUBTILE_ZOOM, SUBTILES_PER_SIDE, TILE_ZOOM } from '../tiles/tile-grid';
 import { addLevel, type TileTotals } from './tile-totals';
-
-const SUBTILES_PER_SIDE = 2 ** (SUBTILE_ZOOM - TILE_ZOOM);
 
 export interface LevelCompletion {
   visited: number;
@@ -57,6 +55,13 @@ export interface CountrySector {
 }
 
 /** Large tiles of the user, with their small tiles. */
+/**
+ * Advisory lock between the located tiles and the changes of the tiles of
+ * the users (`refresh_user_tiles`, shared): each tile gained counted once
+ * in `user_countries`, by one side or the other.
+ */
+const TILE_COUNTRIES_LOCK = `hashtextextended('tile_countries', 0)`;
+
 const USER_CELLS = 'SELECT x, y, mask FROM user_tiles WHERE user_id = $1';
 
 /** Layers of the shape tiles: the merged areas and their outer borders. */
@@ -74,6 +79,8 @@ const MVT_EXTENT = 4096;
 const MVT_BUFFER = 64;
 /** Snapping grid of the tile shapes, in meters: tile edges computed at different zooms meet exactly. */
 const SHAPE_GRID_M = 1;
+/** Width of the Web Mercator world, in meters: a pixel of a tile is this over its extent and its count. */
+const WORLD_M = 40_075_016.686;
 /** Large tiles touching the country `$2`, with their small tiles touching it. */
 const COUNTRY_ZONE =
   'SELECT x, y, mask FROM tile_countries WHERE country_code = $2';
@@ -127,6 +134,10 @@ export class CountriesService {
            ON s.activity_id = t.activity_id AND s.updated_at >= $2`
       : '';
     return this.dataSource.transaction(async (manager) => {
+      // The tiles of the users stand still meanwhile: their countries counted once.
+      await manager.query(
+        `SELECT pg_advisory_xact_lock(${TILE_COUNTRIES_LOCK})`,
+      );
       const [row]: { located: number }[] = await manager.query(
         `WITH todo AS (
            SELECT DISTINCT t.x, t.y FROM activity_tiles t
@@ -161,6 +172,19 @@ export class CountriesService {
            INSERT INTO tile_countries (x, y, country_code, mask)
            SELECT x, y, country_code, bit_or(bit) FROM bits
            GROUP BY x, y, country_code
+           RETURNING x, y, country_code
+         ),
+         -- The holders of the tiles visit their countries.
+         visited AS (
+           SELECT u.user_id, i.country_code, count(*)::int AS tiles
+           FROM inserted i JOIN user_tiles u ON u.x = i.x AND u.y = i.y
+           GROUP BY u.user_id, i.country_code
+         ),
+         counted AS (
+           INSERT INTO user_countries (user_id, country_code, tiles)
+           SELECT user_id, country_code, tiles FROM visited
+           ON CONFLICT (user_id, country_code) DO UPDATE
+           SET tiles = user_countries.tiles + EXCLUDED.tiles
          )
          SELECT count(*)::int AS located FROM marked`,
         since ? [limit, since] : [limit],
@@ -436,6 +460,22 @@ export class CountriesService {
   }
 
   /**
+   * Bounds of the main landmass of a country, in degrees, computed once:
+   * null for an unknown country, or one without any land.
+   */
+  async focusBounds(
+    code: string,
+  ): Promise<[number, number, number, number] | null> {
+    const [country]: { bounds: [number, number, number, number] | null }[] =
+      await this.dataSource.query(
+        `SELECT ${BOUNDS_IN_DEGREES} AS bounds FROM countries WHERE code = $1`,
+        [code],
+      );
+    if (!country) return null;
+    return country.bounds ?? (await this.computeFocusBounds(code));
+  }
+
+  /**
    * Bounds of the largest landmass of a country, made of its parts touching
    * one another: a country with territories overseas is framed on its
    * mainland. Stored for the next requests.
@@ -529,6 +569,10 @@ export class CountriesService {
   ): Promise<Buffer> {
     // The shapes are clipped beyond the buffer of the tile: the edges added
     // by the clipping fall outside the buffer, where the borders are cut.
+    // Snapped to the pixel of the tile before the union, which the tile rounds
+    // to anyway: zoomed out, the union of every country drops from tens of
+    // seconds to a few.
+    const grid = Math.max(SHAPE_GRID_M, WORLD_M / (MVT_EXTENT * 2 ** zoom));
     const [row]: { tile: Buffer }[] = await this.dataSource.query(
       `WITH bounds AS (SELECT ST_TileEnvelope($1, $2, $3) AS envelope),
        clip AS (
@@ -537,7 +581,7 @@ export class CountriesService {
          FROM bounds
        ),
        merged AS (
-         SELECT ST_Union(ST_ClipByBox2D(c.tile_shape, clip.box), ${SHAPE_GRID_M}) AS geom
+         SELECT ST_Union(ST_ReducePrecision(ST_ClipByBox2D(c.tile_shape, clip.box), ${grid}), ${grid}) AS geom
          FROM countries c, clip
          WHERE c.code = ANY($4) AND c.tile_shape && clip.box
        ),

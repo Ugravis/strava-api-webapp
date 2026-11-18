@@ -1,5 +1,6 @@
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
-import type { MapPalette } from "./map-style";
+import { SHAPES_MAX_ZOOM } from "@kilotrace/shared";
+import type { MapPalette } from "@kilotrace/ui/lib/map/map-style";
 
 /** What the sector tool draws on the map. */
 export interface MapSector {
@@ -17,10 +18,9 @@ const SOURCE_ID = "sector-outside";
 /** Layers of the vector tiles served by the backend: the area outside the sector and its border. */
 const OUTSIDE_SOURCE_LAYER = "outside";
 const BORDER_SOURCE_LAYER = "border";
-/** The backend serves the shapes down to this zoom; the map stretches them beyond. */
-const SHAPES_MAX_ZOOM = 10;
-/** The veil of the sector: the layers drawn over the map go below it. */
-export const SECTOR_VEIL_LAYER_ID = "sector-outside-fill";
+import { SECTOR_VEIL_LAYER_ID } from "@kilotrace/ui/lib/map/layer-order";
+
+export { SECTOR_VEIL_LAYER_ID };
 const FILL_ID = SECTOR_VEIL_LAYER_ID;
 const LINE_ID = "sector-border-line";
 

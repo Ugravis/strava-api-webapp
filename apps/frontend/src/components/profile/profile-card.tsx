@@ -400,6 +400,10 @@ function StationsWidget({ stations }: { stations: ProfileShowcase["stations"] })
           <dt className="truncate">{t("stationsVisited")}</dt>
           <dd className="shrink-0 font-medium text-zinc-50 tabular-nums">{format.number(stations.visited)}</dd>
         </div>
+        <div className="flex justify-between gap-2">
+          <dt className="truncate">{t("stationCluster")}</dt>
+          <dd className="shrink-0 font-medium text-zinc-50 tabular-nums">{format.number(stations.maxCluster)}</dd>
+        </div>
       </dl>
     </div>
   );

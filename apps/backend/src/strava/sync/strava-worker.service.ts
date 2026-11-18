@@ -1,3 +1,4 @@
+import { AppSettingsService } from '../../system/app-settings.service';
 import {
   Inject,
   Injectable,
@@ -44,6 +45,7 @@ export class StravaWorker
     private readonly connections: StravaConnectionService,
     private readonly stravaTiles: StravaTilesService,
     private readonly tiles: TilesService,
+    private readonly settings: AppSettingsService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -82,8 +84,15 @@ export class StravaWorker
     }, delayMs);
   }
 
-  /** Processes at most one item; returns whether there was something to do. */
+  /**
+   * Processes at most one item; returns whether there was something to do.
+   * Paused from the back office: nothing is read from Strava, the webhook
+   * events and the jobs wait in their queues.
+   */
   private async tick(): Promise<boolean> {
+    if (!(await this.settings.get('stravaSyncEnabled'))) {
+      return false;
+    }
     if (Date.now() - this.lastMaintenance >= MAINTENANCE_INTERVAL_MS) {
       this.lastMaintenance = Date.now();
       await this.maintain();

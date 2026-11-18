@@ -72,6 +72,12 @@ export class UpdateReleaseNoteDto {
   @MaxLength(RELEASE_NOTE_SECTION_MAX_LENGTH)
   other?: string | null;
 
+  @TrimToNull()
+  @nullable
+  @IsString()
+  @MaxLength(RELEASE_NOTE_SECTION_MAX_LENGTH)
+  team?: string | null;
+
   @IsOptional()
   @IsIn(RELEASE_NOTE_DISPLAYS)
   display?: ReleaseNoteDisplay;

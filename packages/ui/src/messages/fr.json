@@ -275,7 +275,7 @@
     "NOT_FOUND": "Introuvable.",
     "PRIVATE_PROFILE": "Ce profil est privé.",
     "NO_FOLLOW_REQUEST": "Cette demande n'existe plus.",
-    "PROFILE_BADGES_FULL": "Vous avez déjà épinglé 5 badges.",
+    "PROFILE_BADGES_FULL": "Vous avez déjà épinglé le nombre maximum de badges.",
     "CANNOT_LIKE_SELF": "Vous ne pouvez pas aimer votre propre profil.",
     "SIGNUPS_DISABLED": "Les inscriptions sont fermées pour le moment.",
     "CANNOT_REPORT_SELF": "Vous ne pouvez pas vous signaler vous-même.",
@@ -349,6 +349,7 @@
       "badges": "Badges épinglés",
       "noBadges": "Aucun badge épinglé. Choisissez ceux à afficher depuis la page <link>Succès</link>.",
       "stationsVisited": "Gares visitées",
+      "stationCluster": "Cluster max",
       "previousLevel": "Grandes tuiles",
       "nextLevel": "Petites tuiles",
       "badgeLevel": "Niveau {level}",
@@ -638,6 +639,7 @@
       "stations": "Gares et voies",
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
       "railway": "de voies débloquées",
+      "stationCluster": "cluster max ({railway})",
       "lastStation": "Dernière : {name}",
       "stationsError": "Impossible de charger vos gares pour le moment.",
       "openTiles": "Voir les tuiles sur la carte",
@@ -670,6 +672,7 @@
       },
       "stationModes": {
         "stations": "Gares visitées",
+        "maxCluster": "Plus grand cluster",
         "railway": "Voies débloquées"
       },
       "squareSize": "{size} × {size}",
@@ -826,7 +829,7 @@
       "addToProfile": "Afficher sur le profil",
       "removeFromProfile": "Retirer du profil",
       "profileError": "Impossible de modifier votre profil pour le moment.",
-      "profileFull": "Vous avez déjà épinglé 5 badges : retirez-en un de votre profil pour en épingler un autre."
+      "profileFull": "Vous avez déjà épinglé le nombre maximum de badges : retirez-en un de votre profil pour en épingler un autre."
     },
     "showMore": "{count, plural, one {Afficher # badge de plus} other {Afficher # badges de plus}}",
     "showLess": "Afficher moins",
@@ -916,9 +919,10 @@
     "stats": {
       "label": "Chiffres clés de la carte",
       "tracks": "Tracés",
-      "trackCount": "{count, plural, one {tracé} other {tracés}}",
       "tiles": "Grandes tuiles",
       "subtiles": "Petites tuiles",
+      "showSubtiles": "Afficher les petites tuiles sur la carte",
+      "hideSubtiles": "Masquer les petites tuiles sur la carte",
       "visited": "Visitées",
       "maxCluster": "Plus grand cluster",
       "otherClusters": "Autres clusters",
@@ -929,12 +933,22 @@
       "stationCount": "{count, plural, one {gare visitée} other {gares visitées}}",
       "railway": "Voies débloquées",
       "dim": "Atténuer la carte",
+      "discreetDots": "Gares vues de loin",
       "trainSpeed": "Vitesse des trains",
       "speedValue": "×{factor, number}",
       "realSpeed": "réelle",
       "editSpeed": "Saisir une vitesse, de ×{min, number} à ×{max, number}",
       "display": "Affichage",
       "sound": "Son des trains"
+    },
+    "settings": {
+      "open": "Paramètres",
+      "map": "Carte",
+      "location": "Ma position"
+    },
+    "location": {
+      "find": "Me localiser",
+      "unavailable": "Position indisponible"
     },
     "modules": {
       "tiles": "Tuiles",
@@ -972,6 +986,7 @@
       "other": "Autre"
     },
     "tilePanel": {
+      "station": "Gare",
       "tile": "Tuile",
       "subtile": "Petite tuile",
       "description": "Ce que vos activités ont exploré sur cette tuile.",
@@ -1018,6 +1033,8 @@
       "newTiles": "Nouvelles",
       "maxCluster": "Cluster principal",
       "otherClusters": "Autres clusters",
+      "stations": "Gares",
+      "newStations": "Nouvelles",
       "gainsPending": "Les gains de cette activité sont en cours de calcul.",
       "gainedOnly": "Uniquement les tuiles gagnées",
       "elapsedTime": "Temps écoulé",
@@ -1030,6 +1047,8 @@
       "showSubtiles": "Petites tuiles",
       "showTrack": "Trace",
       "noTrack": "Trace indisponible sur cet appareil",
+      "showStations": "Gares et voies gagnées",
+      "noStations": "Aucune gare gagnée par cette activité",
       "nothingGained": "Aucune tuile gagnée par cette activité"
     },
     "activityFormat": {
@@ -1061,7 +1080,8 @@
         "tiles": "Grandes tuiles",
         "subtiles": "Petites tuiles",
         "stations": "Gares",
-        "railway": "Voies"
+        "railway": "Voies",
+        "stationCluster": "Cluster de gares"
       },
       "pending": "Mise à jour de l'historique…",
       "error": "Impossible de charger l'historique.",
@@ -1105,17 +1125,20 @@
       "unnamed": "Gare sans nom",
       "visited": "Visitée",
       "notVisited": "Pas encore visitée",
-      "visitedDescription": "Une de vos activités a traversé la petite tuile de cette gare.",
-      "notVisitedDescription": "Traversez la petite tuile de cette gare pour la débloquer.",
+      "inMaxCluster": "Plus grand cluster",
+      "visitedDescription": "Une de vos activités a traversé une des petites tuiles de cette gare, surlignées sur la carte.",
+      "notVisitedDescription": "Traversez une des petites tuiles de cette gare, surlignées sur la carte, pour la débloquer.",
       "firstVisit": "Première visite",
       "links": "Liaisons débloquées",
       "neighbors": "Gares voisines",
       "noNeighbors": "Aucune gare voisine trouvée sur le réseau ferré.",
       "linkUnlocked": "{distance} débloqués",
-      "activities": "Activités",
+      "activities": "Activités sur la tuile de la gare",
       "viewTile": "Voir la petite tuile",
+      "center": "Centrer la gare sur la carte",
       "error": "Impossible de charger cette gare.",
-      "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>"
+      "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>",
+      "report": "Signaler un problème sur cette gare"
     },
     "trainPanel": {
       "title": "{kind} {number}",
@@ -1164,6 +1187,36 @@
       "fewerStops": "Masquer les arrêts intermédiaires",
       "passed": "Desservi",
       "estimated": "Horaire estimé"
+    },
+    "stationReport": {
+      "prompt": "Un problème avec une ligne de trains ? Une gare manquante ?",
+      "open": "Signaler",
+      "title": "Signaler un manque ou une erreur",
+      "description": "Une gare manque, une voie ferrée est absente ou erronée ? Dites-le à l'équipe, qui corrigera les données lors des prochaines mises à jour.",
+      "stationTitle": "Signaler « {name} »",
+      "stationDescription": "Une information de cette gare est fausse ? Dites-le à l'équipe, qui corrigera les données lors des prochaines mises à jour.",
+      "unnamed": "Gare sans nom",
+      "legend": "Raison du signalement",
+      "reasons": {
+        "missing_station": "Une gare manque",
+        "railway": "Voie ferrée manquante ou erronée",
+        "wrong_count": "Une gare est comptabilisée à tort",
+        "wrong_name": "Nom erroné",
+        "wrong_location": "Mauvais emplacement",
+        "wrong_zone": "Zone de validation incorrecte",
+        "closed": "Gare fermée ou inexistante",
+        "duplicate": "Doublon d'une autre gare",
+        "other": "Autre"
+      },
+      "details": "Précisions (facultatif)",
+      "detailsRequired": "Précisez la raison",
+      "detailsPlaceholder": "Nom de la gare, ville, ligne… tout ce qui aide l'équipe à la retrouver.",
+      "stationPlaceholder": "Ce qui est faux, et ce qui serait juste.",
+      "customPlaceholder": "Décrivez le problème.",
+      "submit": "Envoyer",
+      "sent": "Signalement envoyé à l'équipe",
+      "sentDescription": "Vous serez prévenu·e dès qu'il aura été examiné.",
+      "close": "Fermer"
     }
   },
   "community": {
@@ -1263,7 +1316,19 @@
     "release": "Nouveautés",
     "report_received": "Nouveau signalement de @{username} à traiter.",
     "report_closed": "{outcome, select, sanctioned {Votre signalement de @{username} a été examiné : une sanction a été prise. Merci.} other {Votre signalement de @{username} a été examiné : aucune sanction n'a été retenue.}}",
-    "report_sent": "Votre signalement de @{username} a bien été envoyé. Vous serez prévenu·e dès que l'équipe l'aura examiné."
+    "report_sent": "Votre signalement de @{username} a bien été envoyé. Vous serez prévenu·e dès que l'équipe l'aura examiné.",
+    "station_report_received": "{general, select, yes {Nouveau signalement des données ferroviaires à traiter.} other {Nouveau signalement de la gare « {station} » à traiter.}}",
+    "station_report_sent": "{general, select, yes {Votre signalement des données ferroviaires a bien été envoyé.} other {Votre signalement de la gare « {station} » a bien été envoyé.}} Vous serez prévenu·e dès que l'équipe l'aura examiné.",
+    "station_report_closed": "{outcome, select, accepted {{general, select, yes {Votre signalement des données ferroviaires} other {Votre signalement de la gare « {station} »}} a été accepté : il sera pris en compte lors des prochaines mises à jour. Merci !} done {{general, select, yes {La correction de votre signalement des données ferroviaires} other {La correction de votre signalement de la gare « {station} »}} est en ligne. Merci !} other {{general, select, yes {Votre signalement des données ferroviaires} other {Votre signalement de la gare « {station} »}} a été classé sans suite : {dismissal}.}}",
+    "teamNote": "Note de l'équipe : {reason}",
+    "stationDismissals": {
+      "already_fixed": "déjà présent ou déjà corrigé",
+      "duplicate": "doublon d'un autre signalement",
+      "osm_correct": "les données OpenStreetMap sont correctes",
+      "out_of_scope": "hors du périmètre du site",
+      "unverifiable": "impossible à vérifier",
+      "other": "autre raison"
+    }
   },
   "footer": {
     "label": "Pied de page",
@@ -1307,7 +1372,9 @@
       "new": "Nouveautés",
       "improved": "Améliorations",
       "fixed": "Corrections",
-      "other": "Autres changements"
+      "other": "Autres changements",
+      "team": "Équipe",
+      "teamHint": "Visible par l'équipe uniquement"
     },
     "dialog": {
       "previous": "Version précédente",

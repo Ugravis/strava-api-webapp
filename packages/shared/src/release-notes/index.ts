@@ -8,8 +8,16 @@ export const RELEASE_NOTE_DISPLAYS = ["popup", "banner", "notification", "none"]
 export type ReleaseNoteDisplay = (typeof RELEASE_NOTE_DISPLAYS)[number];
 
 /** The parts of a note, in the order they are shown. */
-export const RELEASE_NOTE_SECTIONS = ["new", "improved", "fixed", "other"] as const;
+export const RELEASE_NOTE_SECTIONS = ["new", "improved", "fixed", "other", "team"] as const;
 export type ReleaseNoteSection = (typeof RELEASE_NOTE_SECTIONS)[number];
+
+/** The part only the back-office team reads (every role): never sent to the others, never enough to publish a note. */
+export const TEAM_RELEASE_NOTE_SECTION = "team" satisfies ReleaseNoteSection;
+
+/** The parts every user reads. */
+export const PUBLIC_RELEASE_NOTE_SECTIONS = RELEASE_NOTE_SECTIONS.filter(
+  (section): section is Exclude<ReleaseNoteSection, typeof TEAM_RELEASE_NOTE_SECTION> => section !== TEAM_RELEASE_NOTE_SECTION,
+);
 
 /**
  * A version after Semantic Versioning 2.0: `major.minor.patch`, then a
@@ -148,7 +156,7 @@ export interface MarkReleaseNotesSeenRequest {
   versions: string[];
 }
 
-/** Whether a note has anything to say. */
+/** Whether a note has anything to say to every user: the team part alone is not enough. */
 export function hasReleaseNoteContent({ title, summary, sections }: ReleaseNoteContent): boolean {
-  return !!(title?.trim() || summary?.trim() || Object.values(sections).some((body) => body?.trim()));
+  return !!(title?.trim() || summary?.trim() || PUBLIC_RELEASE_NOTE_SECTIONS.some((section) => sections[section]?.trim()));
 }

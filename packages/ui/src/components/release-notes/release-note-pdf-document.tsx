@@ -1,4 +1,4 @@
-import { type PublicReleaseNote, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
+import { PUBLIC_RELEASE_NOTE_SECTIONS, type PublicReleaseNote, type ReleaseNoteSection } from "@kilotrace/shared";
 import { Document, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ReactNode } from "react";
 import { INLINE_HIGHLIGHT, markdownBlocks, SAFE_LINK } from "@kilotrace/ui/components/markdown/markdown";
@@ -16,7 +16,7 @@ const LINE = "#e4e4e7";
 const PRIMARY = "#2563eb";
 
 /** The colour of the title of each part, as their icons on the site. */
-const SECTION_COLORS: Record<ReleaseNoteSection, string> = { new: "#7c3aed", improved: "#0284c7", fixed: "#059669", other: MUTED };
+const SECTION_COLORS: Record<ReleaseNoteSection, string> = { new: "#7c3aed", improved: "#0284c7", fixed: "#059669", other: MUTED, team: "#b45309" };
 
 const styles = StyleSheet.create({
   page: { paddingTop: 44, paddingBottom: 56, paddingHorizontal: 48, fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.5, color: INK },
@@ -93,7 +93,8 @@ export interface ReleaseNotePdfProps {
 }
 
 export function ReleaseNotePdf({ note, banner, labels }: ReleaseNotePdfProps) {
-  const parts = RELEASE_NOTE_SECTIONS.filter((section) => note.sections[section]?.trim());
+  // A file passes from hand to hand: the team part stays out of it.
+  const parts = PUBLIC_RELEASE_NOTE_SECTIONS.filter((section) => note.sections[section]?.trim());
   return (
     <Document title={labels.title} author="Kilotrace" subject={`Version ${note.version}`} language="fr">
       <Page size="A4" style={styles.page}>

@@ -3,7 +3,10 @@ import { Get } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Badge } from '../distances/badge.entity';
+import { StationReport } from '../reports/station-report.entity';
 import { UserReport } from '../reports/user-report.entity';
+import { Country } from '../countries/country.entity';
+import { Place } from '../stations/place.entity';
 import { ReservedUsername } from '../users/reserved-username.entity';
 import { UserTag } from '../users/user-tag.entity';
 import { User } from '../users/user.entity';
@@ -20,20 +23,45 @@ export class AdminNavigationController {
     private readonly reservedUsernames: Repository<ReservedUsername>,
     @InjectRepository(UserReport)
     private readonly reports: Repository<UserReport>,
+    @InjectRepository(StationReport)
+    private readonly stationReports: Repository<StationReport>,
+    @InjectRepository(Place) private readonly places: Repository<Place>,
+    @InjectRepository(Country)
+    private readonly countries: Repository<Country>,
   ) {}
 
   /** Sizes of the catalogs listed in the sidebar, read on every page of the back office. */
   @Get('counts')
   @AnyMember()
   async counts(): Promise<AdminNavigationCounts> {
-    const [users, badges, userTags, reservedUsernames, openReports] =
-      await Promise.all([
-        this.users.count(),
-        this.badges.count(),
-        this.userTags.count(),
-        this.reservedUsernames.count(),
-        this.reports.countBy({ status: 'open' }),
-      ]);
-    return { users, badges, userTags, reservedUsernames, openReports };
+    const [
+      users,
+      badges,
+      userTags,
+      reservedUsernames,
+      openReports,
+      openStationReports,
+      stations,
+      regions,
+    ] = await Promise.all([
+      this.users.count(),
+      this.badges.count(),
+      this.userTags.count(),
+      this.reservedUsernames.count(),
+      this.reports.countBy({ status: 'open' }),
+      this.stationReports.countBy({ status: 'open' }),
+      this.places.countBy({ kind: 'station' }),
+      this.countries.count(),
+    ]);
+    return {
+      users,
+      badges,
+      userTags,
+      reservedUsernames,
+      openReports,
+      openStationReports,
+      stations,
+      regions,
+    };
   }
 }

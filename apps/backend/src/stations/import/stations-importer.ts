@@ -4,11 +4,18 @@ import { basename, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { DataSource, EntityManager } from 'typeorm';
 import { LOCATE_PLACES } from '../place-countries';
+import { COUNT_PLACE_HOLDERS } from '../place-holders';
 import { placeTile } from '../station-tile';
 import { parseOplLine } from './osm-opl';
-import { type RailwayData, RailwayDataBuilder } from './railway-data';
+import { osmKey, type RailwayData, RailwayDataBuilder } from './railway-data';
+import { pruneStations } from './station-pruning';
 import type { StationExclusion } from './railway-rules';
+import { mergeOverlappingStations } from './station-merges';
+import { COUNT_STATION_LINKS } from '../station-links';
+import { saveStrokes } from './rail-strokes';
 import { type NetworkLink, RailwayNetwork } from './railway-network';
+import { stationZones } from './station-zones';
+import { saveZones, type ZoneReport } from './station-zones-store';
 
 /** Below this, the extract is considered incomplete and nothing is replaced. */
 const MIN_STATIONS = 1_000;
@@ -20,16 +27,28 @@ const MANY_NEIGHBORS = 6;
 
 /**
  * Objects kept from an OSM extract: the stations, the tracks, the passenger
- * train routes and the stop areas, with the objects they reference.
+ * train routes and the stop areas, with the objects they reference, and
+ * the platforms and buildings drawing the zones of the stations.
  */
 const OSMIUM_FILTERS = [
   'n/railway=station,halt',
   'w/railway=rail,narrow_gauge,preserved',
   'r/route=train',
   'r/public_transport=stop_area',
+  'nwr/railway=platform',
+  'nwr/public_transport=platform',
+  'nwr/public_transport=station',
+  'w/building=train_station,transportation,roof',
+  'w/railway=station',
 ];
+/**
+ * Prefix of the derived extract: changed with the filters, so that an
+ * extract of older filters is never reused.
+ */
+const EXTRACT_PREFIX = 'railway-zones';
 
 interface StationSample {
+  osmType: string;
   osmId: number;
   name: string | null;
   lon: number;
@@ -74,6 +93,8 @@ export interface RailwayImportReport {
   manyNeighbors: (StationSample & { neighbors: number })[];
   /** Per country: kept stations and network length. */
   countries: { code: string; stations: number; networkKm: number }[];
+  /** Stations by source of their zone, and small tiles of all the zones. */
+  zones: ZoneReport;
   durationsS: Record<string, number>;
 }
 
@@ -98,7 +119,7 @@ function run(command: string, args: string[]): Promise<void> {
 async function railwayExtract(source: string): Promise<string> {
   const dir = join(dirname(source), 'derived');
   mkdirSync(dir, { recursive: true });
-  const extract = join(dir, `railway-${basename(source)}`);
+  const extract = join(dir, `${EXTRACT_PREFIX}-${basename(source)}`);
   if (
     existsSync(extract) &&
     statSync(extract).mtimeMs > statSync(source).mtimeMs
@@ -162,10 +183,15 @@ async function readRailway(extract: string): Promise<RailwayData> {
  * (the planet or any extract): osmium keeps its railway, then the whole
  * network is walked in memory. The stations keep their ids from one import
  * to the next; the links are replaced. `dataSource` must be initialized.
+ *
+ * With `zonesOnly`, only the zones of the stations of the file already in
+ * the database are recomputed: a small extract can be tried without
+ * replacing the stations of the world.
  */
 export async function importStations(
   dataSource: DataSource,
   source: string,
+  { zonesOnly = false }: { zonesOnly?: boolean } = {},
 ): Promise<void> {
   const durationsS: Record<string, number> = {};
   const timed = async <T>(step: string, work: () => Promise<T>): Promise<T> => {
@@ -184,6 +210,19 @@ export async function importStations(
   console.log(
     `${data.nodes.size} nodes, ${data.tracks.count} tracks, ${data.stations.length} candidate stations, ${kept.length} kept`,
   );
+  if (zonesOnly) {
+    const zones = await timed('zones', () =>
+      saveZones(dataSource, data, stationZones(data, kept), {
+        onlyComputed: true,
+      }),
+    );
+    console.log(
+      `Zones of ${kept.length} stations: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
+    );
+    await timed('holders', () => dataSource.query(COUNT_PLACE_HOLDERS));
+    await timed('links', () => dataSource.query(COUNT_STATION_LINKS));
+    return;
+  }
   if (kept.length < MIN_STATIONS) {
     throw new Error(
       `Only ${kept.length} stations kept from ${source}: nothing imported`,
@@ -192,25 +231,33 @@ export async function importStations(
   const result = await timed('link', () =>
     Promise.resolve(new RailwayNetwork(data).linkAll()),
   );
+  const links = pruneStations(data.stations, result.links);
+  const imported = kept.filter(
+    (index) => data.stations[index].exclusion === null,
+  );
   console.log(
-    `${result.links.length} links, ${result.detours.length} detours rejected, ${result.redundant.length} redundant`,
+    `${links.length} links, ${result.detours.length} detours rejected, ${result.redundant.length} redundant, ${kept.length - imported.length} stations unlinked or on a park train`,
   );
 
   const sample = (index: number): StationSample => {
-    const { osmId, name, point } = data.stations[index];
-    return { osmId, name, lon: point[0], lat: point[1] };
+    const { osmType, osmId, name, point } = data.stations[index];
+    return { osmType, osmId, name, lon: point[0], lat: point[1] };
   };
   const excludedSamples = {
     not_train: [],
     closed: [],
     not_served: [],
     merged: [],
+    unlinked: [],
+    park: [],
   } as Record<StationExclusion, StationSample[]>;
   const excluded = {
     not_train: 0,
     closed: 0,
     not_served: 0,
     merged: 0,
+    unlinked: 0,
+    park: 0,
   } as Record<StationExclusion, number>;
   data.stations.forEach((station, index) => {
     if (!station.exclusion) return;
@@ -220,21 +267,43 @@ export async function importStations(
     }
   });
   const neighbors = new Map<number, number>();
-  for (const { a, b } of result.links) {
+  for (const { a, b } of links) {
     neighbors.set(a, (neighbors.get(a) ?? 0) + 1);
     neighbors.set(b, (neighbors.get(b) ?? 0) + 1);
   }
 
   await timed('save', () =>
     dataSource.transaction(async (manager) => {
-      await saveStations(manager, data, kept);
-      await saveLinks(manager, data, result.links);
+      await saveStations(manager, data, imported);
+      await saveLinks(manager, data, links);
     }),
   );
+  const zones = await timed('zones', () =>
+    saveZones(dataSource, data, stationZones(data, imported)),
+  );
+  console.log(
+    `Zones: ${zones.sources.osm} footprints, ${zones.sources.rails} tracks, ${zones.sources.point} points, ${zones.tiles} small tiles`,
+  );
+  const merged = await timed('merge', () =>
+    mergeOverlappingStations(
+      dataSource,
+      new Map(
+        imported.map((index) => [
+          osmKey(data.stations[index]),
+          data.stations[index].routeIds.length,
+        ]),
+      ),
+    ),
+  );
+  excluded.merged += merged;
+  console.log(`${merged} stations merged into an overlapping footprint`);
+  await timed('segments', () => saveSegments(dataSource));
+  await timed('strokes', () => saveStrokes(dataSource));
   await timed('countries', async () => {
     await dataSource.query(LOCATE_PLACES);
     await splitByCountry(dataSource);
   });
+  await timed('holders', () => dataSource.query(COUNT_PLACE_HOLDERS));
 
   const countries: { code: string; stations: number; network_km: number }[] =
     await dataSource.query(
@@ -256,8 +325,8 @@ export async function importStations(
   const report: RailwayImportReport = {
     source: basename(source),
     candidates: data.stations.length,
-    kept: kept.length,
-    servedByTrack: kept.filter(
+    kept: imported.length - merged,
+    servedByTrack: imported.filter(
       (index) => data.stations[index].servedBy === 'track',
     ).length,
     excluded,
@@ -266,9 +335,9 @@ export async function importStations(
       count: result.isolated.length,
       samples: result.isolated.slice(0, REPORT_SAMPLES).map(sample),
     },
-    links: result.links.length,
+    links: links.length,
     networkKm: Math.round(
-      result.links.reduce((total, link) => total + link.lengthM, 0) / 1000,
+      links.reduce((total, link) => total + link.lengthM, 0) / 1000,
     ),
     redundant: {
       count: result.redundant.length,
@@ -303,6 +372,7 @@ export async function importStations(
       stations,
       networkKm: network_km,
     })),
+    zones,
     durationsS,
   };
   await dataSource.query(
@@ -310,7 +380,7 @@ export async function importStations(
     [basename(source), JSON.stringify(report)],
   );
   console.log(
-    `Imported: ${kept.length} stations, ${result.links.length} links, ${report.networkKm} km.`,
+    `Imported: ${imported.length - merged} stations, ${links.length} links, ${report.networkKm} km.`,
   );
 }
 
@@ -322,7 +392,10 @@ async function saveStations(
 ): Promise<void> {
   await manager.query(
     `CREATE TEMP TABLE imported_stations (
-       osm_id bigint PRIMARY KEY, name text, geom geometry(Point, 4326), x integer, y integer, bit smallint
+       osm_type char(1), osm_id bigint, name text, geom geometry(Point, 4326), x integer, y integer, bit smallint,
+       category varchar(16), tourist boolean, routes integer, operator text, network text, uic_ref text,
+       wikidata text, osm_tags jsonb,
+       PRIMARY KEY (osm_type, osm_id)
      ) ON COMMIT DROP`,
   );
   for (let i = 0; i < kept.length; i += INSERT_BATCH) {
@@ -330,11 +403,17 @@ async function saveStations(
       .slice(i, i + INSERT_BATCH)
       .map((index) => data.stations[index]);
     const tiles = batch.map(({ point }) => placeTile(point[0], point[1]));
+    const tag = (key: string) =>
+      batch.map((station) => station.tags[key]?.trim() || null);
     await manager.query(
       `INSERT INTO imported_stations
-       SELECT id, name, ST_SetSRID(ST_MakePoint(lon, lat), 4326), x, y, bit
-       FROM unnest($1::bigint[], $2::text[], $3::float8[], $4::float8[], $5::int[], $6::int[], $7::int[])
-         AS s(id, name, lon, lat, x, y, bit)
+       SELECT type, id, name, ST_SetSRID(ST_MakePoint(lon, lat), 4326), x, y, bit,
+         category, tourist, routes, operator, network, uic_ref, wikidata, tags::jsonb
+       FROM unnest(
+         $1::bigint[], $2::text[], $3::float8[], $4::float8[], $5::int[], $6::int[], $7::int[], $8::text[],
+         $9::text[], $10::boolean[], $11::int[], $12::text[], $13::text[], $14::text[], $15::text[], $16::text[]
+       ) AS s(id, name, lon, lat, x, y, bit, type,
+         category, tourist, routes, operator, network, uic_ref, wikidata, tags)
        ON CONFLICT DO NOTHING`,
       [
         batch.map((station) => station.osmId),
@@ -344,21 +423,44 @@ async function saveStations(
         tiles.map((tile) => tile.x),
         tiles.map((tile) => tile.y),
         tiles.map((tile) => tile.bit),
+        batch.map((station) => station.osmType),
+        tag('railway'),
+        batch.map((station) => station.tourist),
+        batch.map((station) => station.routeIds.length),
+        tag('operator'),
+        tag('network'),
+        tag('uic_ref'),
+        tag('wikidata'),
+        batch.map((station) => JSON.stringify(station.tags)),
       ],
     );
   }
   await manager.query(
     `DELETE FROM places p WHERE p.kind = 'station' AND NOT EXISTS (
-       SELECT 1 FROM imported_stations i WHERE p.osm_type = 'n' AND i.osm_id = p.osm_id
+       SELECT 1 FROM imported_stations i WHERE i.osm_type = p.osm_type AND i.osm_id = p.osm_id
      )`,
   );
+  // What OSM says is refreshed at every import; `updated_at`, which the
+  // vector tiles follow, only when the name or the point changes.
   await manager.query(
-    `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit)
-     SELECT 'station', 'n', osm_id, name, geom, x, y, bit FROM imported_stations
+    `INSERT INTO places (kind, osm_type, osm_id, name, geom, x, y, bit, category, wikidata, osm_tags)
+     SELECT 'station', osm_type, osm_id, name, geom, x, y, bit, category, wikidata, osm_tags
+     FROM imported_stations
      ON CONFLICT (osm_type, osm_id) DO UPDATE SET
        name = excluded.name, geom = excluded.geom, x = excluded.x, y = excluded.y, bit = excluded.bit,
-       updated_at = now()
-     WHERE places.name IS DISTINCT FROM excluded.name OR NOT ST_Equals(places.geom, excluded.geom)`,
+       category = excluded.category, wikidata = excluded.wikidata, osm_tags = excluded.osm_tags,
+       updated_at = CASE
+         WHEN places.name IS DISTINCT FROM excluded.name OR NOT ST_Equals(places.geom, excluded.geom)
+         THEN now() ELSE places.updated_at END`,
+  );
+  await manager.query(
+    `INSERT INTO stations (place_id, tourist, routes, operator, network, uic_ref)
+     SELECT p.id, i.tourist, i.routes, i.operator, i.network, i.uic_ref
+     FROM imported_stations i
+     JOIN places p ON p.osm_type = i.osm_type AND p.osm_id = i.osm_id
+     ON CONFLICT (place_id) DO UPDATE SET
+       tourist = excluded.tourist, routes = excluded.routes, operator = excluded.operator,
+       network = excluded.network, uic_ref = excluded.uic_ref`,
   );
 }
 
@@ -374,9 +476,10 @@ async function saveLinks(
     await manager.query(
       `INSERT INTO rail_links (station_a, station_b, geom, length_m)
        SELECT least(a.id, b.id), greatest(a.id, b.id), ST_GeomFromText(l.wkt, 4326), l.length_m
-       FROM unnest($1::bigint[], $2::bigint[], $3::text[], $4::float8[]) AS l(osm_a, osm_b, wkt, length_m)
-       JOIN places a ON a.osm_type = 'n' AND a.osm_id = l.osm_a
-       JOIN places b ON b.osm_type = 'n' AND b.osm_id = l.osm_b
+       FROM unnest($1::bigint[], $2::bigint[], $3::text[], $4::float8[], $5::text[], $6::text[])
+         AS l(osm_a, osm_b, wkt, length_m, type_a, type_b)
+       JOIN places a ON a.osm_type = l.type_a AND a.osm_id = l.osm_a
+       JOIN places b ON b.osm_type = l.type_b AND b.osm_id = l.osm_b
        ON CONFLICT (station_a, station_b) DO NOTHING`,
       [
         batch.map((link) => data.stations[link.a].osmId),
@@ -386,9 +489,52 @@ async function saveLinks(
             `LINESTRING(${link.coords.map(([lon, lat]) => `${lon} ${lat}`).join(',')})`,
         ),
         batch.map((link) => link.lengthM),
+        batch.map((link) => data.stations[link.a].osmType),
+        batch.map((link) => data.stations[link.b].osmType),
       ],
     );
   }
+}
+
+/**
+ * Cuts the links into the segments they share, for ties drawn once. Done by
+ * degree cell, a union of the whole network being too large for the memory:
+ * a segment ends where a cell does, which the drawing does not show. The
+ * pieces with the same links are merged back: a ties' dash restarts with
+ * each segment, doubling the tick at every cut.
+ */
+export async function saveSegments(dataSource: DataSource): Promise<void> {
+  const cells: { x: number; y: number }[] = await dataSource.query(
+    `SELECT DISTINCT x, y FROM rail_links l,
+       generate_series(floor(ST_XMin(l.geom))::int, floor(ST_XMax(l.geom))::int) x,
+       generate_series(floor(ST_YMin(l.geom))::int, floor(ST_YMax(l.geom))::int) y`,
+  );
+  await dataSource.transaction(async (manager) => {
+    await manager.query('DELETE FROM rail_segments');
+    for (const { x, y } of cells) {
+      await manager.query(
+        `WITH near AS (
+           SELECT l.id, ST_Intersection(l.geom, ST_MakeEnvelope($1::float8, $2::float8, $1::float8 + 1, $2::float8 + 1, 4326)) AS g
+           FROM rail_links l
+           WHERE l.geom && ST_MakeEnvelope($1::float8, $2::float8, $1::float8 + 1, $2::float8 + 1, 4326)
+         ), segs AS (
+           SELECT (ST_Dump(ST_UnaryUnion(ST_Collect(g)))).geom AS geom
+           FROM near WHERE NOT ST_IsEmpty(g)
+         ), owned AS (
+           SELECT s.geom, array_agg(n.id ORDER BY n.id) AS link_ids
+           FROM segs s
+           JOIN near n ON ST_DWithin(n.g, ST_LineInterpolatePoint(s.geom, 0.5), 0.0000001)
+           WHERE GeometryType(s.geom) = 'LINESTRING'
+           GROUP BY s.geom
+         )
+         INSERT INTO rail_segments (geom, link_ids)
+         SELECT (ST_Dump(ST_LineMerge(ST_Collect(geom)))).geom, link_ids
+         FROM owned
+         GROUP BY link_ids`,
+        [x, y],
+      );
+    }
+  });
 }
 
 /**

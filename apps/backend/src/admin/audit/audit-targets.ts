@@ -3,7 +3,10 @@ import { type EntityManager, In } from 'typeorm';
 import { BadgeTheme } from '../../distances/badge-theme.entity';
 import { Badge } from '../../distances/badge.entity';
 import { ReleaseNote } from '../../release-notes/release-note.entity';
+import { Report } from '../../reports/report.entity';
+import { StationReport } from '../../reports/station-report.entity';
 import { UserReport } from '../../reports/user-report.entity';
+import { Place } from '../../stations/place.entity';
 import { UserTag } from '../../users/user-tag.entity';
 import type { AdminAuditLog } from './admin-audit-log.entity';
 
@@ -29,6 +32,7 @@ const TYPES = new Set<string>([
   'userTag',
   'releaseNote',
   'report',
+  'station',
 ]);
 
 interface Ref {
@@ -89,9 +93,20 @@ async function find(
       );
     case 'report':
       return by(
-        await manager.findBy(UserReport, { id: In(ids) }),
+        await manager.findBy(Report, { id: In(ids) }),
         (report) => report.id,
-        (report) => ({ name: `@${report.targetUsername}`, color: null }),
+        (report) => ({ name: reportName(report), color: null }),
+      );
+    case 'station':
+      return by(
+        await manager.findBy(Place, {
+          id: In(ids.map(Number).filter(Number.isSafeInteger)),
+        }),
+        (place) => String(place.id),
+        (place) => ({
+          name: place.customName ?? place.name ?? `#${place.id}`,
+          color: null,
+        }),
       );
     case 'username':
       return new Map(ids.map((id) => [id, { name: id, color: null }]));
@@ -142,4 +157,13 @@ export async function auditTargets(
     });
   }
   return targets;
+}
+
+/** A report in the log: its profile, or its station (none for a general one). */
+function reportName(report: Report): string {
+  if (report instanceof UserReport) return `@${report.targetUsername}`;
+  if (report instanceof StationReport) {
+    return report.stationName ?? 'Signalement général';
+  }
+  return report.id;
 }

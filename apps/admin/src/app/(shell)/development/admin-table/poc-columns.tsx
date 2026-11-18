@@ -23,6 +23,7 @@ import {
   LinkIcon,
   MailIcon,
   PanelRightOpenIcon,
+  PercentIcon,
   ShapesIcon,
   StickyNoteIcon,
   TagIcon,
@@ -45,6 +46,7 @@ import {
   imageColumn,
   localTableSource,
   numberColumn,
+  shareColumn,
   pillsColumn,
   RowActions,
   SelectionAction,
@@ -67,6 +69,10 @@ const open = (user: PocUser) => toast(`Ouvrirait le panneau de @${user.username}
 /** Offered as the keywords of an account are typed. */
 const USER_KEYWORDS = ["signalé", "à suivre", "VIP", "partenaire", "bêta"];
 
+/** Storage of a demo account against its quota, from 0 to 1: the column of shares. */
+const POC_QUOTA_BYTES = 50_000_000;
+const quotaOf = (user: PocUser) => user.storageBytes / POC_QUOTA_BYTES;
+
 /** The demo rows, served like the API would, after a network-like pause. */
 export const fetchPocUsers = localTableSource(POC_USERS, {
   search: (user) => `${user.displayName ?? ""} ${user.username} ${user.email}`,
@@ -78,6 +84,7 @@ export const fetchPocUsers = localTableSource(POC_USERS, {
     lastSeenAt: (user) => user.lastSeenAt,
     activities: (user) => user.activitiesCount,
     storage: (user) => user.storageBytes,
+    quota: quotaOf,
     userTags: (user) => user.userTags.length,
   },
   facets: {
@@ -148,6 +155,8 @@ export const USERS: DataTableConfig<PocUser> = {
     dateColumn({ id: "lastSeenAt", header: "Dernière visite", icon: <ClockIcon />, sortable: true, value: (user) => user.lastSeenAt, relative: true, now: POC_NOW }),
     numberColumn({ id: "activities", header: "Activités", icon: <ActivityIcon />, sortable: true, value: (user) => user.activitiesCount }),
     bytesColumn({ id: "storage", header: "Stockage", icon: <HardDriveIcon />, sortable: true, value: (user) => user.storageBytes }),
+    // A share: a ring in the table, a bar in the detail, the percentage muted beside it.
+    shareColumn({ id: "quota", header: "Quota utilisé", icon: <PercentIcon />, sortable: true, value: quotaOf }),
     iconsColumn({ id: "connections", header: "Connexions", icon: <LinkIcon />, value: connectionItems }),
     iconsColumn({ id: "userTags", header: "Tags", icon: <TagIcon />, sortable: true, value: tagItems }),
     customColumn({

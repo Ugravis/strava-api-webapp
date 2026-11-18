@@ -2,6 +2,7 @@ import { type AdminExplorationResponse } from '@kilotrace/shared/admin';
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { shownStation } from '../../stations/shown-stations';
 import { periodDays } from './statistics-period';
 
 /** How long the totals of the imported railway are kept: they only change on an import. */
@@ -33,9 +34,10 @@ interface DailyRow {
  */
 export const stationFirsts = (join = '', where = '') => `firsts AS (
     SELECT p.id, f.user_id, min(f.visited_at) AS at FROM places p
-    JOIN tile_first_visits f ON f.x = p.x AND f.y = p.y AND f.mask & (1::bigint << p.bit) <> 0
+    JOIN place_tiles t ON t.place_id = p.id
+    JOIN tile_first_visits f ON f.x = t.x AND f.y = t.y AND f.mask & (1::bigint << t.bit) <> 0
     ${join}
-    WHERE p.kind = 'station' ${where} GROUP BY p.id, f.user_id
+    WHERE ${shownStation()} ${where} GROUP BY p.id, f.user_id
   ), stations AS (
     SELECT id, min(at) AS at FROM firsts GROUP BY id
   ), links AS (
@@ -148,7 +150,7 @@ export class AdminExplorationService {
     const [row] = await this.dataSource.query<
       { stations: number; railway_m: number | null }[]
     >(
-      `SELECT (SELECT count(*)::int FROM places WHERE kind = 'station') AS stations,
+      `SELECT (SELECT count(*)::int FROM places WHERE kind = 'station' AND hidden_at IS NULL) AS stations,
          (SELECT sum(length_m) FROM rail_links) AS railway_m`,
     );
     this.railwayTotals = {

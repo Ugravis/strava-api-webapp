@@ -1,16 +1,18 @@
 "use client";
 
-import { CheckIcon, ChevronRightIcon, CircleDashedIcon, TrainFrontIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleDashedIcon, FlagIcon, LocateFixedIcon, TrainFrontIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@kilotrace/ui/components/ui/badge";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { useStation } from "@/hooks/use-station";
+import { type Bounds, SUBTILE_ZOOM, tilesBounds } from "@/lib/tiles/tile-geometry";
 import type { StationDetails, StationNeighbor } from "@kilotrace/ui/lib/api/types";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
-import type { StationPick } from "./stations-layer";
+import { ReportStationDialog } from "./report-station-dialog";
+import type { StationPick } from "@kilotrace/ui/lib/map/stations-layer";
 import type { TileRef } from "./tile-highlight";
 import { TileActivityList } from "./tile-activity-list";
 
@@ -19,21 +21,25 @@ const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
 interface StationPanelProps {
   stationId: number;
   /** Called once the station is known, to ring it on the map and center it. */
-  onLocated: (station: StationPick) => void;
+  /** The station loaded, with the bounds of its zone. */
+  onLocated: (station: StationPick, bounds: Bounds | null) => void;
+  /** Centers the station on the map. */
+  onCenter: () => void;
   onOpenStation: (station: StationPick) => void;
   onOpenTile: (tile: TileRef) => void;
   onOpenActivity: (activityId: string) => void;
 }
 
 /**
- * Content of the panel for a train station: whether its small tile was
- * visited, its neighbors on the railway with the links unlocked, and the
+ * Content of the panel for a train station: whether a small tile of its
+ * zone (outlined on the map) was visited, its neighbors on the railway with the links unlocked, and the
  * activities that crossed its small tile.
  */
-export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, onOpenActivity }: StationPanelProps) {
+export function StationPanel({ stationId, onLocated, onCenter, onOpenStation, onOpenTile, onOpenActivity }: StationPanelProps) {
   const t = useTranslations("map.stationPanel");
   const format = useFormatter();
   const { station, error } = useStation(stationId);
+  const [reporting, setReporting] = useState(false);
   // Called once per station: the callback changes with every render of the map.
   const onLocatedRef = useRef(onLocated);
 
@@ -42,7 +48,12 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
   });
 
   useEffect(() => {
-    if (station) onLocatedRef.current({ id: station.id, lon: station.lon, lat: station.lat });
+    if (!station) return;
+    const zone = station.tiles.length > 0 ? station.tiles : [station.tile];
+    onLocatedRef.current(
+      { id: station.id, lon: station.lon, lat: station.lat, name: station.name },
+      tilesBounds(SUBTILE_ZOOM, zone.map(({ x, y }): [number, number] => [x, y])),
+    );
   }, [station]);
 
   if (error) return <p className="text-muted-foreground">{t("error")}</p>;
@@ -63,13 +74,22 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
           >
             <TrainFrontIcon className="size-5" />
           </span>
-          <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
             <h2 className="text-lg leading-tight font-semibold wrap-break-word">{station.name ?? t("unnamed")}</h2>
-            <div>
+            <div className="flex flex-wrap gap-1.5">
               <Badge variant={station.visited ? "default" : "outline"}>
                 {station.visited ? t("visited") : t("notVisited")}
               </Badge>
+              {station.inMaxCluster && <Badge variant="outline">{t("inMaxCluster")}</Badge>}
             </div>
+          </div>
+          <div className="flex shrink-0 gap-1.5">
+            <Button variant="outline" size="icon-sm" onClick={onCenter} aria-label={t("center")} title={t("center")}>
+              <LocateFixedIcon />
+            </Button>
+            <Button variant="outline" size="icon-sm" onClick={() => setReporting(true)} aria-label={t("report")} title={t("report")}>
+              <FlagIcon />
+            </Button>
           </div>
         </div>
         <p className="text-muted-foreground">{station.visited ? t("visitedDescription") : t("notVisitedDescription")}</p>
@@ -110,6 +130,7 @@ export function StationPanel({ stationId, onLocated, onOpenStation, onOpenTile, 
           ),
         })}
       </p>
+      <ReportStationDialog station={{ id: station.id, name: station.name }} open={reporting} onOpenChange={setReporting} />
     </div>
   );
 }

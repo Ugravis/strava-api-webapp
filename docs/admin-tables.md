@@ -125,7 +125,7 @@ For a short list already loaded in full, or a demo, `fetch: localTableSource(row
 | `facets` | Filter buttons of the header. |
 | `groupings` | The « Grouper » menu. Its titles fold their group. |
 | `defaultGroupBy` | A grouping applied by the system; « Aucun » then joins the menu. |
-| `views` | Any number of views, the first one the default. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, `noSelection` / `noActions` to drop the checkboxes or the row menu, and `params` sent to `fetch` as its second argument when the view changes the rows themselves, e.g. `{ branch: "develop" }`. Two tables of other columns and cards, or a single table: as wanted. |
+| `views` | Any number of views, the first one the default; their menu shows from two views on. Each has a free `label`, a `layout` (`table` by default, `cards`, `list`) whose icon it takes (a small grid for a table of up to 5 columns), a subset of `columns`, its own `pageSize`, `noSelection` / `noActions` to drop the checkboxes or the row menu, and `params` sent to `fetch` as its second argument when the view changes the rows themselves, e.g. `{ branch: "develop" }`. Two tables of other columns and cards, or a single table: as wanted. |
 | `emptyFiltered` | A message of its own for no row under some filters: `({ filters, search }) => { title, description } \| null`, e.g. « nothing open » under the default filter of the open rows. `null` keeps « Aucun résultat » and its button. |
 | `create` | The blue « Nouveau » button: opens a blank row in the split panel, a `DetailForm` (`docs/admin-detail.md`), never a dialog of fields. |
 | `defaultSort` | `createdAt` descending unless said otherwise. |
@@ -157,6 +157,7 @@ Each builder applies the rules of the kit: the cell of its kind, a copy button o
 | `textColumn({ value, muted?, width? })` | Free text, e-mail (`muted`). Truncated with the whole text in a bubble. Copied. | `TextCell` |
 | `codeColumn({ value, width? })` | Id, key, hash, in monospace. Copied. | `CodeCell` |
 | `numberColumn({ value, zero?, unit? })` | A count. `0` shows as empty unless `zero`. Copied. | `NumberCell` |
+| `shareColumn({ value, look?, detailLook? })` | A share from 0 to 1, e.g. tiles visited, as Notion draws numbers: a `ring` in the table and a `bar` in the detail by default, the percentage muted beside it, or the percentage alone (`number`). Copied as « 12,5 % ». | `ShareCell` |
 | `bytesColumn({ value })` | A weight of files, e.g. « 1,4 Mo ». Copied. | `BytesCell` |
 | `dateColumn({ value, time?, relative?, now? })` | A date, a date and time, or how long ago (`relative`, exact date on hover). | `DateCell`, `RelativeDateCell` |
 | `imageColumn({ value })` | An image `{ src, alt }`: a cover, a capture. A thumbnail in a table and a list; in cards, the first one after the title is the cover at the top of the card, as the card preview of Notion, light grey without an image. A click opens it whole in a popup. | `ImageCell`, `ImageCover` |

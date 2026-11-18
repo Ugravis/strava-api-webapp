@@ -4,13 +4,14 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
 import { usePanelHistory } from "@/hooks/use-panel-history";
 import type { TilesSummary, VisitedStations } from "@kilotrace/ui/lib/api/types";
-import { SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
+import { type Bounds, SUBTILE_ZOOM, TILE_ZOOM, tileAt, tileCenter, type TileZoom, tilesBounds } from "@/lib/tiles/tile-geometry";
 import { ActivityPanel } from "./activity-panel";
 import {
   activityTileData,
@@ -20,12 +21,14 @@ import {
   setActivityTiles,
 } from "./activity-tiles-layer";
 import { activityTrack, addActivityTrackLayer, setActivityTrack, setActivityTrackVisible } from "./activity-track-layer";
-import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "./country-layer";
+import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { type MapHistory, setHistory } from "./history-layer";
 import { BANDS_HEIGHT_VAR } from "./map-bands";
+import { setLocationShown, useLocationShown } from "./location-setting";
 import { MapSidePanel } from "./map-side-panel";
 import { type MapSector, setSector } from "./sector-layer";
-import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "./map-style";
+import { UserLocationControl } from "./user-location-control";
+import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import {
   addTileLayers,
   clickableZooms,
@@ -39,7 +42,7 @@ import {
   visitedTileNear,
 } from "./tile-layers";
 import { addTileOutlines, sameTile, setTileOutline, type TileRef } from "./tile-highlight";
-import { TilePickPanel } from "./tile-pick-panel";
+import { PlaceTabs, type PlaceView, TilePickPanel } from "./tile-pick-panel";
 import { entryFromSearch, entryKey, pickOf, sameEntry, searchWithEntry, shownTile, type TilePick } from "./panel-entry";
 import { StationPanel } from "./station-panel";
 import { TrainPanel } from "./train-panel";
@@ -47,16 +50,18 @@ import { TRAIN_FOLLOW_EVENT, TrainTraffic } from "./train-traffic";
 import {
   addStationLayers,
   setAllStations,
+  setDiscreetDots,
   setHoveredStation,
   setMapDimmed,
   setSelectedStation,
   setStationData,
   setStationsVisible,
-  stationData,
   stationNear,
   type StationPick,
   trainNear,
-} from "./stations-layer";
+} from "@kilotrace/ui/lib/map/stations-layer";
+import { stationData } from "@kilotrace/ui/lib/map/station-data";
+import { centerStation as centerStationOn, stationCut } from "@kilotrace/ui/lib/map/station-camera";
 import { type ActivityView, defaultActivityView, hasGains } from "./activity-view";
 import {
   addTrackLayer,
@@ -81,6 +86,8 @@ interface ActivityMapProps {
   showTracks: boolean;
   /** What the history tool draws; null while it is closed. */
   history: MapHistory | null;
+  /** Ids of the stations of the largest network of the history, once loaded. */
+  historyStationCluster: number[] | null;
   /** The sector picked with its tool; null while it is closed. */
   sector: MapSector | null;
   /** Incremented to frame the sector, once its bounds are known. */
@@ -96,7 +103,11 @@ interface ActivityMapProps {
   showStations: boolean;
   /** Whether the base map and the tiles are dimmed below the stations. */
   dimmed: boolean;
+  /** The station dots from a zoom sooner, discreet over their first zooms. */
+  discreetDots: boolean;
   label: string;
+  /** A control in the bottom right corner, at the right of the credits, following the panel and the bands as they do. */
+  control?: ReactNode;
 }
 
 /** Margin around an activity or a sector framed on the map, in pixels. */
@@ -105,8 +116,6 @@ const ACTIVITY_PADDING = 48;
 const CENTER_ZOOMS: Record<TileZoom, number> = { [TILE_ZOOM]: 12, [SUBTILE_ZOOM]: 15 };
 /** Marks the moves of the camera framing the sector. */
 const SECTOR_FRAME_EVENT = "sectorFrame";
-/** Zoom of the map centered on a station: its town and its neighbors around. */
-const STATION_ZOOM = 13;
 
 /** Vector map drawing every activity track and the tiles they crossed. */
 export function ActivityMap({
@@ -116,17 +125,28 @@ export function ActivityMap({
   tileMode,
   showTracks,
   history: mapHistory,
+  historyStationCluster,
   sector,
   sectorFrame,
   onCenterChange,
   stations,
   showStations,
   dimmed,
+  discreetDots,
   label,
+  control,
 }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Container of `control`, among those of MapLibre.
+  const [controlContainer, setControlContainer] = useState<HTMLElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const locationShown = useLocationShown();
+  const locationShownRef = useRef(locationShown);
+  const locationRef = useRef<UserLocationControl | null>(null);
+  const tLocation = useTranslations("map.location");
+  // Titles of the location button, read once by the map.
+  const locationLabelsRef = useRef({ find: tLocation("find"), unavailable: tLocation("unavailable") });
   // Kept for the style changes, which drop the custom layers.
   const tracksRef = useRef<TrackCollection>(trackCollection([]));
   const tilesRef = useRef<TileData>(tileData(null));
@@ -148,16 +168,14 @@ export function ActivityMap({
   const paletteRef = useRef(palette);
   const showStationsRef = useRef(showStations);
   const dimmedRef = useRef(dimmed);
-  // The stations as of the history when open: the visits are dated.
-  const stationsData = useMemo(() => stationData(stations, mapHistory), [stations, mapHistory]);
-  const stationsDataRef = useRef(stationsData);
+  const discreetDotsRef = useRef(discreetDots);
   const stationsVersion = stations?.stationsVersion ?? null;
   const stationsVersionRef = useRef(stationsVersion);
   // The station shown in the panel, ringed on the map.
   const selectedStationRef = useRef<StationPick | null>(null);
   // The station just picked on the map: unlike a station reached otherwise, the camera stays.
   const pickedStationRef = useRef<number | null>(null);
-  const pickStationRef = useRef<(station: StationPick) => void>(() => {});
+  const pickStationRef = useRef<(station: StationPick, pick: TilePick | null) => void>(() => {});
   const pickTrainRef = useRef<(trainId: number) => void>(() => {});
 
   const t = useTranslations("map.panel");
@@ -186,6 +204,19 @@ export function ActivityMap({
   const defaultView = useMemo(() => defaultActivityView(tileMode === "both"), [tileMode]);
   const activityView = changedView && changedView.activityId === activityId ? changedView.view : defaultView;
   const activityViewRef = useRef(activityView);
+  // Hidden by its switch, the activity leaves the stations as they are.
+  const activityStations = activityView.stations ? (activityTiles?.stationGains?.stationIds ?? null) : null;
+  // The stations as of the history when open, the visits being dated, with the gains of the activity shown.
+  const stationsData = useMemo(
+    () =>
+      stationData(
+        stations,
+        mapHistory && { ...mapHistory, cluster: historyStationCluster ?? [] },
+        activityStations,
+      ),
+    [stations, mapHistory, historyStationCluster, activityStations],
+  );
+  const stationsDataRef = useRef(stationsData);
   const activityData = useMemo(() => {
     if (!activityTiles) return NO_ACTIVITY_TILES;
     const { gains } = activityTiles;
@@ -218,12 +249,38 @@ export function ActivityMap({
       container: containerRef.current,
       ...DEFAULT_VIEW,
       attributionControl: { compact: true },
+      locale: {
+        "GeolocateControl.FindMyLocation": locationLabelsRef.current.find,
+        "GeolocateControl.LocationNotAvailable": locationLabelsRef.current.unavailable,
+      },
       dragRotate: false,
       pitchWithRotate: false,
     });
     setBaseStyle(map, paletteRef.current);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    // Below the zoom buttons, kept while the setting is off: a click turns it back on.
+    const location = new UserLocationControl({
+      inset: () => ({
+        right: panelWidthOf(panelRef.current, collapsedRef.current),
+        bottom: bandsHeightOf(containerRef.current),
+      }),
+      enabled: () => locationShownRef.current,
+      onEnable: () => setLocationShown(true),
+    });
+    map.addControl(location, "top-right");
+    locationRef.current = location;
+    // MapLibre folds the credits on a drag only: a zoom of the user folds them too.
+    map.on("zoomstart", (event) => {
+      if (event.originalEvent)
+        map.getContainer().querySelector(".maplibregl-compact-show")?.classList.remove("maplibregl-compact-show");
+    });
+    // At the right of the credits (see `globals.css`). Not a `maplibregl-ctrl`, whose
+    // stylesheet would turn the hover of its button translucent.
+    const controlElement = document.createElement("div");
+    controlElement.className = "pointer-events-auto flex";
+    map.addControl({ onAdd: () => controlElement, onRemove: () => controlElement.remove() }, "bottom-right");
+    setControlContainer(controlElement);
     map.on("style.load", () => {
       styleReadyRef.current = true;
       // Below the first label layer, keeping place names readable; tracks
@@ -241,6 +298,7 @@ export function ActivityMap({
         paletteRef.current,
         firstLabel,
       );
+      setDiscreetDots(map, discreetDotsRef.current);
       addStationLayers(
         map,
         stationsDataRef.current,
@@ -296,11 +354,11 @@ export function ActivityMap({
         return;
       }
       const station = showStationsRef.current ? stationNear(map, event.point) : null;
+      const pick = pickTile(map, modeRef.current, event.point);
       if (station) {
-        pickStationRef.current(station);
+        pickStationRef.current(station, pick);
         return;
       }
-      const pick = pickTile(map, modeRef.current, event.point);
       if (pick) pickRef.current(pick);
     });
     // The tile under the pointer is outlined: a click opens it. Looked for
@@ -357,6 +415,7 @@ export function ActivityMap({
       trafficRef.current = null;
       map.remove();
       mapRef.current = null;
+      locationRef.current = null;
     };
   }, []);
 
@@ -449,6 +508,16 @@ export function ActivityMap({
   }, [dimmed]);
 
   useEffect(() => {
+    discreetDotsRef.current = discreetDots;
+    if (mapRef.current) setDiscreetDots(mapRef.current, discreetDots);
+  }, [discreetDots]);
+
+  useEffect(() => {
+    locationShownRef.current = locationShown;
+    locationRef.current?.setEnabled(locationShown);
+  }, [locationShown]);
+
+  useEffect(() => {
     sectorRef.current = sector;
     // Before the style is loaded, the layers get the sector on load.
     if (mapRef.current && styleReadyRef.current) setSector(mapRef.current, sector, paletteRef.current);
@@ -489,9 +558,12 @@ export function ActivityMap({
       history.push({ kind: "tile", ...pick });
       setCollapsed(false);
     };
-    pickStationRef.current = (station) => {
+    pickStationRef.current = (station, pick) => {
       pickedStationRef.current = station.id;
-      history.push({ kind: "station", stationId: station.id });
+      // Shown at once on the map, before the panel loads it.
+      selectedStationRef.current = station;
+      if (mapRef.current) setSelectedStation(mapRef.current, station);
+      history.push({ kind: "station", stationId: station.id, ...(pick && { pick }) });
       setCollapsed(false);
     };
     pickTrainRef.current = (trainId) => {
@@ -518,21 +590,50 @@ export function ActivityMap({
     if (mapRef.current) setSelectedStation(mapRef.current, null);
   }, [stationId]);
 
-  /** Rings the station shown and, unless just picked on the map, centers it beside the panel. */
-  const locateStation = (station: StationPick) => {
+  /** Bounds of the zone of the station shown, once loaded. */
+  const stationBoundsRef = useRef<Bounds | null>(null);
+
+  /**
+   * Centers the station shown beside the panel, zoomed in like a small tile
+   * (`zoomIn`) or as it is, but out enough for its whole zone to fit.
+   */
+  const centerStation = (zoomIn: boolean) => {
+    const map = mapRef.current;
+    const station = selectedStationRef.current;
+    if (!map || !station) return;
+    centerStationOn(map, station, stationBoundsRef.current, insets(), zoomIn);
+  };
+
+  /** Room taken by the panel and the bands over the map. */
+  const insets = () => ({ right: panelWidthOf(panelRef.current, collapsedRef.current), bottom: bandsHeightOf(containerRef.current) });
+
+  /** Rings the station shown and, unless just picked on the map whole, centers it beside the panel. */
+  const locateStation = (station: StationPick, bounds: Bounds | null) => {
     selectedStationRef.current = station;
+    stationBoundsRef.current = bounds;
     const map = mapRef.current;
     if (!map) return;
     setSelectedStation(map, station);
     if (pickedStationRef.current === station.id) {
       pickedStationRef.current = null;
+      if (bounds && stationCut(map, bounds, insets())) centerStation(false);
       return;
     }
-    map.easeTo({
-      center: [station.lon, station.lat],
-      zoom: Math.max(map.getZoom(), STATION_ZOOM),
-      offset: [-panelWidthOf(panelRef.current, collapsedRef.current) / 2, -bandsHeightOf(containerRef.current) / 2],
-    });
+    centerStation(true);
+  };
+
+  /** Shows another view of the place picked, in place of the current one: the camera stays. */
+  const showPlace = (stationId: number | undefined, pick: TilePick | undefined, view: PlaceView) => {
+    if (view === "station") {
+      if (stationId === undefined) return;
+      pickedStationRef.current = stationId;
+      history.replace({ kind: "station", stationId, ...(pick && { pick: { tile: pick.tile, subtile: pick.subtile, zoom: pick.zoom } }) });
+      return;
+    }
+    if (!pick) return;
+    const next: TilePick = { tile: pick.tile, subtile: pick.subtile, zoom: view };
+    pickedRef.current = shownTile(next);
+    history.replace({ kind: "tile", ...next, ...(stationId !== undefined && { stationId }) });
   };
 
   const shown = entry?.kind === "tile" ? shownTile(entry) : null;
@@ -606,6 +707,7 @@ export function ActivityMap({
   return (
     <div className="map-with-panel absolute inset-0" data-panel={entry && !collapsed ? "open" : undefined}>
       <div ref={containerRef} role="region" aria-label={label} className="size-full" />
+      {control && controlContainer && createPortal(control, controlContainer)}
       {entry && (
         <MapSidePanel
           ref={panelRef}
@@ -631,23 +733,28 @@ export function ActivityMap({
               onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
             />
           ) : entry.kind === "station" ? (
-            <StationPanel
-              key={entry.stationId}
-              stationId={entry.stationId}
-              onLocated={locateStation}
-              onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
-              onOpenTile={(tile) => history.push({ kind: "tile", ...pickOf(tile) })}
-              onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
-            />
+            <div className="flex flex-col gap-5">
+              <PlaceTabs
+                station
+                pick={entry.pick}
+                value="station"
+                onValueChange={(view) => showPlace(entry.stationId, entry.pick, view)}
+              />
+              <StationPanel
+                key={entry.stationId}
+                stationId={entry.stationId}
+                onLocated={locateStation}
+                onCenter={() => centerStation(true)}
+                onOpenStation={(station) => history.push({ kind: "station", stationId: station.id })}
+                onOpenTile={(tile) => history.push({ kind: "tile", ...pickOf(tile), stationId: entry.stationId })}
+                onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
+              />
+            </div>
           ) : entry.kind === "tile" ? (
             <TilePickPanel
               pick={entry}
-              onZoomChange={(zoom) => {
-                const pick = { ...entry, zoom };
-                // Another level of the same place: the camera stays.
-                pickedRef.current = shownTile(pick);
-                history.replace(pick);
-              }}
+              stationId={entry.stationId}
+              onViewChange={(view) => showPlace(entry.stationId, entry, view)}
               onOpenActivity={(activityId) => history.push({ kind: "activity", activityId })}
             />
           ) : (

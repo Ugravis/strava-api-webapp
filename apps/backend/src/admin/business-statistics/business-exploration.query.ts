@@ -92,8 +92,10 @@ export async function businessExploration(
     query<AdminBusinessExploration['medians']>(
       `SELECT (percentile_cont(0.5) WITHIN GROUP (ORDER BY ("m"."metrics" -> 'tiles' ->> 'visited')::int))::float AS "tiles",
                 (percentile_cont(0.5) WITHIN GROUP (ORDER BY ("m"."metrics" -> 'tiles' -> 'maxSquare' ->> 'size')::int))::float AS "maxSquare",
-                (percentile_cont(0.5) WITHIN GROUP (ORDER BY ("m"."metrics" -> 'tiles' ->> 'maxCluster')::int))::float AS "maxCluster"
+                (percentile_cont(0.5) WITHIN GROUP (ORDER BY ("m"."metrics" -> 'tiles' ->> 'maxCluster')::int))::float AS "maxCluster",
+                (percentile_cont(0.5) WITHIN GROUP (ORDER BY COALESCE(cardinality("s"."max_cluster"), 0)))::float AS "maxStationCluster"
          FROM "user_tile_metrics" "m" JOIN "users" "u" ON "u"."id" = "m"."user_id"
+         LEFT JOIN "user_station_metrics" "s" ON "s"."user_id" = "m"."user_id"
          WHERE ${counted('$1')} AND "m"."metrics" IS NOT NULL`,
       [team],
     ),

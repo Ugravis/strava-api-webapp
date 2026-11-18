@@ -1,10 +1,9 @@
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { STATIONS_MAX_ZOOM } from '@kilotrace/shared';
 
 /** Below this zoom, the map shows no station: too many to tell apart. */
-export const STATIONS_MIN_ZOOM = 6;
-/** Deepest zoom of the station tiles: the map stretches them beyond. */
-export const STATIONS_MAX_ZOOM = 14;
+export const STATIONS_MIN_ZOOM = 5;
 
 export class StationsTileParamsDto {
   @Type(() => Number)

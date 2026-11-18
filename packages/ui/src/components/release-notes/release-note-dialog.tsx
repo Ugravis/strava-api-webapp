@@ -28,7 +28,8 @@ export function ReleaseNoteCard({ note, footer, framed = false }: { note: Public
         <Description className={note.summary ? "text-sm text-muted-foreground" : "sr-only"}>{note.summary || title}</Description>
       </div>
       <div className="max-h-[min(60vh,32rem)] overflow-y-auto overscroll-contain px-5 py-4 [scrollbar-width:thin]">
-        <ReleaseNoteSections note={note} />
+        {/* The team part, always last, takes the whole width of the frame. */}
+        <ReleaseNoteSections note={note} teamClassName="-mx-5 rounded-none px-5 py-4" />
       </div>
       <div className="flex flex-col-reverse items-center gap-2 border-t bg-muted/50 px-5 py-3 sm:flex-row sm:justify-between">{footer}</div>
     </>

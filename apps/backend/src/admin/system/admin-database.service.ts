@@ -5,8 +5,10 @@ import { DataSource } from 'typeorm';
 
 /**
  * Every table of the database outside the catalogs of Postgres, with its
- * figures, columns, indexes and links: read from the catalogs only, never
- * from the rows themselves.
+ * figures, columns, indexes and links: read from the catalogs, never from
+ * the rows themselves. The free space alone is measured on the pages, by
+ * `pgstattuple_approx`, which skips those the visibility map says are full
+ * of live rows.
  */
 const TABLES_SQL = `
 SELECT
@@ -20,6 +22,11 @@ SELECT
   pg_total_relation_size(c.oid) AS "totalBytes",
   pg_relation_size(c.oid) AS "tableBytes",
   pg_indexes_size(c.oid) AS "indexBytes",
+  CASE WHEN c.relkind = 'r' THEN (
+    SELECT sum(f.approx_free_space + f.dead_tuple_len)
+    FROM unnest(array_remove(ARRAY[c.oid, c.reltoastrelid], 0::oid)) AS r(oid),
+      LATERAL pgstattuple_approx(r.oid) AS f
+  ) ELSE 0 END AS "freeBytes",
   COALESCE((
     SELECT json_agg(json_build_object(
       'name', a.attname,
@@ -96,6 +103,7 @@ type NumberKey =
   | 'totalBytes'
   | 'tableBytes'
   | 'indexBytes'
+  | 'freeBytes'
   | 'seqScans'
   | 'indexScans'
   | 'inserts'
@@ -109,6 +117,7 @@ const NUMBER_KEYS: NumberKey[] = [
   'totalBytes',
   'tableBytes',
   'indexBytes',
+  'freeBytes',
   'seqScans',
   'indexScans',
   'inserts',

@@ -1,12 +1,6 @@
 import { parseOplLine } from './osm-opl';
 import { metersBetween, RailwayDataBuilder } from './railway-data';
-import {
-  platformGroups,
-  stationZones,
-  type ZoneFeature,
-  type ZoneInput,
-  zoneSource,
-} from './station-zones';
+import { stationZones, type ZoneInput, zoneSource } from './station-zones';
 
 const LAT = 45;
 const LON = 5;
@@ -87,42 +81,6 @@ const length = (lines: [number, number][][]) =>
     0,
   );
 
-const platform = (
-  key: string,
-  underground: boolean,
-  dx: number,
-  dy: number,
-): ZoneFeature => ({
-  key,
-  platform: true,
-  stationBuilding: false,
-  roof: false,
-  underground,
-  parts: [
-    [
-      [LON + (dx - 100) * MX, LAT + dy * MY],
-      [LON + (dx + 100) * MX, LAT + dy * MY],
-    ],
-  ],
-});
-
-describe('platformGroups', () => {
-  it('chains the platforms of a level within 50 m, apart from the underground ones', () => {
-    const groups = platformGroups([
-      platform('w1', false, 0, 0),
-      platform('w2', false, 0, 30),
-      platform('w3', false, 0, 70),
-      platform('w4', true, 0, 10),
-      platform('w5', false, 0, 300),
-    ]);
-    expect(groups.map((g) => g.map((p) => p.key).sort())).toEqual([
-      ['w1', 'w2', 'w3'],
-      ['w4'],
-      ['w5'],
-    ]);
-  });
-});
-
 describe('zoneSource', () => {
   it('takes the footprint, else the tracks, else the point', () => {
     const line: [number, number][] = [
@@ -130,15 +88,15 @@ describe('zoneSource', () => {
       [1, 1],
     ];
     expect(
-      zoneSource({ clusters: [[line]], buildings: [], rails: [line] }),
+      zoneSource({ levels: [[], [line]], buildings: [], rails: [line] }),
     ).toBe('osm');
-    expect(zoneSource({ clusters: [], buildings: [line], rails: [] })).toBe(
+    expect(zoneSource({ levels: [[], []], buildings: [line], rails: [] })).toBe(
       'osm',
     );
-    expect(zoneSource({ clusters: [], buildings: [], rails: [line] })).toBe(
+    expect(zoneSource({ levels: [[], []], buildings: [], rails: [line] })).toBe(
       'rails',
     );
-    expect(zoneSource({ clusters: [], buildings: [], rails: [] })).toBe(
+    expect(zoneSource({ levels: [[], []], buildings: [], rails: [] })).toBe(
       'point',
     );
   });
@@ -196,8 +154,42 @@ describe('stationZones', () => {
     f.square(14, 'building=roof', 0, -60, 6);
     const [zone] = f.zones();
     expect(zone.source).toBe('osm');
-    expect(zone.clusters).toHaveLength(1);
+    expect(zone.levels[0]).toHaveLength(1);
     expect(zone.buildings).toHaveLength(2);
+    // The track along the platform, to be taken in.
+    expect(length(zone.tracks)).toBeGreaterThan(200);
+  });
+
+  it('leaves out the platforms without a train track of their level and the underground buildings', () => {
+    const f = stationOnTrack();
+    // A metro platform tagged as a train one: no rail track under it.
+    f.way(10, 'railway=platform,level=-2', [
+      [-100, 5],
+      [100, 5],
+    ]);
+    f.square(12, 'building=train_station,location=underground', 0, 40, 20);
+    const [zone] = f.zones();
+    expect(zone.levels).toEqual([[], []]);
+    expect(zone.buildings).toHaveLength(0);
+    expect(zone.source).toBe('rails');
+  });
+
+  it('reads the level before the tunnel: a covered trench is at the surface', () => {
+    const f = new Fixture();
+    const station = f.node(0, 0, 'railway=station,name=S');
+    f.way(1, 'railway=rail,tunnel=yes,level=0', [
+      [-500, 0],
+      [500, 0],
+    ]);
+    f.relations.push(`r1 Ttype=route,route=train Mn${station}@stop,w1@`);
+    f.way(10, 'railway=platform,level=0', [
+      [-100, 5],
+      [100, 5],
+    ]);
+    const [zone] = f.zones();
+    expect(zone.levels[0]).toHaveLength(1);
+    expect(zone.tracks).toEqual([]);
+    expect(length(zone.tunnels)).toBeGreaterThan(200);
   });
 
   it('takes the platforms of its stop area up to 300 m away', () => {

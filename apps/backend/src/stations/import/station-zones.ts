@@ -6,7 +6,13 @@ import {
   isUnderground,
 } from './railway-rules';
 import { Column, float64, int32, uint8 } from './columns';
-import { type NodeStore, osmKey, type RailwayData } from './railway-data';
+import {
+  type NodeStore,
+  osmKey,
+  type RailwayData,
+  TUNNEL_TRACK,
+  UNDERGROUND_TRACK,
+} from './railway-data';
 import { metersBetween, type Point, PointIndex, project } from './railway-geo';
 
 /**
@@ -28,8 +34,10 @@ export const STOP_AREA_RADIUS_M = 2 * PLATFORM_RADIUS_M;
 export const BUILDING_RADIUS_M = 150;
 /** Roofs and transport buildings this close to a platform of the station are part of it. */
 export const ROOF_RADIUS_M = 8;
-/** Platforms of a level this close to each other form one block. */
-export const CLUSTER_GAP_M = 50;
+/** A platform belongs to a station only with a passenger track of its level this close: not a metro one. */
+export const PLATFORM_TRACK_M = 15;
+/** Tracks this close to the platforms or to the walked tracks may be taken into the zone. */
+export const TRACK_NEAR_M = 40;
 /** Tracks this much farther than the nearest one still start a walk. */
 export const TRACK_SLACK_M = 40;
 /** Tracks farther than this from the point start no walk. */
@@ -60,12 +68,16 @@ export interface ZoneInput {
   /** Index of the station in `RailwayData.stations`. */
   station: number;
   source: ZoneSource;
-  /** Per group of platforms, the lines of its platforms. */
-  clusters: Point[][][];
-  /** Rings of the station buildings and of the roofs over its platforms. */
+  /** Lines and rings of its platforms at the surface, then under the ground. */
+  levels: [Point[][], Point[][]];
+  /** Rings of the station buildings and of the roofs over its platforms, at the surface. */
   buildings: Point[][];
   /** The tracks walked from the point. */
   rails: Point[][];
+  /** Zone tracks near the platforms and the walked tracks, in the open… */
+  tracks: Point[][];
+  /** …and in tunnels: only the underground platforms and the walked tracks take them. */
+  tunnels: Point[][];
 }
 
 const isClosed = (part: Point[]): boolean =>
@@ -250,31 +262,15 @@ function near(f: ZoneFeature, others: ZoneFeature[], radius: number): boolean {
   );
 }
 
-/**
- * Groups of platforms: same level (surface or underground), chained when
- * `CLUSTER_GAP_M` apart at most.
- */
-export function platformGroups(platforms: ZoneFeature[]): ZoneFeature[][] {
-  let groups: { underground: boolean; platforms: ZoneFeature[] }[] = [];
-  for (const p of platforms) {
-    const joined = groups.filter(
-      (g) =>
-        g.underground === p.underground && near(p, g.platforms, CLUSTER_GAP_M),
-    );
-    groups = groups.filter((g) => !joined.includes(g));
-    groups.push({
-      underground: p.underground,
-      platforms: [p, ...joined.flatMap((g) => g.platforms)],
-    });
-  }
-  return groups.map((g) => g.platforms);
-}
-
 /** The cascade: the footprint when mapped, else the tracks, else the point. */
 export function zoneSource(
-  zone: Pick<ZoneInput, 'clusters' | 'buildings' | 'rails'>,
+  zone: Pick<ZoneInput, 'levels' | 'buildings' | 'rails'>,
 ): ZoneSource {
-  if (zone.clusters.length > 0 || zone.buildings.length > 0) return 'osm';
+  if (
+    zone.levels.some((lines) => lines.length > 0) ||
+    zone.buildings.length > 0
+  )
+    return 'osm';
   return zone.rails.length > 0 ? 'rails' : 'point';
 }
 
@@ -301,6 +297,22 @@ class CellIndex<T> {
     }
     return found;
   }
+}
+
+/** Distance in metres from a line (or a point) to segment `ab`, taken at the ends of both. */
+function segmentDistance(part: Point[], a: Point, b: Point): number {
+  if (part.length === 1) return project(part[0], a, b).d;
+  let best = Infinity;
+  for (let i = 0; i + 1 < part.length; i++) {
+    best = Math.min(
+      best,
+      project(a, part[i], part[i + 1]).d,
+      project(b, part[i], part[i + 1]).d,
+      project(part[i], a, b).d,
+      project(part[i + 1], a, b).d,
+    );
+  }
+  return best;
 }
 
 const lerp = (a: Point, b: Point, t: number): Point => [
@@ -385,6 +397,64 @@ export class TrackWalker {
       }
     }
     return lines;
+  }
+
+  /**
+   * Positions of the zone track segments within `radius` metres of `parts`
+   * (lines, rings or points): the distance of two segments is taken at their ends.
+   */
+  segmentsNear(parts: Point[][], radius: number): number[] {
+    const points = parts.flat();
+    if (points.length === 0) return [];
+    // A box around the parts, in degrees, to skip the far segments at once.
+    const margin = radius / 111_000;
+    const lat = Math.max(...points.map((p) => Math.abs(p[1])));
+    const lonMargin = margin / Math.max(0.01, Math.cos((lat * Math.PI) / 180));
+    const [west, east] = [
+      Math.min(...points.map((p) => p[0])) - lonMargin,
+      Math.max(...points.map((p) => p[0])) + lonMargin,
+    ];
+    const [south, north] = [
+      Math.min(...points.map((p) => p[1])) - margin,
+      Math.max(...points.map((p) => p[1])) + margin,
+    ];
+    const candidates = new Set<number>();
+    for (const point of points)
+      for (const position of this.segments.around(point))
+        candidates.add(position);
+    const near: number[] = [];
+    for (const position of candidates) {
+      const [a, b] = [this.at(position), this.at(position + 1)];
+      if (Math.max(a[0], b[0]) < west || Math.min(a[0], b[0]) > east) continue;
+      if (Math.max(a[1], b[1]) < south || Math.min(a[1], b[1]) > north)
+        continue;
+      if (parts.some((part) => segmentDistance(part, a, b) <= radius))
+        near.push(position);
+    }
+    return near.sort((x, y) => x - y);
+  }
+
+  /** The level bits of the track of a segment (`Tracks.zone`). */
+  levelOf(position: number): number {
+    return this.data.tracks.zone[this.trackOf[position]];
+  }
+
+  /** Segments joined into lines where they follow each other on a track. */
+  lines(positions: number[]): Point[][] {
+    const out: Point[][] = [];
+    let previous = -2;
+    for (const position of positions) {
+      if (
+        position === previous + 1 &&
+        this.trackOf[position] === this.trackOf[previous]
+      ) {
+        out[out.length - 1].push(this.at(position + 1));
+      } else {
+        out.push([this.at(position), this.at(position + 1)]);
+      }
+      previous = position;
+    }
+    return out;
   }
 
   private at(position: number): Point {
@@ -496,21 +566,53 @@ export function stationZones(data: RailwayData, kept: number[]): ZoneInput[] {
   );
   return kept.map((s) => {
     const point = stations[s].point;
-    const platforms = [...(platformsOf.get(s) ?? [])];
-    // Never an untagged building holding the node: Auber would take the Opéra Garnier.
-    const buildings = [...nearby.around(point)].filter((b) =>
-      b.stationBuilding
-        ? distanceTo(b, point) <= BUILDING_RADIUS_M
-        : b.roof && platforms.length > 0 && near(b, platforms, ROOF_RADIUS_M),
+    // A platform with no passenger track of its level beside it is a metro one
+    // tagged as a train one (line 14 under Bibliothèque François Mitterrand).
+    const platforms = [...(platformsOf.get(s) ?? [])].filter((p) =>
+      walker
+        .segmentsNear(p.parts, PLATFORM_TRACK_M)
+        .some(
+          (position) =>
+            ((walker.levelOf(position) & UNDERGROUND_TRACK) !== 0) ===
+            p.underground,
+        ),
     );
-    const clusters = platformGroups(platforms)
-      .map((group) => group.flatMap((p) => (p.key[0] === 'n' ? [] : p.parts)))
-      .filter((lines) => lines.length > 0);
+    // Never an untagged building holding the node: Auber would take the Opéra Garnier;
+    // never one under the ground (a metro hall): it does not show on the map.
+    const buildings = [...nearby.around(point)].filter(
+      (b) =>
+        !b.underground &&
+        (b.stationBuilding
+          ? distanceTo(b, point) <= BUILDING_RADIUS_M
+          : b.roof &&
+            platforms.length > 0 &&
+            near(b, platforms, ROOF_RADIUS_M)),
+    );
+    const rails = walker.reach(point);
+    const level = (underground: boolean) =>
+      platforms
+        .filter((p) => p.underground === underground && p.key[0] !== 'n')
+        .flatMap((p) => p.parts);
+    const levels: [Point[][], Point[][]] = [level(false), level(true)];
+    const near_ = walker.segmentsNear(
+      [...levels[0], ...levels[1], ...rails],
+      TRACK_NEAR_M,
+    );
     const zone = {
       station: s,
-      clusters,
+      levels,
       buildings: buildings.map((b) => b.parts[0]),
-      rails: walker.reach(point),
+      rails,
+      tracks: walker.lines(
+        near_.filter(
+          (position) => (walker.levelOf(position) & TUNNEL_TRACK) === 0,
+        ),
+      ),
+      tunnels: walker.lines(
+        near_.filter(
+          (position) => (walker.levelOf(position) & TUNNEL_TRACK) !== 0,
+        ),
+      ),
     };
     return { ...zone, source: zoneSource(zone) };
   });

@@ -5,7 +5,9 @@ import {
   isTouristTags,
   isTouristTrack,
   isStation,
+  isInTunnel,
   isStationZoneTrack,
+  isUnderground,
   isStopArea,
   isStopRole,
   isTrackWay,
@@ -115,6 +117,11 @@ export class NodeStore {
   }
 }
 
+/** Bits of `Tracks.zone`. */
+export const ZONE_TRACK = 1;
+export const UNDERGROUND_TRACK = 2;
+export const TUNNEL_TRACK = 4;
+
 /** Tracks as runs of node indexes: way `i` spans `nodes[starts[i]]` to `nodes[starts[i + 1] - 1]`. */
 export interface Tracks {
   count: number;
@@ -123,7 +130,10 @@ export interface Tracks {
   nodes: Int32Array;
   /** Whether passenger trains can run on each track. */
   passenger: Uint8Array;
-  /** Whether the zone of a station may follow each track. */
+  /**
+   * Whether the zone of a station may follow each track (`ZONE_TRACK`), with
+   * its level as bits: `UNDERGROUND_TRACK`, `TUNNEL_TRACK`.
+   */
   zone: Uint8Array;
   /** The train routes running on each track, by track index, when any. */
   routes: Map<number, number[]>;
@@ -271,7 +281,13 @@ export class RailwayDataBuilder {
     // A metro or tram track counts only once a train route runs on it.
     this.trackOpen.push(!routeOnly && isPassengerTrack(tags!, false) ? 1 : 0);
     this.trackServes.push(!routeOnly && servesStationsNearby(tags!) ? 1 : 0);
-    this.trackZone.push(!routeOnly && isStationZoneTrack(tags!) ? 1 : 0);
+    this.trackZone.push(
+      !routeOnly && isStationZoneTrack(tags!)
+        ? ZONE_TRACK |
+            (isUnderground(tags) ? UNDERGROUND_TRACK : 0) |
+            (isInTunnel(tags) ? TUNNEL_TRACK : 0)
+        : 0,
+    );
     this.trackTourist.push(isTouristTrack(tags!) ? 1 : 0);
   }
 

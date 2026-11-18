@@ -99,7 +99,6 @@ const PULSE = { periodMs: 3000, frameMs: 33, opacity: 0.55, swell: 0.12 } as con
 
 /** Zoomed in, the stations show their name in a bubble over their dot, fading in. */
 const NAMES_MIN_ZOOM = 11;
-const NAMES_IN = fadeIn(NAMES_MIN_ZOOM, 1);
 /** The grey bubbles let the map through a little. */
 const UNVISITED_BUBBLE_OPACITY = 0.9;
 const NAME_FONT = ["Noto Sans Bold"];
@@ -404,7 +403,8 @@ const HIDDEN: ExpressionSpecification = ["boolean", ["get", "hidden"], false];
 
 /** The visited stations with a name, but the one shown: its bubble is drawn over the map. */
 function namedFilter(map: MapLibreMap): ExpressionSpecification {
-  if (everyStation.has(map)) return ["all", NAMED, ["!", HIDDEN], ["!=", ["id"], selectedIds.get(map) ?? -1]];
+  // From the tiles of every station, the name of the one shown is hidden by its feature state (`hideSelected`).
+  if (everyStation.has(map)) return ["all", NAMED, ["!", HIDDEN]];
   return ["all", NAMED, ["!=", ["get", "id"], selectedIds.get(map) ?? -1]];
 }
 
@@ -464,9 +464,33 @@ const selectedIds = new WeakMap<MapLibreMap, number | null>();
 /** Id of the station under the pointer on each map: its footprint is outlined. */
 const hoveredIds = new WeakMap<MapLibreMap, number | null>();
 
-/** Only the footprint of the station `id`, or none. */
-function footprintFilter(id: number | null | undefined): ExpressionSpecification {
-  return ["==", ["id"], id ?? -1];
+/**
+ * The station shown and the one under the pointer flagged by the feature
+ * state of their point, footprint and zone in the tiles of every station
+ * (`selected`, `hovered`): applied at once, where a filter or an expression
+ * on their ids would lay the whole source out again.
+ */
+const SELECTED: ExpressionSpecification = ["boolean", ["feature-state", "selected"], false];
+const HOVERED: ExpressionSpecification = ["boolean", ["feature-state", "hovered"], false];
+const STATE_SOURCE_LAYERS = [ALL_SOURCE_LAYER, FOOTPRINTS_SOURCE_LAYER, ZONES_SOURCE_LAYER];
+
+/** Moves the flag `key` from the station `from` to the station `to`, either null. */
+function moveStationState(map: MapLibreMap, key: "selected" | "hovered", from: number | null | undefined, to: number | null | undefined): void {
+  if (!map.getSource(SOURCES.all)) return;
+  for (const sourceLayer of STATE_SOURCE_LAYERS) {
+    if (from != null && from !== to) map.setFeatureState({ source: SOURCES.all, sourceLayer, id: from }, { [key]: false });
+    if (to != null) map.setFeatureState({ source: SOURCES.all, sourceLayer, id: to }, { [key]: true });
+  }
+}
+
+/** Fading in from `FOOTPRINTS_MIN_ZOOM` to `opacity` for the station shown only. */
+function selectedFadeIn(opacity: number): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], FOOTPRINTS_MIN_ZOOM, 0, FOOTPRINTS_MIN_ZOOM + FADE_ZOOMS, ["case", SELECTED, opacity, 0]];
+}
+
+/** The fade of the names, but the one of the station shown, named by its bubble. */
+function hideSelected(max: number): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], NAMES_MIN_ZOOM, 0, NAMES_MIN_ZOOM + FADE_ZOOMS, ["case", SELECTED, 0, max]];
 }
 
 /** Opacity of the footprints and the zone tiles, of the stations visited or not, then of those of the station shown: the grey ones stronger to be seen. */
@@ -490,7 +514,7 @@ function selectedOpacity(
     FOOTPRINTS_MIN_ZOOM + FADE_ZOOMS,
     [
       "case",
-      ["in", ["id"], ["literal", [selectedIds.get(map) ?? -1, hoveredIds.get(map) ?? -1]]],
+      ["any", SELECTED, HOVERED],
       selected,
       byVisit(map, visited, unvisited),
     ],
@@ -498,13 +522,8 @@ function selectedOpacity(
 }
 
 function unvisitedFilter(map: MapLibreMap): ExpressionSpecification {
-  if (everyStation.has(map)) return ["all", NAMED, ["!=", ["id"], selectedIds.get(map) ?? -1], HIDDEN];
-  return [
-    "all",
-    NAMED,
-    ["!=", ["id"], selectedIds.get(map) ?? -1],
-    ["!", ["in", ["id"], ["literal", visitedIds.get(map) ?? []]]],
-  ];
+  if (everyStation.has(map)) return ["all", NAMED, HIDDEN];
+  return ["all", NAMED, ["!", ["in", ["id"], ["literal", visitedIds.get(map) ?? []]]]];
 }
 
 function rememberVisited(map: MapLibreMap, data: StationData): void {
@@ -734,8 +753,8 @@ export function addStationLayers(
       layout: { ...layout, ...nameLayout(STATION_ICONS.bubble, [1.45, 1.65]) },
       paint: {
         "text-color": palette.stationCasing,
-        "text-opacity": NAMES_IN,
-        "icon-opacity": NAMES_IN,
+        "text-opacity": hideSelected(1),
+        "icon-opacity": hideSelected(1),
       },
     },
     top,
@@ -860,9 +879,8 @@ export function setAllStations(
       id: LAYERS.zoneHatch,
       type: "fill",
       ...zones,
-      filter: footprintFilter(selectedIds.get(map)),
       layout: shown,
-      paint: { "fill-pattern": colors.hatch, "fill-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 0.3) },
+      paint: { "fill-pattern": colors.hatch, "fill-opacity": selectedFadeIn(0.3) },
     },
     LAYERS.linksCasing,
   );
@@ -870,15 +888,14 @@ export function setAllStations(
   const layers = map.getStyle().layers;
   const overLinks = layers[layers.findIndex(({ id }) => id === LAYERS.links) + 1]?.id;
   // The zone and the footprint of the station shown outlined in white over a drop shadow: the zone below the footprints, the footprint over the labels.
-  const selectedId = selectedIds.get(map);
   const shadow = {
     "line-color": SELECTED_SHADOW.color,
-    "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, SELECTED_SHADOW.opacity),
+    "line-opacity": selectedFadeIn(SELECTED_SHADOW.opacity),
     "line-width": SELECTED_SHADOW.width,
     "line-blur": SELECTED_SHADOW.blur,
     "line-translate": SELECTED_SHADOW.translate,
   } as const;
-  const white = { "line-color": SELECTED_LINE, "line-opacity": fadeIn(FOOTPRINTS_MIN_ZOOM, 1) } as const;
+  const white = { "line-color": SELECTED_LINE, "line-opacity": selectedFadeIn(1) } as const;
   for (const [id, source, join, paint, before] of [
     [LAYERS.zoneShadow, zones, "miter", shadow, overLinks],
     [LAYERS.zoneSelected, zones, "miter", { ...white, "line-width": 1.5 }, overLinks],
@@ -886,7 +903,7 @@ export function setAllStations(
     [LAYERS.footprintSelected, footprints, "round", { ...white, "line-width": 2 }, LAYERS.visited],
   ] as const) {
     map.addLayer(
-      { id, type: "line", ...source, filter: footprintFilter(selectedId), layout: { ...shown, "line-join": join }, paint },
+      { id, type: "line", ...source, layout: { ...shown, "line-join": join }, paint },
       before,
     );
   }
@@ -944,13 +961,16 @@ export function setAllStations(
       },
       paint: {
         "text-color": palette.stationCasing,
-        "text-opacity": NAMES_IN,
-        "icon-opacity": fadeIn(NAMES_MIN_ZOOM, UNVISITED_BUBBLE_OPACITY),
+        "text-opacity": hideSelected(1),
+        "icon-opacity": hideSelected(UNVISITED_BUBBLE_OPACITY),
       },
     },
     LAYERS.names,
   );
   applyHiddenGroups(map);
+  // A new source: the states of the station shown and of the one under the pointer set again.
+  moveStationState(map, "selected", null, selectedIds.get(map));
+  moveStationState(map, "hovered", null, hoveredIds.get(map));
 }
 
 /** Shows the visited stations and the links of `data`; ignored until the layers are added. */
@@ -1088,17 +1108,13 @@ export function setSelectedStation(
   map: MapLibreMap,
   station: StationPick | null,
 ): void {
-  const changed = selectedIds.get(map) !== (station?.id ?? null);
+  const last = selectedIds.get(map);
+  const changed = last !== (station?.id ?? null);
   selectedIds.set(map, station?.id ?? null);
   selectedPicks.set(map, station);
-  if (changed && map.getLayer(LAYERS.zones)) {
-    map.setPaintProperty(LAYERS.zones, "fill-opacity", selectedOpacity(map, ZONE_OPACITY));
-    map.setPaintProperty(LAYERS.footprints, "fill-opacity", selectedOpacity(map, FOOTPRINT_OPACITY));
-    for (const id of [LAYERS.zoneHatch, LAYERS.zoneShadow, LAYERS.zoneSelected, LAYERS.footprintShadow, LAYERS.footprintSelected])
-      map.setFilter(id, footprintFilter(station?.id));
-    map.setFilter(LAYERS.unvisitedNames, unvisitedFilter(map));
-  }
-  if (changed && map.getLayer(LAYERS.names)) map.setFilter(LAYERS.names, namedFilter(map));
+  if (changed) moveStationState(map, "selected", last, station?.id);
+  // The names of the visits, out of the tiles of every station, filtered: a small GeoJSON source.
+  if (changed && !everyStation.has(map) && map.getLayer(LAYERS.names)) map.setFilter(LAYERS.names, namedFilter(map));
   map.getSource<GeoJSONSource>(SOURCES.selected)?.setData(ringData(station));
   updateHoveredRing(map);
   updateBubble(map);
@@ -1112,13 +1128,11 @@ export function setHoveredStation(
 ): void {
   const id = station?.id ?? null;
   hoveredPicks.set(map, station);
-  // Called on every move of the pointer: the filter changes with the station only.
-  if (hoveredIds.get(map) !== id) {
+  // Called on every move of the pointer: the state changes with the station only.
+  const last = hoveredIds.get(map);
+  if (last !== id) {
     hoveredIds.set(map, id);
-    if (map.getLayer(LAYERS.zones)) {
-      map.setPaintProperty(LAYERS.zones, "fill-opacity", selectedOpacity(map, ZONE_OPACITY));
-      map.setPaintProperty(LAYERS.footprints, "fill-opacity", selectedOpacity(map, FOOTPRINT_OPACITY));
-    }
+    moveStationState(map, "hovered", last, id);
   }
   updateHoveredRing(map);
 }

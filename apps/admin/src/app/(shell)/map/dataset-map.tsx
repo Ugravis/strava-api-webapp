@@ -5,7 +5,7 @@ import type { AdminMapVersion } from "@kilotrace/shared/admin";
 import { Map as MapLibreMap, NavigationControl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useSplitPanel } from "@kilotrace/ui/components/split-panel";
+import { useSplitPanel, useSplitPanelPageMode } from "@kilotrace/ui/components/split-panel";
 import { countryName } from "@kilotrace/ui/lib/countries/country-format";
 import { setCountriesVisible, setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { BASE_STYLE_URL, DEFAULT_VIEW, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
@@ -74,6 +74,8 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
     [serverVersions, edits, everyDot],
   );
   const { open, setTitle, isOpen, activeId } = useSplitPanel();
+  // The detail floats over the map until switched beside it here, whatever the mode kept on the other pages.
+  useSplitPanelPageMode("overlay");
   const selectedId = isOpen ? activeId : null;
 
   // Read by the handlers of the map, created once with it.
@@ -140,6 +142,9 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
       const station = stationNear(map, event.point);
       if (!station) return;
       picked.current = String(station.id);
+      // Ringed and its zone striped at once, not once the panel has located it.
+      selected.current = null;
+      setSelectedStation(map, station);
       openRef.current(String(station.id), station.name ?? null);
     });
     // The station under the pointer is haloed: looked for once per frame, and not while the map moves.

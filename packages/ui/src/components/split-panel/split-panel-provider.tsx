@@ -30,6 +30,8 @@ interface SplitPanelContextValue {
   activeId: string | null;
   /** The id of the content the panel shows, null without any: `activeId` may name another one, e.g. after a link. */
   shownId: string | null;
+  /** Gives the page its own mode, from `initial`, until the returned cleanup: see `useSplitPanelPageMode`. */
+  keepPageMode: (initial: SplitPanelMode) => () => void;
 }
 
 interface Entry extends SplitPanelOptions {
@@ -89,7 +91,10 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
   const storedMode = useStored(MODE_KEY);
   const asked = params.get(MODE_PARAM);
   const expanded = asked === "full" && !mobile;
-  const mode: SplitPanelMode = ((asked === "full" ? null : asked) ?? storedMode) === "split" ? "split" : "overlay";
+  // The mode of a page keeping its own (`useSplitPanelPageMode`), else of the URL, else the one kept.
+  const [pageMode, setPageMode] = useState<SplitPanelMode | null>(null);
+  const pageModeRef = useRef<SplitPanelMode | null>(null);
+  const mode: SplitPanelMode = (pageMode ?? (asked === "full" ? null : asked) ?? storedMode) === "split" ? "split" : "overlay";
   const storedWidth = Number(useStored(WIDTH_KEY));
   // Followed at once by the page while the edge is dragged, then stored.
   const [dragged, setDragged] = useState<number | null>(null);
@@ -112,7 +117,8 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
       return { entries, at: entries.length - 1 };
     });
     setFolded(false);
-    writeParams({ [ROW_PARAM]: options.id ?? null, [MODE_PARAM]: modeRef.current });
+    // The mode of the page read from its ref: set in the same event, `modeRef` follows after the render.
+    writeParams({ [ROW_PARAM]: options.id ?? null, [MODE_PARAM]: modeRef.current === "full" ? "full" : (pageModeRef.current ?? modeRef.current) });
   }, []);
   const open = useCallback((content: ReactNode, options: SplitPanelOptions = {}) => attempt(() => show(content, options, false)), [attempt, show]);
   const setTitle = useCallback(
@@ -145,16 +151,29 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
     // Out of the whole page first, then closed.
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || asking.current) return;
-      if (new URLSearchParams(window.location.search).get(MODE_PARAM) === "full") writeParams({ [MODE_PARAM]: localStorage.getItem(MODE_KEY) ?? "overlay" });
+      if (new URLSearchParams(window.location.search).get(MODE_PARAM) === "full")
+        writeParams({ [MODE_PARAM]: pageModeRef.current ?? localStorage.getItem(MODE_KEY) ?? "overlay" });
       else close();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen, close, asking]);
 
+  const keepPageMode = useCallback((initial: SplitPanelMode) => {
+    // A link naming its mode (`?panel=`) starts in it.
+    const linked = new URLSearchParams(window.location.search).get(MODE_PARAM);
+    const start = linked === "split" || linked === "overlay" ? linked : initial;
+    pageModeRef.current = start;
+    setPageMode(start);
+    return () => {
+      pageModeRef.current = null;
+      setPageMode(null);
+    };
+  }, []);
+
   const value = useMemo(
-    () => ({ open, replace, close, setTitle, guard, isOpen, activeId, shownId }),
-    [open, replace, close, setTitle, guard, isOpen, activeId, shownId],
+    () => ({ open, replace, close, setTitle, guard, isOpen, activeId, shownId, keepPageMode }),
+    [open, replace, close, setTitle, guard, isOpen, activeId, shownId, keepPageMode],
   );
 
   const state: SplitPanelState = {
@@ -174,7 +193,10 @@ export function SplitPanelProvider({ children }: { children: ReactNode }) {
     mode,
     toggleMode: () => {
       const next = mode === "split" ? "overlay" : "split";
-      store(MODE_KEY, next);
+      if (pageModeRef.current) {
+        pageModeRef.current = next;
+        setPageMode(next);
+      } else store(MODE_KEY, next);
       writeParams({ [MODE_PARAM]: next });
     },
     expanded,
@@ -212,6 +234,17 @@ export function useSplitPanelGuard(dirty: boolean) {
     window.addEventListener("beforeunload", onUnload);
     return () => window.removeEventListener("beforeunload", onUnload);
   }, [guard, dirty]);
+}
+
+/**
+ * Gives the page its own mode while mounted, from `initial` (or the `?panel=`
+ * of a link): the switch of the panel changes it for the page only, never the
+ * mode kept for the other pages (`localStorage`). Called before the page opens
+ * anything.
+ */
+export function useSplitPanelPageMode(initial: SplitPanelMode) {
+  const keepPageMode = useSplitPanel().keepPageMode;
+  useEffect(() => keepPageMode(initial), [keepPageMode, initial]);
 }
 
 /** `open(content, { id, title })` and `close()`, from any page under a `SplitPanelProvider`. */

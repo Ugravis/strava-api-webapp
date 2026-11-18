@@ -76,7 +76,11 @@ import { AdminTeamService } from './team/admin-team.service';
 import { AdminDatabaseService } from './system/admin-database.service';
 import { AdminSystemOverviewService } from './system/admin-system-overview.service';
 import { AdminUploadsService } from './system/admin-uploads.service';
+import { Report } from '../reports/report.entity';
+import { StationReport } from '../reports/station-report.entity';
 import { UserReport } from '../reports/user-report.entity';
+import { AdminStationReportsController } from './station-reports/admin-station-reports.controller';
+import { AdminStationReportsService } from './station-reports/admin-station-reports.service';
 import { AdminUserReportsController } from './user-reports/admin-user-reports.controller';
 import { AdminUserReportsService } from './user-reports/admin-user-reports.service';
 import { AdminUsersController } from './users/admin-users.controller';
@@ -109,7 +113,9 @@ export const ADMIN_ROUTES = [
       ReservedUsername,
       AdminRolePermission,
       ReleaseNote,
+      Report,
       UserReport,
+      StationReport,
       Place,
       Country,
     ]),
@@ -138,6 +144,7 @@ export const ADMIN_ROUTES = [
     AdminUserTagsController,
     AdminMapController,
     AdminStationsController,
+    AdminStationReportsController,
     AdminRegionsController,
     AdminSystemController,
     AdminTeamController,
@@ -160,6 +167,7 @@ export const ADMIN_ROUTES = [
     AdminUserTagsService,
     AdminMapService,
     AdminStationsService,
+    AdminStationReportsService,
     AdminRegionsService,
     AdminUploadsService,
     AdminDatabaseService,

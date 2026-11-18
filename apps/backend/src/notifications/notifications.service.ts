@@ -183,6 +183,9 @@ export class NotificationsService {
       | 'report_received'
       | 'report_sent'
       | 'report_closed'
+      | 'station_report_received'
+      | 'station_report_sent'
+      | 'station_report_closed'
     >,
     details: NotificationDetails,
   ): Promise<void> {

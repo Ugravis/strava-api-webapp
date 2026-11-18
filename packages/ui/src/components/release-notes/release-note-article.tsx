@@ -1,7 +1,7 @@
 "use client";
 
-import { type PublicReleaseNote, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
-import { CirclePlusIcon, InfoIcon, type LucideIcon, TrendingUpIcon, WrenchIcon } from "lucide-react";
+import { type PublicReleaseNote, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection, TEAM_RELEASE_NOTE_SECTION } from "@kilotrace/shared";
+import { CirclePlusIcon, InfoIcon, type LucideIcon, ShieldIcon, TrendingUpIcon, WrenchIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Fragment } from "react";
 import { Markdown } from "@kilotrace/ui/components/markdown/markdown";
@@ -14,6 +14,7 @@ export const RELEASE_NOTE_SECTION_LOOKS: Record<ReleaseNoteSection, { icon: Luci
   improved: { icon: TrendingUpIcon, className: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
   fixed: { icon: WrenchIcon, className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
   other: { icon: InfoIcon, className: "bg-muted text-muted-foreground" },
+  team: { icon: ShieldIcon, className: "bg-amber-500/20 text-amber-700 dark:text-amber-300" },
 };
 
 /** The image across the top of a note, in a wide frame whatever its size. */
@@ -46,17 +47,25 @@ export function ReleaseNoteSections({ note }: { note: Pick<PublicReleaseNote, "s
     <div className="flex flex-col gap-4">
       {parts.map((section, index) => {
         const { icon: Icon, className } = RELEASE_NOTE_SECTION_LOOKS[section];
+        // Only the back-office team gets it: set apart on a pale yellow ground.
+        const team = section === TEAM_RELEASE_NOTE_SECTION;
         return (
           <Fragment key={section}>
-            {index > 0 && <Separator />}
-            <section className="flex flex-col gap-2">
+            {index > 0 && !team && <Separator />}
+            <section
+              className={cn(
+                "flex flex-col gap-2",
+                team && "rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-50",
+              )}
+            >
               <h3 className="flex items-center gap-2 text-sm font-semibold">
                 <span className={cn("grid size-6 place-items-center rounded-md", className)}>
                   <Icon className="size-3.5" aria-hidden />
                 </span>
                 {t(section)}
+                {team && <span className="ml-auto text-xs font-normal text-amber-800/80 dark:text-amber-200/80">{t("teamHint")}</span>}
               </h3>
-              <div className="text-sm text-foreground/90">
+              <div className={cn("text-sm", team ? "text-amber-950/90 dark:text-amber-50/90" : "text-foreground/90")}>
                 <Markdown source={note.sections[section]!} highlight />
               </div>
             </section>

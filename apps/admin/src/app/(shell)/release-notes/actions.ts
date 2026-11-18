@@ -40,6 +40,7 @@ export interface ReleaseNoteDraft {
   improved: string | null;
   fixed: string | null;
   other: string | null;
+  team: string | null;
   /** The banner picked, uploaded once the note is created. */
   banner: File | string | null;
   githubUrl: string | null;
@@ -57,6 +58,7 @@ export async function createReleaseNote(draft: ReleaseNoteDraft): Promise<AdminA
     improved: draft.improved?.trim() || null,
     fixed: draft.fixed?.trim() || null,
     other: draft.other?.trim() || null,
+    team: draft.team?.trim() || null,
     githubUrl: draft.githubUrl?.trim() || null,
   };
   const result = await runAdminAction("/release-notes", "POST", body, errors());

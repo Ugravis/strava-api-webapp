@@ -68,7 +68,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     items: [
       { key: "datasetMap", href: adminRoutes.datasetMap, icon: MapIcon },
       { key: "regions", href: adminRoutes.regions, icon: EarthIcon, count: "regions" },
-      { key: "stations", href: adminRoutes.stations, icon: TrainFrontIcon, count: "stations" },
+      { key: "stations", href: adminRoutes.stations, icon: TrainFrontIcon, count: "stations", alert: "openStationReports" },
     ],
   },
   {

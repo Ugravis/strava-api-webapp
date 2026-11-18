@@ -9,6 +9,7 @@ import {
   type LucideIcon,
   MegaphoneIcon,
   ReceiptTextIcon,
+  TrainFrontIcon,
   TriangleAlertIcon,
   UserXIcon,
 } from "lucide-react";
@@ -44,7 +45,7 @@ const TONES: Record<Severity, string> = {
 /** What the team has to look at, the most urgent first; a calm line when nothing. */
 export async function DashboardAttention() {
   const t = getAdminTranslations("dashboard.attention");
-  const [format, system, dev, commits, releaseNotes, audit, users, statistics, reports] = await Promise.all([
+  const [format, system, dev, commits, releaseNotes, audit, users, statistics, reports, stationReports] = await Promise.all([
     getFormatter(),
     dashboardData.system(),
     dashboardData.dev(),
@@ -54,6 +55,7 @@ export async function DashboardAttention() {
     dashboardData.users(),
     dashboardData.statistics(),
     dashboardData.reports(),
+    dashboardData.stationReports(),
   ]);
   const today = statistics?.stravaUsage.days.at(-1);
   const quota = today?.read != null && today.readLimit ? today.read / today.readLimit : 0;
@@ -82,6 +84,14 @@ export async function DashboardAttention() {
       title: t("reports", { count: reports.open }),
       detail: t("reportsDetail", { today: reports.openToday }),
       href: `${adminRoutes.users}#reports`,
+    },
+    stationReports && stationReports.open > 0 && {
+      key: "stationReports",
+      severity: "warning",
+      icon: TrainFrontIcon,
+      title: t("stationReports", { count: stationReports.open }),
+      detail: t("reportsDetail", { today: stationReports.openToday }),
+      href: `${adminRoutes.stations}#reports`,
     },
     quota >= QUOTA_WARNING && today?.read != null && today.readLimit && {
       key: "quota",

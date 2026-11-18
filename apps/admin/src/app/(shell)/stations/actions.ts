@@ -12,13 +12,16 @@ import { fetchAdminTable } from "@/lib/admin/table";
  * fields, and records every change.
  */
 
+const STATION_ID = /^[1-9]\d{0,9}$/;
+
 /** A page of the table of the stations. */
 export async function fetchStationsTable(query: TableQuery): Promise<TablePage<AdminStation>> {
   return fetchAdminTable<AdminStation>("/stations/table", query);
 }
 
-/** A station for its detail, null when it is gone. */
+/** A station for its detail, null when it is gone or when `?row=` names a report. */
 export async function loadStation(id: string): Promise<AdminStation | null> {
+  if (!STATION_ID.test(id)) return null;
   const result = await adminApi<AdminStation>(`/stations/${checkedId(id)}`);
   if (result.ok) return result.data;
   if (result.status === 404) return null;
@@ -53,7 +56,7 @@ export async function hideStation(id: string, hidden: boolean, reason: string | 
 
 /** An id posted by the page, checked before it reaches a URL. */
 function checkedId(id: string): string {
-  if (typeof id !== "string" || !/^[1-9]\d{0,9}$/.test(id)) {
+  if (typeof id !== "string" || !STATION_ID.test(id)) {
     throw new Error("Invalid id");
   }
   return id;

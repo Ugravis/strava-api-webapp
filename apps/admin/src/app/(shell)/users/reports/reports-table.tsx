@@ -3,14 +3,13 @@
 import { USER_REPORT_REASONS } from "@kilotrace/shared";
 import type { AdminPermission, AdminUserReport, UserReportStatus } from "@kilotrace/shared/admin";
 import type { TableQuery } from "@kilotrace/shared/table";
-import { BanIcon, CheckCheckIcon, ChevronDownIcon, CopyIcon, ExternalLinkIcon, FlagIcon, FlagOffIcon, GavelIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
-import { type ReactNode, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { BanIcon, CheckCheckIcon, CopyIcon, ExternalLinkIcon, FlagOffIcon, GavelIcon, PanelRightOpenIcon, Trash2Icon } from "lucide-react";
+import { type ReactNode, useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { type DataTableConfig, DataTable, RowActions, useConfirmDialog } from "@kilotrace/ui/components/admin/data-table";
 import { type RowPanelControls, useRowPanel } from "@kilotrace/ui/components/admin/detail";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "@kilotrace/ui/components/ui/dropdown-menu";
 import { userProfileHref } from "@/config/site-links";
-import { cn } from "@kilotrace/ui/lib/utils";
 import { REFUSALS, type UserActionKey, userActionsOf } from "../user-actions";
 import { useOpenUser } from "../use-user-panel";
 import { fetchReportsTable, loadReport, loadReportDetail } from "./actions";
@@ -30,29 +29,6 @@ const MENU_SANCTIONS: { key: "moderate" | "suspend" | "delete"; label: string; d
   { key: "suspend", label: "Suspendre", destructive: true },
   { key: "delete", label: "Supprimer le compte", destructive: true },
 ];
-
-/**
- * The section of the reports, folded on arrival when none is open: the
- * table stays mounted, so that a shared link still opens its report.
- */
-export function ReportsSection({ title, openCount, permissions }: { title: string; openCount: number; permissions: AdminPermission[] }) {
-  const [unfolded, setUnfolded] = useState(openCount > 0);
-  return (
-    <section id="reports" className="flex scroll-mt-20 flex-col gap-3" aria-labelledby="reports-title">
-      <h2 id="reports-title" className="text-sm font-medium">
-        <button type="button" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-expanded={unfolded} aria-controls="reports-table" onClick={() => setUnfolded(!unfolded)}>
-          <FlagIcon className="size-4 text-muted-foreground" aria-hidden />
-          {title}
-          {openCount > 0 && <span className="rounded-full bg-destructive px-1.5 text-xs text-white tabular-nums">{openCount}</span>}
-          <ChevronDownIcon className={cn("size-4 text-muted-foreground transition-transform", !unfolded && "-rotate-90")} aria-hidden />
-        </button>
-      </h2>
-      <div id="reports-table" hidden={!unfolded}>
-        <ReportsTable permissions={permissions} />
-      </div>
-    </section>
-  );
-}
 
 /** The reports, those open by default; a click opens one in the side panel. */
 export function ReportsTable({ permissions }: { permissions: AdminPermission[] }) {

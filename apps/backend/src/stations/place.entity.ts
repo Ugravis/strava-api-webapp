@@ -24,6 +24,8 @@ export type PlaceZoneSource = 'osm' | 'rails' | 'point';
 @Entity('places')
 @Index(['osmType', 'osmId'], { unique: true })
 @Index(['x', 'y'])
+/** Latest change of a kind (`stationsVersion`), read every few seconds by the station metrics worker. */
+@Index('IDX_places_kind_updated_at', ['kind', 'updatedAt'])
 export class Place {
   @PrimaryGeneratedColumn()
   id!: number;

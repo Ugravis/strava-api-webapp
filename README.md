@@ -22,15 +22,23 @@ docker/                      Dockerfiles
 
 ## Getting started
 
-Requirements: Docker, or Node.js 24 and pnpm 10.
+Requirements: Docker, Node.js 24 and pnpm 10.
+
+The services (PostGIS, storage, emails, Adminer) run in Docker, the apps on the host: three
+dev servers in the Docker VM of a Mac are much slower. The apps read the root `.env` through
+links (ignored by git).
 
 ```bash
 cp .env.example .env
-docker compose up --build
+ln -s ../../.env apps/backend/.env
+ln -s ../../.env apps/frontend/.env.local
+ln -s ../../.env apps/admin/.env.local
+pnpm install
+docker compose up -d
+pnpm turbo run dev --filter=@kilotrace/backend --filter=@kilotrace/frontend
 ```
 
-- Back office (optional, a third Next.js dev server): `docker compose --profile admin up`, then
-  http://localhost:3200
+- Back office: add `--filter=@kilotrace/admin`, then http://localhost:3200
 - Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
 - API health check: http://localhost:4000/api/health
 - API endpoint listing: http://localhost:3000/api (method, path, access, rate limit, status; not served in production)
@@ -38,15 +46,11 @@ docker compose up --build
 - Mailpit (outgoing emails): http://localhost:8025
 - RustFS console (S3-compatible storage): http://localhost:9001, credentials `rustfsadmin` / `rustfsadmin`
 
-Without Docker (PostGIS, an SMTP server and an S3-compatible storage must be reachable with the `.env` settings):
-
-```bash
-pnpm install
-pnpm dev
-```
+The apps can also run in containers: `docker compose --profile apps --profile admin up --build`
+(stop the host servers first, they share the ports).
 
 `@kilotrace/shared` is a compiled package: `pnpm dev` builds it first and rebuilds it on change. The
-Docker dev images build it once, so after changing it, rebuild them (`docker compose up --build`).
+Docker dev images (`--profile apps`) build it once, so after changing it, rebuild them (`docker compose --profile apps up --build`).
 
 Database migrations run automatically when the backend starts. `pnpm db:reset` (development only)
 applies the pending migrations, empties the user data tables but keeps the datasets (countries,

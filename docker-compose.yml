@@ -45,7 +45,10 @@ services:
     volumes:
       - storage-data:/data
 
+  # Apps in containers are optional (`--profile apps`): by default they run on
+  # the host (`pnpm dev`), much lighter on a Mac than three dev servers in a VM.
   backend:
+    profiles: [apps]
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
@@ -101,11 +104,17 @@ services:
   tunnel:
     image: cloudflare/cloudflared:2026.9.3
     profiles: [tunnel]
-    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 --url http://backend:4000
+    # Through the host: reaches the backend in a container or on the host alike.
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 --url http://host.docker.internal:4000
+    ports:
+      - "2000:2000"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+        required: false
 
   frontend:
+    profiles: [apps]
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
@@ -133,14 +142,16 @@ services:
       dockerfile: docker/admin.Dockerfile
       target: dev
     environment:
-      API_INTERNAL_URL: http://backend:4000
+      API_INTERNAL_URL: http://host.docker.internal:4000
       ADMIN_URL: ${ADMIN_URL:-http://localhost:3200}
       ADMIN_GATEWAY_SECRET: ${ADMIN_GATEWAY_SECRET:-development-admin-gateway-secret}
       NEXT_PUBLIC_SITE_URL: ${FRONTEND_URL:-http://localhost:3000}
     ports:
       - "3200:3200"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+        required: false
     volumes:
       - ./apps/admin/src:/app/apps/admin/src
       - ./apps/admin/public:/app/apps/admin/public

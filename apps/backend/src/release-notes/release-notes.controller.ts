@@ -56,8 +56,8 @@ export class ReleaseNotesController {
 
   /** The history: every note published, the latest first. */
   @Get()
-  async list(): Promise<ReleaseNotesResponse> {
-    return { notes: await this.releaseNotes.published() };
+  async list(@CurrentUser() user: User): Promise<ReleaseNotesResponse> {
+    return { notes: await this.releaseNotes.published(user) };
   }
 
   /** The notes to show on arrival, and how. */

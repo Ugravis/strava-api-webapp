@@ -35,6 +35,7 @@ export const SECTION_FIELDS: Record<ReleaseNoteSection, { label: string; placeho
   improved: { label: "Améliorations", placeholder: "- Le tableau de bord charge deux fois plus vite" },
   fixed: { label: "Corrections", placeholder: "- Les tuiles d'un trajet en ferry ne sont plus comptées" },
   other: { label: "Autres changements", placeholder: "Tout ce qui ne rentre pas ailleurs : maintenance, conditions…" },
+  team: { label: "Équipe", placeholder: "Visible par l'équipe admin uniquement : nouvelles pages, permissions, points à surveiller…" },
 };
 
 const SectionIcon = ({ section }: { section: ReleaseNoteSection }) => {
@@ -183,7 +184,7 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
   );
 }
 
-const BLANK: ReleaseNoteDraft = { version: null, display: null, title: null, summary: null, new: null, improved: null, fixed: null, other: null, banner: null, githubUrl: null };
+const BLANK: ReleaseNoteDraft = { version: null, display: null, title: null, summary: null, new: null, improved: null, fixed: null, other: null, team: null, banner: null, githubUrl: null };
 
 /** A note written ahead for a version not out yet: a draft until made ready, nothing saved before « Créer ». */
 export function ReleaseNoteCreate({ initial, currentVersion, onCancel, onCreated }: { initial?: Partial<ReleaseNoteDraft>; currentVersion: string; onCancel: () => void; onCreated: (id: string) => void }) {
@@ -274,7 +275,7 @@ function DraftPreview({ draft, version, display, open, onOpenChange }: { draft: 
         bannerUrl: bannerUrl ?? null,
         title: draft.title,
         summary: draft.summary,
-        sections: { new: draft.new, improved: draft.improved, fixed: draft.fixed, other: draft.other },
+        sections: { new: draft.new, improved: draft.improved, fixed: draft.fixed, other: draft.other, team: draft.team },
       })}
       open={open}
       onOpenChange={onOpenChange}

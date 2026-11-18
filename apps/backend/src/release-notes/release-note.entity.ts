@@ -60,6 +60,10 @@ export class ReleaseNote {
   @Column({ name: 'section_other', type: 'text', nullable: true })
   sectionOther!: string | null;
 
+  /** Read by the back-office team only (every role). */
+  @Column({ name: 'section_team', type: 'text', nullable: true })
+  sectionTeam!: string | null;
+
   /** Hidden from the users once published, null while shown. */
   @Column({ name: 'disabled_at', type: 'timestamptz', nullable: true })
   disabledAt!: Date | null;

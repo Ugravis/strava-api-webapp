@@ -1319,7 +1319,9 @@
       "new": "Nouveautés",
       "improved": "Améliorations",
       "fixed": "Corrections",
-      "other": "Autres changements"
+      "other": "Autres changements",
+      "team": "Équipe",
+      "teamHint": "Visible par l'équipe uniquement"
     },
     "dialog": {
       "previous": "Version précédente",

@@ -1132,7 +1132,8 @@
       "viewTile": "Voir la petite tuile",
       "center": "Centrer la gare sur la carte",
       "error": "Impossible de charger cette gare.",
-      "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>"
+      "attribution": "Gares et voies ferrées © <link>contributeurs OpenStreetMap</link>",
+      "report": "Signaler un problème sur cette gare"
     },
     "trainPanel": {
       "title": "{kind} {number}",
@@ -1181,6 +1182,36 @@
       "fewerStops": "Masquer les arrêts intermédiaires",
       "passed": "Desservi",
       "estimated": "Horaire estimé"
+    },
+    "stationReport": {
+      "prompt": "Un problème avec une ligne de trains ? Une gare manquante ?",
+      "open": "Signaler",
+      "title": "Signaler un manque ou une erreur",
+      "description": "Une gare manque, une voie ferrée est absente ou erronée ? Dites-le à l'équipe, qui corrigera les données lors des prochaines mises à jour.",
+      "stationTitle": "Signaler « {name} »",
+      "stationDescription": "Une information de cette gare est fausse ? Dites-le à l'équipe, qui corrigera les données lors des prochaines mises à jour.",
+      "unnamed": "Gare sans nom",
+      "legend": "Raison du signalement",
+      "reasons": {
+        "missing_station": "Une gare manque",
+        "railway": "Voie ferrée manquante ou erronée",
+        "wrong_count": "Une gare est comptabilisée à tort",
+        "wrong_name": "Nom erroné",
+        "wrong_location": "Mauvais emplacement",
+        "wrong_zone": "Zone de validation incorrecte",
+        "closed": "Gare fermée ou inexistante",
+        "duplicate": "Doublon d'une autre gare",
+        "other": "Autre"
+      },
+      "details": "Précisions (facultatif)",
+      "detailsRequired": "Précisez la raison",
+      "detailsPlaceholder": "Nom de la gare, ville, ligne… tout ce qui aide l'équipe à la retrouver.",
+      "stationPlaceholder": "Ce qui est faux, et ce qui serait juste.",
+      "customPlaceholder": "Décrivez le problème.",
+      "submit": "Envoyer",
+      "sent": "Signalement envoyé à l'équipe",
+      "sentDescription": "Vous serez prévenu·e dès qu'il aura été examiné.",
+      "close": "Fermer"
     }
   },
   "community": {
@@ -1280,7 +1311,19 @@
     "release": "Nouveautés",
     "report_received": "Nouveau signalement de @{username} à traiter.",
     "report_closed": "{outcome, select, sanctioned {Votre signalement de @{username} a été examiné : une sanction a été prise. Merci.} other {Votre signalement de @{username} a été examiné : aucune sanction n'a été retenue.}}",
-    "report_sent": "Votre signalement de @{username} a bien été envoyé. Vous serez prévenu·e dès que l'équipe l'aura examiné."
+    "report_sent": "Votre signalement de @{username} a bien été envoyé. Vous serez prévenu·e dès que l'équipe l'aura examiné.",
+    "station_report_received": "{general, select, yes {Nouveau signalement des données ferroviaires à traiter.} other {Nouveau signalement de la gare « {station} » à traiter.}}",
+    "station_report_sent": "{general, select, yes {Votre signalement des données ferroviaires a bien été envoyé.} other {Votre signalement de la gare « {station} » a bien été envoyé.}} Vous serez prévenu·e dès que l'équipe l'aura examiné.",
+    "station_report_closed": "{outcome, select, accepted {{general, select, yes {Votre signalement des données ferroviaires} other {Votre signalement de la gare « {station} »}} a été accepté : il sera pris en compte lors des prochaines mises à jour. Merci !} done {{general, select, yes {La correction de votre signalement des données ferroviaires} other {La correction de votre signalement de la gare « {station} »}} est en ligne. Merci !} other {{general, select, yes {Votre signalement des données ferroviaires} other {Votre signalement de la gare « {station} »}} a été classé sans suite : {dismissal}.}}",
+    "teamNote": "Note de l'équipe : {reason}",
+    "stationDismissals": {
+      "already_fixed": "déjà présent ou déjà corrigé",
+      "duplicate": "doublon d'un autre signalement",
+      "osm_correct": "les données OpenStreetMap sont correctes",
+      "out_of_scope": "hors du périmètre du site",
+      "unverifiable": "impossible à vérifier",
+      "other": "autre raison"
+    }
   },
   "footer": {
     "label": "Pied de page",

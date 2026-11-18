@@ -1,8 +1,8 @@
 "use client";
 
-import { CheckIcon, ChevronRightIcon, CircleDashedIcon, LocateFixedIcon, TrainFrontIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleDashedIcon, FlagIcon, LocateFixedIcon, TrainFrontIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@kilotrace/ui/components/ui/badge";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
@@ -11,6 +11,7 @@ import { type Bounds, SUBTILE_ZOOM, tilesBounds } from "@/lib/tiles/tile-geometr
 import type { StationDetails, StationNeighbor } from "@kilotrace/ui/lib/api/types";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { PanelFigure, PanelFigures, PanelFiguresSkeleton, PanelSection } from "./panel-figure";
+import { ReportStationDialog } from "./report-station-dialog";
 import type { StationPick } from "@kilotrace/ui/lib/map/stations-layer";
 import type { TileRef } from "./tile-highlight";
 import { TileActivityList } from "./tile-activity-list";
@@ -38,6 +39,7 @@ export function StationPanel({ stationId, onLocated, onCenter, onOpenStation, on
   const t = useTranslations("map.stationPanel");
   const format = useFormatter();
   const { station, error } = useStation(stationId);
+  const [reporting, setReporting] = useState(false);
   // Called once per station: the callback changes with every render of the map.
   const onLocatedRef = useRef(onLocated);
 
@@ -81,9 +83,14 @@ export function StationPanel({ stationId, onLocated, onCenter, onOpenStation, on
               {station.inMaxCluster && <Badge variant="outline">{t("inMaxCluster")}</Badge>}
             </div>
           </div>
-          <Button variant="outline" size="icon-sm" onClick={onCenter} aria-label={t("center")} title={t("center")}>
-            <LocateFixedIcon />
-          </Button>
+          <div className="flex shrink-0 gap-1.5">
+            <Button variant="outline" size="icon-sm" onClick={onCenter} aria-label={t("center")} title={t("center")}>
+              <LocateFixedIcon />
+            </Button>
+            <Button variant="outline" size="icon-sm" onClick={() => setReporting(true)} aria-label={t("report")} title={t("report")}>
+              <FlagIcon />
+            </Button>
+          </div>
         </div>
         <p className="text-muted-foreground">{station.visited ? t("visitedDescription") : t("notVisitedDescription")}</p>
       </header>
@@ -123,6 +130,7 @@ export function StationPanel({ stationId, onLocated, onCenter, onOpenStation, on
           ),
         })}
       </p>
+      <ReportStationDialog station={{ id: station.id, name: station.name }} open={reporting} onOpenChange={setReporting} />
     </div>
   );
 }

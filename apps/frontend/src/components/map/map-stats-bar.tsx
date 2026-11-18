@@ -2,7 +2,7 @@
 
 import { EyeIcon, EyeOffIcon, FlagIcon, HistoryIcon, type LucideIcon, SearchIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
@@ -12,6 +12,7 @@ import { cn } from "@kilotrace/ui/lib/utils";
 import { MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
 import { MAP_MODULE_ICONS } from "./map-module-icons";
 import { BandHeading, Stat, ValueSkeleton } from "./map-stat";
+import { ReportStationDialog } from "./report-station-dialog";
 
 type TracksState = Pick<ActivityTracksState, "status" | "errorCode" | "retry">;
 
@@ -463,7 +464,7 @@ function StationsModule({ stations }: { stations: VisitedStations | null }) {
     );
 
   return (
-    <div className="flex h-full overflow-x-auto scrollbar-none">
+    <div className="flex h-full divide-x overflow-x-auto scrollbar-none">
       <StatsSection title={t("stations")} columns>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
@@ -486,6 +487,23 @@ function StationsModule({ stations }: { stations: VisitedStations | null }) {
           accent="railLink"
         />
       </StatsSection>
+      <StationsReportSection />
+    </div>
+  );
+}
+
+/** A station missing or the railway wrong, told to the team from the band: a question, its button under it. */
+function StationsReportSection() {
+  const t = useTranslations("map.stationReport");
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex w-56 shrink-0 snap-start flex-col justify-center gap-2 px-4 py-3 md:px-5 md:py-4">
+      <p className="text-xs leading-snug text-muted-foreground">{t("prompt")}</p>
+      <Button variant="outline" size="sm" className="self-start" onClick={() => setOpen(true)}>
+        <FlagIcon data-icon="inline-start" aria-hidden />
+        {t("open")}
+      </Button>
+      <ReportStationDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

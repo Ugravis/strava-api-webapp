@@ -33,6 +33,7 @@ export const ADMIN_PERMISSIONS = {
   "userTags.edit": { category: "userTags", defaults: ["admin"] },
   "userTags.delete": { category: "userTags", defaults: ["admin"] },
   "stations.edit": { category: "stations", defaults: ["admin"] },
+  "stations.reports": { category: "stations", defaults: ["admin"] },
   "releaseNotes.create": { category: "releaseNotes", defaults: ["admin"] },
   "releaseNotes.edit": { category: "releaseNotes", defaults: ["admin"] },
   "releaseNotes.publish": { category: "releaseNotes", defaults: ["admin"] },

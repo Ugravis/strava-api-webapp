@@ -6,6 +6,8 @@ export interface AdminNavigationCounts {
   reservedUsernames: number;
   stations: number;
   regions: number;
-  /** Reports waiting for a decision, in a red pill. */
+  /** Reports of profiles waiting for a decision, in a red pill. */
   openReports: number;
+  /** Reports of the railway data waiting for a decision, in a red pill. */
+  openStationReports: number;
 }

@@ -10,27 +10,26 @@ const SIDE = 2 ** SHIFT;
 const HALF_WORLD = 20037508.342789244;
 const TILE_SIZE = (2 * HALF_WORLD) / 2 ** SUBTILE_ZOOM;
 
-/** Footprint: platforms (lines) widened by this on each side, flat ends, to cover their tracks. */
-const PLATFORM_REACH_M = 10;
-/** Footprint: gaps narrower than twice this are closed. */
-const CLOSING_M = 8;
-/** Footprint: grown by this once closed. */
+/** Footprint: platforms drawn as lines are this wide, flat ends. */
+const PLATFORM_WIDTH_M = 8;
+/** Footprint: gaps between the platforms of a level narrower than twice this are filled (the tracks between them). */
+const PLATFORM_CLOSING_M = 10;
+/** Footprint: a track this close to the platforms of its level runs along them… */
+const TRACK_ALONG_M = 6;
+/** …and is taken in with this margin on each side, a little more than a platform. */
+const TRACK_MARGIN_M = 12;
+/** Footprint: spikes narrower than twice this, left by the square ends of fanning tracks, are trimmed. */
+const SPIKE_OPENING_M = 6;
+/** Footprint: gaps narrower than twice this are closed between the blocks and the buildings… */
+const CLOSING_M = 15;
+/** …then the shape is grown by this. */
 const PADDING_M = 2;
-/** A group of platforms becomes its oriented rectangle when that covers at most this much more than its band… */
-const BLOCK_SLACK = 1.3;
-/** …else its convex hull at most this much more (a fan), else its band (a curve). */
-const FAN_SLACK = 1.8;
 /** Footprint parts smaller than this share of the largest are dropped. */
 const CRUMB_SHARE = 0.1;
 /** Footprint simplification, in metres. */
 const SIMPLIFY_M = 0.5;
-/**
- * Tracks are buffered by this, a zero-width line touching no tile envelope
- * area: the band is both the zone and the footprint drawn, about a track bed wide.
- */
-const RAILS_BUFFER_M = 3;
 
-const MITRE = 'join=mitre mitre_limit=3';
+const MITRE = 'join=mitre mitre_limit=5';
 
 export interface ZoneReport {
   sources: Record<ZoneSource, number>;
@@ -41,40 +40,54 @@ const round = ([lon, lat]: Point): Point => [
   Math.round(lon * 1e7) / 1e7,
   Math.round(lat * 1e7) / 1e7,
 ];
-const lines = (parts: Point[][]) => parts.map((part) => part.map(round));
+const isRing = (part: Point[]): boolean =>
+  part.length >= 4 &&
+  part[0][0] === part[part.length - 1][0] &&
+  part[0][1] === part[part.length - 1][1];
+const multiLine = (parts: Point[][]): string | null =>
+  parts.length > 0
+    ? JSON.stringify({
+        type: 'MultiLineString',
+        coordinates: parts.map((part) => part.map(round)),
+      })
+    : null;
+
+/** Platforms of a level: rings as areas, lines as lines. */
+function platformGeoJson(parts: Point[][]): string | null {
+  const lines = parts.filter((part) => part.length >= 2);
+  if (lines.length === 0) return null;
+  return JSON.stringify({
+    type: 'GeometryCollection',
+    geometries: lines.map((part) =>
+      isRing(part)
+        ? { type: 'Polygon', coordinates: [part.map(round)] }
+        : { type: 'LineString', coordinates: part.map(round) },
+    ),
+  });
+}
 
 /** GeoJSON inputs of a zone, null where it has none. */
 export function zoneGeoJson(zone: ZoneInput): {
-  clusters: string | null;
+  surface: string | null;
+  below: string | null;
   buildings: string | null;
   rails: string | null;
+  tracks: string | null;
+  tunnels: string | null;
 } {
-  const osm = zone.source === 'osm';
   return {
-    clusters:
-      osm && zone.clusters.length > 0
-        ? JSON.stringify({
-            type: 'GeometryCollection',
-            geometries: zone.clusters.map((group) => ({
-              type: 'MultiLineString',
-              coordinates: lines(group),
-            })),
-          })
-        : null,
+    surface: platformGeoJson(zone.levels[0]),
+    below: platformGeoJson(zone.levels[1]),
     buildings:
-      osm && zone.buildings.length > 0
+      zone.buildings.length > 0
         ? JSON.stringify({
             type: 'MultiPolygon',
             coordinates: zone.buildings.map((ring) => [ring.map(round)]),
           })
         : null,
-    rails:
-      zone.rails.length > 0
-        ? JSON.stringify({
-            type: 'MultiLineString',
-            coordinates: lines(zone.rails),
-          })
-        : null,
+    rails: multiLine(zone.rails),
+    tracks: multiLine(zone.tracks),
+    tunnels: multiLine(zone.tunnels),
   };
 }
 
@@ -82,73 +95,107 @@ export function zoneGeoJson(zone: ZoneInput): {
 const UTM_SRID = `(CASE WHEN ST_Y(p.geom) >= 0 THEN 32600 ELSE 32700 END
   + least(60, floor((ST_X(p.geom) + 180) / 6)::int + 1))`;
 
+const metric = (geojson: string) =>
+  `ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326), s.srid)`;
+/** Platforms as areas: those drawn as lines get PLATFORM_WIDTH_M, flat ends. */
+const areas = (g: string) => `ST_Union(ARRAY(
+    SELECT CASE ST_Dimension(d.geom) WHEN 2 THEN ST_CollectionExtract(ST_MakeValid(d.geom), 3)
+      ELSE ST_Buffer(d.geom, ${PLATFORM_WIDTH_M / 2}, 'endcap=flat ${MITRE}') END
+    FROM ST_Dump(${g}) AS d WHERE ST_Dimension(d.geom) > 0
+  ))`;
+/** A closing (grown then shrunk), straight edges and square corners kept. */
+const closing = (g: string, m: number) =>
+  `ST_Buffer(ST_Buffer(${g}, ${m}, '${MITRE}'), -${m}, '${MITRE}')`;
+/** An opening (shrunk then grown): spikes trimmed. */
+const opening = (g: string, m: number) =>
+  `ST_Buffer(ST_Buffer(${g}, -${m}, '${MITRE}'), ${m}, '${MITRE}')`;
+/** `shape` with the tracks inside `within` taken in, TRACK_MARGIN_M on each side, flat ends. */
+const along = (shape: string, tracks: string, within: string) =>
+  `ST_Union(${shape}, coalesce(ST_Buffer(
+    ST_CollectionExtract(ST_Intersection(${tracks}, ${within}), 2),
+    ${TRACK_MARGIN_M}, 'endcap=flat ${MITRE}'), ${shape}))`;
+/** The union of two shapes, either of which may be null. */
+const union = (a: string, b: string) =>
+  `coalesce(ST_Union(${a}, ${b}), ${a}, ${b})`;
+/** A shape closed, grown by PADDING_M, simplified, without holes nor crumbs. */
+const solid = (g: string) => `(
+    SELECT ST_Union(ARRAY(
+      SELECT ST_MakePolygon(ST_ExteriorRing(part.geom))
+      FROM ST_Dump(ST_SimplifyPreserveTopology(x.blob, ${SIMPLIFY_M})) AS part
+      WHERE ST_Area(part.geom) >= ${CRUMB_SHARE} * (SELECT max(ST_Area(y.geom)) FROM ST_Dump(x.blob) AS y)
+    ))
+    FROM (SELECT ST_Buffer(ST_Buffer(${g}, ${CLOSING_M}, '${MITRE}'), ${PADDING_M - CLOSING_M}, '${MITRE}') AS blob) AS x
+  )`;
+
 /**
- * Footprint and zone of a batch of stations, in their UTM zone: each group
- * of platforms becomes a block (its band, oriented rectangle or hull),
- * joined to the buildings, gaps closed, holes filled, crumbs dropped. The
- * source falls back to the tracks, then to the point, when a shape is empty;
- * the band of the tracks is then the footprint.
+ * Footprint and zone of a batch of stations, in their UTM zone, as Apple
+ * Plans draws a station: the platforms of each level, the tracks between
+ * them filled; every track along them taken in with a margin on each side,
+ * then every track inside the shape so grown (cut to it: the tails do not
+ * grow); spikes trimmed; joined to the surface buildings, gaps closed,
+ * holes filled, crumbs dropped. Surface platforms take the tracks in the
+ * open, underground ones every track: a track may change its tags along a
+ * platform. Without platforms nor buildings, the tracks walked from the
+ * point get the same margins; without them either, the tile of the point.
  * Every step is materialized: inlined, Postgres would compute a shape again
  * at each of its uses, many times over.
  */
 const SHAPES = `INSERT INTO zone_shapes (place_id, source, footprint, zone)
 WITH m AS MATERIALIZED (
   SELECT p.id, s.srid,
-    ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.clusters), 4326), s.srid) AS clusters,
-    ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.buildings), 4326), s.srid) AS buildings,
-    ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(i.rails), 4326), s.srid) AS rails
-  FROM unnest($1::bigint[], $2::text[], $3::text[], $4::text[], $5::text[])
-    AS i(osm_id, clusters, buildings, rails, osm_type)
+    ${areas(metric('i.surface'))} AS surface,
+    ${areas(metric('i.below'))} AS below,
+    ST_Union(ARRAY(
+      SELECT ST_CollectionExtract(ST_MakeValid(d.geom), 3) FROM ST_Dump(${metric('i.buildings')}) AS d
+    )) AS buildings,
+    ${metric('i.rails')} AS rails,
+    ${metric('i.tracks')} AS open_tracks,
+    ${union(metric('i.tracks'), metric('i.tunnels'))} AS all_tracks
+  FROM unnest($1::bigint[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[])
+    AS i(osm_id, surface, below, buildings, rails, tracks, tunnels, osm_type)
   JOIN places p ON p.osm_type = i.osm_type AND p.osm_id = i.osm_id
   CROSS JOIN LATERAL (SELECT ${UTM_SRID} AS srid) AS s
 ),
-f AS MATERIALIZED (
-  SELECT m.id, m.srid, m.rails, (
-      SELECT ST_Union(ARRAY(
-        SELECT CASE
-          WHEN ST_Area(ST_OrientedEnvelope(band)) <= ${BLOCK_SLACK} * ST_Area(band) THEN ST_OrientedEnvelope(band)
-          WHEN ST_Area(ST_ConvexHull(band)) <= ${FAN_SLACK} * ST_Area(band) THEN ST_ConvexHull(band)
-          ELSE band END
-        FROM (
-          SELECT ST_Buffer(ST_Buffer(
-            ST_Buffer(ST_GeometryN(m.clusters, g), ${PLATFORM_REACH_M}, 'endcap=flat ${MITRE}'),
-            ${CLOSING_M}, '${MITRE}'), -${CLOSING_M}, '${MITRE}') AS band
-          FROM generate_series(1, ST_NumGeometries(m.clusters)) AS g
-          OFFSET 0
-        ) AS bands
-        WHERE NOT ST_IsEmpty(band)
-      ))
-    ) AS blocks,
-    ST_Union(ARRAY(
-      SELECT ST_CollectionExtract(ST_MakeValid(d.geom), 3) FROM ST_Dump(m.buildings) AS d
-    )) AS buildings
+c AS MATERIALIZED (
+  SELECT m.*,
+    ${closing('m.surface', PLATFORM_CLOSING_M)} AS surface_closed,
+    ${closing('m.below', PLATFORM_CLOSING_M)} AS below_closed,
+    ST_Buffer(m.rails, ${TRACK_MARGIN_M}, 'endcap=flat ${MITRE}') AS walked
   FROM m
 ),
-b AS MATERIALIZED (
-  SELECT f.id, f.srid, f.rails,
-    ST_Buffer(ST_Buffer(coalesce(ST_Union(f.blocks, f.buildings), f.blocks, f.buildings),
-      ${CLOSING_M}, '${MITRE}'), ${PADDING_M - CLOSING_M}, '${MITRE}') AS blob
-  FROM f
+g1 AS MATERIALIZED (
+  SELECT c.id, c.srid, c.buildings, c.rails, c.open_tracks, c.all_tracks, c.walked,
+    ${along('c.surface_closed', 'c.open_tracks', `ST_Buffer(c.surface_closed, ${TRACK_ALONG_M}, '${MITRE}')`)} AS surface,
+    ${along('c.below_closed', 'c.all_tracks', `ST_Buffer(c.below_closed, ${TRACK_ALONG_M}, '${MITRE}')`)} AS below
+  FROM c
+),
+g2 AS MATERIALIZED (
+  SELECT g1.id, g1.srid, g1.buildings, g1.rails,
+    ${opening(along('g1.surface', 'g1.open_tracks', 'g1.surface'), SPIKE_OPENING_M)} AS surface,
+    ${opening(along('g1.below', 'g1.all_tracks', 'g1.below'), SPIKE_OPENING_M)} AS below,
+    ${opening(along('g1.walked', 'g1.all_tracks', 'g1.walked'), SPIKE_OPENING_M)} AS rail_block
+  FROM g1
 ),
 o AS MATERIALIZED (
-  SELECT b.id, b.srid, b.rails, (
-    SELECT ST_Union(ARRAY(
-      SELECT ST_MakePolygon(ST_ExteriorRing(part.geom))
-      FROM ST_Dump(ST_SimplifyPreserveTopology(b.blob, ${SIMPLIFY_M})) AS part
-      WHERE ST_Area(part.geom) >= ${CRUMB_SHARE} * (SELECT max(ST_Area(x.geom)) FROM ST_Dump(b.blob) AS x)
-    ))
-  ) AS footprint
-  FROM b
+  SELECT g2.id, g2.srid, g2.rails, g2.rail_block,
+    ${solid(union(union('g2.surface', 'g2.below'), 'g2.buildings'))} AS footprint
+  FROM g2
+),
+r AS MATERIALIZED (
+  SELECT o.id, o.footprint, o.rails,
+    CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true) THEN NULL
+      WHEN o.rail_block IS NOT NULL THEN ${solid('o.rail_block')} END AS rail_shape
+  FROM o
 )
-SELECT o.id,
-  CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true) THEN 'osm'
-    WHEN o.rails IS NOT NULL THEN 'rails' ELSE 'point' END,
+SELECT r.id,
+  CASE WHEN NOT coalesce(ST_IsEmpty(r.footprint), true) THEN 'osm'
+    WHEN r.rails IS NOT NULL THEN 'rails' ELSE 'point' END,
   ST_Multi(ST_Transform(s.shape, 4326)),
   ST_Transform(s.shape, 3857)
-FROM o
+FROM r
 CROSS JOIN LATERAL (
-  SELECT CASE WHEN NOT coalesce(ST_IsEmpty(o.footprint), true) THEN o.footprint
-    WHEN o.rails IS NOT NULL THEN ST_Buffer(o.rails, ${RAILS_BUFFER_M}) END AS shape
+  SELECT CASE WHEN NOT coalesce(ST_IsEmpty(r.footprint), true) THEN r.footprint
+    ELSE r.rail_shape END AS shape
 ) AS s`;
 
 /** Small tiles touching each zone, as large tile + bit, like `places.x/y/bit`. */
@@ -235,9 +282,12 @@ async function insertShapes(
   const inputs = zones.map(zoneGeoJson);
   await runner.query(SHAPES, [
     zones.map((zone) => data.stations[zone.station].osmId),
-    inputs.map((input) => input.clusters),
+    inputs.map((input) => input.surface),
+    inputs.map((input) => input.below),
     inputs.map((input) => input.buildings),
     inputs.map((input) => input.rails),
+    inputs.map((input) => input.tracks),
+    inputs.map((input) => input.tunnels),
     zones.map((zone) => data.stations[zone.station].osmType),
   ]);
 }

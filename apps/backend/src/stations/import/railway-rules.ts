@@ -171,17 +171,22 @@ export function isPlatformRoof(tags: Tags | null): boolean {
   return ROOF_BUILDINGS.has(tags?.building ?? '');
 }
 
-/** Whether an object lies under the ground: an RER or metro line under the city. */
+/**
+ * Whether an object lies under the ground: an RER or metro line under the
+ * city. The level says it when given: tracks in a covered trench (Austerlitz)
+ * are tagged as a tunnel at level 0, as their platforms. A negative layer
+ * alone is not enough: they are drawn below the streets.
+ */
 export function isUnderground(tags: Tags | null): boolean {
   if (!tags) return false;
-  const below = (value: string | undefined) =>
-    value !== undefined && Number.parseFloat(value) < 0;
-  return (
-    below(tags.layer) ||
-    below(tags.level) ||
-    tags.location === 'underground' ||
-    tags.tunnel === 'yes'
-  );
+  const level = Number.parseFloat(tags.level ?? '');
+  if (!Number.isNaN(level)) return level < 0;
+  return isInTunnel(tags);
+}
+
+/** Whether a track runs in a tunnel, whatever its level. */
+export function isInTunnel(tags: Tags | null): boolean {
+  return tags?.tunnel === 'yes' || tags?.location === 'underground';
 }
 
 /**

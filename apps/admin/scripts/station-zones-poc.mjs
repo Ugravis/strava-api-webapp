@@ -3,11 +3,15 @@
  * Station zones POC: builds the zones of the stations of one French
  * département, shown by /development/station-zones.
  *
- * Usage: node apps/admin/scripts/station-zones-poc.mjs <ISO 3166-2 code> <overpass.json> <out.json>
+ * Usage: node apps/admin/scripts/station-zones-poc.mjs [<ISO 3166-2 code> [<overpass.json> <out.json>]]
  *
+ * - Without arguments, the three départements of the page (DEPARTMENTS).
  * - The code: FR-13, FR-18, FR-75C (Paris is a collectivité in OSM)...
  * - overpass.json: answer of overpassQuery(code) (`out geom`); fetched and
- *   written there when the file does not exist yet.
+ *   written there when the file does not exist yet. By default kept in
+ *   OVERPASS_CACHE (not versioned): the shapes are computed again from it,
+ *   without asking Overpass, as long as the file is there.
+ * - out.json: by default the file of the page, in OUT_DIR.
  * - The stations are the kept ones of the dev database mapped inside the département.
  *
  * Every shape is computed by PostGIS in the dev database container
@@ -26,7 +30,9 @@
  * Each comes with the small tiles (z17) it touches.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const overpassQuery = (code) => `[out:json][timeout:300];
 area["ISO3166-2"="${code}"]->.a;
@@ -79,21 +85,42 @@ const HALF_WORLD = 20037508.342789244;
 const TILE_SIZE = (2 * HALF_WORLD) / 2 ** 17;
 const DB_CONTAINER = process.env.DB_CONTAINER ?? "strava-webapp-db-1";
 
-const [code, overpassPath, outPath] = process.argv.slice(2);
-if (!outPath) {
-  console.error("Usage: station-zones-poc.mjs <ISO 3166-2 code> <overpass.json> <out.json>");
-  process.exit(1);
+const HERE = dirname(fileURLToPath(import.meta.url));
+/** Answers of Overpass, kept between runs (not versioned). */
+const OVERPASS_CACHE = join(HERE, ".station-zones-cache");
+/** Files read by the page (not versioned). */
+const OUT_DIR = join(HERE, "../public/development/station-zones");
+/** Départements of the page: ISO 3166-2 code and the name of its file. */
+const DEPARTMENTS = { "FR-13": "fr-13", "FR-18": "fr-18", "FR-75C": "fr-75" };
+
+const [code, overpassArg, outArg] = process.argv.slice(2);
+if (!code) {
+  // Every département of the page, one run each.
+  for (const one of Object.keys(DEPARTMENTS)) execFileSync(process.execPath, [fileURLToPath(import.meta.url), one], { stdio: "inherit" });
+  process.exit(0);
 }
+const overpassPath = overpassArg ?? join(OVERPASS_CACHE, `${code}.overpass.json`);
+const outPath = outArg ?? join(OUT_DIR, `${DEPARTMENTS[code] ?? code.toLowerCase()}.json`);
+mkdirSync(dirname(overpassPath), { recursive: true });
+mkdirSync(dirname(outPath), { recursive: true });
 
 if (!existsSync(overpassPath)) {
   console.log(`Fetching ${code} from Overpass…`);
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: { "User-Agent": "kilotrace-station-zones-poc/1.0" },
-    body: new URLSearchParams({ data: overpassQuery(code) }),
-  });
-  if (!response.ok) throw new Error(`Overpass answered ${response.status}`);
-  writeFileSync(overpassPath, await response.text());
+  // Overpass often answers 502 or 504 when busy: tried again, a minute apart at most.
+  for (let attempt = 1; ; attempt++) {
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "User-Agent": "kilotrace-station-zones-poc/1.0" },
+      body: new URLSearchParams({ data: overpassQuery(code) }),
+    });
+    if (response.ok) {
+      writeFileSync(overpassPath, await response.text());
+      break;
+    }
+    if (attempt === 4) throw new Error(`Overpass answered ${response.status}`);
+    console.log(`Overpass answered ${response.status}, trying again…`);
+    await new Promise((resolve) => setTimeout(resolve, 20_000 * attempt));
+  }
 }
 const elements = JSON.parse(readFileSync(overpassPath, "utf8")).elements;
 const byKey = new Map(elements.map((e) => [`${e.type[0]}${e.id}`, e]));
@@ -492,14 +519,22 @@ SELECT json_build_object('name', ${sqlText(tags(boundary ?? {}).name ?? code)},
     JSON.stringify({ type: "MultiLineString", coordinates: outers }),
   )}), 4326)), 0.0001), 5)::json);`);
 
-// --- Rail links of the app between the stations, for the map only ------------------------------
+// --- Rail network of the app around the stations, as on the site map ---------------------------
 const lons = out.map((s) => s.point[0]);
 const lats = out.map((s) => s.point[1]);
-const railLinks = out.length
+const network = out.length
   ? psqlJson(`
-SELECT coalesce(json_agg(ST_AsGeoJSON(ST_Simplify(geom, 0.00001), 6)::json), '[]') FROM rail_links
-WHERE geom && ST_MakeEnvelope(${Math.min(...lons) - 0.1}, ${Math.min(...lats) - 0.1}, ${Math.max(...lons) + 0.1}, ${Math.max(...lats) + 0.1}, 4326);`)
-  : [];
+WITH l AS (
+  SELECT id, station_a, station_b, geom FROM rail_links
+  WHERE geom && ST_MakeEnvelope(${Math.min(...lons) - 0.1}, ${Math.min(...lats) - 0.1}, ${Math.max(...lons) + 0.1}, ${Math.max(...lats) + 0.1}, 4326)
+)
+SELECT json_build_object(
+  'stations', (SELECT coalesce(json_agg(json_build_object('id', p.id, 'name', COALESCE(p.custom_name, p.name), 'lon', ST_X(p.geom), 'lat', ST_Y(p.geom))), '[]')
+    FROM places p WHERE p.id IN (SELECT station_a FROM l UNION SELECT station_b FROM l) OR p.id = ANY(ARRAY[${out.map((s) => s.id).join(",") || "NULL"}]::int[])),
+  'links', (SELECT coalesce(json_agg(json_build_object('id', id, 'stations', json_build_array(station_a, station_b),
+    'coords', (ST_AsGeoJSON(ST_Simplify(geom, 0.00001), 6)::json)->'coordinates')), '[]') FROM l)
+);`)
+  : { stations: [], links: [] };
 
 writeFileSync(
   outPath,
@@ -521,7 +556,7 @@ writeFileSync(
     })),
     zones,
     footprints,
-    railLinks,
+    network,
   }),
 );
 console.log(`${code} ${border.name}: ${out.length} stations, ${out.filter((s) => s.rails.length).length} with tracks, ${zones.length} zones`);

@@ -1,4 +1,5 @@
-import type { FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Point, Polygon, Position } from "geojson";
+import type { FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon, Position } from "geojson";
+import type { StationNetwork } from "@kilotrace/ui/lib/map/station-data";
 
 /** A station of the prototype, as built by `scripts/station-zones-poc.mjs`. */
 export interface PocStation {
@@ -48,8 +49,8 @@ export interface PocDepartment {
   zones: PocZone[];
   /** Footprints of all the stations merged, per precision: overlapping ones are filled once. */
   footprints: Record<Precision, Shape>;
-  /** Rail links of the app between the stations, as on the site map. */
-  railLinks: LineString[];
+  /** Stations and rail links of the app around the département, drawn as on the site map. */
+  network: { stations: { id: number; name: string | null; lon: number; lat: number }[]; links: StationNetwork["links"] };
 }
 
 export interface ZoneChoice {
@@ -103,8 +104,15 @@ export function footprintFill(departments: PocDepartment[], precision: Precision
   return collection(departments.filter((d) => d.footprints[precision]).map((d) => ({ properties: null, geometry: d.footprints[precision] })));
 }
 
-export function railLinks(departments: PocDepartment[]): FeatureCollection<LineString, null> {
-  return collection(departments.flatMap((d) => d.railLinks.map((geometry) => ({ properties: null, geometry }))));
+/** The stations and rail links of the départements, for the layers of the site map: each link ties its own stretch. */
+export function network(departments: PocDepartment[]): StationNetwork {
+  const stations = new Map(departments.flatMap((d) => d.network.stations).map((s) => [s.id, s]));
+  const links = new Map(departments.flatMap((d) => d.network.links).map((l) => [l.id, l]));
+  return {
+    stations: [...stations.values()],
+    links: [...links.values()],
+    ties: [...links.values()].map((l) => ({ linkIds: [l.id], coords: l.coords })),
+  };
 }
 
 /** Tracks walked from every station, drawn thin under the zones. */
@@ -114,10 +122,6 @@ export function tracks(stations: PocStation[]): FeatureCollection<LineString, nu
 
 export function tiles(stations: PocStation[]): FeatureCollection<Polygon, { id: number }> {
   return collection(stations.map((s) => ({ properties: { id: s.id }, geometry: { type: "Polygon" as const, coordinates: [s.tile] } })));
-}
-
-export function points(stations: PocStation[]): FeatureCollection<Point, { id: number; name: string }> {
-  return collection(stations.map((s) => ({ properties: { id: s.id, name: s.name ?? "" }, geometry: { type: "Point" as const, coordinates: s.point } })));
 }
 
 export function borders(departments: PocDepartment[]): FeatureCollection<LineString | MultiLineString, { name: string }> {

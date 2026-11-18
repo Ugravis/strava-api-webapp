@@ -6,6 +6,13 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { cn } from "@kilotrace/ui/lib/utils";
 
+/**
+ * Handle folding the bands or the side panel: in the color of what it folds,
+ * flat against it, open or not, in both themes; tinted on hover only.
+ */
+export const FOLD_HANDLE =
+  "bg-background aria-expanded:bg-background hover:bg-muted dark:bg-background dark:aria-expanded:bg-background dark:hover:bg-muted";
+
 /** Height of the bands over the bottom of the map, set on their parent for the map and its panel. */
 export const BANDS_HEIGHT_VAR = "--map-bands-height";
 
@@ -43,7 +50,8 @@ export function MapBands({ children }: { children: ReactNode }) {
         aria-expanded={!collapsed}
         aria-label={collapsed ? t("expand") : t("collapse")}
         className={cn(
-          "absolute left-1/2 -translate-x-1/2 rounded-b-none border-b-0 bg-background shadow-md",
+          "absolute left-1/2 -translate-x-1/2 rounded-b-none border-b-0",
+          FOLD_HANDLE,
           collapsed ? "-top-7 h-7 w-12" : "-top-4 h-4 w-9 [&_svg:not([class*='size-'])]:size-3",
         )}
       >

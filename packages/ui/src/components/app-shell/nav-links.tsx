@@ -66,6 +66,8 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
             <SidebarMenuButton
               isActive={active}
               tooltip={item.label}
+              // The icon of the active page in blue, and on hover.
+              className="hover:[&>svg]:text-blue-500 data-active:[&>svg]:text-blue-500 dark:hover:[&>svg]:text-blue-400 dark:data-active:[&>svg]:text-blue-400"
               render={<Link href={item.href} aria-current={active ? "page" : undefined} onClick={() => setOpenMobile(false)} />}
             >
               {item.icon}

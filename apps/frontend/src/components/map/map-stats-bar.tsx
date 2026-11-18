@@ -1,36 +1,19 @@
 "use client";
 
-import {
-  CircleDotIcon,
-  EyeIcon,
-  EyeOffIcon,
-  FlagIcon,
-  HistoryIcon,
-  LoaderCircleIcon,
-  type LucideIcon,
-  SearchIcon,
-  SunDimIcon,
-  Volume2Icon,
-} from "lucide-react";
-import Link from "next/link";
+import { EyeIcon, EyeOffIcon, FlagIcon, HistoryIcon, type LucideIcon, SearchIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
-import { type ReactNode, useEffect, useId } from "react";
+import { type ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@kilotrace/ui/components/ui/button";
-import { Checkbox } from "@kilotrace/ui/components/ui/checkbox";
-import { Switch } from "@kilotrace/ui/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kilotrace/ui/components/ui/tooltip";
-import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 import type { TileLevelSummary, TilesSummary, VisitedStations } from "@kilotrace/ui/lib/api/types";
-import { updateSoundSettings, useSoundSettings } from "@/lib/sound/sound-settings";
 import { cn } from "@kilotrace/ui/lib/utils";
 import { MAP_MODULES, type MapLayers, type MapModule } from "./map-layers";
 import { MAP_MODULE_ICONS } from "./map-module-icons";
 import { BandHeading, Stat, ValueSkeleton } from "./map-stat";
-import { TrainSpeedControl } from "./train-speed-control";
 
-type TracksState = Pick<ActivityTracksState, "lines" | "status" | "progress" | "errorCode" | "retry">;
+type TracksState = Pick<ActivityTracksState, "status" | "errorCode" | "retry">;
 
 interface MapStatsBarProps {
   tracks: TracksState;
@@ -147,9 +130,9 @@ export function MapStatsBar({
             )}
           >
             {candidate === "tiles" ? (
-              <TilesModule tracks={tracks} summary={summary} layers={layers} onLayersChange={onLayersChange} />
+              <TilesModule summary={summary} layers={layers} onLayersChange={onLayersChange} />
             ) : (
-              <StationsModule stations={stations} layers={layers} onLayersChange={onLayersChange} />
+              <StationsModule stations={stations} />
             )}
           </div>
         ))}
@@ -212,6 +195,42 @@ function ToolButton({
   );
 }
 
+/** Eye showing or hiding a layer on the map, its action in its tooltip. */
+function VisibilityButton({
+  shown,
+  label,
+  onShownChange,
+  className,
+}: {
+  shown: boolean;
+  label: string;
+  onShownChange: (shown: boolean) => void;
+  className?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-pressed={shown}
+            aria-label={label}
+            onClick={() => onShownChange(!shown)}
+            className={cn(
+              "flex items-center justify-center rounded-md outline-none hover:bg-foreground/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-3.5",
+              !shown && "text-muted-foreground",
+              className,
+            )}
+          />
+        }
+      >
+        {shown ? <EyeIcon aria-hidden /> : <EyeOffIcon aria-hidden />}
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 /**
  * Tab of a module, with two actions: its name selects the module, showing
  * its figures in the band, and its eye shows or hides it on the map.
@@ -252,58 +271,39 @@ function ModuleTab({
         <Icon aria-hidden />
         <span>{label}</span>
       </button>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <button
-              type="button"
-              aria-pressed={shown}
-              aria-label={visibility}
-              onClick={() => onShownChange(!shown)}
-              className={cn(
-                "flex size-7 items-center justify-center rounded-md outline-none md:size-6 hover:bg-foreground/8 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-3.5",
-                !shown && "text-muted-foreground",
-              )}
-            />
-          }
-        >
-          {shown ? <EyeIcon aria-hidden /> : <EyeOffIcon aria-hidden />}
-        </TooltipTrigger>
-        <TooltipContent>{visibility}</TooltipContent>
-      </Tooltip>
+      <VisibilityButton shown={shown} label={visibility} onShownChange={onShownChange} className="size-7 md:size-6" />
     </div>
   );
 }
 
 interface StatsSectionProps {
   title: string;
-  /** Without it, the layer is drawn with its module. */
-  checked?: boolean;
-  onCheckedChange?: (checked: boolean) => void;
+  /** Without it, the layer is drawn with its module; with it, an eye after the title shows or hides it. */
+  shown?: boolean;
+  onShownChange?: (shown: boolean) => void;
+  /** Action of the eye, in its tooltip. */
+  visibilityLabel?: string;
   /** Figures in a grid of two columns from large screens, rather than in a row. */
   columns?: boolean;
   className?: string;
   children: ReactNode;
 }
 
-/** One layer of a module: its title, its checkbox if optional, and its figures, dimmed while hidden; centered in its column from large screens. */
-function StatsSection({ title, checked, onCheckedChange, columns = false, className, children }: StatsSectionProps) {
-  const optional = checked !== undefined && onCheckedChange !== undefined;
-  const dimmed = optional && !checked;
-  const heading = <BandHeading>{title}</BandHeading>;
+/** One layer of a module: its title, its eye if optional, and its figures, dimmed while hidden; sharing the width of the band, centered in it. */
+function StatsSection({ title, shown, onShownChange, visibilityLabel, columns = false, className, children }: StatsSectionProps) {
+  const optional = shown !== undefined && onShownChange !== undefined;
+  const dimmed = optional && !shown;
 
   return (
-    <div className={cn("flex shrink-0 snap-start flex-col justify-center px-4 py-3 md:px-5 md:py-4 lg:min-w-0 lg:items-center", className)}>
+    <div className={cn("flex flex-1 shrink-0 snap-start flex-col items-center justify-center px-4 py-3 md:px-5 md:py-4 lg:min-w-0", className)}>
       {/* Centered as a block, its title on the left of its figures. */}
       <div className="flex flex-col gap-2">
-        {optional ? (
-          <label className="flex h-4 w-fit cursor-pointer items-center gap-2">
-            <Checkbox checked={checked} onCheckedChange={onCheckedChange} />
-            {heading}
-          </label>
-        ) : (
-          <div className="flex h-4 items-center">{heading}</div>
-        )}
+        <div className="flex h-4 items-center gap-1">
+          <BandHeading>{title}</BandHeading>
+          {optional && (
+            <VisibilityButton shown={shown} label={visibilityLabel ?? title} onShownChange={onShownChange} className="size-5 text-muted-foreground" />
+          )}
+        </div>
         <div
           className={cn(
             "transition-opacity",
@@ -324,33 +324,19 @@ interface ModuleProps {
 }
 
 /**
- * The large tiles, the small tiles and the tracks, side by side; the tiles
- * share the width in equal columns, the tracks as narrow as their content.
- * An optional layer checked shows the module too.
+ * The large tiles and the small tiles, side by side in equal columns. The
+ * small tiles shown, as in the settings of the map, show the module too.
  */
-function TilesModule({
-  tracks,
-  summary,
-  layers,
-  onLayersChange,
-}: ModuleProps & { tracks: TracksState; summary: TilesSummary | null }) {
-  const check = (layer: "subtiles" | "tracks") => (checked: boolean) =>
-    onLayersChange({
-      ...layers,
-      [layer]: checked,
-      tiles: layers.tiles || checked,
-    });
-
+function TilesModule({ summary, layers, onLayersChange }: ModuleProps & { summary: TilesSummary | null }) {
   return (
-    <div className="flex snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none lg:grid lg:grid-cols-[repeat(2,minmax(0,1fr))_auto] lg:overflow-visible">
+    <div className="flex snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none lg:grid lg:grid-cols-2 lg:overflow-visible">
       <TilesSection level="tiles" summary={summary?.tiles} />
       <TilesSection
         level="subtiles"
         summary={summary?.subtiles}
-        checked={layers.subtiles}
-        onCheckedChange={check("subtiles")}
+        shown={layers.subtiles}
+        onShownChange={(subtiles) => onLayersChange({ ...layers, subtiles, tiles: layers.tiles || subtiles })}
       />
-      <TracksSection tracks={tracks} checked={layers.tracks} onCheckedChange={check("tracks")} />
     </div>
   );
 }
@@ -383,14 +369,14 @@ function WithShare({ text, part, total, detail }: { text: string; part: number; 
 function TilesSection({
   level,
   summary,
-  checked,
-  onCheckedChange,
+  shown,
+  onShownChange,
 }: {
   level: "tiles" | "subtiles";
   /** Undefined while loading. */
   summary: TileLevelSummary | undefined;
-  checked?: boolean;
-  onCheckedChange?: (checked: boolean) => void;
+  shown?: boolean;
+  onShownChange?: (shown: boolean) => void;
 }) {
   const t = useTranslations("map.stats");
   const format = useFormatter();
@@ -403,8 +389,9 @@ function TilesSection({
   return (
     <StatsSection
       title={t(level)}
-      checked={checked}
-      onCheckedChange={onCheckedChange}
+      shown={shown}
+      onShownChange={onShownChange}
+      visibilityLabel={t(shown ? "hideSubtiles" : "showSubtiles")}
       columns
     >
       <Stat
@@ -455,56 +442,8 @@ function useTracksErrorToast({ status, errorCode, retry }: TracksState): void {
   }, [errorMessage, retry, t]);
 }
 
-function TracksSection({
-  tracks: { lines, status, progress },
-  checked,
-  onCheckedChange,
-}: {
-  tracks: TracksState;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  const t = useTranslations("map");
-  const format = useFormatter();
-  const syncing = status === "syncing" || status === "idle";
-
-  return (
-    <StatsSection title={t("stats.tracks")} checked={checked} onCheckedChange={onCheckedChange}>
-      <Stat
-        value={lines ? format.number(lines.length) : <ValueSkeleton />}
-        label={t("stats.trackCount", { count: lines?.length ?? 0 })}
-        accent="track"
-      />
-      <div role="status" className="flex max-w-56 min-w-0 items-center text-xs text-muted-foreground">
-        {syncing && lines ? (
-          <span className="flex items-center gap-1.5">
-            <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin" aria-hidden />
-            {progress
-              ? t("syncing", {
-                  fetched: progress.fetched,
-                  total: progress.total,
-                })
-              : t("checking")}
-          </span>
-        ) : (
-          status === "ready" &&
-          lines?.length === 0 && (
-            <Link href={routes.dashboard} className="underline underline-offset-4">
-              {t("empty")}
-            </Link>
-          )
-        )}
-      </div>
-    </StatsSection>
-  );
-}
-
-/**
- * The train stations visited and the kilometers of railway unlocked between
- * them, the settings of the map for them, of which the dimming of the map
- * below them also shows the module, and the speed of the trains.
- */
-function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { stations: VisitedStations | null }) {
+/** The train stations visited and the kilometers of railway unlocked between them. */
+function StationsModule({ stations }: { stations: VisitedStations | null }) {
   const t = useTranslations("map.stats");
   const format = useFormatter();
   const railwayM = stations?.links.reduce((total, link) => total + link.lengthM, 0) ?? 0;
@@ -522,10 +461,9 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
     ) : (
       <ValueSkeleton />
     );
-  const sound = useSoundSettings();
 
   return (
-    <div className="flex h-full snap-x snap-mandatory divide-x overflow-x-auto scrollbar-none xl:grid xl:grid-cols-3 xl:overflow-visible">
+    <div className="flex h-full overflow-x-auto scrollbar-none">
       <StatsSection title={t("stations")} columns>
         <Stat
           value={stations ? format.number(stations.stations.length) : <ValueSkeleton />}
@@ -548,65 +486,6 @@ function StationsModule({ stations, layers, onLayersChange }: ModuleProps & { st
           accent="railLink"
         />
       </StatsSection>
-      {/* Titled from large screens only, where the band is taller: the band keeps its height below. Centered in the band. */}
-      <div className="flex shrink-0 snap-start flex-col justify-center px-4 py-3 md:px-5 md:py-4 lg:items-center">
-        <div className="flex flex-col gap-2">
-          <BandHeading className="flex h-4 items-center max-lg:hidden">{t("display")}</BandHeading>
-          <div className="flex flex-col gap-1.5">
-            <SettingSwitch
-              icon={SunDimIcon}
-              label={t("dim")}
-              checked={layers.dimmed}
-              onCheckedChange={(dimmed) =>
-                onLayersChange({
-                  ...layers,
-                  dimmed,
-                  stations: layers.stations || dimmed,
-                })
-              }
-            />
-            <SettingSwitch
-              icon={CircleDotIcon}
-              label={t("discreetDots")}
-              checked={layers.discreetDots}
-              onCheckedChange={(discreetDots) => onLayersChange({ ...layers, discreetDots })}
-            />
-            <SettingSwitch
-              icon={Volume2Icon}
-              label={t("sound")}
-              checked={sound.enabled}
-              onCheckedChange={(enabled) => updateSoundSettings({ enabled })}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="flex shrink-0 snap-start flex-col justify-center px-4 py-3 md:px-5 md:py-4 lg:items-center">
-        <TrainSpeedControl />
-      </div>
-    </div>
-  );
-}
-
-/** A setting of a module, its icon and name before its switch. */
-function SettingSwitch({
-  icon: Icon,
-  label,
-  checked,
-  onCheckedChange,
-}: {
-  icon: LucideIcon;
-  label: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  const id = useId();
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <label htmlFor={id} className="flex cursor-pointer items-center gap-2 text-[0.8rem] whitespace-nowrap">
-        <Icon className="size-3.5 text-muted-foreground" aria-hidden />
-        {label}
-      </label>
-      <Switch id={id} size="sm" checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }

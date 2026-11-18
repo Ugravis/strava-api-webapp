@@ -922,6 +922,8 @@
       "trackCount": "{count, plural, one {tracé} other {tracés}}",
       "tiles": "Grandes tuiles",
       "subtiles": "Petites tuiles",
+      "showSubtiles": "Afficher les petites tuiles sur la carte",
+      "hideSubtiles": "Masquer les petites tuiles sur la carte",
       "visited": "Visitées",
       "maxCluster": "Plus grand cluster",
       "otherClusters": "Autres clusters",
@@ -939,6 +941,9 @@
       "editSpeed": "Saisir une vitesse, de ×{min, number} à ×{max, number}",
       "display": "Affichage",
       "sound": "Son des trains"
+    },
+    "settings": {
+      "open": "Paramètres"
     },
     "modules": {
       "tiles": "Tuiles",

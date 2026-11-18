@@ -27,7 +27,6 @@ import {
   type Precision,
   type Proposal,
   network,
-  platforms,
   tileCells,
   tiles,
   tracks,
@@ -109,7 +108,6 @@ function applyShown(map: MapLibreMap, shown: Shown) {
   show("tracks-line", shown.sources);
   show("footprints-fill", shown.footprint);
   show("footprints-line", shown.footprint);
-  show("platforms-line", shown.footprint);
   setHiddenGroups(map, new Set(shown.links ? [] : ["rails"]));
 }
 
@@ -190,7 +188,6 @@ export function StationZonesMap({ labels }: { labels: StationZonesLabels }) {
       map.addSource("cells", { type: "geojson", data: data.cellData });
       map.addSource("footprints", { type: "geojson", data: data.footprintData });
       map.addSource("footprint-fill", { type: "geojson", data: data.footprintFillData });
-      map.addSource("platforms", { type: "geojson", data: platforms(departments) });
       const add = (layer: Parameters<MapLibreMap["addLayer"]>[0]) => map.addLayer(layer, firstLabel);
       add({ id: "borders-line", type: "line", source: "borders", paint: { "line-color": palette.base.label, "line-width": 2, "line-dasharray": [4, 2], "line-opacity": 0.7 } });
       // Opaque hatching: overlapping zones are not drawn darker.
@@ -199,7 +196,6 @@ export function StationZonesMap({ labels }: { labels: StationZonesLabels }) {
       add({ id: "zones-line", type: "line", source: "zones", paint: { "line-color": VIOLET, "line-width": 2 } });
       // Filled once from the merged footprints, outlined station by station.
       add({ id: "footprints-fill", type: "fill", source: "footprint-fill", paint: { "fill-color": VIOLET, "fill-opacity": 0.3 } });
-      add({ id: "platforms-line", type: "line", source: "platforms", paint: { "line-color": "#4c1d95", "line-width": 0.75, "line-opacity": 0.7 } });
       add({ id: "footprints-line", type: "line", source: "footprints", paint: { "line-color": "#4c1d95", "line-width": 1.5 } });
       add({ id: "tracks-line", type: "line", source: "tracks", paint: { "line-color": palette.base.label, "line-width": 1, "line-dasharray": [2, 1] } });
       add({ id: "tiles-line", type: "line", source: "tiles", paint: { "line-color": "#ea580c", "line-width": 1.5, "line-dasharray": [3, 2] } });

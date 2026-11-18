@@ -22,7 +22,8 @@
  *   platforms next to it, its station area and building), in two precisions:
  *   `hull` (convex hull), `plans` (as Apple Plans draws it: the platforms
  *   themselves, the tracks between them filled, square ends, edges along the
- *   platforms, joined to the station buildings, no holes) or
+ *   platforms, every track along them taken in with TRACK_MARGIN on each side,
+ *   joined to the station buildings, no holes) or
  *   `fine` (every feature itself, gaps under twice CLOSING metres closed);
  * - `rails`: the passenger tracks walked RAIL_REACH metres on each side of the
  *   station point, from every track next to it;
@@ -64,8 +65,16 @@ const CLOSING = 15;
 const PLATFORM_WIDTH = 8;
 /** Plans footprint: gaps between the platforms of a level narrower than twice this are filled (the tracks between them). */
 const PLATFORM_CLOSING = 10;
+/** Plans footprint: a track this close to the platforms of its level runs along them... */
+const TRACK_ALONG = 6;
+/** ...and is taken in with this margin on each side (m), a little more than a platform. */
+const TRACK_MARGIN = 10;
+/** A platform is kept when a passenger track of its level runs this close to it (m). */
+const PLATFORM_TRACK = 15;
+/** Tracks looked at around a station (m): its platforms reach that far at most. */
+const TRACK_RADIUS = 1000;
 /** Plans footprint: gaps narrower than twice this are closed between the platforms and the buildings... */
-const PLANS_CLOSING = 8;
+const PLANS_CLOSING = 15;
 /** ...then the shape is grown by this margin. */
 const PLANS_PADDING = 2;
 /** Roofs and transport buildings this close to a platform of the station are part of it. */
@@ -241,24 +250,47 @@ function distanceTo(e, point) {
  * node of an underground station may lie in any building (Auber in the Opéra).
  */
 function plansFeatures(s, features) {
-  const platforms = features.parts.filter(isPlatform);
+  const proj = projector(s.point);
+  const nearTracks = tracks.filter((w) => {
+    const pts = w.geometry.map((g) => proj([g.lon, g.lat]));
+    return pts.some((p, i) => i > 0 && toSegment([0, 0], pts[i - 1], p).d <= TRACK_RADIUS);
+  });
+  // A train platform runs along a passenger track of its level: metro platforms tagged as train
+  // ones (line 14 under Bibliothèque François Mitterrand) have none, their tracks are railway=subway.
+  const segments = (below) =>
+    nearTracks.filter((w) => isUnderground(w) === below).flatMap((w) => w.geometry.slice(1).map((g, i) => [proj([w.geometry[i].lon, w.geometry[i].lat]), proj([g.lon, g.lat])]));
+  const levelSegments = new Map([false, true].map((below) => [below, segments(below)]));
+  const alongTrack = (p) =>
+    vertices(p).map(proj).some((v) => levelSegments.get(isUnderground(p)).some(([a, b]) => toSegment(v, a, b).d <= PLATFORM_TRACK));
+  const platforms = features.parts.filter(isPlatform).filter(alongTrack);
   const near = (e, list, radius) => list.some((p) => vertices(e).some((v) => distanceTo(p, v) <= radius));
-  const buildings = elements.filter(isBuilding).filter((b) => {
+  // Buildings under the ground (a metro hall) do not show on the map.
+  const buildings = elements.filter((b) => isBuilding(b) && !isUnderground(b)).filter((b) => {
     const t = tags(b);
     if (t.railway === "station" || t.public_transport === "station" || t.building === "train_station") return distanceTo(b, s.point) <= PLATFORM_RADIUS;
     return ROOFS.has(t.building) && platforms.length > 0 && near(b, platforms, ROOF_RADIUS);
   });
   const collect = (list) => ({ type: "GeometryCollection", geometries: list.flatMap(geometriesOf) });
-  // The platforms of each level apart: an RER under a surface station is not joined to it by its tracks.
-  const levels = [platforms.filter((p) => !isUnderground(p)), platforms.filter(isUnderground)].map(collect);
-  return { platforms: collect(platforms), buildings: collect(buildings), levels };
+  // Each level apart, its platforms and its tracks: an RER under a surface station is not joined to it.
+  const levels = [false, true].map((below) => {
+    const lines = nearTracks.filter((w) => isUnderground(w) === below).map((w) => wayCoords(w.geometry));
+    return {
+      platforms: collect(platforms.filter((p) => isUnderground(p) === below)),
+      tracks: lines.length ? { type: "MultiLineString", coordinates: lines } : null,
+    };
+  });
+  return { buildings: collect(buildings), levels };
 }
 
-/** Whether a platform lies under the ground (an RER or metro line under the city). */
+/**
+ * Whether a platform or a track lies under the ground (an RER or metro line under the city).
+ * The level says it when given: tracks in a covered trench (Austerlitz) are tagged as a tunnel at
+ * level 0, as their platforms. A negative layer alone is not enough: they are drawn below the streets.
+ */
 function isUnderground(e) {
   const t = tags(e);
-  const below = (v) => v !== undefined && Number.parseFloat(v) < 0;
-  return below(t.layer) || below(t.level) || t.location === "underground" || t.tunnel === "yes";
+  if (t.level !== undefined && !Number.isNaN(Number.parseFloat(t.level))) return Number.parseFloat(t.level) < 0;
+  return t.location === "underground" || t.tunnel === "yes";
 }
 
 // --- Proposal 2: the passenger tracks around the station ------------------------------------
@@ -380,7 +412,9 @@ const out = stations.map((s) => ({
 const rows = out
   .map((s) => {
     const rails = s.rails.length ? JSON.stringify({ type: "MultiLineString", coordinates: s.rails }) : null;
-    return `(${s.id}, ${sqlText(JSON.stringify(s.features))}, ${sqlText(JSON.stringify(s.platforms))}, ${sqlText(JSON.stringify(s.buildings))}, ${sqlText(JSON.stringify(s.levels[0]))}, ${sqlText(JSON.stringify(s.levels[1]))}, ${sqlText(rails)}, ${sqlText(JSON.stringify({ type: "Point", coordinates: s.point }))})`;
+    return `(${s.id}, ${sqlText(JSON.stringify(s.features))}, ${sqlText(JSON.stringify(s.buildings))}, ${s.levels
+      .flatMap((l) => [sqlText(JSON.stringify(l.platforms)), sqlText(l.tracks && JSON.stringify(l.tracks))])
+      .join(", ")}, ${sqlText(rails)}, ${sqlText(JSON.stringify({ type: "Point", coordinates: s.point }))})`;
   })
   .join(",\n");
 const L93 = (geojson) => `ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326), 2154)`;
@@ -404,19 +438,25 @@ const platformAreas = (geojson) => `ST_Union(ARRAY(
 const shape = (g) => `json_build_object('shape', ${json(g)}, 'area', round(ST_Area(${g})), 'tiles', ${tilesOf(g)})`;
 
 const shapes = psqlJson(`
-WITH s(id, features, platforms, buildings, surface, below, rails, pt) AS (VALUES ${rows}),
+WITH s(id, features, buildings, surface, surface_tracks, below, below_tracks, rails, pt) AS (VALUES ${rows}),
 b AS (
   SELECT s.id, ${L93("s.pt")} AS pt,
     CASE WHEN s.rails IS NULL THEN NULL ELSE ${L93("s.rails")} END AS rails,
     ${L93("s.features")} AS features,
-    ${platformAreas("s.platforms")} AS platforms,
     ST_Union(ARRAY(SELECT ST_MakeValid(d.geom) FROM ST_Dump(${L93("s.buildings")}) AS d WHERE ST_Dimension(d.geom) = 2)) AS buildings,
     -- The platforms of each level, the tracks between them filled: a closing with mitre
-    -- joins, which keeps the outer edges along the platforms, their corners square.
+    -- joins, which keeps the outer edges along the platforms, their corners square. Every
+    -- track running along them is then taken in, TRACK_MARGIN on each side, square ends.
     ST_Union(ARRAY(
-      SELECT ST_Buffer(ST_Buffer(l.g, ${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5'), -${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5')
-      FROM (VALUES (${platformAreas("s.surface")}), (${platformAreas("s.below")})) AS l(g)
-      WHERE l.g IS NOT NULL AND NOT ST_IsEmpty(l.g)
+      SELECT ST_Union(l.closed, coalesce(ST_Buffer(
+        ST_CollectionExtract(ST_Intersection(l.tracks, ST_Buffer(l.closed, ${TRACK_ALONG}, 'join=mitre mitre_limit=5')), 2),
+        ${TRACK_MARGIN}, 'endcap=flat join=mitre mitre_limit=5'), l.closed))
+      FROM (
+        SELECT ST_Buffer(ST_Buffer(${platformAreas("v.p")}, ${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5'), -${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5') AS closed,
+          CASE WHEN v.t IS NULL THEN NULL ELSE ${L93("v.t")} END AS tracks
+        FROM (VALUES (s.surface, s.surface_tracks), (s.below, s.below_tracks)) AS v(p, t)
+      ) AS l
+      WHERE l.closed IS NOT NULL AND NOT ST_IsEmpty(l.closed)
     )) AS blocks
   FROM s
 ),
@@ -430,7 +470,6 @@ base AS MATERIALIZED (
       SELECT CASE ST_Dimension(d.geom) WHEN 2 THEN ST_MakeValid(d.geom) WHEN 1 THEN ST_Buffer(d.geom, 2, 'quad_segs=8') ELSE ST_Buffer(d.geom, 4, 'quad_segs=8') END
       FROM ST_Dump(ST_Collect(b.features, b.pt)) AS d
     )), ${CLOSING}, 'quad_segs=8'), -${CLOSING}, 'quad_segs=8')) AS fine,
-    b.platforms,
     -- Plans: the blocks of platforms joined to the buildings, straight edges kept (mitre
     -- joins), grown a little; holes filled and crumbs dropped in plans_shape.
     -- Nothing mapped: a small square on the point.
@@ -472,11 +511,9 @@ SELECT json_build_object(
   'plans', json_build_object('osm', ${shape("plans")}, 'both', ${shape("plans_both")})
 ) ORDER BY id, r) FROM u),
   -- Footprints of all the stations merged: overlapping ones are filled once.
-  'footprints', (SELECT json_build_object('hull', ${json("ST_Union(hull)")}, 'fine', ${json("ST_Union(fine)")}, 'plans', ${json("ST_Union(plans)")}) FROM plans_shape),
-  -- Outlined inside the footprints, as Plans draws them.
-  'platforms', (SELECT ${json("ST_Union(platforms)")} FROM plans_shape)
+  'footprints', (SELECT json_build_object('hull', ${json("ST_Union(hull)")}, 'fine', ${json("ST_Union(fine)")}, 'plans', ${json("ST_Union(plans)")}) FROM plans_shape)
 );`);
-const { zones, footprints, platforms } = shapes;
+const { zones, footprints } = shapes;
 
 // --- Département boundary, for the map only ---------------------------------------------------
 const boundary = elements.find((e) => e.type === "relation" && tags(e).boundary === "administrative");
@@ -524,7 +561,6 @@ writeFileSync(
     })),
     zones,
     footprints,
-    platforms,
     network,
   }),
 );

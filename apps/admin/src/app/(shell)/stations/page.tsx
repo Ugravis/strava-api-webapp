@@ -78,7 +78,7 @@ export default async function AdminStationsPage() {
         </KpiGrid>
       )}
       <Separator />
-      <ReportsSection title={t("reports")} openCount={reports?.open ?? 0} pending={{ count: reports?.accepted ?? 0, label: t("acceptedReports", { count: reports?.accepted ?? 0 }) }}>
+      <ReportsSection title={t("reports")} openCount={reports?.open ?? 0}>
         <StationReportsTable rights={rights} canHandle={permissions.includes("stations.reports")} />
       </ReportsSection>
       <Separator />

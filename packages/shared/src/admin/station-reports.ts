@@ -32,8 +32,6 @@ export interface AdminStationReportsOverview {
   open: number;
   /** Open reports filed in the last 24 hours. */
   openToday: number;
-  /** Accepted, the change not live yet. */
-  accepted: number;
 }
 
 /** `GET /api/admin/station-reports/:id/related`: the other reports on the same station, the latest first. */

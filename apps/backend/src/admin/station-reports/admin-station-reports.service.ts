@@ -78,15 +78,14 @@ export class AdminStationReportsService {
   }
 
   async overview(): Promise<AdminStationReportsOverview> {
-    const [open, openToday, accepted] = await Promise.all([
+    const [open, openToday] = await Promise.all([
       this.reports.countBy({ status: 'open' }),
       this.reports.countBy({
         status: 'open',
         createdAt: MoreThan(new Date(Date.now() - DAY_MS)),
       }),
-      this.reports.countBy({ status: 'accepted' }),
     ]);
-    return { open, openToday, accepted };
+    return { open, openToday };
   }
 
   async detail(id: string): Promise<AdminStationReport> {

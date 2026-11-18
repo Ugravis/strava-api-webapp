@@ -63,6 +63,7 @@ export function MapSettings({ tracks, layers, onLayersChange }: MapSettingsProps
           <SettingSwitch
             icon={RouteIcon}
             label={t("stats.tracks")}
+            count={tracks.status === "ready" && tracks.lines?.length ? tracks.lines.length : undefined}
             checked={layers.tracks}
             onCheckedChange={showTiles("tracks")}
           />
@@ -111,12 +112,11 @@ function SettingsGroup({ title, children }: { title: string; children: ReactNode
   );
 }
 
-/** The count of the tracks, or their sync while running, under their switch. */
+/** The sync of the tracks while running, or the way to connect Strava without any, under their switch. */
 function TracksStatus({ tracks: { lines, status, progress } }: { tracks: TracksState }) {
   const t = useTranslations("map");
-  const format = useFormatter();
   const syncing = status === "syncing" || status === "idle";
-  if (!lines) return null;
+  if (!lines || (!syncing && lines.length > 0)) return null;
 
   return (
     <div role="status" className="pl-5.5 text-xs text-muted-foreground">
@@ -125,35 +125,37 @@ function TracksStatus({ tracks: { lines, status, progress } }: { tracks: TracksS
           <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin" aria-hidden />
           {progress ? t("syncing", { fetched: progress.fetched, total: progress.total }) : t("checking")}
         </span>
-      ) : status === "ready" && lines.length === 0 ? (
+      ) : (
         <Link href={routes.dashboard} className="underline underline-offset-4">
           {t("empty")}
         </Link>
-      ) : (
-        `${format.number(lines.length)} ${t("stats.trackCount", { count: lines.length })}`
       )}
     </div>
   );
 }
 
-/** A setting, its icon and name before its switch. */
+/** A setting, its icon and name, with a count in grey, before its switch. */
 function SettingSwitch({
   icon: Icon,
   label,
+  count,
   checked,
   onCheckedChange,
 }: {
   icon: LucideIcon;
   label: string;
+  count?: number;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
   const id = useId();
+  const format = useFormatter();
   return (
     <div className="flex items-center justify-between gap-4">
       <label htmlFor={id} className="flex cursor-pointer items-center gap-2 text-[0.8rem] whitespace-nowrap">
         <Icon className="size-3.5 text-muted-foreground" aria-hidden />
         {label}
+        {count !== undefined && <span className="text-muted-foreground tabular-nums">({format.number(count)})</span>}
       </label>
       <Switch id={id} size="sm" checked={checked} onCheckedChange={onCheckedChange} />
     </div>

@@ -919,7 +919,6 @@
     "stats": {
       "label": "Chiffres clés de la carte",
       "tracks": "Tracés",
-      "trackCount": "{count, plural, one {tracé} other {tracés}}",
       "tiles": "Grandes tuiles",
       "subtiles": "Petites tuiles",
       "showSubtiles": "Afficher les petites tuiles sur la carte",

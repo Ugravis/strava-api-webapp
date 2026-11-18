@@ -1,3 +1,4 @@
+import { highestAdminRole } from '@kilotrace/shared/admin';
 import {
   compareVersions,
   defaultDisplayOf,
@@ -53,17 +54,24 @@ export function contentOf(note: ReleaseNote): ReleaseNoteContent {
       improved: note.sectionImproved,
       fixed: note.sectionFixed,
       other: note.sectionOther,
+      team: note.sectionTeam,
     },
   };
 }
 
-function toPublic(note: ReleaseNote): PublicReleaseNote {
+/** A note as `reader` gets it: the team part for the back-office team only. */
+function toPublic(note: ReleaseNote, reader: User): PublicReleaseNote {
+  const content = contentOf(note);
   return {
     version: note.version,
     display: note.display,
     releasedAt: (note.releasedAt ?? note.createdAt).toISOString(),
     bannerUrl: bannerUrlOf(note),
-    ...contentOf(note),
+    ...content,
+    sections: {
+      ...content.sections,
+      team: highestAdminRole(reader.roles ?? []) ? content.sections.team : null,
+    },
   };
 }
 
@@ -165,13 +173,13 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
   }
 
   /** Every note shown to the users, those without popup nor banner included, the latest first: the history. */
-  async published(): Promise<PublicReleaseNote[]> {
+  async published(reader: User): Promise<PublicReleaseNote[]> {
     const notes = await this.notes
       .createQueryBuilder('note')
       .where(PUBLISHED)
       .orderBy(VERSION_ORDER, 'DESC')
       .getMany();
-    return notes.map(toPublic);
+    return notes.map((note) => toPublic(note, reader));
   }
 
   /** The notes delivered to the user and not seen yet, the latest first. */
@@ -190,7 +198,7 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
       .limit(UNSEEN_LIMIT)
       .getMany();
     return {
-      notes: notes.map(toPublic),
+      notes: notes.map((note) => toPublic(note, user)),
       display: strongestDisplay(notes.map(({ display }) => display)),
     };
   }

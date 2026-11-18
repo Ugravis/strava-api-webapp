@@ -66,6 +66,8 @@ export interface UpdateReleaseNoteRequest {
   improved?: string | null;
   fixed?: string | null;
   other?: string | null;
+  /** Read by the back-office team only. */
+  team?: string | null;
   display?: ReleaseNoteDisplay;
   githubUrl?: string | null;
 }
@@ -126,6 +128,7 @@ export const RELEASE_NOTE_RULES: FieldRules<CreateReleaseNoteRequest & SetReleas
   improved: section,
   fixed: section,
   other: section,
+  team: section,
   display: { type: "choice", required: true, values: RELEASE_NOTE_DISPLAYS },
   githubUrl: { type: "url", maxLength: RELEASE_NOTE_GITHUB_URL_MAX_LENGTH },
   status: { type: "choice", required: true, values: RELEASE_NOTE_STATUSES },

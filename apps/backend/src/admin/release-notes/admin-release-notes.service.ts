@@ -52,6 +52,7 @@ const RELEASE_NOTES_TABLE: TableSpec = {
     'note.section_improved',
     'note.section_fixed',
     'note.section_other',
+    'note.section_team',
   ],
   sorts: {
     version: VERSION_ORDER,
@@ -92,6 +93,7 @@ function fieldsOf(dto: UpdateReleaseNoteDto): Partial<ReleaseNote> {
     ...(dto.improved !== undefined && { sectionImproved: dto.improved }),
     ...(dto.fixed !== undefined && { sectionFixed: dto.fixed }),
     ...(dto.other !== undefined && { sectionOther: dto.other }),
+    ...(dto.team !== undefined && { sectionTeam: dto.team }),
     ...(dto.display !== undefined && { display: dto.display }),
     ...(dto.githubUrl !== undefined && { githubUrl: dto.githubUrl }),
   };

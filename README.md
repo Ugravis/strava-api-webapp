@@ -29,6 +29,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
+- Back office (optional, a third Next.js dev server): `docker compose --profile admin up`, then
+  http://localhost:3200
 - Frontend: http://localhost:3000 (the API is also reachable under `/api` through a rewrite)
 - API health check: http://localhost:4000/api/health
 - API endpoint listing: http://localhost:3000/api (method, path, access, rate limit, status; not served in production)

@@ -121,9 +121,13 @@ services:
       - ./apps/frontend/src:/app/apps/frontend/src
       - ./apps/frontend/public:/app/apps/frontend/public
       - ./packages/ui/src:/app/packages/ui/src
+      # Keeps the Turbopack cache when the container is recreated.
+      - frontend-next:/app/apps/frontend/.next
 
-  # Back office, on its own host and port: http://localhost:3200.
+  # Back office, on its own host and port: http://localhost:3200. Optional, a
+  # third Next.js dev server is heavy: `docker compose --profile admin up`.
   admin:
+    profiles: [admin]
     build:
       context: .
       dockerfile: docker/admin.Dockerfile
@@ -142,7 +146,10 @@ services:
       - ./apps/admin/public:/app/apps/admin/public
       - ./apps/admin/messages:/app/apps/admin/messages
       - ./packages/ui/src:/app/packages/ui/src
+      - admin-next:/app/apps/admin/.next
 
 volumes:
   db-data:
   storage-data:
+  frontend-next:
+  admin-next:

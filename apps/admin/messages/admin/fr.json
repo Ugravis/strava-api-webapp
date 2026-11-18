@@ -1570,8 +1570,7 @@
   "stations": {
     "title": "Gares",
     "description": "Les gares importées d'OpenStreetMap, visitées par les membres sur la carte. Un nom custom ou un masquage tient au fil des imports.",
-    "reports": "Signalements",
-    "acceptedReports": "{count, plural, one {# signalement accepté en attente de mise en ligne} other {# signalements acceptés en attente de mise en ligne}}"
+    "reports": "Signalements"
   },
   "regions": {
     "title": "Régions",

@@ -38,6 +38,7 @@ import {
   withModuleOpened,
 } from "./map-layers";
 import { MapSkeleton } from "./map-skeleton";
+import { MapSettings } from "./map-settings";
 import { MapStatsBar } from "./map-stats-bar";
 import { entryFromSearch } from "./panel-entry";
 import { SectorBand } from "./sector-band";
@@ -208,9 +209,10 @@ export function TracksMap() {
           onCenterChange={onCenterChange}
           stations={stations}
           showStations={layers.stations}
-          dimmed={mapDimmed(layers, module)}
+          dimmed={mapDimmed(layers)}
           discreetDots={layers.discreetDots}
           label={t("label")}
+          control={<MapSettings tracks={tracks} layers={layers} onLayersChange={setLayers} />}
         />
       </div>
       <MapBands>

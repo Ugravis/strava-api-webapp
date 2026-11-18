@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode, Ref } from "react";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { cn } from "@kilotrace/ui/lib/utils";
+import { FOLD_HANDLE } from "./map-bands";
 
 interface MapSidePanelProps {
   ref?: Ref<HTMLElement>;
@@ -62,7 +63,8 @@ export function MapSidePanel({
         className={cn(
           // Centred by its margins: a translation would be replaced by the one of the button pressed,
           // moving it from under the pointer before the click.
-          "absolute inset-y-0 my-auto rounded-r-none border-r-0 bg-background shadow-md",
+          "absolute inset-y-0 my-auto rounded-r-none border-r-0",
+          FOLD_HANDLE,
           // Discreet beside the open panel, larger once folded, to find it again.
           collapsed ? "-left-7 h-12 w-7" : "-left-4 h-9 w-4 [&_svg:not([class*='size-'])]:size-3",
         )}

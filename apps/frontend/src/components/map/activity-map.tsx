@@ -4,7 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useActivityTiles } from "@/hooks/use-activity";
 import type { TrackLine } from "@/hooks/use-activity-tracks";
@@ -103,6 +104,8 @@ interface ActivityMapProps {
   /** The station dots from a zoom sooner, discreet over their first zooms. */
   discreetDots: boolean;
   label: string;
+  /** A control in the bottom right corner, at the right of the credits, following the panel and the bands as they do. */
+  control?: ReactNode;
 }
 
 /** Margin around an activity or a sector framed on the map, in pixels. */
@@ -129,9 +132,12 @@ export function ActivityMap({
   dimmed,
   discreetDots,
   label,
+  control,
 }: ActivityMapProps) {
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Container of `control`, among those of MapLibre.
+  const [controlContainer, setControlContainer] = useState<HTMLElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   // Kept for the style changes, which drop the custom layers.
   const tracksRef = useRef<TrackCollection>(trackCollection([]));
@@ -241,6 +247,17 @@ export function ActivityMap({
     setBaseStyle(map, paletteRef.current);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    // MapLibre folds the credits on a drag only: a zoom of the user folds them too.
+    map.on("zoomstart", (event) => {
+      if (event.originalEvent)
+        map.getContainer().querySelector(".maplibregl-compact-show")?.classList.remove("maplibregl-compact-show");
+    });
+    // Added after the credits: MapLibre puts it at their right. Not a `maplibregl-ctrl`, whose
+    // stylesheet would turn the hover of its button translucent.
+    const controlElement = document.createElement("div");
+    controlElement.className = "pointer-events-auto flex";
+    map.addControl({ onAdd: () => controlElement, onRemove: () => controlElement.remove() }, "bottom-right");
+    setControlContainer(controlElement);
     map.on("style.load", () => {
       styleReadyRef.current = true;
       // Below the first label layer, keeping place names readable; tracks
@@ -661,6 +678,7 @@ export function ActivityMap({
   return (
     <div className="map-with-panel absolute inset-0" data-panel={entry && !collapsed ? "open" : undefined}>
       <div ref={containerRef} role="region" aria-label={label} className="size-full" />
+      {control && controlContainer && createPortal(control, controlContainer)}
       {entry && (
         <MapSidePanel
           ref={panelRef}

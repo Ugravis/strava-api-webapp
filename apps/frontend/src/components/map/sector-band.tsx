@@ -144,46 +144,48 @@ export function SectorBand({ code, sector, error, subtiles, veil, onVeilChange, 
         </div>
       </div>
 
-      {/* Scrolling sideways where the four figures do not fit. */}
-      <div className={cn(SECTION, "min-w-0 gap-8 overflow-x-auto scrollbar-none *:shrink-0 md:flex-1 md:justify-center-safe")}>
-        <CompletionStat label={t("tiles")} accent="tile" completion={levelCompletion(sector?.tiles)} />
-        {subtiles && (
-          <CompletionStat
-            label={t("subtiles")}
-            accent="subtile"
-            completion={levelCompletion(sector?.subtiles)}
-          />
-        )}
-        {/* Hidden once loaded for a country without stations. */}
-        {(!sector || sector.stations) && (
-          <CompletionStat
-            label={t("stations")}
-            accent="station"
-            completion={sector?.stations ? { ...sector.stations, unit: null } : undefined}
-          />
-        )}
-        {/* Hidden once loaded for a country without railway. */}
-        {(!sector || sector.railway) && (
-          <CompletionStat
-            label={t("railway")}
-            accent="railLink"
-            completion={
-              sector?.railway
-                ? { visited: sector.railway.unlockedM / 1000, total: sector.railway.totalM / 1000, unit: "kilometer" }
-                : undefined
-            }
-          />
-        )}
-      </div>
+      {/* Scrolling sideways where the four figures do not fit; on narrow screens, the visits follow them. */}
+      <div className="flex min-w-0 overflow-x-auto scrollbar-none md:contents">
+        <div className={cn(SECTION, "gap-8 *:shrink-0 max-md:shrink-0 md:min-w-0 md:border-l md:flex-1 md:justify-center-safe md:overflow-x-auto md:scrollbar-none")}>
+          <CompletionStat label={t("tiles")} accent="tile" completion={levelCompletion(sector?.tiles)} />
+          {subtiles && (
+            <CompletionStat
+              label={t("subtiles")}
+              accent="subtile"
+              completion={levelCompletion(sector?.subtiles)}
+            />
+          )}
+          {/* Hidden once loaded for a country without stations. */}
+          {(!sector || sector.stations) && (
+            <CompletionStat
+              label={t("stations")}
+              accent="station"
+              completion={sector?.stations ? { ...sector.stations, unit: null } : undefined}
+            />
+          )}
+          {/* Hidden once loaded for a country without railway. */}
+          {(!sector || sector.railway) && (
+            <CompletionStat
+              label={t("railway")}
+              accent="railLink"
+              completion={
+                sector?.railway
+                  ? { visited: sector.railway.unlockedM / 1000, total: sector.railway.totalM / 1000, unit: "kilometer" }
+                  : undefined
+              }
+            />
+          )}
+        </div>
 
-      {/* Two short lines, as tall as the figures. */}
-      <div className={cn(SECTION, "shrink-0")}>
-        <dl className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1.5 text-xs whitespace-nowrap">
-          <dt className="text-muted-foreground">{t("firstVisit")}</dt>
-          <dd className="font-medium tabular-nums">{visit(sector?.firstVisitAt)}</dd>
-          <dt className="text-muted-foreground">{t("lastVisit")}</dt>
-          <dd className="font-medium tabular-nums">{visit(sector?.lastVisitAt)}</dd>
-        </dl>
+        {/* Two short lines, as tall as the figures. */}
+        <div className={cn(SECTION, "shrink-0 border-l")}>
+          <dl className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1.5 text-xs whitespace-nowrap">
+            <dt className="text-muted-foreground">{t("firstVisit")}</dt>
+            <dd className="font-medium tabular-nums">{visit(sector?.firstVisitAt)}</dd>
+            <dt className="text-muted-foreground">{t("lastVisit")}</dt>
+            <dd className="font-medium tabular-nums">{visit(sector?.lastVisitAt)}</dd>
+          </dl>
+        </div>
       </div>
 
       {/* On narrow screens, only while there is something to tell. */}

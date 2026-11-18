@@ -49,7 +49,7 @@ export function TrainSpeedControl() {
   };
 
   return (
-    <div className="flex w-56 shrink-0 flex-col gap-2">
+    <div className="flex w-full flex-col gap-2">
       <div className="flex h-4 items-center gap-1.5 text-xs font-medium">
         <BandHeading>{t("trainSpeed")}</BandHeading>
         {editing ? (

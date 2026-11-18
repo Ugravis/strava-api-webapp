@@ -152,6 +152,19 @@
 .map-with-panel[data-panel="open"] .maplibregl-ctrl-bottom-right {
   right: var(--map-panel-width);
 }
+/* The right controls keep from the edges the gap of the floating panel, which is also their gap from it. */
+.map-with-panel .maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 0.75rem 0.75rem 0 0;
+}
+/* In a row, centered on each other: the first added, the credits, on the left of the next ones. */
+.map-with-panel .maplibregl-ctrl-bottom-right {
+  @apply flex flex-row-reverse items-center;
+}
+.map-with-panel .maplibregl-ctrl-bottom-right > *,
+.map-with-panel .maplibregl-ctrl-bottom-right > .maplibregl-ctrl-attrib.maplibregl-compact {
+  @apply float-none clear-none;
+  margin: 0 0.75rem 0.75rem 0;
+}
 /* The bands cover the bottom of the map: its bottom controls stay above them. */
 .map-with-panel .maplibregl-ctrl-bottom-left,
 .map-with-panel .maplibregl-ctrl-bottom-right {
@@ -176,6 +189,46 @@
 }
 .maplibregl-map .maplibregl-ctrl-attrib a {
   @apply text-foreground;
+}
+/*
+ * The credits on one line, cut short on narrow maps, unfolding sideways: the
+ * text stays rendered, folded to no width, and the closed content of their
+ * `details` waits for the end of the fold before it is hidden.
+ */
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact {
+  transition: padding 200ms ease-out;
+}
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact::details-content {
+  transition: content-visibility 200ms allow-discrete;
+}
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    max-width 200ms ease-out,
+    opacity 200ms ease-out;
+}
+.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner {
+  max-width: min(22rem, calc(100vw - 7.5rem));
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact,
+  .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact::details-content,
+  .maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner {
+    transition: none;
+  }
+}
+/* No blue halo once clicked: a ring for the keyboard only. */
+.maplibregl-map .maplibregl-ctrl-attrib-button:focus {
+  box-shadow: none;
+}
+.maplibregl-map .maplibregl-ctrl-attrib-button:focus-visible {
+  @apply ring-2 ring-ring/50;
 }
 /* The icons are dark images: they are inverted on the dark theme. */
 .dark .maplibregl-map .maplibregl-ctrl-icon,

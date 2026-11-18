@@ -1,3 +1,4 @@
+import type { StationReportDismissal } from "@kilotrace/shared";
 import type { AdminRole } from "@kilotrace/shared/admin";
 
 export interface User {
@@ -646,7 +647,10 @@ export type NotificationType =
   | "release_note"
   | "report_received"
   | "report_sent"
-  | "report_closed";
+  | "report_closed"
+  | "station_report_received"
+  | "station_report_sent"
+  | "station_report_closed";
 
 /** Back-office role told by a `role_changed` notification. */
 export type TeamRole = "support" | "admin" | "super-admin";
@@ -660,7 +664,19 @@ export interface AppNotification {
   /** Null for an anonymous kind (who liked a profile is never told) and for the team. */
   actor: PublicUser | null;
   /** Said by the team: the reason, and the fields reset by a moderation. */
-  details: { reason?: string; fields?: ModeratedField[]; role?: TeamRole | null; version?: string; username?: string; href?: string; outcome?: "sanctioned" | "dismissed" } | null;
+  details: {
+    reason?: string;
+    fields?: ModeratedField[];
+    role?: TeamRole | null;
+    version?: string;
+    username?: string;
+    href?: string;
+    /** The decision on a report: `sanctioned` or `dismissed` for a profile; `accepted`, `dismissed`, then `done` for the railway data. */
+    outcome?: "sanctioned" | "dismissed" | "accepted" | "done";
+    /** The station of a report of the railway data, null for a general one. */
+    station?: string | null;
+    dismissal?: StationReportDismissal;
+  } | null;
   read: boolean;
   createdAt: string;
   /** Whether the actor follows the current user, who neither follows them nor asked to: offers to follow back. */

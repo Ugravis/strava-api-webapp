@@ -7,7 +7,8 @@ import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
-import { ReportsSection } from "./reports/reports-table";
+import { ReportsSection } from "@/components/admin/reports-section";
+import { ReportsTable } from "./reports/reports-table";
 import { UsersTable } from "./users-table";
 
 const number = new Intl.NumberFormat("fr-FR");
@@ -44,7 +45,9 @@ export default async function AdminUsersPage() {
         </KpiGrid>
       )}
       <Separator />
-      <ReportsSection title={t("reports")} openCount={reports.ok ? reports.data.open : 0} permissions={me.permissions} />
+      <ReportsSection title={t("reports")} openCount={reports.ok ? reports.data.open : 0}>
+        <ReportsTable permissions={me.permissions} />
+      </ReportsSection>
       <Separator />
       <section className="flex flex-col gap-3" aria-labelledby="users-title">
         <h2 id="users-title" className="flex items-center gap-2 text-sm font-medium">

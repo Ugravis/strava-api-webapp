@@ -19,8 +19,11 @@ import { User } from '../users/user.entity';
  * the user, null once out of the team. `release_note`: a new version of the
  * site has a note to read. `report_received`: a user was reported, told to
  * the members processing reports. `report_sent`: the report of the user was
- * filed. `report_closed`: the team decided on a report of the user. The last
- * seven have no actor.
+ * filed. `report_closed`: the team decided on a report of the user. The
+ * `station_report_*` ones are the same for a report of the railway data,
+ * `station_report_closed` told at each decision (accepted, dismissed, then
+ * done once the change is live). The kinds from `moderation` on have no
+ * actor.
  */
 export const NOTIFICATION_TYPES = [
   'follow',
@@ -34,6 +37,9 @@ export const NOTIFICATION_TYPES = [
   'report_received',
   'report_sent',
   'report_closed',
+  'station_report_received',
+  'station_report_sent',
+  'station_report_closed',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -61,10 +67,17 @@ export interface NotificationDetails {
   version?: string;
   /** The target of a report. */
   username?: string;
-  /** Where a member opens a `report_received`. */
+  /** Where a member opens a `report_received` or a `station_report_received`. */
   href?: string;
-  /** The decision told by a `report_closed`, never the kind of sanction. */
-  outcome?: 'sanctioned' | 'dismissed';
+  /**
+   * The decision told by a `report_closed`, never the kind of sanction; by a
+   * `station_report_closed`, with the note of the team in `reason`.
+   */
+  outcome?: 'sanctioned' | 'dismissed' | 'accepted' | 'done';
+  /** The station of a `station_report_*`, null for a general report. */
+  station?: string | null;
+  /** Why a report of the railway data was dismissed. */
+  dismissal?: string;
 }
 
 export const ANONYMOUS_NOTIFICATIONS: ReadonlySet<NotificationType> = new Set([

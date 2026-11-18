@@ -35,12 +35,18 @@ export interface ConfirmOptions {
    * reasons picked in one click.
    */
   reason?: { label: string; placeholder?: string; required?: boolean; minLength?: number; maxLength?: number; presets?: string[] };
+  /**
+   * One value picked among `options` before the button acts, handed to the
+   * action after the reason, e.g. why a report is dismissed; the reason
+   * becomes required for the values of `reasonRequiredFor`.
+   */
+  choice?: { label: string; options: { value: string; label: string }[]; reasonRequiredFor?: string[] };
   /** A word typed again before the button acts, e.g. the id of a row removed for good. */
   typed?: { label: string; expected: string };
 }
 
-/** An action, given the reason typed: an `ActionResult` answered `{ ok: false }` keeps the dialog open, its message in it; any other answer closes it. */
-export type ConfirmedRun = (reason: string | undefined) => unknown;
+/** An action, given the reason typed and the value chosen: an `ActionResult` answered `{ ok: false }` keeps the dialog open, its message in it; any other answer closes it. */
+export type ConfirmedRun = (reason: string | undefined, choice?: string) => unknown;
 
 const refused = (outcome: unknown): outcome is ActionResult => !!outcome && typeof outcome === "object" && "ok" in outcome && outcome.ok === false;
 
@@ -55,15 +61,16 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
   const [pending, setPending] = useState(false);
   const [reason, setReason] = useState("");
   const [typed, setTyped] = useState("");
+  const [chosen, setChosen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const tell = (message: string) => (confirm ? setError(message) : toast.error(message));
-  const go = async (typed?: string) => {
+  const go = async (typed?: string, choice?: string) => {
     if (!run || pending) return;
     setPending(true);
     setError(null);
     try {
-      const outcome = await run(typed);
+      const outcome = await run(typed, choice);
       // Without a dialog, told in a toast.
       if (refused(outcome)) tell(outcome.message);
       else setOpen(false);
@@ -77,13 +84,17 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
     if (!confirm) return void go();
     setReason("");
     setTyped("");
+    setChosen(null);
     setError(null);
     setOpen(true);
   };
   const asked = confirm?.reason;
+  const choice = confirm?.choice;
   const length = reason.trim().length;
+  const reasonRequired = !!asked?.required || (!!chosen && !!choice?.reasonRequiredFor?.includes(chosen));
   const missing =
-    (!!asked?.required && length === 0) ||
+    (!!choice && !chosen) ||
+    (reasonRequired && length === 0) ||
     (length > 0 && length < (asked?.minLength ?? 0)) ||
     (!!confirm?.typed && typed.trim() !== confirm.typed.expected);
 
@@ -94,11 +105,35 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
           <AlertDialogTitle>{confirm.title}</AlertDialogTitle>
           {confirm.description && <AlertDialogDescription>{confirm.description}</AlertDialogDescription>}
         </AlertDialogHeader>
+        {choice && (
+          <div className="flex flex-col gap-1.5" role="radiogroup" aria-label={choice.label}>
+            <Label>
+              {choice.label}
+              <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {choice.options.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="xs"
+                  role="radio"
+                  aria-checked={chosen === option.value}
+                  variant={chosen === option.value ? "secondary" : "outline"}
+                  disabled={pending}
+                  onClick={() => setChosen(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
         {asked && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="confirm-reason">
               {asked.label}
-              {asked.required && <span className="text-destructive">*</span>}
+              {reasonRequired && <span className="text-destructive">*</span>}
             </Label>
             {asked.presets && asked.presets.length > 0 && (
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Raisons fréquentes">
@@ -111,7 +146,7 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
             )}
             <Textarea
               id="confirm-reason"
-              autoFocus
+              autoFocus={!choice}
               value={reason}
               disabled={pending}
               maxLength={asked.maxLength}
@@ -139,7 +174,7 @@ export function useConfirmedAction(run: ConfirmedRun | undefined, confirm: Confi
         )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Annuler</AlertDialogCancel>
-          <Button variant={confirm.destructive === false ? "default" : "destructive"} disabled={pending || missing} onClick={() => void go(asked ? reason.trim() : undefined)}>
+          <Button variant={confirm.destructive === false ? "default" : "destructive"} disabled={pending || missing} onClick={() => void go(asked ? reason.trim() : undefined, chosen ?? undefined)}>
             {pending && <LoaderCircleIcon className="animate-spin" aria-hidden />}
             {confirm.confirmLabel}
           </Button>

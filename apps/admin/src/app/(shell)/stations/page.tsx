@@ -1,12 +1,14 @@
-import type { AdminStationsOverview } from "@kilotrace/shared/admin";
+import type { AdminStationReportsOverview, AdminStationsOverview } from "@kilotrace/shared/admin";
 import { CrownIcon, RouteIcon, TrainFrontIcon, UsersIcon } from "lucide-react";
 import { KpiGrid, KpiTile, shareOf } from "@/components/admin/kpi-tile";
+import { ReportsSection } from "@/components/admin/reports-section";
 import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
 import { Separator } from "@kilotrace/ui/components/ui/separator";
 import { requireAdminMember } from "@/lib/admin/access";
 import { adminApi } from "@/lib/admin/api";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { adminRoutes } from "@/lib/admin/navigation";
+import { StationReportsTable } from "./reports/reports-table";
 import type { StationRights } from "./station-bits";
 import { StationsTable } from "./stations-table";
 
@@ -16,14 +18,20 @@ const plural = (count: number, one: string, many: string) => `${number.format(co
 
 /**
  * The figures of the stations of the dataset, then all of them, the most
- * visited first: every member reads, `stations.edit` renames and hides.
+ * visited first, the reports of the railway data between them: every
+ * member reads, `stations.edit` renames and hides, `stations.reports` decides
+ * on the reports.
  */
 export default async function AdminStationsPage() {
   const { permissions } = await requireAdminMember();
   const rights: StationRights = { edit: permissions.includes("stations.edit") };
   const t = getAdminTranslations("stations");
-  const result = await adminApi<AdminStationsOverview>("/stations/overview");
+  const [result, reportsResult] = await Promise.all([
+    adminApi<AdminStationsOverview>("/stations/overview"),
+    adminApi<AdminStationReportsOverview>("/station-reports/overview"),
+  ]);
   const overview = result.ok ? result.data : null;
+  const reports = reportsResult.ok ? reportsResult.data : null;
 
   return (
     <>
@@ -70,7 +78,17 @@ export default async function AdminStationsPage() {
         </KpiGrid>
       )}
       <Separator />
-      <StationsTable rights={rights} countries={overview?.countries.map(({ code }) => code) ?? []} />
+      <ReportsSection title={t("reports")} openCount={reports?.open ?? 0} pending={{ count: reports?.accepted ?? 0, label: t("acceptedReports", { count: reports?.accepted ?? 0 }) }}>
+        <StationReportsTable rights={rights} canHandle={permissions.includes("stations.reports")} />
+      </ReportsSection>
+      <Separator />
+      <section className="flex flex-col gap-3" aria-labelledby="stations-title">
+        <h2 id="stations-title" className="flex items-center gap-2 text-sm font-medium">
+          <TrainFrontIcon className="size-4 text-muted-foreground" aria-hidden />
+          {t("title")}
+        </h2>
+        <StationsTable rights={rights} countries={overview?.countries.map(({ code }) => code) ?? []} />
+      </section>
     </>
   );
 }

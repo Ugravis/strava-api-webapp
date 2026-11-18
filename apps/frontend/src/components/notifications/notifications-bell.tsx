@@ -197,7 +197,17 @@ export function NotificationsMenu({ trigger, side = "bottom", align = "end" }: N
 }
 
 /** Kinds told by the team, shown with its shield. */
-const TEAM_NOTIFICATIONS: ReadonlySet<AppNotification["type"]> = new Set(["moderation", "strava_unlinked", "role_changed", "report_received", "report_sent", "report_closed"]);
+const TEAM_NOTIFICATIONS: ReadonlySet<AppNotification["type"]> = new Set([
+  "moderation",
+  "strava_unlinked",
+  "role_changed",
+  "report_received",
+  "report_sent",
+  "report_closed",
+  "station_report_received",
+  "station_report_sent",
+  "station_report_closed",
+]);
 
 function NotificationItem({ notification, unread }: { notification: AppNotification; unread: boolean }) {
   const t = useTranslations("notifications");
@@ -247,6 +257,10 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
             version: details?.version ?? "",
             username: details?.username ?? "",
             outcome: details?.outcome ?? "dismissed",
+            // A report of the railway data: about a station, or general.
+            station: details?.station ?? "",
+            general: details?.station ? "no" : "yes",
+            dismissal: details?.dismissal ? t(`stationDismissals.${details.dismissal}`) : "",
             b: (chunks) => (
               <span className="font-semibold underline-offset-2 hover:underline">
                 {chunks}
@@ -255,7 +269,7 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
           })}
         </span>
         {details?.reason && (
-          <span className="text-xs whitespace-normal text-muted-foreground">{t("reason", { reason: details.reason })}</span>
+          <span className="text-xs whitespace-normal text-muted-foreground">{t(notification.type === "station_report_closed" ? "teamNote" : "reason", { reason: details.reason })}</span>
         )}
         <span className="text-xs text-muted-foreground">
           {format.relativeTime(new Date(notification.createdAt), now)}

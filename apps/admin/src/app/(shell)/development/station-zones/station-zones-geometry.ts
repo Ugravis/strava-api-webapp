@@ -49,6 +49,8 @@ export interface PocDepartment {
   zones: PocZone[];
   /** Footprints of all the stations merged, per precision: overlapping ones are filled once. */
   footprints: Record<Precision, Shape>;
+  /** Platforms of all the stations, as areas: outlined inside the footprints, as Plans draws them. */
+  platforms: Shape | null;
   /** Stations and rail links of the app around the département, drawn as on the site map. */
   network: { stations: { id: number; name: string | null; lon: number; lat: number }[]; links: StationNetwork["links"] };
 }
@@ -97,6 +99,11 @@ export function figures(all: PocZone[], choice: ZoneChoice): Map<number, { area:
 /** The OSM footprint of every station, unwidened: drawn over the tiles, for the eye only. */
 export function footprints(all: PocZone[], precision: Precision): FeatureCollection<Shape, { id: number }> {
   return collection(widened(all, 0).map((z) => ({ properties: { id: z.id }, geometry: z[precision].osm.shape })));
+}
+
+/** The platforms of the départements, outlined over the footprints. */
+export function platforms(departments: PocDepartment[]): FeatureCollection<Shape, null> {
+  return collection(departments.filter((d) => d.platforms).map((d) => ({ properties: null, geometry: d.platforms! })));
 }
 
 /** The merged footprints of the départements: their fill, overlaps drawn once. */

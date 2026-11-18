@@ -942,7 +942,13 @@
       "sound": "Son des trains"
     },
     "settings": {
-      "open": "Paramètres"
+      "open": "Paramètres",
+      "map": "Carte",
+      "location": "Ma position"
+    },
+    "location": {
+      "find": "Me localiser",
+      "unavailable": "Position indisponible"
     },
     "modules": {
       "tiles": "Tuiles",

@@ -99,14 +99,9 @@ export function IconGrid({ value, disabled, onPick }: { value: string | null; di
           ))}
         </div>
       )}
-      <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
-        <p className={cn(!lucide && "invisible")}>
-          {found.length > SHOWN ? `${SHOWN} sur ${found.length} icônes : précisez la recherche.` : `${found.length} icône${found.length > 1 ? "s" : ""}`}
-        </p>
-        <a href="https://lucide.dev/icons" target="_blank" rel="noreferrer" className="shrink-0 text-[0.65rem] underline-offset-2 hover:text-foreground hover:underline">
-          Powered by Lucide icons
-        </a>
-      </div>
+      <p className={cn("text-xs text-muted-foreground", !lucide && "invisible")}>
+        {found.length > SHOWN ? `${SHOWN} sur ${found.length} icônes : précisez la recherche.` : `${found.length} icône${found.length > 1 ? "s" : ""}`}
+      </p>
     </div>
   );
 }

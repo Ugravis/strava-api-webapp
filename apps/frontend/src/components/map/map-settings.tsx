@@ -4,6 +4,7 @@ import {
   CircleDotIcon,
   GridIcon,
   LoaderCircleIcon,
+  LocateIcon,
   type LucideIcon,
   RouteIcon,
   SettingsIcon,
@@ -21,6 +22,7 @@ import { routes } from "@/config/routes";
 import type { ActivityTracksState } from "@/hooks/use-activity-tracks";
 import { updateSoundSettings, useSoundSettings } from "@/lib/sound/sound-settings";
 import type { MapLayers } from "./map-layers";
+import { setLocationShown, useLocationShown } from "./location-setting";
 import { BandHeading } from "./map-stat";
 import { TrainSpeedControl } from "./train-speed-control";
 
@@ -35,11 +37,12 @@ interface MapSettingsProps {
 /**
  * Settings of the map, in a popover opened by a round button in its bottom
  * right corner: the optional layers of the tiles, the display of the stations and
- * the speed of the trains. An optional layer switched on shows its module too.
+ * the speed of the trains, and the position of the user. An optional layer switched on shows its module too.
  */
 export function MapSettings({ tracks, layers, onLayersChange }: MapSettingsProps) {
   const t = useTranslations("map");
   const sound = useSoundSettings();
+  const locationShown = useLocationShown();
   const showTiles = (layer: "subtiles" | "tracks") => (checked: boolean) =>
     onLayersChange({ ...layers, [layer]: checked, tiles: layers.tiles || checked });
 
@@ -98,6 +101,15 @@ export function MapSettings({ tracks, layers, onLayersChange }: MapSettingsProps
         </SettingsGroup>
         <Separator />
         <TrainSpeedControl />
+        <Separator />
+        <SettingsGroup title={t("settings.map")}>
+          <SettingSwitch
+            icon={LocateIcon}
+            label={t("settings.location")}
+            checked={locationShown}
+            onCheckedChange={setLocationShown}
+          />
+        </SettingsGroup>
       </PopoverContent>
     </Popover>
   );
@@ -157,7 +169,13 @@ function SettingSwitch({
         {label}
         {count !== undefined && <span className="text-muted-foreground tabular-nums">({format.number(count)})</span>}
       </label>
-      <Switch id={id} size="sm" checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch
+        id={id}
+        size="sm"
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        className="data-checked:bg-blue-600 dark:data-checked:bg-blue-500 [&_[data-slot=switch-thumb]]:data-checked:bg-white"
+      />
     </div>
   );
 }

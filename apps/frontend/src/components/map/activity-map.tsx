@@ -24,8 +24,10 @@ import { activityTrack, addActivityTrackLayer, setActivityTrack, setActivityTrac
 import { NO_COUNTRIES, setVisitedCountries, type VisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
 import { type MapHistory, setHistory } from "./history-layer";
 import { BANDS_HEIGHT_VAR } from "./map-bands";
+import { setLocationShown, useLocationShown } from "./location-setting";
 import { MapSidePanel } from "./map-side-panel";
 import { type MapSector, setSector } from "./sector-layer";
+import { UserLocationControl } from "./user-location-control";
 import { BASE_STYLE_URL, DEFAULT_VIEW, type MapPalette, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import {
   addTileLayers,
@@ -139,6 +141,12 @@ export function ActivityMap({
   // Container of `control`, among those of MapLibre.
   const [controlContainer, setControlContainer] = useState<HTMLElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const locationShown = useLocationShown();
+  const locationShownRef = useRef(locationShown);
+  const locationRef = useRef<UserLocationControl | null>(null);
+  const tLocation = useTranslations("map.location");
+  // Titles of the location button, read once by the map.
+  const locationLabelsRef = useRef({ find: tLocation("find"), unavailable: tLocation("unavailable") });
   // Kept for the style changes, which drop the custom layers.
   const tracksRef = useRef<TrackCollection>(trackCollection([]));
   const tilesRef = useRef<TileData>(tileData(null));
@@ -241,12 +249,27 @@ export function ActivityMap({
       container: containerRef.current,
       ...DEFAULT_VIEW,
       attributionControl: { compact: true },
+      locale: {
+        "GeolocateControl.FindMyLocation": locationLabelsRef.current.find,
+        "GeolocateControl.LocationNotAvailable": locationLabelsRef.current.unavailable,
+      },
       dragRotate: false,
       pitchWithRotate: false,
     });
     setBaseStyle(map, paletteRef.current);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    // Below the zoom buttons, kept while the setting is off: a click turns it back on.
+    const location = new UserLocationControl({
+      inset: () => ({
+        right: panelWidthOf(panelRef.current, collapsedRef.current),
+        bottom: bandsHeightOf(containerRef.current),
+      }),
+      enabled: () => locationShownRef.current,
+      onEnable: () => setLocationShown(true),
+    });
+    map.addControl(location, "top-right");
+    locationRef.current = location;
     // MapLibre folds the credits on a drag only: a zoom of the user folds them too.
     map.on("zoomstart", (event) => {
       if (event.originalEvent)
@@ -392,6 +415,7 @@ export function ActivityMap({
       trafficRef.current = null;
       map.remove();
       mapRef.current = null;
+      locationRef.current = null;
     };
   }, []);
 
@@ -487,6 +511,11 @@ export function ActivityMap({
     discreetDotsRef.current = discreetDots;
     if (mapRef.current) setDiscreetDots(mapRef.current, discreetDots);
   }, [discreetDots]);
+
+  useEffect(() => {
+    locationShownRef.current = locationShown;
+    locationRef.current?.setEnabled(locationShown);
+  }, [locationShown]);
 
   useEffect(() => {
     sectorRef.current = sector;

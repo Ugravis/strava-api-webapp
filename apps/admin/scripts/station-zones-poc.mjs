@@ -68,7 +68,7 @@ const PLATFORM_CLOSING = 10;
 /** Plans footprint: a track this close to the platforms of its level runs along them... */
 const TRACK_ALONG = 6;
 /** ...and is taken in with this margin on each side (m), a little more than a platform. */
-const TRACK_MARGIN = 10;
+const TRACK_MARGIN = 12;
 /** A platform is kept when a passenger track of its level runs this close to it (m). */
 const PLATFORM_TRACK = 15;
 /** Tracks looked at around a station (m): its platforms reach that far at most. */
@@ -271,9 +271,12 @@ function plansFeatures(s, features) {
     return ROOFS.has(t.building) && platforms.length > 0 && near(b, platforms, ROOF_RADIUS);
   });
   const collect = (list) => ({ type: "GeometryCollection", geometries: list.flatMap(geometriesOf) });
-  // Each level apart, its platforms and its tracks: an RER under a surface station is not joined to it.
+  // Each level apart, its platforms and the tracks that may run along them: an RER under a surface
+  // station is not joined to it. Underground platforms take every track, a track changing its tags
+  // along them (Arenc: level -1 then none); surface ones every track but those in a tunnel.
+  const inTunnel = (w) => tags(w).tunnel === "yes" || tags(w).location === "underground";
   const levels = [false, true].map((below) => {
-    const lines = nearTracks.filter((w) => isUnderground(w) === below).map((w) => wayCoords(w.geometry));
+    const lines = nearTracks.filter((w) => below || !inTunnel(w)).map((w) => wayCoords(w.geometry));
     return {
       platforms: collect(platforms.filter((p) => isUnderground(p) === below)),
       tracks: lines.length ? { type: "MultiLineString", coordinates: lines } : null,
@@ -435,6 +438,10 @@ const platformAreas = (geojson) => `ST_Union(ARRAY(
         ELSE ST_Buffer(d.geom, ${PLATFORM_WIDTH / 2}, 'endcap=flat join=mitre mitre_limit=5') END
       FROM ST_Dump(${L93(geojson)}) AS d WHERE ST_Dimension(d.geom) > 0
     ))`;
+/** `shape` with the tracks inside `within` taken in, TRACK_MARGIN on each side, square ends. */
+const alongTracks = (shape, tracks, within) => `ST_Union(${shape}, coalesce(ST_Buffer(
+        ST_CollectionExtract(ST_Intersection(${tracks}, ${within}), 2),
+        ${TRACK_MARGIN}, 'endcap=flat join=mitre mitre_limit=5'), ${shape}))`;
 const shape = (g) => `json_build_object('shape', ${json(g)}, 'area', round(ST_Area(${g})), 'tiles', ${tilesOf(g)})`;
 
 const shapes = psqlJson(`
@@ -446,17 +453,19 @@ b AS (
     ST_Union(ARRAY(SELECT ST_MakeValid(d.geom) FROM ST_Dump(${L93("s.buildings")}) AS d WHERE ST_Dimension(d.geom) = 2)) AS buildings,
     -- The platforms of each level, the tracks between them filled: a closing with mitre
     -- joins, which keeps the outer edges along the platforms, their corners square. Every
-    -- track running along them is then taken in, TRACK_MARGIN on each side, square ends.
+    -- track running along them is then taken in, TRACK_MARGIN on each side, square ends; then
+    -- every track inside the shape so grown, cut to it: the tails do not grow.
     ST_Union(ARRAY(
-      SELECT ST_Union(l.closed, coalesce(ST_Buffer(
-        ST_CollectionExtract(ST_Intersection(l.tracks, ST_Buffer(l.closed, ${TRACK_ALONG}, 'join=mitre mitre_limit=5')), 2),
-        ${TRACK_MARGIN}, 'endcap=flat join=mitre mitre_limit=5'), l.closed))
+      SELECT ${alongTracks("g1.shape", "g1.tracks", "g1.shape")}
       FROM (
-        SELECT ST_Buffer(ST_Buffer(${platformAreas("v.p")}, ${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5'), -${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5') AS closed,
-          CASE WHEN v.t IS NULL THEN NULL ELSE ${L93("v.t")} END AS tracks
-        FROM (VALUES (s.surface, s.surface_tracks), (s.below, s.below_tracks)) AS v(p, t)
-      ) AS l
-      WHERE l.closed IS NOT NULL AND NOT ST_IsEmpty(l.closed)
+        SELECT l.tracks, ${alongTracks("l.closed", "l.tracks", `ST_Buffer(l.closed, ${TRACK_ALONG}, 'join=mitre mitre_limit=5')`)} AS shape
+        FROM (
+          SELECT ST_Buffer(ST_Buffer(${platformAreas("v.p")}, ${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5'), -${PLATFORM_CLOSING}, 'join=mitre mitre_limit=5') AS closed,
+            CASE WHEN v.t IS NULL THEN NULL ELSE ${L93("v.t")} END AS tracks
+          FROM (VALUES (s.surface, s.surface_tracks), (s.below, s.below_tracks)) AS v(p, t)
+        ) AS l
+        WHERE l.closed IS NOT NULL AND NOT ST_IsEmpty(l.closed)
+      ) AS g1
     )) AS blocks
   FROM s
 ),

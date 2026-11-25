@@ -7,6 +7,8 @@ import { SignedCookie } from './signed-cookie';
 /** What a suspended user is told when a sign-in is refused. */
 export interface SuspensionNotice {
   reason: string;
+  /** The reason as the team wrote it, when machine-translated for the reader. */
+  originalReason?: string;
   /** Null for an indefinite suspension. */
   until: string | null;
 }

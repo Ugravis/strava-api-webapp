@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createTransport, type Transporter } from 'nodemailer';
-import { VERIFICATION_CODE_TTL_MINUTES } from '@kilotrace/shared';
+import { type Locale, VERIFICATION_CODE_TTL_MINUTES } from '@kilotrace/shared';
 import authConfig, { type AuthConfig } from '../config/auth.config';
 import mailConfig, { type MailConfig } from '../config/mail.config';
 import { accountExistsTemplate } from './templates/account-exists.template';
@@ -11,6 +11,8 @@ interface Recipient {
   email: string;
   username: string;
   displayName: string | null;
+  /** The language of the account, or the one of the site at sign-up. */
+  locale: Locale;
 }
 
 @Injectable()
@@ -37,6 +39,7 @@ export class MailService {
     return this.send(
       recipient,
       verificationCodeTemplate(
+        recipient.locale,
         'signup',
         nameOf(recipient),
         code,
@@ -49,6 +52,7 @@ export class MailService {
     return this.send(
       recipient,
       verificationCodeTemplate(
+        recipient.locale,
         'password_reset',
         nameOf(recipient),
         code,
@@ -62,6 +66,7 @@ export class MailService {
     return this.send(
       recipient,
       accountExistsTemplate(
+        recipient.locale,
         nameOf(recipient),
         this.authSettings.frontendUrl,
         hasPassword,

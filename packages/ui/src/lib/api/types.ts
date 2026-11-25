@@ -667,7 +667,10 @@ export interface AppNotification {
   actor: PublicUser | null;
   /** Said by the team: the reason, and the fields reset by a moderation. */
   details: {
+    /** In the language of the reader, machine-translated when the team wrote another one. */
     reason?: string;
+    /** The reason as the team wrote it, when translated. */
+    originalReason?: string;
     fields?: ModeratedField[];
     role?: TeamRole | null;
     version?: string;
@@ -709,6 +712,8 @@ export interface NotificationEvent {
 /** Why a sign-in was refused to a suspended account. */
 export interface SuspensionNotice {
   reason: string;
+  /** The reason as the team wrote it, when machine-translated for the reader. */
+  originalReason?: string;
   /** Null for an indefinite suspension. */
   until: string | null;
 }

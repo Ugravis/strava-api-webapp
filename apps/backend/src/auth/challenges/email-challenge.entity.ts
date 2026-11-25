@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import type { Locale } from '@kilotrace/shared';
 import { User } from '../../users/user.entity';
 
 export enum EmailChallengePurpose {
@@ -64,6 +65,10 @@ export class EmailChallenge {
   @Column({ type: 'varchar', length: 20, nullable: true })
   @Index('IDX_email_challenges_username')
   username!: string | null;
+
+  /** Language of the site where it started, that of its emails and of the account. */
+  @Column({ type: 'varchar', length: 5, default: 'en' })
+  locale!: Locale;
 
   @Column({
     name: 'password_hash',

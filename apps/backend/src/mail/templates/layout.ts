@@ -1,3 +1,6 @@
+import type { Locale } from '@kilotrace/shared';
+import { EMAIL_TEXTS } from './texts';
+
 export interface RenderedEmail {
   subject: string;
   html: string;
@@ -14,6 +17,7 @@ export function escapeHtml(value: string): string {
 }
 
 interface EmailContent {
+  locale: Locale;
   subject: string;
   greeting: string;
   paragraphs: string[];
@@ -47,12 +51,12 @@ export function renderEmail(content: EmailContent): RenderedEmail {
     ? `<p style="margin:24px 0">
                   ${button}
                 </p>
-                <p style="${MUTED}">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :</p>
+                <p style="${MUTED}">${escapeHtml(EMAIL_TEXTS[content.locale].buttonFallback)}</p>
                 <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="${url}" style="color:#171717">${url}</a></p>`
     : '';
 
   const html = `<!doctype html>
-<html lang="fr">
+<html lang="${content.locale}">
   <body style="margin:0;padding:24px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#171717">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
       <tr>
@@ -80,7 +84,7 @@ export function renderEmail(content: EmailContent): RenderedEmail {
     ...content.paragraphs.flatMap((paragraph) => [paragraph, '']),
     ...(content.code ? [content.code, ''] : []),
     ...(content.action
-      ? [`${content.action.label} : ${content.action.url}`, '']
+      ? [`${content.action.label}: ${content.action.url}`, '']
       : []),
     content.footer,
   ].join('\n');

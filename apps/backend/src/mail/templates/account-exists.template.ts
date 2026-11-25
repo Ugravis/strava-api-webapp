@@ -1,41 +1,36 @@
+import { localePath, type Locale } from '@kilotrace/shared';
 import { renderEmail, type RenderedEmail } from './layout';
+import { EMAIL_TEXTS } from './texts';
 
 /**
  * Sent instead of a code when someone signs up with an address already in
  * use. Only the owner of the mailbox reads it, so it may tell how to sign in.
  */
 export function accountExistsTemplate(
+  locale: Locale,
   name: string,
   frontendUrl: string,
   hasPassword: boolean,
 ): RenderedEmail {
-  const paragraphs = hasPassword
-    ? [
-        'Quelqu’un, sans doute vous, a voulu créer un compte Kilotrace avec cette adresse email. Vous en avez déjà un : connectez-vous avec votre email ou votre pseudo et votre mot de passe.',
-        'Mot de passe oublié ? Vous pourrez en choisir un nouveau depuis la page de connexion.',
-      ]
-    : [
-        'Quelqu’un, sans doute vous, a voulu créer un compte Kilotrace avec cette adresse email. Vous en avez déjà un, créé avec Google : connectez-vous avec le bouton « Continuer avec Google ».',
-        'Vous préférez un mot de passe ? Choisissez-en un depuis « Mot de passe oublié » sur la page de connexion : un code vous sera envoyé à cette adresse.',
-      ];
+  const texts = EMAIL_TEXTS[locale].accountExists;
   return renderEmail({
-    subject: 'Vous avez déjà un compte Kilotrace',
-    greeting: `Bonjour ${name},`,
-    paragraphs,
+    locale,
+    subject: texts.subject,
+    greeting: EMAIL_TEXTS[locale].greeting(name),
+    paragraphs: hasPassword ? texts.withPassword : texts.withGoogle,
     action: hasPassword
       ? {
-          label: 'Se connecter',
-          url: new URL('/login', frontendUrl).toString(),
+          label: texts.signIn,
+          url: new URL(localePath(locale, '/login'), frontendUrl).toString(),
         }
       : {
           // Starts the Google sign-in at once, as the button of the app does.
-          label: 'Continuer avec Google',
+          label: texts.continueWithGoogle,
           url: new URL('/api/auth/google', frontendUrl).toString(),
           google: {
             iconUrl: new URL('/email/google.png', frontendUrl).toString(),
           },
         },
-    footer:
-      "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre compte n'a pas changé.",
+    footer: texts.footer,
   });
 }

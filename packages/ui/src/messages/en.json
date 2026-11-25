@@ -26,7 +26,8 @@
     "cancel": "Cancel",
     "back": "Back",
     "unexpectedError": "An unexpected error occurred. Please try again in a moment.",
-    "language": "Language"
+    "language": "Language",
+    "machineTranslated": "Translated automatically"
   },
   "landing": {
     "heroBadge": "Works with Strava",

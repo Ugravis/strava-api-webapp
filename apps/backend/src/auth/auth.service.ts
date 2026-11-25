@@ -1,6 +1,7 @@
 import type { RequestMetadata } from './request-metadata';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import {
+  type Locale,
   isCommonPassword,
   passwordContext,
   type EmailNotVerifiedError,
@@ -62,7 +63,10 @@ export class AuthService {
    * Sends the code that creates the account once entered. An address already
    * in use is answered alike, its owner being warned by email instead.
    */
-  async register(dto: RegisterDto): Promise<VerificationChallenge> {
+  async register(
+    dto: RegisterDto,
+    locale: Locale,
+  ): Promise<VerificationChallenge> {
     await this.system.assertSignupsEnabled();
     this.assertPasswordStrength(dto.password, dto.email, dto.username);
     await this.users.assertUsernameAvailable(dto.username);
@@ -72,6 +76,7 @@ export class AuthService {
     return this.challenges.start({
       purpose: EmailChallengePurpose.Signup,
       email: dto.email,
+      locale,
       ...(owner
         ? { userId: owner.id }
         : { username: dto.username, passwordHash }),
@@ -97,7 +102,7 @@ export class AuthService {
       username: challenge.username,
       passwordHash: challenge.passwordHash,
       termsAcceptedAt: new Date(),
-      locale: metadata.locale,
+      locale: challenge.locale,
     });
     return {
       user,
@@ -175,6 +180,7 @@ export class AuthService {
       purpose: EmailChallengePurpose.PasswordReset,
       email: user.email,
       userId: user.id,
+      locale: user.locale,
     });
   }
 

@@ -59,7 +59,10 @@ export const NOTIFICATION_CATEGORY_TYPES: Record<
 /** Kinds whose actor is kept for the bookkeeping but never disclosed. */
 /** What a notification from the team says beyond its kind. */
 export interface NotificationDetails {
+  /** In the language of the reader, machine-translated when it was not. */
   reason?: string;
+  /** The reason as the team wrote it, when translated. */
+  originalReason?: string;
   fields?: string[];
   /** New back-office role, null once out of the team. */
   role?: string | null;

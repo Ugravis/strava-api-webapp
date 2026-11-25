@@ -15,6 +15,7 @@ import {
   type Repository,
 } from 'typeorm';
 import {
+  type Locale,
   VERIFICATION_CODE_TTL_MINUTES,
   type VerificationChallenge,
 } from '@kilotrace/shared';
@@ -49,6 +50,7 @@ export interface StartChallengeInput {
   userId?: string | null;
   username?: string | null;
   passwordHash?: string | null;
+  locale: Locale;
 }
 
 interface Delivery {
@@ -126,6 +128,7 @@ export class EmailChallengesService {
         challenge.userId = input.userId ?? null;
         challenge.username = input.username ?? null;
         challenge.passwordHash = input.passwordHash ?? null;
+        challenge.locale = input.locale;
         return this.sendIfAllowed(manager, challenge, now);
       },
     );
@@ -297,6 +300,7 @@ export class EmailChallengesService {
           email: challenge.email,
           username: challenge.username,
           displayName: null,
+          locale: challenge.locale,
         },
         code,
       );

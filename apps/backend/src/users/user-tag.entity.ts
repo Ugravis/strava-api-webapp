@@ -1,3 +1,5 @@
+import type { Translations } from '@kilotrace/shared';
+import type { UserTagTranslatedField } from '@kilotrace/shared/admin';
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 /**
@@ -16,6 +18,10 @@ export class UserTag {
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   description!: string | null;
+
+  /** Name and description in the other languages of the site; the fields above are the French source. */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  translations!: Translations<UserTagTranslatedField>;
 
   /** Key resolved by the clients, which fall back on a generic icon. */
   @Column({ type: 'varchar', length: 40 })

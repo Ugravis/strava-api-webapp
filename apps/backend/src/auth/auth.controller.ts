@@ -33,7 +33,8 @@ import { ChallengeDto, VerifyCodeDto } from './dto/verification.dto';
 import { AppSettingsService } from '../system/app-settings.service';
 import { GoogleOAuthService } from './google/google-oauth.service';
 import { TranslationService } from '../translation/translation.service';
-import { requestLocale, requestMetadata } from './request-metadata';
+import { requestLocale } from '../common/request-locale';
+import { requestMetadata } from './request-metadata';
 import { SessionCookie } from './session-cookie';
 import { SensitiveThrottle } from './throttle';
 

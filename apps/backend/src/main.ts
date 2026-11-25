@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { API_PREFIX } from './common/api-prefix';
 import { originCheck } from './common/origin-check.middleware';
+import { requestLocaleContext } from './common/request-locale';
 import authConfig, { type AuthConfig } from './config/auth.config';
 import { StravaWebhookSubscriptionService } from './strava/webhooks/strava-webhook-subscription.service';
 
@@ -19,6 +20,7 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix(API_PREFIX);
   app.use(cookieParser(config.cookieSecret));
   app.use(originCheck(frontendOrigin));
+  app.use(requestLocaleContext);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors({ origin: frontendOrigin, credentials: true });
   app.enableShutdownHooks();

@@ -5,6 +5,7 @@ import {
   BADGE_RULES,
   BADGE_THEME_RULES,
 } from '@kilotrace/shared/admin';
+import type { FillTranslationsResponse } from '@kilotrace/shared';
 import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
@@ -18,6 +19,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { assertRules } from '../../common/field-rules';
+import { UpdateTranslationDto } from '../../common/translations';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
@@ -100,6 +102,29 @@ export class AdminBadgesController {
   delete(@Param('id') id: string): Promise<void> {
     return this.badges.deleteBadge(id);
   }
+
+  @Put(':id/translations')
+  @Permission('badges.edit')
+  @Audited({
+    action: 'badges.translate',
+    target: BADGE,
+    details: ['locale', 'field'],
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  translate(
+    @Param('id') id: string,
+    @Body() dto: UpdateTranslationDto,
+  ): Promise<void> {
+    return this.badges.translateBadge(id, dto);
+  }
+
+  @Post(':id/translations/fill')
+  @Permission('badges.edit')
+  @Audited({ action: 'badges.translate', target: BADGE })
+  @HttpCode(HttpStatus.OK)
+  fillTranslations(@Param('id') id: string): Promise<FillTranslationsResponse> {
+    return this.badges.fillBadgeTranslations(id);
+  }
 }
 
 /** The collections gathering badges, e.g. astronomy. */
@@ -142,6 +167,29 @@ export class AdminBadgeThemesController {
   ): Promise<void> {
     assertRules(BADGE_THEME_RULES, dto, { partial: true });
     return this.badges.updateTheme(id, dto);
+  }
+
+  @Put(':id/translations')
+  @Permission('badges.edit')
+  @Audited({
+    action: 'badges.themes.translate',
+    target: THEME,
+    details: ['locale', 'field'],
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  translate(
+    @Param('id') id: string,
+    @Body() dto: UpdateTranslationDto,
+  ): Promise<void> {
+    return this.badges.translateTheme(id, dto);
+  }
+
+  @Post(':id/translations/fill')
+  @Permission('badges.edit')
+  @Audited({ action: 'badges.themes.translate', target: THEME })
+  @HttpCode(HttpStatus.OK)
+  fillTranslations(@Param('id') id: string): Promise<FillTranslationsResponse> {
+    return this.badges.fillThemeTranslations(id);
   }
 
   @Delete(':id')

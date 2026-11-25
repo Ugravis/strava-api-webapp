@@ -16,6 +16,7 @@ import { ProviderConnection } from '../connections/provider-connection.entity';
 import { Follow } from '../follows/follow.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReleaseNote } from '../release-notes/release-note.entity';
+import { ReleaseNoteTranslation } from '../release-notes/release-note-translation.entity';
 import { CountriesModule } from '../countries/countries.module';
 import { Country } from '../countries/country.entity';
 import { ReleaseNotesModule } from '../release-notes/release-notes.module';
@@ -113,6 +114,7 @@ export const ADMIN_ROUTES = [
       ReservedUsername,
       AdminRolePermission,
       ReleaseNote,
+      ReleaseNoteTranslation,
       Report,
       UserReport,
       StationReport,

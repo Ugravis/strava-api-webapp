@@ -1,3 +1,5 @@
+import { translated } from '@kilotrace/shared';
+import { currentLocale } from '../common/request-locale';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -193,8 +195,18 @@ export class FollowsService {
       private: user.profilePrivate,
       userTags: userTags.map(({ userTag, awardedAt }) => ({
         id: userTag!.id,
-        name: userTag!.name,
-        description: userTag!.description,
+        name: translated(
+          userTag!.name,
+          userTag!.translations,
+          'name',
+          currentLocale(),
+        ),
+        description: translated(
+          userTag!.description,
+          userTag!.translations,
+          'description',
+          currentLocale(),
+        ),
         icon: userTag!.icon,
         color: userTag!.color,
         awardedAt: awardedAt.toISOString(),

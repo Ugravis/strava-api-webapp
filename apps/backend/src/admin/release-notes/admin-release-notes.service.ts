@@ -1,14 +1,18 @@
 import {
+  type FillTranslationsResponse,
+  RELEASE_NOTE_TRANSLATED_FIELDS,
+  type TargetLocale,
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
   versionSortKey,
 } from '@kilotrace/shared';
-import type {
-  AdminReleaseNote,
-  AdminReleaseNotesOverview,
-  ReleaseNoteState,
-  ReleaseNoteStatus,
+import {
+  type AdminReleaseNote,
+  type AdminReleaseNotesOverview,
+  RELEASE_NOTE_RULES,
+  type ReleaseNoteState,
+  type ReleaseNoteStatus,
 } from '@kilotrace/shared/admin';
 import {
   mapTablePage,
@@ -19,12 +23,22 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
+import {
+  fillTranslations,
+  type UpdateTranslationDto,
+  withTranslation,
+} from '../../common/translations';
 import { ReleaseNote } from '../../release-notes/release-note.entity';
+import { ReleaseNoteTranslation } from '../../release-notes/release-note-translation.entity';
+import { TranslationService } from '../../translation/translation.service';
 import { ReleaseNoteBannersService } from '../../release-notes/release-note-banners.service';
 import {
   bannerUrlOf,
   concernedUsers,
   contentOf,
+  type ReleaseNoteTranslations,
+  TRANSLATION_COLUMNS,
+  translationsOf,
   NOTE_HAS_CONTENT,
   ReleaseNotesService,
   VERSION_ORDER,
@@ -115,8 +129,11 @@ export class AdminReleaseNotesService {
     private readonly notes: Repository<ReleaseNote>,
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    @InjectRepository(ReleaseNoteTranslation)
+    private readonly translations: Repository<ReleaseNoteTranslation>,
     private readonly releaseNotes: ReleaseNotesService,
     private readonly banners: ReleaseNoteBannersService,
+    private readonly translation: TranslationService,
   ) {}
 
   async table(query: TableQuery): Promise<TablePage<AdminReleaseNote>> {
@@ -316,6 +333,75 @@ export class AdminReleaseNotesService {
     await this.banners.deleteQuietly(note.bannerKey);
   }
 
+  async translate(
+    version: string,
+    dto: UpdateTranslationDto,
+    actor: User,
+  ): Promise<void> {
+    await this.find(version);
+    const current = await this.translationsOf(version);
+    await this.saveTranslations(
+      version,
+      withTranslation(
+        current,
+        RELEASE_NOTE_TRANSLATED_FIELDS,
+        RELEASE_NOTE_RULES,
+        dto,
+      ),
+      actor,
+    );
+  }
+
+  /** The texts machine-translated where no language has them; the section of the team stays French. */
+  async fillTranslations(
+    version: string,
+    actor: User,
+  ): Promise<FillTranslationsResponse> {
+    const note = await this.find(version);
+    const { title, summary, sections } = contentOf(note);
+    const { translations, filled } = await fillTranslations(
+      this.translation,
+      { title, summary, ...sections },
+      await this.translationsOf(version),
+      RELEASE_NOTE_TRANSLATED_FIELDS,
+    );
+    if (filled > 0) await this.saveTranslations(version, translations, actor);
+    return { filled };
+  }
+
+  private async translationsOf(
+    version: string,
+  ): Promise<ReleaseNoteTranslations> {
+    return (
+      translationsOf(await this.translations.findBy({ version })).get(
+        version,
+      ) ?? {}
+    );
+  }
+
+  /** Every language of a note replaced by `translations`, those left without text removed. */
+  private async saveTranslations(
+    version: string,
+    translations: ReleaseNoteTranslations,
+    actor: User,
+  ): Promise<void> {
+    await this.translations.manager.transaction(async (manager) => {
+      await manager.delete(ReleaseNoteTranslation, { version });
+      const rows = Object.entries(translations).map(([locale, fields]) => ({
+        version,
+        locale: locale as TargetLocale,
+        ...Object.fromEntries(
+          RELEASE_NOTE_TRANSLATED_FIELDS.map((field) => [
+            TRANSLATION_COLUMNS[field],
+            fields?.[field] ?? null,
+          ]),
+        ),
+      }));
+      if (rows.length > 0) await manager.insert(ReleaseNoteTranslation, rows);
+      await manager.update(ReleaseNote, version, { updatedById: actor.id });
+    });
+  }
+
   private async find(version: string): Promise<ReleaseNote> {
     const note = await this.notes.findOneBy({ version });
     if (!note) {
@@ -342,6 +428,9 @@ export class AdminReleaseNotesService {
       ? await this.users.findBy({ id: In(editorIds) })
       : [];
     const editorOf = new Map(editors.map((user) => [user.id, user]));
+    const translations = translationsOf(
+      await this.translations.findBy({ version: In(versions) }),
+    );
     return notes.map((note) => {
       const content = contentOf(note);
       return {
@@ -352,6 +441,7 @@ export class AdminReleaseNotesService {
         state: stateOf(note),
         display: note.display,
         ...content,
+        translations: translations.get(note.version) ?? {},
         hasContent: hasReleaseNoteContent(content),
         disabledAt: note.disabledAt?.toISOString() ?? null,
         bannerUrl: bannerUrlOf(note),

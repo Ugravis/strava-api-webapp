@@ -7,7 +7,9 @@ import {
   RELEASE_VERSION_PATTERN,
   type ReleaseNoteContent,
   type ReleaseNoteDisplay,
+  type ReleaseNoteTranslatedField,
 } from "../release-notes";
+import type { Translations } from "../i18n/translations";
 import type { FieldRules } from "../rules";
 import type { AuditUser } from "./audit";
 
@@ -38,6 +40,8 @@ export interface AdminReleaseNote extends ReleaseNoteContent {
   status: ReleaseNoteStatus;
   state: ReleaseNoteState;
   display: ReleaseNoteDisplay;
+  /** Its texts in the other languages; the content above is the French source. */
+  translations: Translations<ReleaseNoteTranslatedField>;
   hasContent: boolean;
   /** When the team hid it once published, null while shown. */
   disabledAt: string | null;

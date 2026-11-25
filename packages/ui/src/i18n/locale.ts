@@ -1,6 +1,6 @@
 import type { Locale } from "@kilotrace/shared";
 
-export { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE, LOCALES, type Locale } from "@kilotrace/shared";
+export { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE, LOCALE_HEADER, LOCALES, type Locale } from "@kilotrace/shared";
 
 /** The back office has a single language. */
 export const ADMIN_LOCALE: Locale = "fr";

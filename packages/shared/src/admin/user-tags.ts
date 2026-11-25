@@ -1,3 +1,4 @@
+import type { Translations } from "../i18n/translations";
 import type { FieldRules } from "../rules";
 import { ADMIN_BADGE_SLUG, ADMIN_ICON_PATTERN, ADMIN_COLOR_PATTERN } from "./badges";
 
@@ -15,9 +16,15 @@ export interface AdminUserTagLook {
   color: string | null;
 }
 
+/** The fields of a user tag shown in the language of the site. */
+export const USER_TAG_TRANSLATED_FIELDS = ["name", "description"] as const;
+export type UserTagTranslatedField = (typeof USER_TAG_TRANSLATED_FIELDS)[number];
+
 /** `GET /api/admin/user-tags`: a user tag of the catalog, in display order. */
 export interface AdminUserTag extends AdminUserTagLook {
   description: string | null;
+  /** Its name and description in the other languages; `name` and `description` are the French source. */
+  translations: Translations<UserTagTranslatedField>;
   position: number;
   /** Awarded by the code (`team`, `early_member`): editable, never deleted. */
   system: boolean;

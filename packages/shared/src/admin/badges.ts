@@ -1,3 +1,4 @@
+import type { Translations } from "../i18n/translations";
 import type { FieldRules } from "../rules";
 
 /** What a badge counts, as stored by the backend; units in `ADMIN_BADGE_UNITS`. */
@@ -42,6 +43,14 @@ export const ADMIN_ICON_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** A colour `#rrggbb`. */
 export const ADMIN_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
+/** The fields of a badge shown in the language of the site. */
+export const BADGE_TRANSLATED_FIELDS = ["name", "description"] as const;
+export type BadgeTranslatedField = (typeof BADGE_TRANSLATED_FIELDS)[number];
+
+/** The fields of a collection shown in the language of the site. */
+export const BADGE_THEME_TRANSLATED_FIELDS = ["name"] as const;
+export type BadgeThemeTranslatedField = (typeof BADGE_THEME_TRANSLATED_FIELDS)[number];
+
 /** `GET /api/admin/badges`: a badge of the catalog. */
 export interface AdminBadge {
   id: string;
@@ -53,6 +62,8 @@ export interface AdminBadge {
   tiers: number[] | null;
   name: string;
   description: string;
+  /** Its name and description in the other languages; `name` and `description` are the French source. */
+  translations: Translations<BadgeTranslatedField>;
   themeId: string | null;
   icon: string;
   /** `#rrggbb`, null for the default card. */
@@ -69,6 +80,8 @@ export interface AdminBadge {
 export interface AdminBadgeTheme {
   id: string;
   name: string;
+  /** Its name in the other languages; `name` is the French source. */
+  translations: Translations<BadgeThemeTranslatedField>;
   position: number;
 }
 

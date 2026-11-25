@@ -4,6 +4,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
 import { ReleaseNote } from './release-note.entity';
 import { ReleaseNoteBannersService } from './release-note-banners.service';
+import { ReleaseNoteTranslation } from './release-note-translation.entity';
 import { ReleaseNoteView } from './release-note-view.entity';
 import { ReleaseNotesController } from './release-notes.controller';
 import { ReleaseNotesService } from './release-notes.service';
@@ -11,7 +12,11 @@ import { ReleaseNotesService } from './release-notes.service';
 /** The releases of the site and their notes, recorded as the backend starts on a new version. */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReleaseNote, ReleaseNoteView]),
+    TypeOrmModule.forFeature([
+      ReleaseNote,
+      ReleaseNoteView,
+      ReleaseNoteTranslation,
+    ]),
     NotificationsModule,
     StorageModule,
   ],

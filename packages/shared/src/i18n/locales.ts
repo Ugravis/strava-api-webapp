@@ -9,6 +9,9 @@ export const DEFAULT_LOCALE: Locale = "en";
 /** Name of the cookie keeping the language chosen on the site. */
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 
+/** Sent by the site with every call to the API: the language of the page that makes it. */
+export const LOCALE_HEADER = "X-Locale";
+
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }

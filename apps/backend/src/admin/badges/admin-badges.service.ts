@@ -1,7 +1,12 @@
-import type {
-  AdminBadge,
-  AdminBadgeCatalog,
-  AdminBadgeThemeRow,
+import type { FillTranslationsResponse } from '@kilotrace/shared';
+import {
+  type AdminBadge,
+  type AdminBadgeCatalog,
+  type AdminBadgeThemeRow,
+  BADGE_RULES,
+  BADGE_THEME_RULES,
+  BADGE_THEME_TRANSLATED_FIELDS,
+  BADGE_TRANSLATED_FIELDS,
 } from '@kilotrace/shared/admin';
 import {
   mapTablePage,
@@ -20,6 +25,12 @@ import type {
   UpdateBadgeDto,
   UpdateBadgeThemeDto,
 } from './admin-badges.dto';
+import {
+  fillTranslations,
+  type UpdateTranslationDto,
+  withTranslation,
+} from '../../common/translations';
+import { TranslationService } from '../../translation/translation.service';
 import { moveRow, type TableMoveDto } from '../common/table-move';
 import { runTableQuery, type TableSpec } from '../common/table-query';
 
@@ -90,6 +101,7 @@ export class AdminBadgesService {
     @InjectRepository(BadgeTheme)
     private readonly themes: Repository<BadgeTheme>,
     private readonly dataSource: DataSource,
+    private readonly translation: TranslationService,
   ) {}
 
   async catalog(): Promise<AdminBadgeCatalog> {
@@ -113,7 +125,12 @@ export class AdminBadgesService {
         }>(),
     ]);
     return {
-      themes: themes.map(({ id, name, position }) => ({ id, name, position })),
+      themes: themes.map(({ id, name, translations, position }) => ({
+        id,
+        name,
+        translations,
+        position,
+      })),
       badges: badges.entities.map((badge, index) =>
         toAdminBadge(
           badge,
@@ -143,9 +160,10 @@ export class AdminBadgesService {
         'SELECT theme_id AS id, COUNT(*)::int AS count FROM badges WHERE theme_id = ANY($1) GROUP BY theme_id',
         themes.map((theme) => theme.id),
       );
-      return themes.map(({ id, name, position }) => ({
+      return themes.map(({ id, name, translations, position }) => ({
         id,
         name,
+        translations,
         position,
         badgesCount: counts.get(id) ?? 0,
       }));
@@ -217,6 +235,56 @@ export class AdminBadgesService {
   async deleteTheme(id: string): Promise<void> {
     await this.findTheme(id);
     await this.themes.delete(id);
+  }
+
+  async translateBadge(id: string, dto: UpdateTranslationDto): Promise<void> {
+    const badge = await this.findBadge(id);
+    await this.badges.update(id, {
+      translations: withTranslation(
+        badge.translations,
+        BADGE_TRANSLATED_FIELDS,
+        BADGE_RULES,
+        dto,
+      ),
+    });
+  }
+
+  /** The name and description machine-translated where no language has them. */
+  async fillBadgeTranslations(id: string): Promise<FillTranslationsResponse> {
+    const badge = await this.findBadge(id);
+    const { translations, filled } = await fillTranslations(
+      this.translation,
+      badge,
+      badge.translations,
+      BADGE_TRANSLATED_FIELDS,
+    );
+    if (filled > 0) await this.badges.update(id, { translations });
+    return { filled };
+  }
+
+  async translateTheme(id: string, dto: UpdateTranslationDto): Promise<void> {
+    const theme = await this.findTheme(id);
+    await this.themes.update(id, {
+      translations: withTranslation(
+        theme.translations,
+        BADGE_THEME_TRANSLATED_FIELDS,
+        BADGE_THEME_RULES,
+        dto,
+      ),
+    });
+  }
+
+  /** The name machine-translated where no language has it. */
+  async fillThemeTranslations(id: string): Promise<FillTranslationsResponse> {
+    const theme = await this.findTheme(id);
+    const { translations, filled } = await fillTranslations(
+      this.translation,
+      theme,
+      theme.translations,
+      BADGE_THEME_TRANSLATED_FIELDS,
+    );
+    if (filled > 0) await this.themes.update(id, { translations });
+    return { filled };
   }
 
   private async withCounts(badges: Badge[]): Promise<AdminBadge[]> {
@@ -316,6 +384,7 @@ function toAdminBadge(
     tiers: badge.tiers,
     name: badge.name,
     description: badge.description,
+    translations: badge.translations,
     themeId: badge.themeId,
     icon: badge.icon,
     backgroundColor: badge.backgroundColor,

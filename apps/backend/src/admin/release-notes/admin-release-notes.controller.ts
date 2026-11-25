@@ -4,6 +4,7 @@ import {
   RELEASE_NOTE_BANNER_MAX_BYTES,
   RELEASE_NOTE_RULES,
 } from '@kilotrace/shared/admin';
+import type { FillTranslationsResponse } from '@kilotrace/shared';
 import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
   Body,
@@ -22,6 +23,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { assertRules } from '../../common/field-rules';
+import { UpdateTranslationDto } from '../../common/translations';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
@@ -155,6 +157,33 @@ export class AdminReleaseNotesController {
     @Param('version') version: string,
   ): Promise<void> {
     return this.releaseNotes.removeBanner(version, actor);
+  }
+
+  @Put(':version/translations')
+  @Permission('releaseNotes.edit')
+  @Audited({
+    action: 'releaseNotes.translate',
+    target: RELEASE_NOTE,
+    details: ['locale', 'field'],
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  translate(
+    @CurrentUser() actor: User,
+    @Param('version') version: string,
+    @Body() dto: UpdateTranslationDto,
+  ): Promise<void> {
+    return this.releaseNotes.translate(version, dto, actor);
+  }
+
+  @Post(':version/translations/fill')
+  @Permission('releaseNotes.edit')
+  @Audited({ action: 'releaseNotes.translate', target: RELEASE_NOTE })
+  @HttpCode(HttpStatus.OK)
+  fillTranslations(
+    @CurrentUser() actor: User,
+    @Param('version') version: string,
+  ): Promise<FillTranslationsResponse> {
+    return this.releaseNotes.fillTranslations(version, actor);
   }
 
   @Delete(':version')

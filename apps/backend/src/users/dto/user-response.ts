@@ -1,3 +1,4 @@
+import type { Locale } from '@kilotrace/shared';
 import { type AdminRole, highestAdminRole } from '@kilotrace/shared/admin';
 import type { FavoriteSport } from '../favorite-sports';
 import type { User } from '../user.entity';
@@ -13,6 +14,7 @@ export interface UserResponse {
   countryCode: string | null;
   favoriteSports: FavoriteSport[];
   profileColor: string | null;
+  locale: Locale;
   profilePrivate: boolean;
   hasPassword: boolean;
   /** Highest back-office role, null outside the team: only shows the way to the back office. */
@@ -39,6 +41,7 @@ export function toUserResponse(user: User): UserResponse {
     countryCode: user.countryCode,
     favoriteSports: user.favoriteSports,
     profileColor: user.profileColor,
+    locale: user.locale,
     profilePrivate: user.profilePrivate,
     hasPassword: user.passwordHash !== null,
     adminRole: highestAdminRole(user.roles ?? []),

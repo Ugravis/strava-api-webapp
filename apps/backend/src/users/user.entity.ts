@@ -1,3 +1,4 @@
+import type { Locale } from '@kilotrace/shared';
 import type { AdminRole } from '@kilotrace/shared/admin';
 import {
   Column,
@@ -67,6 +68,10 @@ export class User {
     default: () => "'{}'",
   })
   favoriteSports!: FavoriteSport[];
+
+  /** Language of the site, of the emails and of the notifications. */
+  @Column({ type: 'varchar', length: 5, default: 'en' })
+  locale!: Locale;
 
   /** Hue of the profile, `#rrggbb`; null for the default one. */
   @Column({ name: 'profile_color', type: 'varchar', length: 7, nullable: true })

@@ -21,6 +21,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     countryCode: 'FR',
     favoriteSports: [],
     profileColor: null,
+    locale: 'fr',
     profilePrivate: true,
     roles: [],
     suspendedAt: null,

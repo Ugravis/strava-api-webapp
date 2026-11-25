@@ -1,4 +1,4 @@
-import { USERNAME_PATTERN } from '@kilotrace/shared';
+import { type Locale, USERNAME_PATTERN } from '@kilotrace/shared';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
@@ -17,6 +17,8 @@ export interface CreateUserInput {
   termsAcceptedAt?: Date | null;
   passwordHash?: string | null;
   externalAvatarUrl?: string | null;
+  /** The language of the site at sign-up. */
+  locale: Locale;
 }
 
 export type UsernameAvailability =
@@ -96,6 +98,7 @@ export class UsersService {
       externalAvatarUrl: input.externalAvatarUrl ?? null,
       avatarKey: null,
       profileColor: randomProfileColor(),
+      locale: input.locale,
     });
     const saved = await this.save(user);
     if ((await this.users.count()) <= EARLY_MEMBERS) {
@@ -144,6 +147,11 @@ export class UsersService {
     if (changes.profileColor !== undefined) {
       user.profileColor = changes.profileColor?.toLowerCase() ?? null;
     }
+    return this.save(user);
+  }
+
+  async setLocale(user: User, locale: Locale): Promise<User> {
+    user.locale = locale;
     return this.save(user);
   }
 

@@ -1,3 +1,4 @@
+import { writeLocaleCookie } from './locale-cookie';
 import {
   Body,
   Controller,
@@ -77,6 +78,7 @@ export class AuthController {
       requestMetadata(request),
     );
     this.sessionCookie.write(response, session);
+    writeLocaleCookie(response, user.locale, this.config.secureCookies);
     return toUserResponse(user);
   }
 
@@ -106,6 +108,7 @@ export class AuthController {
         requestMetadata(request),
       );
       this.sessionCookie.write(response, session);
+      writeLocaleCookie(response, user.locale, this.config.secureCookies);
       return toUserResponse(user);
     } catch (error) {
       if (error instanceof AccountSuspendedException) {

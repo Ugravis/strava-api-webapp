@@ -1,3 +1,4 @@
+import type { RequestMetadata } from '../request-metadata';
 import type { SystemSettingsService } from '../../system/system-settings.service';
 import type { User } from '../../users/user.entity';
 import type { UsersService } from '../../users/users.service';
@@ -13,7 +14,7 @@ const profile: GoogleProfile = {
   name: 'Jean Dupont',
   picture: 'https://lh3.googleusercontent.com/a/photo',
 };
-const metadata = {};
+const metadata: RequestMetadata = { locale: 'fr' };
 const user = { id: 'user-id' } as User;
 const authResult = { user, session: { token: 'token', expiresAt: new Date() } };
 

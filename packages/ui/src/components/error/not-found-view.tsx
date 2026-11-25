@@ -7,7 +7,7 @@ import { BackButton } from "./back-button";
 import { ErrorScene } from "./error-scene";
 
 /** The 404 of an app: a page that does not exist, or that the visitor may not know of. */
-export function NotFoundView({ variant, homeHref }: { variant?: AppVariant; homeHref: string }) {
+export function NotFoundView({ variant, homeHref, embedded }: { variant?: AppVariant; homeHref: string; embedded?: boolean }) {
   const t = useTranslations("errorPages");
   return (
     <ErrorScene
@@ -15,6 +15,7 @@ export function NotFoundView({ variant, homeHref }: { variant?: AppVariant; home
       ghost={1}
       variant={variant}
       homeHref={homeHref}
+      embedded={embedded}
       eyebrow={t("notFound.eyebrow")}
       title={t("notFound.title")}
       description={t("notFound.description")}

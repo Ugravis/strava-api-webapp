@@ -1,11 +1,9 @@
 "use client";
 
 import { ErrorView } from "@kilotrace/ui/components/error/error-view";
+import { ADMIN_INDEX } from "@/lib/admin/entry";
 
-/** The entry of the back office, which opens on its dashboard. */
-const HOME = "/";
-
-/** An error thrown while rendering a page, inside the root layout. */
+/** An error of the frame of the back office, or of its sign-in: full screen. */
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <ErrorView error={error} reset={reset} variant="admin" homeHref={HOME} />;
+  return <ErrorView error={error} reset={reset} variant="admin" homeHref={ADMIN_INDEX} />;
 }

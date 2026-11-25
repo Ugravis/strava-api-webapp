@@ -13,10 +13,12 @@ interface ErrorViewProps {
   reset: () => void;
   variant?: AppVariant;
   homeHref: string;
+  /** Inside the navbar and footer of a layout. */
+  embedded?: boolean;
 }
 
 /** The page of an unexpected error: try again, or go home. The digest ties it to the server logs. */
-export function ErrorView({ error, reset, variant, homeHref }: ErrorViewProps) {
+export function ErrorView({ error, reset, variant, homeHref, embedded }: ErrorViewProps) {
   const t = useTranslations("errorPages");
 
   useEffect(() => {
@@ -29,6 +31,7 @@ export function ErrorView({ error, reset, variant, homeHref }: ErrorViewProps) {
       ghost={2}
       variant={variant}
       homeHref={homeHref}
+      embedded={embedded}
       eyebrow={t("error.eyebrow")}
       title={t("error.title")}
       description={t("error.description")}

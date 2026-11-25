@@ -1,11 +1,12 @@
 import "server-only";
 import type { AdminNavigationCounts } from "@kilotrace/shared/admin";
+import { ADMIN_INDEX } from "./entry";
 import { ActivityIcon, AtSignIcon, BoltIcon, ChartColumnIcon, DatabaseIcon, EarthIcon, GaugeIcon, GitCommitHorizontalIcon, ListClockIcon, type LucideIcon, MapIcon, PackageIcon, ReceiptTextIcon, ShieldCogCornerIcon, TagIcon, TrainFrontIcon, TrophyIcon, UsersIcon } from "lucide-react";
 
 /** Kept out of `@/config/routes`, which reaches the browser. */
 export const adminRoutes = {
   /** Entry of the back office, redirected to its dashboard. */
-  index: "/",
+  index: ADMIN_INDEX,
   dashboard: "/dashboard",
   statistics: "/statistics",
   /** Temporary charts of the site activity, replaced by a real dashboard. */

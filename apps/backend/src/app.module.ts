@@ -18,12 +18,14 @@ import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import { validateEnvironment } from './config/environment.validation';
 import googleConfig from './config/google.config';
+import translationConfig from './config/translation.config';
 import mailConfig from './config/mail.config';
 import storageConfig from './config/storage.config';
 import profilesConfig from './config/profiles.config';
 import stravaConfig from './config/strava.config';
 import { HealthController } from './health/health.controller';
 import { NotificationsModule } from './notifications/notifications.module';
+import { TranslationModule } from './translation/translation.module';
 import { ReleaseNotesModule } from './release-notes/release-notes.module';
 import { StationsModule } from './stations/stations.module';
 import { StravaModule } from './strava/strava.module';
@@ -45,6 +47,7 @@ import { UsersModule } from './users/users.module';
         stravaConfig,
         profilesConfig,
         adminConfig,
+        translationConfig,
       ],
     }),
     TypeOrmModule.forRootAsync({
@@ -64,6 +67,7 @@ import { UsersModule } from './users/users.module';
     FollowsModule,
     ReportsModule,
     NotificationsModule,
+    TranslationModule,
     SystemModule,
     ReleaseNotesModule,
     AdminModule,

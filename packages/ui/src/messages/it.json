@@ -26,7 +26,8 @@
     "cancel": "Annulla",
     "back": "Indietro",
     "unexpectedError": "Si è verificato un errore imprevisto. Riprova tra un attimo.",
-    "language": "Lingua"
+    "language": "Lingua",
+    "machineTranslated": "Tradotto automaticamente"
   },
   "landing": {
     "heroBadge": "Compatibile con Strava",

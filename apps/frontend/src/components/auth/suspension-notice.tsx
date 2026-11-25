@@ -10,6 +10,7 @@ import { authService } from "@/services/auth.service";
 /** Why the sign-in was refused to a suspended account, as told by the team. */
 export function SuspensionNotice() {
   const t = useTranslations("auth.suspended");
+  const tCommon = useTranslations("common");
   const format = useFormatter();
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -29,7 +30,14 @@ export function SuspensionNotice() {
               ? t("until", { date: format.dateTime(new Date(notice.until), { dateStyle: "long", timeStyle: "short" }) })
               : t("indefinite")}
           </span>
-          {notice.reason && <span className="block">{t("reason", { reason: notice.reason })}</span>}
+          {notice.reason && (
+            <span className="block">
+              {t("reason", { reason: notice.reason })}
+              {notice.originalReason && (
+                <span className="italic" title={notice.originalReason}> · {tCommon("machineTranslated")}</span>
+              )}
+            </span>
+          )}
         </AlertDescription>
       )}
     </Alert>

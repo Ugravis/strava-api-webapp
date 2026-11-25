@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { Follow } from '../follows/follow.entity';
+import { TranslationService } from '../translation/translation.service';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import { User } from '../users/user.entity';
 import { NotificationStreams } from './notification-streams';
@@ -77,6 +78,7 @@ export class NotificationsService {
     @InjectRepository(Follow)
     private readonly follows: Repository<Follow>,
     private readonly streams: NotificationStreams,
+    private readonly translation: TranslationService,
   ) {}
 
   /** A page of the notifications of the user in a category, the newest first. */
@@ -190,12 +192,43 @@ export class NotificationsService {
     details: NotificationDetails,
   ): Promise<void> {
     const notification = await this.notifications.save(
-      this.notifications.create({ userId, type, actorId: null, details }),
+      this.notifications.create({
+        userId,
+        type,
+        actorId: null,
+        details: await this.inReaderLanguage(userId, details),
+      }),
     );
     this.streams.send(userId, {
       unreadCount: await this.unreadCount(userId),
       notification: toNotificationResponse(notification, null),
     } satisfies NotificationEvent);
+  }
+
+  /**
+   * The note of the team, written in the language of the back office,
+   * machine-translated into the one of its reader, the original kept.
+   */
+  private async inReaderLanguage(
+    userId: string,
+    details: NotificationDetails,
+  ): Promise<NotificationDetails> {
+    if (!details.reason || !this.translation.enabled) return details;
+    const reader = await this.notifications.manager.findOne(User, {
+      where: { id: userId },
+      select: { id: true, locale: true },
+    });
+    if (!reader) return details;
+    const [translation] =
+      (await this.translation.translate([details.reason], reader.locale)) ?? [];
+    if (!translation || translation.detectedSource === reader.locale) {
+      return details;
+    }
+    return {
+      ...details,
+      reason: translation.text,
+      originalReason: details.reason,
+    };
   }
 
   /** Withdraws an unread notification once its cause is undone, e.g. on unfollow. */

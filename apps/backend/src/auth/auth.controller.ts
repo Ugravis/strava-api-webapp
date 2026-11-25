@@ -32,7 +32,8 @@ import { ResetPasswordDto } from './dto/token.dto';
 import { ChallengeDto, VerifyCodeDto } from './dto/verification.dto';
 import { AppSettingsService } from '../system/app-settings.service';
 import { GoogleOAuthService } from './google/google-oauth.service';
-import { requestMetadata } from './request-metadata';
+import { TranslationService } from '../translation/translation.service';
+import { requestLocale, requestMetadata } from './request-metadata';
 import { SessionCookie } from './session-cookie';
 import { SensitiveThrottle } from './throttle';
 
@@ -44,6 +45,7 @@ export class AuthController {
     private readonly sessionCookie: SessionCookie,
     private readonly google: GoogleOAuthService,
     private readonly settings: AppSettingsService,
+    private readonly translation: TranslationService,
   ) {}
 
   /** Sign-in methods available, so the frontend only shows working buttons. */
@@ -58,9 +60,12 @@ export class AuthController {
   @SensitiveThrottle()
   @Post('register')
   @HttpCode(HttpStatus.ACCEPTED)
-  async register(@Body() dto: RegisterDto): Promise<VerificationChallenge> {
+  async register(
+    @Body() dto: RegisterDto,
+    @Req() request: Request,
+  ): Promise<VerificationChallenge> {
     await this.assertEmailSignIn();
-    return this.auth.register(dto);
+    return this.auth.register(dto, requestLocale(request));
   }
 
   @Public()
@@ -121,12 +126,19 @@ export class AuthController {
   /** Why the latest sign-in was refused, while its short-lived cookie lasts. */
   @Public()
   @Get('suspension')
-  suspension(@Req() request: Request): SuspensionNotice {
+  async suspension(@Req() request: Request): Promise<SuspensionNotice> {
     const notice = suspensionCookie.read(request);
     if (!notice) {
       throw ApiErrors.notFound(ApiErrorCode.NotFound, 'No suspension notice');
     }
-    return notice;
+    if (!notice.reason) return notice;
+    // In the language of the page, the team writing in the one of the back office.
+    const locale = requestLocale(request);
+    const [translation] =
+      (await this.translation.translate([notice.reason], locale)) ?? [];
+    return translation && translation.detectedSource !== locale
+      ? { ...notice, reason: translation.text, originalReason: notice.reason }
+      : notice;
   }
 
   /** Public so that a stale cookie can always be cleared. */

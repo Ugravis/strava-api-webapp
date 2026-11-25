@@ -210,6 +210,7 @@ const TEAM_NOTIFICATIONS: ReadonlySet<AppNotification["type"]> = new Set([
 
 function NotificationItem({ notification, unread }: { notification: AppNotification; unread: boolean }) {
   const t = useTranslations("notifications");
+  const tCommon = useTranslations("common");
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   const router = useRouter();
@@ -268,7 +269,12 @@ function NotificationItem({ notification, unread }: { notification: AppNotificat
           })}
         </span>
         {details?.reason && (
-          <span className="text-xs whitespace-normal text-muted-foreground">{t(notification.type === "station_report_closed" ? "teamNote" : "reason", { reason: details.reason })}</span>
+          <span className="text-xs whitespace-normal text-muted-foreground">
+            {t(notification.type === "station_report_closed" ? "teamNote" : "reason", { reason: details.reason })}
+            {details.originalReason && (
+              <span className="italic" title={details.originalReason}> · {tCommon("machineTranslated")}</span>
+            )}
+          </span>
         )}
         <span className="text-xs text-muted-foreground">
           {format.relativeTime(new Date(notification.createdAt), now)}

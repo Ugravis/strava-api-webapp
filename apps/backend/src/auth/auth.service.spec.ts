@@ -83,6 +83,7 @@ function buildChallenge(
     email: 'jean@example.com',
     userId: null,
     username: 'jean',
+    locale: 'it',
     passwordHash: 'hash',
     codes: [],
     failedAttempts: 0,
@@ -184,7 +185,7 @@ describe('AuthService', () => {
     it('creates no account but sends a code for the sign-up, its password hashed', async () => {
       users.findByEmail.mockResolvedValue(null);
 
-      await expect(service.register(dto)).resolves.toBe(challengeState);
+      await expect(service.register(dto, 'it')).resolves.toBe(challengeState);
 
       expect(users.create).not.toHaveBeenCalled();
       const input = challenges.start.mock.calls[0][0];
@@ -192,6 +193,7 @@ describe('AuthService', () => {
         purpose: EmailChallengePurpose.Signup,
         email: dto.email,
         username: dto.username,
+        locale: 'it',
       });
       await expect(
         passwordHasher.verify(dto.password, input.passwordHash ?? ''),
@@ -201,19 +203,20 @@ describe('AuthService', () => {
     it('answers alike for an address already in use, its owner being warned', async () => {
       users.findByEmail.mockResolvedValue(buildUser());
 
-      await expect(service.register(dto)).resolves.toBe(challengeState);
+      await expect(service.register(dto, 'it')).resolves.toBe(challengeState);
 
       expect(challenges.start).toHaveBeenCalledWith({
         purpose: EmailChallengePurpose.Signup,
         email: dto.email,
         userId: 'user-id',
+        locale: 'it',
       });
     });
 
     it('sends nothing while the sign-ups are closed', async () => {
       system.assertSignupsEnabled.mockRejectedValue(new ForbiddenException());
 
-      await expect(service.register(dto)).rejects.toBeInstanceOf(
+      await expect(service.register(dto, 'it')).rejects.toBeInstanceOf(
         ForbiddenException,
       );
       expect(challenges.start).not.toHaveBeenCalled();
@@ -223,7 +226,7 @@ describe('AuthService', () => {
       'refuses the common password %s',
       async (password) => {
         await expect(
-          service.register({ ...dto, password }),
+          service.register({ ...dto, password }, 'it'),
         ).rejects.toMatchObject({ response: { code: 'PASSWORD_TOO_COMMON' } });
         expect(challenges.start).not.toHaveBeenCalled();
       },
@@ -245,6 +248,8 @@ describe('AuthService', () => {
           username: 'jean',
           passwordHash: 'hash',
           termsAcceptedAt: expect.any(Date) as Date,
+          // The language of the site where the sign-up started.
+          locale: 'it',
         }),
       );
       expect(result.session).toBe(createdSession);
@@ -451,6 +456,7 @@ describe('AuthService', () => {
         purpose: EmailChallengePurpose.PasswordReset,
         email: user.email,
         userId: user.id,
+        locale: 'fr',
       });
     });
 

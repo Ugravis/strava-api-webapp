@@ -6,7 +6,7 @@ import { renderEmail, type RenderedEmail } from './layout';
  */
 export function accountExistsTemplate(
   name: string,
-  loginUrl: string,
+  frontendUrl: string,
   hasPassword: boolean,
 ): RenderedEmail {
   const paragraphs = hasPassword
@@ -22,10 +22,19 @@ export function accountExistsTemplate(
     subject: 'Vous avez déjà un compte Kilotrace',
     greeting: `Bonjour ${name},`,
     paragraphs,
-    action: {
-      label: hasPassword ? 'Se connecter' : 'Se connecter avec Google',
-      url: loginUrl,
-    },
+    action: hasPassword
+      ? {
+          label: 'Se connecter',
+          url: new URL('/login', frontendUrl).toString(),
+        }
+      : {
+          // Starts the Google sign-in at once, as the button of the app does.
+          label: 'Continuer avec Google',
+          url: new URL('/api/auth/google', frontendUrl).toString(),
+          google: {
+            iconUrl: new URL('/email/google.png', frontendUrl).toString(),
+          },
+        },
     footer:
       "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre compte n'a pas changé.",
   });

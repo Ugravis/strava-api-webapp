@@ -342,9 +342,7 @@
     "verification": {
       "title": "Vérifiez votre boîte mail",
       "codeLabel": "Code de vérification à 6 chiffres",
-      "autoSubmit": "Le code est vérifié dès le 6e chiffre.",
       "verifying": "Vérification…",
-      "notReceived": "Rien reçu ? Vérifiez vos spams.",
       "resend": "Renvoyer un code",
       "resendIn": "Renvoyer un code dans {seconds} s",
       "resendLater": "Vous avez demandé beaucoup de codes : réessayez plus tard.",

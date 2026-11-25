@@ -19,8 +19,11 @@ interface EmailContent {
   paragraphs: string[];
   /** A one-time code, shown large under the paragraphs. */
   code?: string;
-  /** A call-to-action button, with its link spelled out below. */
-  action?: { label: string; url: string };
+  /**
+   * A call-to-action button, with its link spelled out below. `google`: the
+   * white button with the Google logo of the app (`iconUrl`, a hosted PNG).
+   */
+  action?: { label: string; url: string; google?: { iconUrl: string } };
   footer: string;
 }
 
@@ -37,9 +40,12 @@ export function renderEmail(content: EmailContent): RenderedEmail {
     ? `<p style="margin:24px 0;font-size:32px;font-weight:700;letter-spacing:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">${escapeHtml(content.code)}</p>`
     : '';
   const url = content.action ? escapeHtml(content.action.url) : '';
+  const button = content.action?.google
+    ? `<a href="${url}" style="display:inline-block;background:#ffffff;color:#171717;text-decoration:none;padding:11px 20px;border:1px solid #e5e5e5;border-radius:8px;font-weight:500"><img src="${escapeHtml(content.action.google.iconUrl)}" width="16" height="16" alt="" style="vertical-align:-3px;margin-right:8px;border:0">${escapeHtml(content.action.label)}</a>`
+    : `<a href="${url}" style="display:inline-block;background:#171717;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${escapeHtml(content.action?.label ?? '')}</a>`;
   const action = content.action
     ? `<p style="margin:24px 0">
-                  <a href="${url}" style="display:inline-block;background:#171717;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${escapeHtml(content.action.label)}</a>
+                  ${button}
                 </p>
                 <p style="${MUTED}">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :</p>
                 <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="${url}" style="color:#171717">${url}</a></p>`

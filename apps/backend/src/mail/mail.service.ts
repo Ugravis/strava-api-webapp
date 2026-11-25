@@ -63,7 +63,7 @@ export class MailService {
       recipient,
       accountExistsTemplate(
         nameOf(recipient),
-        new URL('/login', this.authSettings.frontendUrl).toString(),
+        this.authSettings.frontendUrl,
         hasPassword,
       ),
     );

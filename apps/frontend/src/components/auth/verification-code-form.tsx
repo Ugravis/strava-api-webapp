@@ -119,11 +119,10 @@ export function VerificationCodeForm({
           </InputOTPGroup>
         </InputOTP>
         <p className="min-h-5 text-sm text-muted-foreground" aria-live="polite">
-          {verifying ? t("verifying") : t("autoSubmit")}
+          {verifying && t("verifying")}
         </p>
       </div>
-      <div className="flex flex-col items-center gap-1 text-sm">
-        <p className="text-muted-foreground">{t("notReceived")}</p>
+      <div className="flex flex-col items-center text-sm">
         {secondsLeft > LONG_WAIT_SECONDS ? (
           <p className="text-muted-foreground">{t("resendLater")}</p>
         ) : (

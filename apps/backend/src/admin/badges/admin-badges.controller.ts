@@ -19,7 +19,10 @@ import {
   Put,
 } from '@nestjs/common';
 import { assertRules } from '../../common/field-rules';
-import { UpdateTranslationDto } from '../../common/translations';
+import {
+  FillTranslationsDto,
+  UpdateTranslationDto,
+} from '../../common/translations';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
 import { Audited } from '../audit/audited.decorator';
@@ -120,10 +123,13 @@ export class AdminBadgesController {
 
   @Post(':id/translations/fill')
   @Permission('badges.edit')
-  @Audited({ action: 'badges.translate', target: BADGE })
+  @Audited({ action: 'badges.translate', target: BADGE, details: ['all'] })
   @HttpCode(HttpStatus.OK)
-  fillTranslations(@Param('id') id: string): Promise<FillTranslationsResponse> {
-    return this.badges.fillBadgeTranslations(id);
+  fillTranslations(
+    @Param('id') id: string,
+    @Body() dto: FillTranslationsDto,
+  ): Promise<FillTranslationsResponse> {
+    return this.badges.fillBadgeTranslations(id, dto.all);
   }
 }
 
@@ -186,10 +192,17 @@ export class AdminBadgeThemesController {
 
   @Post(':id/translations/fill')
   @Permission('badges.edit')
-  @Audited({ action: 'badges.themes.translate', target: THEME })
+  @Audited({
+    action: 'badges.themes.translate',
+    target: THEME,
+    details: ['all'],
+  })
   @HttpCode(HttpStatus.OK)
-  fillTranslations(@Param('id') id: string): Promise<FillTranslationsResponse> {
-    return this.badges.fillThemeTranslations(id);
+  fillTranslations(
+    @Param('id') id: string,
+    @Body() dto: FillTranslationsDto,
+  ): Promise<FillTranslationsResponse> {
+    return this.badges.fillThemeTranslations(id, dto.all);
   }
 
   @Delete(':id')

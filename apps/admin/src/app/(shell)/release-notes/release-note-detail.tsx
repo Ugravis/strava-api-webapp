@@ -192,14 +192,15 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
         ]}
         source={{ title: note.title, summary: note.summary, ...note.sections }}
         translations={note.translations}
+        sources={note.translationSources}
         locked={locked}
         onSave={async (locale, field, value) => {
           const result = await translateReleaseNote(note.version, locale, field, value);
           if (result.ok) bumpReleaseNotes();
           return result;
         }}
-        onFill={async () => {
-          const result = await fillReleaseNoteTranslations(note.version);
+        onFill={async (all) => {
+          const result = await fillReleaseNoteTranslations(note.version, all);
           if (result.ok) bumpReleaseNotes();
           return result;
         }}

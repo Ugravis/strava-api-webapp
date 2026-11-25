@@ -179,7 +179,8 @@
   },
   "navbar": {
     "login": "Accedi",
-    "register": "Registrati"
+    "register": "Registrati",
+    "options": "Opzioni"
   },
   "nav": {
     "label": "Navigazione",

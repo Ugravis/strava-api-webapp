@@ -64,6 +64,8 @@ export interface AdminBadge {
   description: string;
   /** Its name and description in the other languages; `name` and `description` are the French source. */
   translations: Translations<BadgeTranslatedField>;
+  /** The French each translation was made from: a translation whose source changed is out of date. */
+  translationSources: Translations<BadgeTranslatedField>;
   themeId: string | null;
   icon: string;
   /** `#rrggbb`, null for the default card. */
@@ -82,6 +84,7 @@ export interface AdminBadgeTheme {
   name: string;
   /** Its name in the other languages; `name` is the French source. */
   translations: Translations<BadgeThemeTranslatedField>;
+  translationSources: Translations<BadgeThemeTranslatedField>;
   position: number;
 }
 

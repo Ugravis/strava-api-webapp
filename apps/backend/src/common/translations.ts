@@ -1,12 +1,21 @@
 import {
+  type FillTranslationsRequest,
   SOURCE_LOCALE,
+  staleTranslations,
   TARGET_LOCALES,
   type TargetLocale,
+  type TranslationSources,
   type Translations,
   type UpdateTranslationRequest,
 } from '@kilotrace/shared';
 import type { FieldRules } from '@kilotrace/shared/rules';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import type { TranslationService } from '../translation/translation.service';
 import { ApiErrorCode, ApiErrors } from './api-error';
 import { assertRules } from './field-rules';
@@ -24,36 +33,83 @@ export class UpdateTranslationDto implements UpdateTranslationRequest {
   value!: string | null;
 }
 
+export class FillTranslationsDto implements FillTranslationsRequest {
+  @IsOptional()
+  @IsBoolean()
+  all?: boolean;
+}
+
+/** The translations of a content and the source each one was made from. */
+export interface TranslationState<F extends string> {
+  translations: Translations<F>;
+  sources: TranslationSources<F>;
+}
+
+/** The state of a row keeping its translations in its own columns. */
+export function stateOf<F extends string>(row: {
+  translations: Translations<F>;
+  translationSources: TranslationSources<F>;
+}): TranslationState<F> {
+  return { translations: row.translations, sources: row.translationSources };
+}
+
+/** The columns of a row for a state. */
+export function columnsOf<F extends string>({
+  translations,
+  sources,
+}: TranslationState<F>) {
+  return { translations, translationSources: sources };
+}
+
+/** `value` set for `field` in `locale` (removed when null), the empty languages dropped. */
+function setField<F extends string>(
+  map: Translations<F>,
+  locale: TargetLocale,
+  field: F,
+  value: string | null,
+): Translations<F> {
+  const fields: Partial<Record<F, string>> = { ...map[locale] };
+  if (value) fields[field] = value;
+  else delete fields[field];
+  const next: Translations<F> = { ...map, [locale]: fields };
+  if (Object.keys(fields).length === 0) delete next[locale];
+  return next;
+}
+
 /**
- * The translations of a content once one field of one language is set, or
- * cleared (null or blank): checked against the rule of its source field.
+ * A content once one field of one language is typed by hand, or cleared
+ * (null or blank): checked against the rule of its source field, and
+ * following its source as it is now.
  */
 export function withTranslation<F extends string>(
-  current: Translations<F>,
+  { translations, sources }: TranslationState<F>,
+  source: Partial<Record<F, string | null>>,
   fields: readonly F[],
   rules: FieldRules<Record<F, string | null>>,
   { locale, field, value }: UpdateTranslationDto,
-): Translations<F> {
+): TranslationState<F> {
   if (!(fields as readonly string[]).includes(field)) {
     throw ApiErrors.badRequest(
       ApiErrorCode.InvalidField,
       `${field} is not translated`,
     );
   }
+  const name = field as F;
   const text = value?.trim() || null;
   if (text !== null) {
-    assertRules(rules, { [field]: text } as Partial<Record<F, string | null>>, {
+    assertRules(rules, { [name]: text } as Partial<Record<F, string | null>>, {
       partial: true,
     });
   }
-  const fieldsOfLocale: Partial<Record<F, string>> = {
-    ...current[locale],
+  return {
+    translations: setField(translations, locale, name, text),
+    sources: setField(
+      sources,
+      locale,
+      name,
+      text && (source[name]?.trim() || null),
+    ),
   };
-  if (text) fieldsOfLocale[field as F] = text;
-  else delete fieldsOfLocale[field as F];
-  const next: Translations<F> = { ...current, [locale]: fieldsOfLocale };
-  if (Object.keys(fieldsOfLocale).length === 0) delete next[locale];
-  return next;
 }
 
 /**
@@ -73,31 +129,39 @@ export const TRANSLATION_CONTEXTS = {
 } as const;
 
 /**
- * Fills the fields missing in every language from their source through
- * DeepL, those typed by the team kept; refused when it cannot translate.
+ * Machine-translates through DeepL, from their source, the fields of every
+ * language that are empty or out of date (their source changed since), or
+ * with `all` every one, those typed by hand included. Refused when it
+ * cannot translate.
  */
 export async function fillTranslations<F extends string>(
   translation: TranslationService,
   source: Partial<Record<F, string | null>>,
-  current: Translations<F>,
+  state: TranslationState<F>,
   fields: readonly F[],
   context: string,
-): Promise<{ translations: Translations<F>; filled: number }> {
+  all = false,
+): Promise<TranslationState<F> & { filled: number }> {
   if (!translation.enabled) {
     throw ApiErrors.unavailable(
       ApiErrorCode.TranslationUnavailable,
       'Machine translation is not set up',
     );
   }
-  const next: Translations<F> = { ...current };
+  const stale = staleTranslations(source, state.translations, state.sources);
+  let { translations, sources } = state;
   let filled = 0;
   for (const locale of TARGET_LOCALES) {
-    const missing = fields.filter(
-      (field) => source[field]?.trim() && !current[locale]?.[field],
+    const wanted = fields.filter(
+      (field) =>
+        source[field]?.trim() &&
+        (all ||
+          !state.translations[locale]?.[field] ||
+          stale[locale]?.includes(field)),
     );
-    if (missing.length === 0) continue;
+    if (wanted.length === 0) continue;
     const texts = await translation.translate(
-      missing.map((field) => source[field]!),
+      wanted.map((field) => source[field]!.trim()),
       locale,
       { source: SOURCE_LOCALE, context },
     );
@@ -107,11 +171,11 @@ export async function fillTranslations<F extends string>(
         'Machine translation failed',
       );
     }
-    next[locale] = {
-      ...current[locale],
-      ...Object.fromEntries(missing.map((field, i) => [field, texts[i].text])),
-    };
-    filled += missing.length;
+    wanted.forEach((field, i) => {
+      translations = setField(translations, locale, field, texts[i].text);
+      sources = setField(sources, locale, field, source[field]!.trim());
+    });
+    filled += wanted.length;
   }
-  return { translations: next, filled };
+  return { translations, sources, filled };
 }

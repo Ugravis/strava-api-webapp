@@ -12,17 +12,19 @@ import {
 import { isLocale, LOCALE_FLAGS, LOCALE_NAMES, LOCALES } from "@kilotrace/ui/i18n/locale";
 import { useChangeLocale } from "./use-change-locale";
 
-/** The language of the site, in the account menu: kept by the account. */
-export function LocaleSubmenu() {
+/** The language of the site, in a menu (the account's, the options of the public navbar); kept by the account when signed in. */
+export function LocaleSubmenu({ signedIn = true }: { signedIn?: boolean }) {
   const t = useTranslations("common");
-  const { current, change } = useChangeLocale(true);
+  const { current, change } = useChangeLocale(signedIn);
 
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <LanguagesIcon />
         {t("language")}
-        <span className="ml-auto text-xs text-muted-foreground">{LOCALE_NAMES[current]}</span>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {LOCALE_FLAGS[current]} {LOCALE_NAMES[current]}
+        </span>
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="min-w-40">
         <DropdownMenuRadioGroup value={current} onValueChange={(value) => isLocale(value) && change(value)}>

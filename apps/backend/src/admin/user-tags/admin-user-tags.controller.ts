@@ -1,6 +1,9 @@
 import type { FillTranslationsResponse } from '@kilotrace/shared';
 import { type AdminUserTag, USER_TAG_RULES } from '@kilotrace/shared/admin';
-import { UpdateTranslationDto } from '../../common/translations';
+import {
+  FillTranslationsDto,
+  UpdateTranslationDto,
+} from '../../common/translations';
 import { assertRules } from '../../common/field-rules';
 import type { TablePage, TableQuery } from '@kilotrace/shared/table';
 import {
@@ -94,10 +97,13 @@ export class AdminUserTagsController {
 
   @Post(':id/translations/fill')
   @Permission('userTags.edit')
-  @Audited({ action: 'userTags.translate', target: USER_TAG })
+  @Audited({ action: 'userTags.translate', target: USER_TAG, details: ['all'] })
   @HttpCode(HttpStatus.OK)
-  fillTranslations(@Param('id') id: string): Promise<FillTranslationsResponse> {
-    return this.userTags.fillTranslations(id);
+  fillTranslations(
+    @Param('id') id: string,
+    @Body() dto: FillTranslationsDto,
+  ): Promise<FillTranslationsResponse> {
+    return this.userTags.fillTranslations(id, dto.all);
   }
 
   @Delete(':id')

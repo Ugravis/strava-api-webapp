@@ -25,6 +25,8 @@ export interface AdminUserTag extends AdminUserTagLook {
   description: string | null;
   /** Its name and description in the other languages; `name` and `description` are the French source. */
   translations: Translations<UserTagTranslatedField>;
+  /** The French each translation was made from: a translation whose source changed is out of date. */
+  translationSources: Translations<UserTagTranslatedField>;
   position: number;
   /** Awarded by the code (`team`, `early_member`): editable, never deleted. */
   system: boolean;

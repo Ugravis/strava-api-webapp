@@ -26,4 +26,8 @@ export class ReleaseNoteTranslation {
 
   @Column({ name: 'section_other', type: 'text', nullable: true })
   sectionOther!: string | null;
+
+  /** The French each field was translated from, by field name (`title`, `new`…). */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  sources!: Partial<Record<string, string>>;
 }

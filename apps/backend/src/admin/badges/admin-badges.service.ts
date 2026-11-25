@@ -26,7 +26,9 @@ import type {
   UpdateBadgeThemeDto,
 } from './admin-badges.dto';
 import {
+  columnsOf,
   fillTranslations,
+  stateOf,
   TRANSLATION_CONTEXTS,
   type UpdateTranslationDto,
   withTranslation,
@@ -126,12 +128,15 @@ export class AdminBadgesService {
         }>(),
     ]);
     return {
-      themes: themes.map(({ id, name, translations, position }) => ({
-        id,
-        name,
-        translations,
-        position,
-      })),
+      themes: themes.map(
+        ({ id, name, translations, translationSources, position }) => ({
+          id,
+          name,
+          translations,
+          translationSources,
+          position,
+        }),
+      ),
       badges: badges.entities.map((badge, index) =>
         toAdminBadge(
           badge,
@@ -161,13 +166,16 @@ export class AdminBadgesService {
         'SELECT theme_id AS id, COUNT(*)::int AS count FROM badges WHERE theme_id = ANY($1) GROUP BY theme_id',
         themes.map((theme) => theme.id),
       );
-      return themes.map(({ id, name, translations, position }) => ({
-        id,
-        name,
-        translations,
-        position,
-        badgesCount: counts.get(id) ?? 0,
-      }));
+      return themes.map(
+        ({ id, name, translations, translationSources, position }) => ({
+          id,
+          name,
+          translations,
+          translationSources,
+          position,
+          badgesCount: counts.get(id) ?? 0,
+        }),
+      );
     });
   }
 
@@ -240,53 +248,69 @@ export class AdminBadgesService {
 
   async translateBadge(id: string, dto: UpdateTranslationDto): Promise<void> {
     const badge = await this.findBadge(id);
-    await this.badges.update(id, {
-      translations: withTranslation(
-        badge.translations,
-        BADGE_TRANSLATED_FIELDS,
-        BADGE_RULES,
-        dto,
+    await this.badges.update(
+      id,
+      columnsOf(
+        withTranslation(
+          stateOf(badge),
+          badge,
+          BADGE_TRANSLATED_FIELDS,
+          BADGE_RULES,
+          dto,
+        ),
       ),
-    });
+    );
   }
 
   /** The name and description machine-translated where no language has them. */
-  async fillBadgeTranslations(id: string): Promise<FillTranslationsResponse> {
+  async fillBadgeTranslations(
+    id: string,
+    all = false,
+  ): Promise<FillTranslationsResponse> {
     const badge = await this.findBadge(id);
-    const { translations, filled } = await fillTranslations(
+    const { filled, ...state } = await fillTranslations(
       this.translation,
       badge,
-      badge.translations,
+      stateOf(badge),
       BADGE_TRANSLATED_FIELDS,
       TRANSLATION_CONTEXTS.badge,
+      all,
     );
-    if (filled > 0) await this.badges.update(id, { translations });
+    if (filled > 0) await this.badges.update(id, columnsOf(state));
     return { filled };
   }
 
   async translateTheme(id: string, dto: UpdateTranslationDto): Promise<void> {
     const theme = await this.findTheme(id);
-    await this.themes.update(id, {
-      translations: withTranslation(
-        theme.translations,
-        BADGE_THEME_TRANSLATED_FIELDS,
-        BADGE_THEME_RULES,
-        dto,
+    await this.themes.update(
+      id,
+      columnsOf(
+        withTranslation(
+          stateOf(theme),
+          theme,
+          BADGE_THEME_TRANSLATED_FIELDS,
+          BADGE_THEME_RULES,
+          dto,
+        ),
       ),
-    });
+    );
   }
 
   /** The name machine-translated where no language has it. */
-  async fillThemeTranslations(id: string): Promise<FillTranslationsResponse> {
+  async fillThemeTranslations(
+    id: string,
+    all = false,
+  ): Promise<FillTranslationsResponse> {
     const theme = await this.findTheme(id);
-    const { translations, filled } = await fillTranslations(
+    const { filled, ...state } = await fillTranslations(
       this.translation,
       theme,
-      theme.translations,
+      stateOf(theme),
       BADGE_THEME_TRANSLATED_FIELDS,
       TRANSLATION_CONTEXTS.badgeTheme,
+      all,
     );
-    if (filled > 0) await this.themes.update(id, { translations });
+    if (filled > 0) await this.themes.update(id, columnsOf(state));
     return { filled };
   }
 
@@ -388,6 +412,7 @@ function toAdminBadge(
     name: badge.name,
     description: badge.description,
     translations: badge.translations,
+    translationSources: badge.translationSources,
     themeId: badge.themeId,
     icon: badge.icon,
     backgroundColor: badge.backgroundColor,

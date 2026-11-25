@@ -5,7 +5,9 @@ import {
   USER_TAG_TRANSLATED_FIELDS,
 } from '@kilotrace/shared/admin';
 import {
+  columnsOf,
   fillTranslations,
+  stateOf,
   TRANSLATION_CONTEXTS,
   type UpdateTranslationDto,
   withTranslation,
@@ -94,6 +96,7 @@ export class AdminUserTagsService {
       name: userTag.name,
       description: userTag.description,
       translations: userTag.translations,
+      translationSources: userTag.translationSources,
       icon: userTag.icon,
       color: userTag.color,
       position: userTag.position,
@@ -127,27 +130,35 @@ export class AdminUserTagsService {
 
   async translate(id: string, dto: UpdateTranslationDto): Promise<void> {
     const userTag = await this.find(id);
-    await this.userTags.update(id, {
-      translations: withTranslation(
-        userTag.translations,
-        USER_TAG_TRANSLATED_FIELDS,
-        USER_TAG_RULES,
-        dto,
+    await this.userTags.update(
+      id,
+      columnsOf(
+        withTranslation(
+          stateOf(userTag),
+          userTag,
+          USER_TAG_TRANSLATED_FIELDS,
+          USER_TAG_RULES,
+          dto,
+        ),
       ),
-    });
+    );
   }
 
   /** The name and description machine-translated where no language has them. */
-  async fillTranslations(id: string): Promise<FillTranslationsResponse> {
+  async fillTranslations(
+    id: string,
+    all = false,
+  ): Promise<FillTranslationsResponse> {
     const userTag = await this.find(id);
-    const { translations, filled } = await fillTranslations(
+    const { filled, ...state } = await fillTranslations(
       this.translation,
       userTag,
-      userTag.translations,
+      stateOf(userTag),
       USER_TAG_TRANSLATED_FIELDS,
       TRANSLATION_CONTEXTS.userTag,
+      all,
     );
-    if (filled > 0) await this.userTags.update(id, { translations });
+    if (filled > 0) await this.userTags.update(id, columnsOf(state));
     return { filled };
   }
 

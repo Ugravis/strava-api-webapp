@@ -1,8 +1,8 @@
 "use client";
 
-import { TARGET_LOCALES, type TargetLocale, type Translations } from "@kilotrace/shared";
+import { staleTranslations, TARGET_LOCALES, type TargetLocale, type TranslationSources, type Translations } from "@kilotrace/shared";
 import type { FieldRule } from "@kilotrace/shared/rules";
-import { LanguagesIcon } from "lucide-react";
+import { LanguagesIcon, TriangleAlertIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
@@ -37,14 +37,18 @@ export interface DetailTranslationField<F extends string> {
 /**
  * The translations of a content written in French: a tab per language, its
  * fields edited in place, empty ones falling back on English then French on
- * the site (the source given as a hint). « Traduire les manquantes » fills
- * every field left empty in every language through DeepL from the source,
- * never one typed; each one stays editable by hand.
+ * the site (the source given as a hint). A translation whose French changed
+ * since it was made is « à revoir », told on its field, its tab and the pill.
+ * The DeepL button translates the fields empty or to review; when none is,
+ * it translates everything again, those typed by hand included, once
+ * confirmed. Each field stays editable by hand, typing it following the
+ * French as it is.
  */
 export function DetailTranslations<F extends string>({
   fields,
   source,
   translations,
+  sources,
   onSave,
   onFill,
   locked,
@@ -53,27 +57,44 @@ export function DetailTranslations<F extends string>({
   /** The French values, those of the fields above. */
   source: Partial<Record<F, string | null>>;
   translations: Translations<F>;
+  /** The French each translation was made from. */
+  sources: TranslationSources<F>;
   onSave: (locale: TargetLocale, field: F, value: string | null) => Promise<ActionResult | void>;
-  onFill: () => Promise<ActionResult>;
+  /** `all`: every field again, else those empty or to review. */
+  onFill: (all: boolean) => Promise<ActionResult>;
   locked?: string | null;
 }) {
   const [tab, setTab] = useState<TargetLocale>(TARGET_LOCALES[0]);
   const wanted = fields.filter((field) => source[field.name]?.trim());
+  const stale = staleTranslations(source, translations, sources);
   const missingIn = (locale: TargetLocale) => wanted.filter((field) => !translations[locale]?.[field.name]).length;
+  const staleIn = (locale: TargetLocale) => stale[locale]?.length ?? 0;
   const missing = TARGET_LOCALES.reduce((total, locale) => total + missingIn(locale), 0);
+  const toReview = TARGET_LOCALES.reduce((total, locale) => total + staleIn(locale), 0);
+  const upToDate = missing === 0 && toReview === 0;
+  const pending = [missing > 0 && `${missing} à traduire`, toReview > 0 && `${toReview} à revoir`].filter(Boolean).join(" · ");
 
   return (
     <DetailSection
       title="Traductions"
-      pill={missing > 0 ? { label: `${missing} à traduire`, tone: "amber" } : { label: "Complètes", tone: "green" }}
+      pill={upToDate ? { label: "À jour", tone: "green" } : { label: pending, tone: "amber" }}
       aside={
         <DetailAction
-          label="Traduire les manquantes (DeepL)"
+          label={upToDate ? "Tout retraduire (DeepL)" : "Traduire les champs vides ou à revoir (DeepL)"}
           icon={<LanguagesIcon aria-hidden />}
           locked={locked}
-          disabled={missing === 0}
+          confirm={
+            upToDate
+              ? {
+                  title: "Tout retraduire ?",
+                  description: "Chaque champ de chaque langue est traduit à nouveau depuis le français par DeepL, y compris ceux saisis à la main.",
+                  confirmLabel: "Retraduire",
+                  destructive: false,
+                }
+              : undefined
+          }
           onClick={async () => {
-            const result = await onFill();
+            const result = await onFill(upToDate);
             if (result.ok) toast.success(result.message);
             return result;
           }}
@@ -85,18 +106,20 @@ export function DetailTranslations<F extends string>({
           {TARGET_LOCALES.map((locale) => (
             <TabsTrigger key={locale} value={locale} className="flex-none px-2">
               {LOCALE_LABELS[locale]}
-              {missingIn(locale) > 0 && <span className="size-1.5 rounded-full bg-amber-500" aria-label="Incomplète" />}
+              {missingIn(locale) + staleIn(locale) > 0 && <span className="size-1.5 rounded-full bg-amber-500" aria-label="Incomplète ou à revoir" />}
             </TabsTrigger>
           ))}
         </TabsList>
         {TARGET_LOCALES.map((locale) => (
           <TabsContent key={locale} value={locale} className="pt-2">
             <DetailFields>
-              {fields.map((field) => (
+              {fields.map((field) => {
+                const outdated = stale[locale]?.includes(field.name);
+                return (
                 <DetailField
                   key={field.name}
-                  label={field.label}
-                  icon={field.icon}
+                  label={outdated ? `${field.label} · à revoir` : field.label}
+                  icon={outdated ? <TriangleAlertIcon className="text-amber-500" aria-label="Le français a changé depuis cette traduction" /> : field.icon}
                   stacked={field.kind === "markdown" || field.multiline}
                   edit={{
                     ...fromRule(field.rule && ({ ...field.rule, required: false } as FieldRule)),
@@ -108,7 +131,8 @@ export function DetailTranslations<F extends string>({
                     onSave: (value: string | null) => onSave(locale, field.name, value?.trim() || null),
                   }}
                 />
-              ))}
+                );
+              })}
             </DetailFields>
           </TabsContent>
         ))}

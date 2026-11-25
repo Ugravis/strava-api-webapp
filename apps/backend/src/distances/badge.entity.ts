@@ -56,6 +56,14 @@ export class Badge {
   @Column({ type: 'jsonb', default: () => "'{}'" })
   translations!: Translations<BadgeTranslatedField>;
 
+  /** The French each translation was made from: one whose source changed since is out of date. */
+  @Column({
+    name: 'translation_sources',
+    type: 'jsonb',
+    default: () => "'{}'",
+  })
+  translationSources!: Translations<BadgeTranslatedField>;
+
   /** Theme of the badge, if any. */
   @Column({ name: 'theme_id', type: 'varchar', length: 32, nullable: true })
   themeId!: string | null;

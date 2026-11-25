@@ -87,14 +87,15 @@ function ThemeDetail({
         fields={[{ name: "name", label: "Nom", icon: <TypeIcon />, rule: BADGE_THEME_RULES.name }]}
         source={theme}
         translations={theme.translations}
+        sources={theme.translationSources}
         locked={rights.edit ? null : LOCKS.edit}
         onSave={async (locale, field, value) => {
           const result = await translateTheme(theme.id, locale, field, value);
           if (result.ok) bumpCatalog();
           return result;
         }}
-        onFill={async () => {
-          const result = await fillThemeTranslations(theme.id);
+        onFill={async (all) => {
+          const result = await fillThemeTranslations(theme.id, all);
           if (result.ok) bumpCatalog();
           return result;
         }}

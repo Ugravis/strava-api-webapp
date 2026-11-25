@@ -107,8 +107,8 @@ export async function translateReleaseNote(version: string, locale: TargetLocale
 }
 
 /** The texts of the note machine-translated where a language lacks them; the section of the team stays French. */
-export async function fillReleaseNoteTranslations(version: string): Promise<ActionResult> {
-  return fillTranslations(pathOf(version));
+export async function fillReleaseNoteTranslations(version: string, all: boolean): Promise<ActionResult> {
+  return fillTranslations(pathOf(version), all);
 }
 
 function pathOf(version: string): string {

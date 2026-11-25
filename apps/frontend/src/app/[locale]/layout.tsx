@@ -7,7 +7,6 @@ import { siteConfig } from "@kilotrace/ui/config/site";
 import { OPEN_GRAPH_LOCALES } from "@kilotrace/ui/i18n/locale";
 import { LocalizedNavigation } from "@/components/navigation-provider";
 import { routing } from "@/i18n/routing";
-import { localeAlternates } from "@/lib/i18n/alternates";
 import { fontVariables } from "../fonts";
 import "../globals.css";
 
@@ -25,7 +24,6 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
     description: t("description"),
     keywords: t.raw("keywords") as string[],
     applicationName: siteConfig.name,
-    alternates: localeAlternates(locale, "/"),
     openGraph: {
       type: "website",
       siteName: siteConfig.name,

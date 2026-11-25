@@ -1,6 +1,7 @@
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { AppLogo } from "@kilotrace/ui/components/brand/app-logo";
+import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { routes } from "@/config/routes";
@@ -15,6 +16,7 @@ export function PublicNavbar() {
           <AppLogo compact />
         </Link>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <LocaleSwitcher signedIn={false} navbar />
           <ThemeToggle />
           <Button variant="ghost" nativeButton={false} render={<Link href={routes.login} />}>
             {t("login")}

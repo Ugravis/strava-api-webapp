@@ -10,13 +10,16 @@ import { SportsBand } from "@/components/landing/sports-band";
 import { Steps } from "@/components/landing/steps";
 import { StructuredData } from "@/components/landing/structured-data";
 import { siteConfig } from "@kilotrace/ui/config/site";
+import { OPEN_GRAPH_LOCALES } from "@kilotrace/ui/i18n/locale";
+import { localeAlternates, localizedPath } from "@/lib/i18n/alternates";
 
 export async function generateMetadata({ params }: LocaleProps): Promise<Metadata> {
-  const t = await getTranslations({ locale: await pageLocale(params), namespace: "metadata" });
+  const locale = await pageLocale(params);
+  const t = await getTranslations({ locale, namespace: "metadata" });
   return {
     title: { absolute: t("title") },
-    alternates: { canonical: "/" },
-    openGraph: { type: "website", url: "/", title: t("title"), description: t("description"), siteName: siteConfig.name, locale: "fr_FR" },
+    alternates: localeAlternates(locale, "/"),
+    openGraph: { type: "website", url: localizedPath(locale, "/"), title: t("title"), description: t("description"), siteName: siteConfig.name, locale: OPEN_GRAPH_LOCALES[locale] },
   };
 }
 

@@ -10,6 +10,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import type { VerificationChallenge } from '@kilotrace/shared';
 import {
   AccountSuspendedException,
   type SuspensionNotice,
@@ -27,6 +28,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/token.dto';
+import { ChallengeDto, VerifyCodeDto } from './dto/verification.dto';
 import { AppSettingsService } from '../system/app-settings.service';
 import { GoogleOAuthService } from './google/google-oauth.service';
 import { requestMetadata } from './request-metadata';
@@ -50,21 +52,42 @@ export class AuthController {
     return { google: this.google.isEnabled };
   }
 
+  /** Sends the code that creates the account: the same answer whether the address is taken or not. */
   @Public()
   @SensitiveThrottle()
   @Post('register')
-  async register(
-    @Body() dto: RegisterDto,
+  @HttpCode(HttpStatus.ACCEPTED)
+  async register(@Body() dto: RegisterDto): Promise<VerificationChallenge> {
+    await this.assertEmailSignIn();
+    return this.auth.register(dto);
+  }
+
+  @Public()
+  @SensitiveThrottle()
+  @Post('register/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifySignup(
+    @Body() dto: VerifyCodeDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserResponse> {
     await this.assertEmailSignIn();
-    const { user, session } = await this.auth.register(
+    const { user, session } = await this.auth.verifySignup(
       dto,
       requestMetadata(request),
     );
     this.sessionCookie.write(response, session);
     return toUserResponse(user);
+  }
+
+  /** Another code for a sign-up or a password reset, at most every 30 seconds. */
+  @Public()
+  @SensitiveThrottle()
+  @Post('verification/resend')
+  @HttpCode(HttpStatus.OK)
+  async resendCode(@Body() dto: ChallengeDto): Promise<VerificationChallenge> {
+    await this.assertEmailSignIn();
+    return this.auth.resendCode(dto.challengeId);
   }
 
   @Public()
@@ -126,10 +149,23 @@ export class AuthController {
   @Public()
   @SensitiveThrottle()
   @Post('password/forgot')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
+  @HttpCode(HttpStatus.ACCEPTED)
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<VerificationChallenge> {
     await this.assertEmailSignIn();
     return this.auth.requestPasswordReset(dto.email);
+  }
+
+  @Public()
+  @SensitiveThrottle()
+  @Post('password/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyPasswordReset(
+    @Body() dto: VerifyCodeDto,
+  ): Promise<{ token: string }> {
+    await this.assertEmailSignIn();
+    return this.auth.verifyPasswordReset(dto);
   }
 
   @Public()

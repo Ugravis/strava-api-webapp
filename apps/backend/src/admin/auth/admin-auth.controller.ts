@@ -48,7 +48,7 @@ export class AdminAuthController {
     @Req() request: Request,
   ): Promise<AdminSessionResponse> {
     return this.adminAuth.login(
-      dto.email,
+      dto.identifier,
       dto.password,
       dto.rememberMe ?? false,
       requestMetadata(request),

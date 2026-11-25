@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { VERIFICATION_CODE_TTL_MINUTES, type VerificationChallenge } from "@kilotrace/shared";
 import { CheckboxField } from "@/components/forms/checkbox-field";
 import { SuspensionNotice } from "@/components/auth/suspension-notice";
 import { FormError } from "@/components/forms/form-error";
@@ -17,9 +18,10 @@ import { Button } from "@kilotrace/ui/components/ui/button";
 import { FieldGroup } from "@kilotrace/ui/components/ui/field";
 import { Input } from "@kilotrace/ui/components/ui/input";
 import { routes, safeRedirectPath } from "@/config/routes";
-import { errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
+import { ApiError, errorCodeOf, type ApiErrorCode } from "@/lib/api/errors";
 import { loginSchema, type LoginValues } from "@/lib/validation/schemas";
 import { authService } from "@/services/auth.service";
+import { VerificationCodeForm } from "./verification-code-form";
 
 /** Notices passed in the URL by redirects (OAuth failure, expired session). */
 function useRedirectNotice(): string | null {
@@ -39,22 +41,52 @@ export function LoginForm() {
   const notice = useRedirectNotice();
   const [suspended, setSuspended] = useState(searchParams.get("error") === "suspended");
   const [errorCode, setErrorCode] = useState<ApiErrorCode | null>(null);
+  /** A sign-up left before its code was entered: resumed here. */
+  const [challenge, setChallenge] = useState<VerificationChallenge | null>(null);
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: true },
+    defaultValues: { identifier: "", password: "", rememberMe: true },
   });
+
+  function signedIn() {
+    router.replace(safeRedirectPath(searchParams.get("next")));
+    router.refresh();
+  }
 
   async function onSubmit(values: LoginValues) {
     setErrorCode(null);
     try {
       await authService.login(values);
-      router.replace(safeRedirectPath(searchParams.get("next")));
-      router.refresh();
+      signedIn();
     } catch (error) {
+      if (error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED" && error.challenge) {
+        setChallenge(error.challenge);
+        return;
+      }
       const code = errorCodeOf(error);
       setSuspended(code === "ACCOUNT_SUSPENDED");
       setErrorCode(code === "ACCOUNT_SUSPENDED" ? null : code);
     }
+  }
+
+  if (challenge) {
+    const identifier = form.getValues("identifier").trim();
+    return (
+      <VerificationCodeForm
+        challenge={challenge}
+        description={
+          identifier.includes("@")
+            ? t("auth.login.unverifiedTo", { email: identifier, minutes: VERIFICATION_CODE_TTL_MINUTES })
+            : t("auth.login.unverified", { minutes: VERIFICATION_CODE_TTL_MINUTES })
+        }
+        onVerify={async (challengeId, code) => {
+          await authService.verifySignup(challengeId, code);
+          signedIn();
+        }}
+        onBack={() => setChallenge(null)}
+        backLabel={t("auth.forgotPassword.backToLogin")}
+      />
+    );
   }
 
   return (
@@ -68,14 +100,15 @@ export function LoginForm() {
           </Alert>
         )}
         <FormError code={errorCode} />
-        <FormField control={form.control} name="email" label={t("fields.email")}>
+        <FormField control={form.control} name="identifier" label={t("fields.identifier")}>
           {(field) => (
             <Input
               {...field}
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              placeholder={t("fields.emailPlaceholder")}
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder={t("fields.identifierPlaceholder")}
             />
           )}
         </FormField>

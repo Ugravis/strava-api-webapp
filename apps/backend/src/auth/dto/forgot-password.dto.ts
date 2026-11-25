@@ -1,9 +1,6 @@
-import { IsEmail, MaxLength } from 'class-validator';
-import { NormalizeIdentifier } from '../../common/transformers';
+import { EmailField } from '../../users/dto/user-fields';
 
 export class ForgotPasswordDto {
-  @NormalizeIdentifier()
-  @IsEmail()
-  @MaxLength(320)
+  @EmailField()
   email!: string;
 }

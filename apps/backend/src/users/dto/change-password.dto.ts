@@ -1,12 +1,10 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { PasswordField } from './user-fields';
-import { PASSWORD_MAX_LENGTH } from './validation.constants';
+import { IsOptional } from 'class-validator';
+import { CurrentPasswordField, PasswordField } from './user-fields';
 
 export class ChangePasswordDto {
   /** Required when the account already has a password. */
   @IsOptional()
-  @IsString()
-  @MaxLength(PASSWORD_MAX_LENGTH)
+  @CurrentPasswordField()
   currentPassword?: string;
 
   @PasswordField()

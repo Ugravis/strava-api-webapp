@@ -10,12 +10,15 @@ import { UsersModule } from '../users/users.module';
 import { AccountController } from './account.controller';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmailChallenge } from './challenges/email-challenge.entity';
+import { EmailChallengesService } from './challenges/email-challenges.service';
 import { GoogleAuthController } from './google/google-auth.controller';
 import { GoogleAuthService } from './google/google-auth.service';
 import { GoogleOAuthService } from './google/google-oauth.service';
 import { OAuthAccount } from './google/oauth-account.entity';
 import { OAuthAccountsService } from './google/oauth-accounts.service';
 import { SessionGuard } from './guards/session.guard';
+import { LoginAttempts } from './login-attempts';
 import { PasswordHasher } from './password-hasher.service';
 import { SessionCookie } from './session-cookie';
 import { Session } from './sessions/session.entity';
@@ -25,7 +28,12 @@ import { UserTokensService } from './tokens/user-tokens.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Session, UserToken, OAuthAccount]),
+    TypeOrmModule.forFeature([
+      Session,
+      UserToken,
+      OAuthAccount,
+      EmailChallenge,
+    ]),
     UsersModule,
     MailModule,
     StravaModule,
@@ -38,6 +46,8 @@ import { UserTokensService } from './tokens/user-tokens.service';
     AuthService,
     SessionsService,
     UserTokensService,
+    EmailChallengesService,
+    LoginAttempts,
     PasswordHasher,
     SessionCookie,
     GoogleOAuthService,

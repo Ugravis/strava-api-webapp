@@ -12,6 +12,7 @@ export interface AuthConfig {
   sessionTtlDays: number;
   /** Idle lifetime of a session ending with the browser ("stay signed in" unchecked). */
   browserSessionTtlHours: number;
+  /** Time left to choose the new password once the reset code is entered. */
   passwordResetTtlMinutes: number;
 }
 
@@ -30,6 +31,6 @@ export default registerAs('auth', (): AuthConfig => {
       : process.env.NODE_ENV !== 'production',
     sessionTtlDays: 30,
     browserSessionTtlHours: 24,
-    passwordResetTtlMinutes: 60,
+    passwordResetTtlMinutes: 15,
   };
 });

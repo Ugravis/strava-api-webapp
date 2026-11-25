@@ -10,7 +10,7 @@
     "description": "Réservée à l'équipe : connectez-vous avec le compte qui porte votre rôle.",
     "google": "Se connecter avec Google",
     "or": "ou",
-    "email": "Email",
+    "identifier": "Email ou pseudo",
     "password": "Mot de passe",
     "rememberMe": "Rester connecté",
     "submit": "Se connecter",

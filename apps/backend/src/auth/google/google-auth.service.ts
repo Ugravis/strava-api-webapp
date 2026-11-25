@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { isUniqueViolation } from '../../common/database-errors';
 import { SystemSettingsService } from '../../system/system-settings.service';
-import { DISPLAY_NAME_MAX_LENGTH } from '../../users/dto/validation.constants';
+import { DISPLAY_NAME_MAX_LENGTH } from '@kilotrace/shared';
 import type { User } from '../../users/user.entity';
 import { normalizeEmail, UsersService } from '../../users/users.service';
 import { AuthService, type AuthResult } from '../auth.service';

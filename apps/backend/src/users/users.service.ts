@@ -48,6 +48,14 @@ export class UsersService {
     return this.users.findOneBy({ email: normalizeEmail(email) });
   }
 
+  /** By email when it holds an `@`, else by username. */
+  findByIdentifier(identifier: string): Promise<User | null> {
+    const normalized = normalizeEmail(identifier);
+    return normalized.includes('@')
+      ? this.users.findOneBy({ email: normalized })
+      : this.users.findOneBy({ username: normalized });
+  }
+
   async checkUsername(
     username: string,
     exceptUserId?: string,
@@ -160,7 +168,7 @@ export class UsersService {
     await this.users.delete({ id: userId });
   }
 
-  private async assertUsernameAvailable(
+  async assertUsernameAvailable(
     username: string,
     exceptUserId?: string,
   ): Promise<void> {

@@ -1,5 +1,6 @@
 "use client";
 
+import { EMAIL_MAX_LENGTH } from "@kilotrace/shared";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { Checkbox } from "@kilotrace/ui/components/ui/checkbox";
 import { Input } from "@kilotrace/ui/components/ui/input";
@@ -8,18 +9,27 @@ import { useActionState } from "react";
 import { type LoginState, signInWithPassword } from "./actions";
 
 interface LoginFormProps {
-  labels: { email: string; password: string; rememberMe: string; submit: string };
+  labels: { identifier: string; password: string; rememberMe: string; submit: string };
 }
 
-/** Email and password, posted to a Server Action: the credentials never reach the browser's API. */
+/** Email or username and password, posted to a Server Action: the credentials never reach the browser's API. */
 export function LoginForm({ labels }: LoginFormProps) {
   const [state, action, pending] = useActionState<LoginState, FormData>(signInWithPassword, {});
 
   return (
     <form action={action} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">{labels.email}</Label>
-        <Input id="email" name="email" type="email" autoComplete="username" required />
+        <Label htmlFor="identifier">{labels.identifier}</Label>
+        <Input
+          id="identifier"
+          name="identifier"
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          maxLength={EMAIL_MAX_LENGTH}
+          required
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="password">{labels.password}</Label>

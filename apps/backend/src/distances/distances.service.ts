@@ -41,6 +41,7 @@ export type BadgeView = Omit<
   | 'backgroundImage'
   | 'active'
   | 'translations'
+  | 'translationSources'
 > &
   BadgeProgress & {
     /** Background of the card; null for the default one. */

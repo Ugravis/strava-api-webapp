@@ -1,6 +1,7 @@
 import {
   type FillTranslationsResponse,
   RELEASE_NOTE_TRANSLATED_FIELDS,
+  type ReleaseNoteTranslatedField,
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
@@ -25,6 +26,7 @@ import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import {
   fillTranslations,
   TRANSLATION_CONTEXTS,
+  type TranslationState,
   type UpdateTranslationDto,
   withTranslation,
 } from '../../common/translations';
@@ -32,9 +34,9 @@ import { ReleaseNote } from '../../release-notes/release-note.entity';
 import { ReleaseNoteTranslation } from '../../release-notes/release-note-translation.entity';
 import {
   loadReleaseNoteTranslations,
-  type ReleaseNoteTranslations,
   replaceReleaseNoteTranslations,
   translatedSourceOf,
+  translationSourcesOf,
   translationsOf,
 } from '../../release-notes/release-note-translations';
 import { TranslationService } from '../../translation/translation.service';
@@ -342,12 +344,12 @@ export class AdminReleaseNotesService {
     dto: UpdateTranslationDto,
     actor: User,
   ): Promise<void> {
-    await this.find(version);
-    const current = await this.translationsOf(version);
+    const note = await this.find(version);
     await this.saveTranslations(
       version,
       withTranslation(
-        current,
+        await this.translationsOf(version),
+        translatedSourceOf(note),
         RELEASE_NOTE_TRANSLATED_FIELDS,
         RELEASE_NOTE_RULES,
         dto,
@@ -356,30 +358,34 @@ export class AdminReleaseNotesService {
     );
   }
 
-  /** The texts machine-translated where no language has them; the section of the team stays French. */
+  /** The texts machine-translated where missing or out of date (`all`: every one); the section of the team stays French. */
   async fillTranslations(
     version: string,
     actor: User,
+    all = false,
   ): Promise<FillTranslationsResponse> {
     const note = await this.find(version);
-    const { translations, filled } = await fillTranslations(
+    const { filled, ...state } = await fillTranslations(
       this.translation,
       translatedSourceOf(note),
       await this.translationsOf(version),
       RELEASE_NOTE_TRANSLATED_FIELDS,
       TRANSLATION_CONTEXTS.releaseNote,
+      all,
     );
-    if (filled > 0) await this.saveTranslations(version, translations, actor);
+    if (filled > 0) await this.saveTranslations(version, state, actor);
     return { filled };
   }
 
-  private translationsOf(version: string): Promise<ReleaseNoteTranslations> {
+  private translationsOf(
+    version: string,
+  ): Promise<TranslationState<ReleaseNoteTranslatedField>> {
     return loadReleaseNoteTranslations(this.translations.manager, version);
   }
 
   private async saveTranslations(
     version: string,
-    translations: ReleaseNoteTranslations,
+    translations: TranslationState<ReleaseNoteTranslatedField>,
     actor: User,
   ): Promise<void> {
     await this.translations.manager.transaction(async (manager) => {
@@ -414,9 +420,11 @@ export class AdminReleaseNotesService {
       ? await this.users.findBy({ id: In(editorIds) })
       : [];
     const editorOf = new Map(editors.map((user) => [user.id, user]));
-    const translations = translationsOf(
-      await this.translations.findBy({ version: In(versions) }),
-    );
+    const translationRows = await this.translations.findBy({
+      version: In(versions),
+    });
+    const translations = translationsOf(translationRows);
+    const sources = translationSourcesOf(translationRows);
     return notes.map((note) => {
       const content = contentOf(note);
       return {
@@ -428,6 +436,7 @@ export class AdminReleaseNotesService {
         display: note.display,
         ...content,
         translations: translations.get(note.version) ?? {},
+        translationSources: sources.get(note.version) ?? {},
         hasContent: hasReleaseNoteContent(content),
         disabledAt: note.disabledAt?.toISOString() ?? null,
         bannerUrl: bannerUrlOf(note),

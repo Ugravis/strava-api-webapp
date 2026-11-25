@@ -195,14 +195,15 @@ function BadgeDetail({ badge, themes, rights, panel }: { badge: AdminBadge; them
         ]}
         source={badge}
         translations={badge.translations}
+        sources={badge.translationSources}
         locked={locked}
         onSave={async (locale, field, value) => {
           const result = await translateBadge(badge.id, locale, field, value);
           if (result.ok) bumpCatalog();
           return result;
         }}
-        onFill={async () => {
-          const result = await fillBadgeTranslations(badge.id);
+        onFill={async (all) => {
+          const result = await fillBadgeTranslations(badge.id, all);
           if (result.ok) bumpCatalog();
           return result;
         }}

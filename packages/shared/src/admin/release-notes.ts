@@ -42,6 +42,8 @@ export interface AdminReleaseNote extends ReleaseNoteContent {
   display: ReleaseNoteDisplay;
   /** Its texts in the other languages; the content above is the French source. */
   translations: Translations<ReleaseNoteTranslatedField>;
+  /** The French each translation was made from: a translation whose source changed is out of date. */
+  translationSources: Translations<ReleaseNoteTranslatedField>;
   hasContent: boolean;
   /** When the team hid it once published, null while shown. */
   disabledAt: string | null;

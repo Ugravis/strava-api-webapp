@@ -5,7 +5,12 @@ import {
   USER_TAG_TRANSLATED_FIELDS,
 } from '@kilotrace/shared/admin';
 import { RELEASE_NOTE_TRANSLATED_FIELDS } from '@kilotrace/shared';
-import { fillTranslations, TRANSLATION_CONTEXTS } from '../common/translations';
+import {
+  columnsOf,
+  fillTranslations,
+  stateOf,
+  TRANSLATION_CONTEXTS,
+} from '../common/translations';
 import translationConfig from '../config/translation.config';
 import dataSource from '../database/data-source';
 import { BadgeTheme } from '../distances/badge-theme.entity';
@@ -38,43 +43,43 @@ async function main(): Promise<void> {
   const counts: Record<string, number> = {};
   try {
     for (const badge of await manager.find(Badge)) {
-      const { translations, filled } = await fillTranslations(
+      const { filled, ...state } = await fillTranslations(
         translation,
         badge,
-        badge.translations,
+        stateOf(badge),
         BADGE_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.badge,
       );
-      if (filled) await manager.update(Badge, badge.id, { translations });
+      if (filled) await manager.update(Badge, badge.id, columnsOf(state));
       counts.badges = (counts.badges ?? 0) + filled;
       if (filled) await pause();
     }
     for (const theme of await manager.find(BadgeTheme)) {
-      const { translations, filled } = await fillTranslations(
+      const { filled, ...state } = await fillTranslations(
         translation,
         theme,
-        theme.translations,
+        stateOf(theme),
         BADGE_THEME_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.badgeTheme,
       );
-      if (filled) await manager.update(BadgeTheme, theme.id, { translations });
+      if (filled) await manager.update(BadgeTheme, theme.id, columnsOf(state));
       counts.collections = (counts.collections ?? 0) + filled;
       if (filled) await pause();
     }
     for (const tag of await manager.find(UserTag)) {
-      const { translations, filled } = await fillTranslations(
+      const { filled, ...state } = await fillTranslations(
         translation,
         tag,
-        tag.translations,
+        stateOf(tag),
         USER_TAG_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.userTag,
       );
-      if (filled) await manager.update(UserTag, tag.id, { translations });
+      if (filled) await manager.update(UserTag, tag.id, columnsOf(state));
       counts.tags = (counts.tags ?? 0) + filled;
       if (filled) await pause();
     }
     for (const note of await manager.find(ReleaseNote)) {
-      const { translations, filled } = await fillTranslations(
+      const { filled, ...state } = await fillTranslations(
         translation,
         translatedSourceOf(note),
         await loadReleaseNoteTranslations(manager, note.version),
@@ -83,7 +88,7 @@ async function main(): Promise<void> {
       );
       if (filled) {
         await manager.transaction((tx) =>
-          replaceReleaseNoteTranslations(tx, note.version, translations),
+          replaceReleaseNoteTranslations(tx, note.version, state),
         );
       }
       counts.releaseNotes = (counts.releaseNotes ?? 0) + filled;

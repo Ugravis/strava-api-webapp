@@ -17,6 +17,14 @@ export class BadgeTheme {
   @Column({ type: 'jsonb', default: () => "'{}'" })
   translations!: Translations<BadgeThemeTranslatedField>;
 
+  /** The French each translation was made from: one whose source changed since is out of date. */
+  @Column({
+    name: 'translation_sources',
+    type: 'jsonb',
+    default: () => "'{}'",
+  })
+  translationSources!: Translations<BadgeThemeTranslatedField>;
+
   /** Display order, ascending. */
   @Column({ type: 'integer' })
   position!: number;

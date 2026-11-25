@@ -5,6 +5,7 @@ import {
   type Translations,
 } from '@kilotrace/shared';
 import type { EntityManager } from 'typeorm';
+import type { TranslationState } from '../common/translations';
 import { ReleaseNote } from './release-note.entity';
 import { ReleaseNoteTranslation } from './release-note-translation.entity';
 import { contentOf } from './release-notes.service';
@@ -44,6 +45,20 @@ export function translationsOf(
   return byVersion;
 }
 
+/** The source each translation of each note was made from, from the rows of its languages. */
+export function translationSourcesOf(
+  rows: ReleaseNoteTranslation[],
+): Map<string, ReleaseNoteTranslations> {
+  const byVersion = new Map<string, ReleaseNoteTranslations>();
+  for (const row of rows) {
+    byVersion.set(row.version, {
+      ...byVersion.get(row.version),
+      [row.locale as TargetLocale]: row.sources,
+    });
+  }
+  return byVersion;
+}
+
 /** The French texts of a note that get translated: every one but the section of the team. */
 export function translatedSourceOf(
   note: ReleaseNote,
@@ -56,19 +71,19 @@ export function translatedSourceOf(
 export async function loadReleaseNoteTranslations(
   manager: EntityManager,
   version: string,
-): Promise<ReleaseNoteTranslations> {
-  return (
-    translationsOf(
-      await manager.findBy(ReleaseNoteTranslation, { version }),
-    ).get(version) ?? {}
-  );
+): Promise<TranslationState<ReleaseNoteTranslatedField>> {
+  const rows = await manager.findBy(ReleaseNoteTranslation, { version });
+  return {
+    translations: translationsOf(rows).get(version) ?? {},
+    sources: translationSourcesOf(rows).get(version) ?? {},
+  };
 }
 
 /** Every language of a note replaced by `translations`, those left without text removed. */
 export async function replaceReleaseNoteTranslations(
   manager: EntityManager,
   version: string,
-  translations: ReleaseNoteTranslations,
+  { translations, sources }: TranslationState<ReleaseNoteTranslatedField>,
 ): Promise<void> {
   await manager.delete(ReleaseNoteTranslation, { version });
   const rows = Object.entries(translations).map(([locale, fields]) => ({
@@ -80,6 +95,7 @@ export async function replaceReleaseNoteTranslations(
         fields?.[field] ?? null,
       ]),
     ),
+    sources: sources[locale as TargetLocale] ?? {},
   }));
   if (rows.length > 0) await manager.insert(ReleaseNoteTranslation, rows);
 }

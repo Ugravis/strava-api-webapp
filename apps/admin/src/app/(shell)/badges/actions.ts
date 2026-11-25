@@ -116,8 +116,8 @@ export async function translateBadge(id: string, locale: TargetLocale, field: st
 }
 
 /** The name and description of a badge machine-translated where a language lacks them. */
-export async function fillBadgeTranslations(id: string): Promise<ActionResult> {
-  return fillTranslations(`/badges/${checkedSlug(id)}`);
+export async function fillBadgeTranslations(id: string, all: boolean): Promise<ActionResult> {
+  return fillTranslations(`/badges/${checkedSlug(id)}`, all);
 }
 
 /** The name of a collection in another language, typed by hand; null clears it. */
@@ -127,8 +127,8 @@ export async function translateTheme(id: string, locale: TargetLocale, field: st
 }
 
 /** The name of a collection machine-translated where a language lacks it. */
-export async function fillThemeTranslations(id: string): Promise<ActionResult> {
-  return fillTranslations(`/badge-themes/${checkedSlug(id)}`);
+export async function fillThemeTranslations(id: string, all: boolean): Promise<ActionResult> {
+  return fillTranslations(`/badge-themes/${checkedSlug(id)}`, all);
 }
 
 /** Deletes a collection, its badges kept without one; `reason` kept in the log. */

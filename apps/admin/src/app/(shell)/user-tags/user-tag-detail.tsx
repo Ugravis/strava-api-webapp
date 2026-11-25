@@ -106,14 +106,15 @@ function UserTagDetail({
         ]}
         source={{ name, description }}
         translations={userTag.translations}
+        sources={userTag.translationSources}
         locked={rights.edit ? null : LOCKS.edit}
         onSave={async (locale, field, value) => {
           const result = await translateUserTag(userTag.id, locale, field, value);
           if (result.ok) bumpUserTags();
           return result;
         }}
-        onFill={async () => {
-          const result = await fillUserTagTranslations(userTag.id);
+        onFill={async (all) => {
+          const result = await fillUserTagTranslations(userTag.id, all);
           if (result.ok) bumpUserTags();
           return result;
         }}

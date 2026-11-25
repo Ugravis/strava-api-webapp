@@ -95,8 +95,8 @@ export async function translateUserTag(id: string, locale: TargetLocale, field: 
 }
 
 /** Its name and description machine-translated where a language lacks them. */
-export async function fillUserTagTranslations(id: string): Promise<ActionResult> {
-  return fillTranslations(`/user-tags/${checkedSlug(id)}`);
+export async function fillUserTagTranslations(id: string, all: boolean): Promise<ActionResult> {
+  return fillTranslations(`/user-tags/${checkedSlug(id)}`, all);
 }
 
 /** Deletes a user tag for good, `reason` kept in the log. */

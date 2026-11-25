@@ -23,6 +23,14 @@ export class UserTag {
   @Column({ type: 'jsonb', default: () => "'{}'" })
   translations!: Translations<UserTagTranslatedField>;
 
+  /** The French each translation was made from: one whose source changed since is out of date. */
+  @Column({
+    name: 'translation_sources',
+    type: 'jsonb',
+    default: () => "'{}'",
+  })
+  translationSources!: Translations<UserTagTranslatedField>;
+
   /** Key resolved by the clients, which fall back on a generic icon. */
   @Column({ type: 'varchar', length: 40 })
   icon!: string;

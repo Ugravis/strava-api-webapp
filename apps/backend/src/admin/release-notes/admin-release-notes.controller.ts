@@ -23,7 +23,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { assertRules } from '../../common/field-rules';
-import { UpdateTranslationDto } from '../../common/translations';
+import {
+  FillTranslationsDto,
+  UpdateTranslationDto,
+} from '../../common/translations';
 import type { User } from '../../users/user.entity';
 import { AdminController } from '../access/admin-controller.decorator';
 import { AnyMember, Permission } from '../access/permission.decorator';
@@ -177,13 +180,18 @@ export class AdminReleaseNotesController {
 
   @Post(':version/translations/fill')
   @Permission('releaseNotes.edit')
-  @Audited({ action: 'releaseNotes.translate', target: RELEASE_NOTE })
+  @Audited({
+    action: 'releaseNotes.translate',
+    target: RELEASE_NOTE,
+    details: ['all'],
+  })
   @HttpCode(HttpStatus.OK)
   fillTranslations(
     @CurrentUser() actor: User,
     @Param('version') version: string,
+    @Body() dto: FillTranslationsDto,
   ): Promise<FillTranslationsResponse> {
-    return this.releaseNotes.fillTranslations(version, actor);
+    return this.releaseNotes.fillTranslations(version, actor, dto.all);
   }
 
   @Delete(':version')

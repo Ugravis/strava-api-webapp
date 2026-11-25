@@ -15,6 +15,8 @@ export interface UserResponse {
   favoriteSports: FavoriteSport[];
   profileColor: string | null;
   locale: Locale;
+  /** IANA time zone of its dates, null until its browser told it. */
+  timeZone: string | null;
   profilePrivate: boolean;
   hasPassword: boolean;
   /** Highest back-office role, null outside the team: only shows the way to the back office. */
@@ -42,6 +44,7 @@ export function toUserResponse(user: User): UserResponse {
     favoriteSports: user.favoriteSports,
     profileColor: user.profileColor,
     locale: user.locale,
+    timeZone: user.timeZone,
     profilePrivate: user.profilePrivate,
     hasPassword: user.passwordHash !== null,
     adminRole: highestAdminRole(user.roles ?? []),

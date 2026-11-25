@@ -40,6 +40,8 @@ export const accountService = {
 
   setLocale: (locale: Locale) => apiRequest<User>("/users/me/locale", { method: "PUT", body: { json: { locale } } }),
 
+  setTimeZone: (timeZone: string) => apiRequest<User>("/users/me/time-zone", { method: "PUT", body: { json: { timeZone } } }),
+
   removeAvatar: () => apiRequest<User>("/users/me/avatar", { method: "DELETE" }),
 
   changePassword: (input: ChangePasswordInput) =>

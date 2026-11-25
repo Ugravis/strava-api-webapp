@@ -73,6 +73,10 @@ export class User {
   @Column({ type: 'varchar', length: 5, default: 'en' })
   locale!: Locale;
 
+  /** IANA time zone of its dates, told by its browser; null until a first visit. */
+  @Column({ name: 'time_zone', type: 'varchar', length: 64, nullable: true })
+  timeZone!: string | null;
+
   /** Hue of the profile, `#rrggbb`; null for the default one. */
   @Column({ name: 'profile_color', type: 'varchar', length: 7, nullable: true })
   profileColor!: string | null;

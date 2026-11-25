@@ -155,6 +155,11 @@ export class UsersService {
     return this.save(user);
   }
 
+  async setTimeZone(user: User, timeZone: string): Promise<User> {
+    user.timeZone = timeZone;
+    return this.save(user);
+  }
+
   async setPasswordHash(userId: string, passwordHash: string): Promise<void> {
     await this.users.update({ id: userId }, { passwordHash });
   }

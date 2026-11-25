@@ -6,7 +6,7 @@ interface CodeTexts {
   footer: string;
 }
 
-/** What the emails say, in each language of the site, with the tone of its texts. */
+/** What the emails say, in each language of the site, addressing the reader formally as the site does. */
 export interface EmailTexts {
   greeting: (name: string) => string;
   /** Above the link spelled out under a button. */
@@ -96,108 +96,108 @@ export const EMAIL_TEXTS: Record<Locale, EmailTexts> = {
     },
   },
   it: {
-    greeting: (name) => `Ciao ${name},`,
+    greeting: (name) => `Buongiorno ${name},`,
     buttonFallback:
-      'Se il pulsante non funziona, copia questo link nel tuo browser:',
+      'Se il pulsante non funziona, copi questo link nel Suo browser:',
     codeExpires: (minutes) => `Questo codice scade tra ${minutes} minuti.`,
     signup: {
       subject: 'Codice di verifica Kilotrace',
       paragraph:
-        'Inserisci questo codice nella pagina di registrazione per confermare il tuo indirizzo email e creare il tuo account.',
+        'Inserisca questo codice nella pagina di registrazione per confermare il Suo indirizzo email e creare il Suo account.',
       footer:
-        'Se non ti sei registrato tu, ignora questa email: non verrà creato alcun account.',
+        'Se non si è registrato Lei, ignori questa email: non verrà creato alcun account.',
     },
     passwordReset: {
       subject: 'Codice di reimpostazione Kilotrace',
       paragraph:
-        'Inserisci questo codice per scegliere una nuova password. Non comunicarlo a nessuno.',
+        'Inserisca questo codice per scegliere una nuova password. Non lo comunichi a nessuno.',
       footer:
-        'Se non hai chiesto nulla, ignora questa email: la tua password resta invariata.',
+        'Se non ha richiesto nulla, ignori questa email: la Sua password resta invariata.',
     },
     accountExists: {
-      subject: 'Hai già un account Kilotrace',
+      subject: 'Ha già un account Kilotrace',
       withPassword: [
-        'Qualcuno, probabilmente tu, ha provato a creare un account Kilotrace con questo indirizzo email. Ne hai già uno: accedi con la tua email o il tuo nome utente e la tua password.',
-        'Password dimenticata? Puoi sceglierne una nuova dalla pagina di accesso.',
+        'Qualcuno, probabilmente Lei, ha provato a creare un account Kilotrace con questo indirizzo email. Ne ha già uno: acceda con la Sua email o il Suo nome utente e la Sua password.',
+        'Password dimenticata? Può sceglierne una nuova dalla pagina di accesso.',
       ],
       withGoogle: [
-        'Qualcuno, probabilmente tu, ha provato a creare un account Kilotrace con questo indirizzo email. Ne hai già uno, creato con Google: accedi con il pulsante «Continua con Google».',
-        'Preferisci una password? Scegline una da «Password dimenticata» nella pagina di accesso: ti verrà inviato un codice a questo indirizzo.',
+        'Qualcuno, probabilmente Lei, ha provato a creare un account Kilotrace con questo indirizzo email. Ne ha già uno, creato con Google: acceda con il pulsante «Continua con Google».',
+        'Preferisce una password? Ne scelga una da «Password dimenticata» nella pagina di accesso: Le verrà inviato un codice a questo indirizzo.',
       ],
       signIn: 'Accedi',
       continueWithGoogle: 'Continua con Google',
       footer:
-        'Se non hai fatto tu questa richiesta, ignora questa email: il tuo account non è cambiato.',
+        'Se non ha fatto Lei questa richiesta, ignori questa email: il Suo account non è cambiato.',
     },
   },
   es: {
-    greeting: (name) => `Hola ${name}:`,
+    greeting: (name) => `Hola, ${name}:`,
     buttonFallback:
-      'Si el botón no funciona, copia este enlace en tu navegador:',
+      'Si el botón no funciona, copie este enlace en su navegador:',
     codeExpires: (minutes) => `Este código caduca en ${minutes} minutos.`,
     signup: {
       subject: 'Código de verificación de Kilotrace',
       paragraph:
-        'Introduce este código en la página de registro para confirmar tu dirección de correo y crear tu cuenta.',
+        'Introduzca este código en la página de registro para confirmar su dirección de correo y crear su cuenta.',
       footer:
-        'Si no te has registrado tú, ignora este correo: no se creará ninguna cuenta.',
+        'Si no se ha registrado usted, ignore este correo: no se creará ninguna cuenta.',
     },
     passwordReset: {
       subject: 'Código de restablecimiento de Kilotrace',
       paragraph:
-        'Introduce este código para elegir una nueva contraseña. No se lo des a nadie.',
+        'Introduzca este código para elegir una nueva contraseña. No se lo dé a nadie.',
       footer:
-        'Si no has pedido nada, ignora este correo: tu contraseña no cambia.',
+        'Si no ha pedido nada, ignore este correo: su contraseña no cambia.',
     },
     accountExists: {
-      subject: 'Ya tienes una cuenta de Kilotrace',
+      subject: 'Ya tiene una cuenta de Kilotrace',
       withPassword: [
-        'Alguien, probablemente tú, ha intentado crear una cuenta de Kilotrace con esta dirección de correo. Ya tienes una: inicia sesión con tu correo o tu nombre de usuario y tu contraseña.',
-        '¿Has olvidado tu contraseña? Puedes elegir una nueva desde la página de inicio de sesión.',
+        'Alguien, probablemente usted, ha intentado crear una cuenta de Kilotrace con esta dirección de correo. Ya tiene una: inicie sesión con su correo o su nombre de usuario y su contraseña.',
+        '¿Ha olvidado su contraseña? Puede elegir una nueva desde la página de inicio de sesión.',
       ],
       withGoogle: [
-        'Alguien, probablemente tú, ha intentado crear una cuenta de Kilotrace con esta dirección de correo. Ya tienes una, creada con Google: inicia sesión con el botón «Continuar con Google».',
-        '¿Prefieres una contraseña? Elige una desde «Contraseña olvidada» en la página de inicio de sesión: te enviaremos un código a esta dirección.',
+        'Alguien, probablemente usted, ha intentado crear una cuenta de Kilotrace con esta dirección de correo. Ya tiene una, creada con Google: inicie sesión con el botón «Continuar con Google».',
+        '¿Prefiere una contraseña? Elija una desde «Contraseña olvidada» en la página de inicio de sesión: le enviaremos un código a esta dirección.',
       ],
       signIn: 'Iniciar sesión',
       continueWithGoogle: 'Continuar con Google',
       footer:
-        'Si no has hecho tú esta solicitud, ignora este correo: tu cuenta no ha cambiado.',
+        'Si no ha hecho usted esta solicitud, ignore este correo: su cuenta no ha cambiado.',
     },
   },
   de: {
-    greeting: (name) => `Hallo ${name},`,
+    greeting: (name) => `Guten Tag ${name},`,
     buttonFallback:
-      'Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:',
+      'Falls die Schaltfläche nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:',
     codeExpires: (minutes) => `Dieser Code läuft in ${minutes} Minuten ab.`,
     signup: {
       subject: 'Kilotrace-Bestätigungscode',
       paragraph:
-        'Gib diesen Code auf der Registrierungsseite ein, um deine E-Mail-Adresse zu bestätigen und dein Konto zu erstellen.',
+        'Geben Sie diesen Code auf der Registrierungsseite ein, um Ihre E-Mail-Adresse zu bestätigen und Ihr Konto zu erstellen.',
       footer:
-        'Falls du dich nicht registriert hast, ignoriere diese E-Mail: Es wird kein Konto erstellt.',
+        'Falls Sie sich nicht registriert haben, ignorieren Sie diese E-Mail: Es wird kein Konto erstellt.',
     },
     passwordReset: {
       subject: 'Kilotrace-Code zum Zurücksetzen',
       paragraph:
-        'Gib diesen Code ein, um ein neues Passwort zu wählen. Gib ihn an niemanden weiter.',
+        'Geben Sie diesen Code ein, um ein neues Passwort zu wählen. Geben Sie ihn an niemanden weiter.',
       footer:
-        'Falls du nichts angefordert hast, ignoriere diese E-Mail: Dein Passwort bleibt unverändert.',
+        'Falls Sie nichts angefordert haben, ignorieren Sie diese E-Mail: Ihr Passwort bleibt unverändert.',
     },
     accountExists: {
-      subject: 'Du hast bereits ein Kilotrace-Konto',
+      subject: 'Sie haben bereits ein Kilotrace-Konto',
       withPassword: [
-        'Jemand, vermutlich du, wollte mit dieser E-Mail-Adresse ein Kilotrace-Konto erstellen. Du hast bereits eines: Melde dich mit deiner E-Mail-Adresse oder deinem Benutzernamen und deinem Passwort an.',
-        'Passwort vergessen? Du kannst auf der Anmeldeseite ein neues wählen.',
+        'Jemand, vermutlich Sie, wollte mit dieser E-Mail-Adresse ein Kilotrace-Konto erstellen. Sie haben bereits eines: Melden Sie sich mit Ihrer E-Mail-Adresse oder Ihrem Benutzernamen und Ihrem Passwort an.',
+        'Passwort vergessen? Sie können auf der Anmeldeseite ein neues wählen.',
       ],
       withGoogle: [
-        'Jemand, vermutlich du, wollte mit dieser E-Mail-Adresse ein Kilotrace-Konto erstellen. Du hast bereits eines, erstellt mit Google: Melde dich über den Button „Weiter mit Google“ an.',
-        'Lieber ein Passwort? Wähle eines über „Passwort vergessen“ auf der Anmeldeseite: Ein Code wird an diese Adresse gesendet.',
+        'Jemand, vermutlich Sie, wollte mit dieser E-Mail-Adresse ein Kilotrace-Konto erstellen. Sie haben bereits eines, erstellt mit Google: Melden Sie sich über die Schaltfläche „Weiter mit Google“ an.',
+        'Lieber ein Passwort? Wählen Sie eines über „Passwort vergessen“ auf der Anmeldeseite: Ein Code wird an diese Adresse gesendet.',
       ],
       signIn: 'Anmelden',
       continueWithGoogle: 'Weiter mit Google',
       footer:
-        'Falls du diese Anfrage nicht gestellt hast, ignoriere diese E-Mail: Dein Konto hat sich nicht geändert.',
+        'Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail: Ihr Konto hat sich nicht geändert.',
     },
   },
 };

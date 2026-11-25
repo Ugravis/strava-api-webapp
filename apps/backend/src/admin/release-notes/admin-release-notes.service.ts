@@ -1,7 +1,6 @@
 import {
   type FillTranslationsResponse,
   RELEASE_NOTE_TRANSLATED_FIELDS,
-  type TargetLocale,
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
@@ -30,15 +29,19 @@ import {
 } from '../../common/translations';
 import { ReleaseNote } from '../../release-notes/release-note.entity';
 import { ReleaseNoteTranslation } from '../../release-notes/release-note-translation.entity';
+import {
+  loadReleaseNoteTranslations,
+  type ReleaseNoteTranslations,
+  replaceReleaseNoteTranslations,
+  translatedSourceOf,
+  translationsOf,
+} from '../../release-notes/release-note-translations';
 import { TranslationService } from '../../translation/translation.service';
 import { ReleaseNoteBannersService } from '../../release-notes/release-note-banners.service';
 import {
   bannerUrlOf,
   concernedUsers,
   contentOf,
-  type ReleaseNoteTranslations,
-  TRANSLATION_COLUMNS,
-  translationsOf,
   NOTE_HAS_CONTENT,
   ReleaseNotesService,
   VERSION_ORDER,
@@ -358,10 +361,9 @@ export class AdminReleaseNotesService {
     actor: User,
   ): Promise<FillTranslationsResponse> {
     const note = await this.find(version);
-    const { title, summary, sections } = contentOf(note);
     const { translations, filled } = await fillTranslations(
       this.translation,
-      { title, summary, ...sections },
+      translatedSourceOf(note),
       await this.translationsOf(version),
       RELEASE_NOTE_TRANSLATED_FIELDS,
     );
@@ -369,35 +371,17 @@ export class AdminReleaseNotesService {
     return { filled };
   }
 
-  private async translationsOf(
-    version: string,
-  ): Promise<ReleaseNoteTranslations> {
-    return (
-      translationsOf(await this.translations.findBy({ version })).get(
-        version,
-      ) ?? {}
-    );
+  private translationsOf(version: string): Promise<ReleaseNoteTranslations> {
+    return loadReleaseNoteTranslations(this.translations.manager, version);
   }
 
-  /** Every language of a note replaced by `translations`, those left without text removed. */
   private async saveTranslations(
     version: string,
     translations: ReleaseNoteTranslations,
     actor: User,
   ): Promise<void> {
     await this.translations.manager.transaction(async (manager) => {
-      await manager.delete(ReleaseNoteTranslation, { version });
-      const rows = Object.entries(translations).map(([locale, fields]) => ({
-        version,
-        locale: locale as TargetLocale,
-        ...Object.fromEntries(
-          RELEASE_NOTE_TRANSLATED_FIELDS.map((field) => [
-            TRANSLATION_COLUMNS[field],
-            fields?.[field] ?? null,
-          ]),
-        ),
-      }));
-      if (rows.length > 0) await manager.insert(ReleaseNoteTranslation, rows);
+      await replaceReleaseNoteTranslations(manager, version, translations);
       await manager.update(ReleaseNote, version, { updatedById: actor.id });
     });
   }

@@ -1,12 +1,9 @@
 import { highestAdminRole } from '@kilotrace/shared/admin';
 import {
   type Locale,
-  RELEASE_NOTE_TRANSLATED_FIELDS,
   type ReleaseNoteTranslatedField,
   SOURCE_LOCALE,
-  type TargetLocale,
   translated,
-  type Translations,
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
@@ -29,6 +26,10 @@ import { NotificationsService } from '../notifications/notifications.service';
 import type { User } from '../users/user.entity';
 import { ReleaseNote } from './release-note.entity';
 import { ReleaseNoteTranslation } from './release-note-translation.entity';
+import {
+  type ReleaseNoteTranslations,
+  translationsOf,
+} from './release-note-translations';
 import { ReleaseNoteView } from './release-note-view.entity';
 
 /** Read once: it never changes while the process runs. */
@@ -69,41 +70,6 @@ export function contentOf(note: ReleaseNote): ReleaseNoteContent {
 }
 
 /** A note as `reader` gets it: the team part for the back-office team only. */
-export type ReleaseNoteTranslations = Translations<ReleaseNoteTranslatedField>;
-
-/** The column of each field translated, in a row of `release_note_translations`. */
-export const TRANSLATION_COLUMNS = {
-  title: 'title',
-  summary: 'summary',
-  new: 'sectionNew',
-  improved: 'sectionImproved',
-  fixed: 'sectionFixed',
-  other: 'sectionOther',
-} as const satisfies Record<
-  ReleaseNoteTranslatedField,
-  keyof ReleaseNoteTranslation
->;
-
-/** The translations of each note, from the rows of its languages. */
-export function translationsOf(
-  rows: ReleaseNoteTranslation[],
-): Map<string, ReleaseNoteTranslations> {
-  const byVersion = new Map<string, ReleaseNoteTranslations>();
-  for (const row of rows) {
-    const fields = Object.fromEntries(
-      RELEASE_NOTE_TRANSLATED_FIELDS.flatMap((field) => {
-        const text = row[TRANSLATION_COLUMNS[field]];
-        return text ? [[field, text]] : [];
-      }),
-    );
-    byVersion.set(row.version, {
-      ...byVersion.get(row.version),
-      [row.locale as TargetLocale]: fields,
-    });
-  }
-  return byVersion;
-}
-
 /** The source content of a note in `locale`, field by field. */
 function localizedContent(
   content: ReleaseNoteContent,

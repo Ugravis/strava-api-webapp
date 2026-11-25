@@ -13,13 +13,14 @@ import {
   DetailHeader,
   DetailLoader,
   DetailSection,
+  DetailTranslations,
   DetailSectionForm,
   DetailSkeleton,
   fromRule,
   type RowPanelControls,
 } from "@kilotrace/ui/components/admin/detail";
 import { BADGE_ICON_KEYS } from "@kilotrace/ui/components/distances/badge-icon";
-import { createBadge, loadBadge } from "./actions";
+import { createBadge, fillBadgeTranslations, loadBadge, translateBadge } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteBadgeOf, FAMILY_OPTIONS, LOCKS, METRIC_OPTIONS, METRICS, saveBadgeWith, themeOptions, useCatalogVersion } from "./badge-bits";
 import { AdminBadgeBanner, badgeColumns } from "./badge-columns";
 import { shownAmount, storedAmount } from "./units";
@@ -187,6 +188,25 @@ function BadgeDetail({ badge, themes, rights, panel }: { badge: AdminBadge; them
           );
         }}
       </DetailSectionForm>
+      <DetailTranslations
+        fields={[
+          { name: "name", label: "Nom", icon: <TypeIcon />, rule: BADGE_RULES.name },
+          { name: "description", label: "Description", icon: <StickyNoteIcon />, multiline: true, rule: BADGE_RULES.description },
+        ]}
+        source={badge}
+        translations={badge.translations}
+        locked={locked}
+        onSave={async (locale, field, value) => {
+          const result = await translateBadge(badge.id, locale, field, value);
+          if (result.ok) bumpCatalog();
+          return result;
+        }}
+        onFill={async () => {
+          const result = await fillBadgeTranslations(badge.id);
+          if (result.ok) bumpCatalog();
+          return result;
+        }}
+      />
       <DetailSection title="Apparence">
         <DetailColumnFields row={badge} columns={columns} ids={["icon", "backgroundColor"]} />
       </DetailSection>

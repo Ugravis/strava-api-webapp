@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultDisplayOf, type PublicReleaseNote, type ReleaseNoteDisplay, RELEASE_VERSION_PATTERN, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
+import { defaultDisplayOf, type PublicReleaseNote, type ReleaseNoteDisplay, RELEASE_VERSION_PATTERN, PUBLIC_RELEASE_NOTE_SECTIONS, RELEASE_NOTE_SECTIONS, type ReleaseNoteSection } from "@kilotrace/shared";
 import { type AdminReleaseNote, RELEASE_NOTE_BANNER_MAX_BYTES, RELEASE_NOTE_BANNER_TYPES, RELEASE_NOTE_RULES } from "@kilotrace/shared/admin";
 import { usePreview } from "@kilotrace/ui/components/admin/detail/use-preview";
 import { useReleaseNotePdf } from "@kilotrace/ui/components/release-notes/download-release-note-pdf";
@@ -20,12 +20,13 @@ import {
   DetailMedia,
   DetailSection,
   DetailSkeleton,
+  DetailTranslations,
   fromRule,
   type RowPanelControls,
 } from "@kilotrace/ui/components/admin/detail";
 import { formatDateTime } from "@kilotrace/ui/components/admin/data-table";
 import { RELEASE_NOTE_SECTION_LOOKS } from "@kilotrace/ui/components/release-notes/release-note-article";
-import { createReleaseNote, loadReleaseNote, type ReleaseNoteDraft } from "./actions";
+import { createReleaseNote, fillReleaseNoteTranslations, loadReleaseNote, type ReleaseNoteDraft, translateReleaseNote } from "./actions";
 import { CurrentMark, deleteOf, displayOptions, LOCKS, stepOf, STEP_ICONS, releaseNoteColumns, type ReleaseNoteRights, saveNote, STATE_HINTS, STATES, useReleaseNotesVersion, bumpReleaseNotes } from "./release-note-bits";
 import { ReleaseNotePreview } from "./release-note-preview";
 
@@ -176,6 +177,33 @@ function ReleaseNoteDetail({ note, rights, panel }: { note: AdminReleaseNote; ri
           ))}
         </DetailFields>
       </DetailSection>
+      <DetailTranslations
+        fields={[
+          { name: "title", label: "Titre", icon: <TypeIcon />, rule: RELEASE_NOTE_RULES.title },
+          { name: "summary", label: "Résumé", icon: <TextIcon />, multiline: true, rule: RELEASE_NOTE_RULES.summary },
+          ...PUBLIC_RELEASE_NOTE_SECTIONS.map((section) => ({
+            name: section,
+            label: SECTION_FIELDS[section].label,
+            icon: <SectionIcon section={section} />,
+            kind: "markdown" as const,
+            highlight: true,
+            rule: RELEASE_NOTE_RULES[section],
+          })),
+        ]}
+        source={{ title: note.title, summary: note.summary, ...note.sections }}
+        translations={note.translations}
+        locked={locked}
+        onSave={async (locale, field, value) => {
+          const result = await translateReleaseNote(note.version, locale, field, value);
+          if (result.ok) bumpReleaseNotes();
+          return result;
+        }}
+        onFill={async () => {
+          const result = await fillReleaseNoteTranslations(note.version);
+          if (result.ok) bumpReleaseNotes();
+          return result;
+        }}
+      />
       <DetailSection title="Suivi">
         <DetailColumnFields row={note} columns={columns} ids={["updatedAt", "updatedBy", "createdAt"]} />
       </DetailSection>

@@ -322,9 +322,11 @@
         "active": "Badge activé ou désactivé",
         "delete": "Badge supprimé",
         "reorder": "Badges réordonnés",
+        "translate": "Traduction d'un badge modifiée",
         "themes": {
           "create": "Collection créée",
           "update": "Collection renommée",
+          "translate": "Traduction d'une collection modifiée",
           "delete": "Collection supprimée",
           "reorder": "Collections réordonnées"
         }
@@ -332,6 +334,7 @@
       "userTags": {
         "create": "Tag créé",
         "update": "Tag modifié",
+        "translate": "Traduction d'un tag modifiée",
         "delete": "Tag supprimé",
         "reorder": "Tags réordonnés"
       },
@@ -355,6 +358,7 @@
       "releaseNotes": {
         "create": "Note de release écrite à l'avance",
         "update": "Note de release modifiée",
+        "translate": "Traduction d'une note de release modifiée",
         "status": "Statut d'une note de release changé",
         "delete": "Note de release supprimée",
         "active": "Note de release activée ou désactivée",
@@ -1609,5 +1613,10 @@
       "weight": "Base de données",
       "weightDetail": "{count, plural, one {# table} other {# tables}} · dont {indexes} d'index · {disk} réels sur le disque"
     }
+  },
+  "translations": {
+    "unavailable": "La traduction automatique n'est pas configurée (clé DeepL manquante) ou DeepL ne répond pas.",
+    "failed": "La traduction a échoué. Réessayer.",
+    "filled": "{count, plural, =0 {Rien à traduire} one {# champ traduit} other {# champs traduits}}"
   }
 }

@@ -17,13 +17,14 @@ import {
   DetailRelated,
   DetailSection,
   DetailSkeleton,
+  DetailTranslations,
   fromRule,
   type RowPanelControls,
 } from "@kilotrace/ui/components/admin/detail";
 import { BADGE_ICON_KEYS, BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
 import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import { publicNameOf } from "@kilotrace/ui/lib/user";
-import { createUserTag, loadUserTag, loadUserTagHolders, type UserTagDraft } from "./actions";
+import { createUserTag, fillUserTagTranslations, loadUserTag, loadUserTagHolders, translateUserTag, type UserTagDraft } from "./actions";
 import { bumpUserTags, deleteLock, deleteOf, LOCKS, saveTag, SystemMark, userTagColumns, type UserTagRights, useUserTagsVersion } from "./user-tag-bits";
 
 const BLANK: UserTagDraft = { id: null, name: null, description: null, icon: BADGE_ICON_KEYS[0], color: null };
@@ -98,6 +99,25 @@ function UserTagDetail({
         </DetailFields>
         <DetailColumnFields row={userTag} columns={columns} ids={["createdAt"]} />
       </DetailSection>
+      <DetailTranslations
+        fields={[
+          { name: "name", label: "Nom", icon: <TypeIcon />, rule: USER_TAG_RULES.name },
+          { name: "description", label: "Description", icon: <StickyNoteIcon />, multiline: true, rule: USER_TAG_RULES.description },
+        ]}
+        source={{ name, description }}
+        translations={userTag.translations}
+        locked={rights.edit ? null : LOCKS.edit}
+        onSave={async (locale, field, value) => {
+          const result = await translateUserTag(userTag.id, locale, field, value);
+          if (result.ok) bumpUserTags();
+          return result;
+        }}
+        onFill={async () => {
+          const result = await fillUserTagTranslations(userTag.id);
+          if (result.ok) bumpUserTags();
+          return result;
+        }}
+      />
       <DetailSection title="Apparence">
         <DetailColumnFields row={userTag} columns={columns} ids={["icon", "color"]} />
       </DetailSection>

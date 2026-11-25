@@ -7,6 +7,7 @@ import {
   type CreateUserTagRequest,
   type UpdateUserTagRequest,
 } from "@kilotrace/shared/admin";
+import { isTargetLocale, type TargetLocale } from "@kilotrace/shared";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import type { TableMove } from "@kilotrace/ui/components/admin/data-table";
@@ -15,6 +16,7 @@ import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { adminRoutes } from "@/lib/admin/navigation";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
+import { fillTranslations, saveTranslation } from "@/lib/admin/translations";
 import type { UserTagRights } from "./user-tag-bits";
 
 /** The accounts of a tag loaded at once in its detail. */
@@ -84,6 +86,17 @@ export async function saveUserTag(id: string, body: UpdateUserTagRequest): Promi
     color: body.color || null,
   };
   return runAdminAction(`/user-tags/${checkedSlug(id)}`, "PATCH", update);
+}
+
+/** Its name or description in another language, typed by hand; null clears it. */
+export async function translateUserTag(id: string, locale: TargetLocale, field: string, value: string | null): Promise<ActionResult> {
+  if (!isTargetLocale(locale)) throw new Error("Invalid locale");
+  return saveTranslation(`/user-tags/${checkedSlug(id)}`, locale, field, value);
+}
+
+/** Its name and description machine-translated where a language lacks them. */
+export async function fillUserTagTranslations(id: string): Promise<ActionResult> {
+  return fillTranslations(`/user-tags/${checkedSlug(id)}`);
 }
 
 /** Deletes a user tag for good, `reason` kept in the log. */

@@ -1,0 +1,1416 @@
+{
+  "metadata": {
+    "title": "Kilotrace: every outing draws your map",
+    "description": "Running, cycling, hiking: color the tiles you cross, grow your biggest square, connect stations and unlock badges. Explore the world, one outing at a time.",
+    "keywords": [
+      "Strava",
+      "activity map",
+      "tiles",
+      "squadrats",
+      "municipalities",
+      "train stations",
+      "badges",
+      "running",
+      "cycling",
+      "hiking",
+      "exploration",
+      "sports challenges"
+    ],
+    "ogTitle": "Every outing draws your map",
+    "ogSubtitle": "Tiles, stations, countries and badges to complete, one outing at a time."
+  },
+  "common": {
+    "or": "or",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "unexpectedError": "An unexpected error occurred. Please try again in a moment.",
+    "language": "Language"
+  },
+  "landing": {
+    "heroBadge": "Works with Strava",
+    "title": "Every outing draws your map",
+    "description": "Running, cycling, hiking: with every activity, the world fills with color. Complete tiles, grow your biggest square, connect stations and unlock badges, one kilometer after another.",
+    "start": "Create my account",
+    "withGoogle": "With Google",
+    "alreadyRegistered": "Already registered?",
+    "login": "Log in",
+    "hero": {
+      "newTiles": "+12 tiles",
+      "newTilesLabel": "after today's outing",
+      "square": "Biggest square",
+      "squareValue": "6 × 6",
+      "badge": "Badge unlocked",
+      "badgeName": "Explorer"
+    },
+    "sports": {
+      "label": "Every activity with a GPS track counts",
+      "run": "Running",
+      "ride": "Cycling",
+      "hike": "Hiking",
+      "walk": "Walking",
+      "trail": "Trail running",
+      "ski": "Cross-country skiing"
+    },
+    "features": {
+      "eyebrow": "Features",
+      "title": "Everything your outings already tell",
+      "subtitle": "Your activities already exist. Kilotrace turns them into a playground to explore.",
+      "carouselLabel": "Kilotrace features",
+      "previous": "Previous feature",
+      "next": "Next feature",
+      "goTo": "Go to feature {index}",
+      "slideLabel": "{index} of {total}",
+      "items": {
+        "tiles": {
+          "title": "Tiles to color",
+          "description": "The map is cut into tiles. Each track colors the ones it crosses, from large tiles of about 1.7 km to small ones of about 200 m for the most meticulous."
+        },
+        "square": {
+          "title": "Your biggest square",
+          "description": "Grow the largest square block of fully visited tiles. One more column is sometimes enough to reach a new level: it's up to you to find which one."
+        },
+        "countries": {
+          "title": "Countries explored",
+          "description": "Track the share of each country you've covered, overseas territories included, down to the hundredth of a percent."
+        },
+        "stations": {
+          "title": "Stations and rail network",
+          "description": "Visit stations and unlock the lines that connect them. Trains run on the map: click one to follow it."
+        },
+        "badges": {
+          "title": "Badges and achievements",
+          "description": "Unlock badges sorted by theme and pin your favorites to showcase them on your profile."
+        },
+        "history": {
+          "title": "Travel back in time",
+          "description": "Slide the timeline to see your map as it was a month ago, a year ago or on your very first outing."
+        },
+        "community": {
+          "title": "Go further with friends",
+          "description": "Follow other explorers and discover their profiles. Yours stays private by default: you choose who follows you."
+        }
+      }
+    },
+    "steps": {
+      "eyebrow": "How it works",
+      "title": "Ready in three steps",
+      "one": {
+        "title": "Create your account",
+        "description": "With your email address or your Google account, in under a minute."
+      },
+      "two": {
+        "title": "Connect your activities",
+        "description": "Your history is imported, then every new outing arrives automatically."
+      },
+      "three": {
+        "title": "Go explore",
+        "description": "Your map fills up, badges roll in. All that's left is picking your next route."
+      }
+    },
+    "progress": {
+      "eyebrow": "Dashboard",
+      "title": "Your progress at a glance",
+      "description": "Visited tiles, biggest square, stations, countries: your key figures are gathered as soon as you open the app, with a preview of your map.",
+      "points": {
+        "tiles": "Tiles and biggest square updated after every outing",
+        "countries": "Countries ranked by the share you've explored",
+        "streak": "Your streak of active days, to keep the pace"
+      },
+      "mock": {
+        "tiles": "Visited tiles",
+        "tilesValue": "1,248",
+        "square": "Biggest square",
+        "squareValue": "14 × 14",
+        "stations": "Stations visited",
+        "stationsValue": "37",
+        "countries": "Countries explored",
+        "countriesValue": "6",
+        "streak": "12 days in a row"
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Frequently asked questions",
+      "description": "Everything you need to know before your first outing.",
+      "moreTitle": "Want to try it?",
+      "moreDescription": "The easiest way is to watch your own map fill up.",
+      "items": {
+        "what": {
+          "question": "What is Kilotrace?",
+          "answer": "Kilotrace turns your sports activities into a map to complete. Each track colors the tiles it crosses, advances your countries, unlocks stations and badges. A good reason to leave the beaten path."
+        },
+        "tiles": {
+          "question": "What is a tile?",
+          "answer": "The map is cut into regular squares. Large tiles are about 1.7 km on a side in France, small ones about 200 m. A tile is visited as soon as one of your tracks crosses it."
+        },
+        "square": {
+          "question": "What is the biggest square?",
+          "answer": "It's the largest square block of tiles that are all visited. It rewards methodical exploration: to grow it, you have to go and find the tiles missing on its edges."
+        },
+        "sources": {
+          "question": "How are my activities imported?",
+          "answer": "You connect the account of a compatible service, such as Strava. Your history is imported, then your new outings arrive automatically. You can revoke access at any time: imported activities are then deleted."
+        },
+        "sports": {
+          "question": "Which activities are counted?",
+          "answer": "All those with a GPS track: running, cycling, hiking, walking, trail running, cross-country skiing and many more. Indoor activities, without a track, don't color the map."
+        },
+        "privacy": {
+          "question": "Is my profile public?",
+          "answer": "No. Your profile is private by default: people who want to follow you send a request, which you accept or not."
+        },
+        "mobile": {
+          "question": "Can I use Kilotrace on mobile?",
+          "answer": "Yes. Kilotrace works in the browser, on computer or phone, with no app to install."
+        },
+        "account": {
+          "question": "How do I create an account?",
+          "answer": "With your email address or your Google account, in under a minute. Then you connect your activities to watch your map fill up."
+        }
+      }
+    },
+    "cta": {
+      "title": "Your next outing will color the map",
+      "description": "Create your account, connect your activities and discover everything you've already covered."
+    }
+  },
+  "navbar": {
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "nav": {
+    "label": "Navigation",
+    "dashboard": "Dashboard",
+    "map": "Map",
+    "distances": "Achievements",
+    "profiles": "Profiles",
+    "cards": "{count, plural, one {# card} other {# cards}}",
+    "settings": "Settings",
+    "logout": "Log out",
+    "openMenu": "Open menu",
+    "collapseMenu": "Collapse menu",
+    "expandMenu": "Expand menu",
+    "userMenu": "Account menu",
+    "releaseNotes": "What's new",
+    "toAdmin": "Back office",
+    "adminRoles": {
+      "support": "Support",
+      "admin": "Admin",
+      "super-admin": "Super admin"
+    }
+  },
+  "theme": {
+    "toggle": "Change theme",
+    "switchToDark": "Dark mode",
+    "switchToLight": "Light mode"
+  },
+  "sound": {
+    "title": "Sound",
+    "on": "Sound: {percent}%",
+    "off": "Sound off",
+    "enable": "Turn sound on",
+    "volume": "Volume"
+  },
+  "fields": {
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "identifier": "Email or username",
+    "identifierPlaceholder": "you@example.com or john_doe",
+    "password": "Password",
+    "newPassword": "New password",
+    "currentPassword": "Current password",
+    "confirmPassword": "Confirm password",
+    "displayName": "Display name",
+    "displayNameDescription": "Optional, visible to other users. Otherwise your username is shown.",
+    "username": "Username",
+    "usernamePlaceholder": "john_doe",
+    "usernameDescription": "3 to 20 characters: lowercase letters, digits and _.",
+    "usernameChecking": "Checking…",
+    "usernameAvailable": "This username is available.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "rememberMe": "Stay signed in",
+    "acceptTerms": "I accept the <link>terms of use</link>.",
+    "bio": "Bio",
+    "bioDescription": "160 characters at most.",
+    "bioPlaceholder": "A few words about you…",
+    "city": "City",
+    "cityDescription": "Pick your city from the list, never inferred from your activities.",
+    "cityPlaceholder": "Search for a city…",
+    "favoriteSports": "Favorite sports",
+    "profileColor": "Profile color"
+  },
+  "validation": {
+    "emailInvalid": "Enter a valid email address.",
+    "required": "This field is required.",
+    "passwordMin": "Password must be at least 8 characters.",
+    "passwordMax": "Password must be at most 128 characters.",
+    "passwordMismatch": "Passwords don't match.",
+    "displayNameMax": "Name must be at most 50 characters.",
+    "usernameLength": "Username must be between 3 and 20 characters.",
+    "usernamePattern": "Use only lowercase letters, digits and _.",
+    "usernameTaken": "This username is already taken.",
+    "usernameReserved": "This username is reserved, please choose another.",
+    "termsRequired": "You must accept the terms of use to continue.",
+    "bioMax": "Bio must be at most 160 characters.",
+    "cityMax": "City must be at most 60 characters.",
+    "cityPick": "Pick a city from the list.",
+    "passwordCommon": "This password is too common or too easy to guess: choose another one.",
+    "identifierInvalid": "Enter your email or username."
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Incorrect username or password.",
+    "EMAIL_SIGN_IN_DISABLED": "Email sign-in isn't available yet: use Google.",
+    "ACCOUNT_SUSPENDED": "Your account is suspended.",
+    "EMAIL_TAKEN": "An account already exists with this email address.",
+    "USERNAME_TAKEN": "This username is already taken.",
+    "USERNAME_RESERVED": "This username is reserved.",
+    "INVALID_TOKEN": "This request has expired: start over to receive a new code.",
+    "INVALID_CODE": "Incorrect or expired code. Check it or request a new one.",
+    "EMAIL_NOT_VERIFIED": "Confirm your email address first with the code you received.",
+    "PASSWORD_TOO_COMMON": "This password is too common or too easy to guess: choose another one.",
+    "TOO_MANY_ATTEMPTS": "Too many sign-in attempts. Try again in 15 minutes.",
+    "INVALID_PASSWORD": "The password is incorrect.",
+    "CONFIRMATION_MISMATCH": "The confirmation doesn't match your username.",
+    "INVALID_IMAGE": "This file isn't a valid image.",
+    "OAUTH_SIGNUP_EXPIRED": "Google sign-up has expired. Start over from the beginning.",
+    "TOO_MANY_REQUESTS": "Too many attempts. Wait a minute before trying again.",
+    "FILE_TOO_LARGE": "The image must not exceed 5 MB.",
+    "UNEXPECTED": "An unexpected error occurred. Please try again in a moment.",
+    "PROVIDER_NOT_CONNECTED": "This account isn't connected.",
+    "CANNOT_FOLLOW_SELF": "You can't follow yourself.",
+    "ALREADY_FOLLOWING": "You already follow this person.",
+    "NOT_FOLLOWING": "You don't follow this person.",
+    "NOT_FOUND": "Not found.",
+    "PRIVATE_PROFILE": "This profile is private.",
+    "NO_FOLLOW_REQUEST": "This request no longer exists.",
+    "PROFILE_BADGES_FULL": "You've already pinned the maximum number of badges.",
+    "CANNOT_LIKE_SELF": "You can't like your own profile.",
+    "SIGNUPS_DISABLED": "Sign-ups are closed for now.",
+    "CANNOT_REPORT_SELF": "You can't report yourself.",
+    "ALREADY_REPORTED": "You already have an open report on this profile.",
+    "REPORT_DETAILS_REQUIRED": "Tell us the reason for your report."
+  },
+  "auth": {
+    "continueWithGoogle": "Continue with Google",
+    "login": {
+      "title": "Log in",
+      "description": "Good to see you again!",
+      "submit": "Log in",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "No account yet?",
+      "registerLink": "Sign up",
+      "googleError": "Google sign-in failed. Try again.",
+      "googleDisabled": "Google sign-in isn't available right now.",
+      "unverified": "Your email address isn't confirmed yet: enter the 6-digit code sent to the address you signed up with. It expires in {minutes} minutes.",
+      "unverifiedTo": "Your email address isn't confirmed yet: enter the 6-digit code sent to {email}. It expires in {minutes} minutes."
+    },
+    "suspended": {
+      "title": "Your account is suspended",
+      "until": "Until {date}.",
+      "indefinite": "For an indefinite period.",
+      "reason": "Reason: {reason}"
+    },
+    "register": {
+      "title": "Sign up",
+      "description": "Create your account in a few seconds.",
+      "submit": "Create my account",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "closedTitle": "Sign-ups closed",
+      "closed": "Sign-ups are closed for now. Come back a little later!",
+      "codeSent": "Enter the 6-digit code sent to {email} to create your account. It expires in {minutes} minutes.",
+      "changeDetails": "Edit my details"
+    },
+    "googleSignup": {
+      "title": "Finish signing up",
+      "description": "Choose your username to finish creating your account {email}.",
+      "submit": "Finish sign-up",
+      "expiredTitle": "Sign-up expired",
+      "restart": "Back to log in"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "description": "Enter your email: we'll send you a code to choose a new password.",
+      "submit": "Send code",
+      "codeSent": "If an account exists for {email}, a 6-digit code has just been sent to it. It expires in {minutes} minutes.",
+      "changeEmail": "Change address",
+      "newPasswordDescription": "Code verified: choose a new password for your account.",
+      "savePassword": "Change password",
+      "success": "Your password has been changed. You can now log in.",
+      "backToLogin": "Back to log in"
+    },
+    "verification": {
+      "title": "Check your inbox",
+      "codeLabel": "6-digit verification code",
+      "verifying": "Verifying…",
+      "resend": "Resend code",
+      "resendIn": "Resend code in {seconds} s",
+      "resendLater": "You've requested a lot of codes: try again later.",
+      "resent": "A new code has just been sent. Previous ones remain valid until they expire."
+    },
+    "sessionExpired": "Your session has expired. Please log in again."
+  },
+  "profile": {
+    "title": "Profiles",
+    "private": "Private profile",
+    "edit": "Edit profile",
+    "favoriteSports": "Favorite sports",
+    "locked": {
+      "title": "This profile is private",
+      "description": "Follow {name} to see their badges and stats.",
+      "requested": "Your follow request is pending.",
+      "descriptionNoShowcase": "Follow {name} to see who they follow."
+    },
+    "showcase": {
+      "railway": "Railways",
+      "badges": "Pinned badges",
+      "noBadges": "No pinned badges. Choose which ones to show from the <link>Achievements</link> page.",
+      "stationsVisited": "Stations visited",
+      "stationCluster": "Max cluster",
+      "previousLevel": "Large tiles",
+      "nextLevel": "Small tiles",
+      "badgeLevel": "Level {level}",
+      "badgeCompletions": "{count, plural, one {Completed # time} other {Completed # times}}",
+      "badgeProgress": "In progress · {percent}",
+      "openAchievements": "View in Achievements",
+      "noBadgesOther": "No pinned badges yet."
+    },
+    "visibility": {
+      "label": "Private profile",
+      "confirm": {
+        "private": {
+          "title": "Make your profile private?",
+          "description": "Only your followers will see your pinned badges, your stats and who you follow. New followers will need to be approved. Your name, bio and tags remain visible.",
+          "action": "Make private",
+          "descriptionNoShowcase": "Only your followers will see who you follow. New followers will need to be approved. Your name, bio and tags remain visible."
+        },
+        "public": {
+          "title": "Make your profile public?",
+          "description": "Everyone will see your pinned badges, your stats and who you follow. Pending follow requests will be accepted.",
+          "action": "Make public",
+          "descriptionNoShowcase": "Everyone will see who you follow. Pending follow requests will be accepted."
+        }
+      },
+      "lock": {
+        "private": "Private profile · make it public",
+        "public": "Public profile · make it private"
+      }
+    },
+    "requests": {
+      "open": "Follow requests",
+      "openCount": "{count, plural, one {# follow request} other {# follow requests}}",
+      "received": "Received",
+      "sent": "Sent",
+      "emptyReceived": "No pending requests.",
+      "emptySent": "No sent requests pending.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "asked": "<b>@{username}</b> asked to follow you",
+      "error": "Requests couldn't be loaded.",
+      "loadMore": "Show more",
+      "fold": "Collapse",
+      "unfold": "Expand",
+      "later": "Later: back to the card stack"
+    },
+    "userTags": {
+      "label": "Tags",
+      "awarded": "Earned on {date}"
+    },
+    "share": {
+      "open": "Share profile",
+      "title": "Share profile",
+      "description": "Invite other members to discover {name}'s profile.",
+      "link": "Link",
+      "qr": "QR code",
+      "copy": "Copy link",
+      "copyFailed": "The link couldn't be copied.",
+      "native": "Share…",
+      "qrLabel": "QR code for {name}'s profile",
+      "qrHint": "Scan it with your phone's camera."
+    },
+    "ownHint": "This is your profile as other members see it: it's the only thing they can see about you.",
+    "color": {
+      "label": "Profile color",
+      "custom": "Custom color",
+      "reset": "Default",
+      "presets": {
+        "violet": "Violet",
+        "blue": "Blue",
+        "teal": "Teal",
+        "green": "Green",
+        "amber": "Amber",
+        "orange": "Orange",
+        "rose": "Rose",
+        "slate": "Slate"
+      }
+    },
+    "image": {
+      "open": "Save card as image",
+      "title": "Profile card",
+      "description": "Download your card as an image or share it directly.",
+      "alt": "@{username}'s profile card",
+      "failed": "The image couldn't be created.",
+      "download": "Download",
+      "share": "Share image"
+    },
+    "deck": {
+      "label": "Profile cards",
+      "show": "View {name}'s card",
+      "previous": "Previous card",
+      "next": "Next card",
+      "position": "Following {index} / {count}",
+      "back": "Back to my profile",
+      "outside": "This profile isn't one of the people you follow",
+      "empty": {
+        "title": "Following",
+        "description": "The profiles you follow will appear here, as a stack of cards."
+      },
+      "backToDeck": "Back to the card stack"
+    },
+    "empty": {
+      "bio": "No bio yet.",
+      "sports": "No favorite sports"
+    },
+    "memberSince": "Member since",
+    "likes": {
+      "like": "Like this profile ({count, plural, one {# like} other {# likes}})",
+      "unlike": "Unlike this profile ({count, plural, one {# like} other {# likes}})",
+      "count": "{count, plural, =0 {No likes} one {# like} other {# likes}}",
+      "anonymous": "Likes are anonymous."
+    },
+    "search": {
+      "open": "Search for a user",
+      "title": "Search",
+      "following": "Following",
+      "followers": "Your followers",
+      "noSuggestions": "You don't follow anyone and nobody follows you yet.",
+      "error": "Suggestions couldn't be loaded."
+    },
+    "close": "Back to the card stack",
+    "options": {
+      "open": "Profile options",
+      "follow": "Follow",
+      "followBack": "Follow back",
+      "unfollow": "Unfollow",
+      "cancelRequest": "Cancel request",
+      "like": "Like",
+      "unlike": "Remove like",
+      "report": "Report",
+      "reported": "Report sent"
+    },
+    "report": {
+      "title": "Report @{username}",
+      "description": "Your report is sent to the team. The reported person isn't notified and won't know who reported them.",
+      "reasons": {
+        "legend": "Reason for the report",
+        "harassment": "Harassment or abusive behavior",
+        "inappropriate": "Inappropriate content (photo, bio, username)",
+        "impersonation": "Impersonation",
+        "spam": "Spam or advertising",
+        "cheating": "Fraudulent activities",
+        "other": "Other reason"
+      },
+      "details": "Details (optional)",
+      "detailsRequired": "Your reason",
+      "detailsPlaceholder": "Add anything that can help the team understand.",
+      "customPlaceholder": "Describe the reason for your report.",
+      "submit": "Send report",
+      "warning": "Abusive reports may themselves be sanctioned."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your profile, connections and account.",
+    "avatar": {
+      "title": "Profile picture",
+      "description": "JPG, PNG, WebP or GIF, 5 MB maximum. The image is cropped to a square.",
+      "upload": "Change picture",
+      "remove": "Remove picture",
+      "updated": "Profile picture updated.",
+      "removed": "Profile picture removed."
+    },
+    "profile": {
+      "title": "Public profile",
+      "description": "This information appears on your profile.",
+      "updated": "Profile updated."
+    },
+    "password": {
+      "title": "Password",
+      "description": "Your other sessions will be logged out.",
+      "descriptionNoPassword": "Your account uses Google. Set a password to also be able to log in with your email.",
+      "submit": "Change password",
+      "submitNoPassword": "Set a password",
+      "updated": "Password updated."
+    },
+    "danger": {
+      "title": "Delete account",
+      "description": "Your account and all your data will be permanently deleted.",
+      "action": "Delete my account",
+      "dialogTitle": "Permanently delete your account?",
+      "dialogDescription": "This action is irreversible. All your data will be lost.",
+      "confirmWithPassword": "Enter your password to confirm.",
+      "confirmWithUsername": "Enter your username “{username}” to confirm.",
+      "confirm": "Delete permanently",
+      "deleted": "Your account has been deleted."
+    },
+    "connections": {
+      "title": "Connections",
+      "description": "The services your activities come from.",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "connectedAs": "{name} · connected since {date}",
+      "connectedSince": "Connected since {date}",
+      "notConnectedDescription": "Import your activities from Strava.",
+      "revoke": "Revoke",
+      "revokeTitle": "Revoke access to Strava?",
+      "revokeDescription": "The platform's access to your Strava account will be removed, along with all activities imported from Strava. You can reconnect at any time.",
+      "revokeConfirm": "Revoke and delete",
+      "revoked": "Access to Strava has been revoked and your imported activities have been deleted."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Who can see your profile in detail."
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "placeholder": "The platform's terms of use will be published soon."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "hero": {
+      "morning": "Hello {name}",
+      "evening": "Good evening {name}",
+      "latest": "Latest activity: <strong>{name}</strong>, {when}.",
+      "noActivity": "No imported activity yet.",
+      "welcome": "Connect your Strava account to fill your dashboard.",
+      "map": "Map",
+      "achievements": "Achievements",
+      "distance": "Distance",
+      "elevation": "Elevation gain",
+      "time": "Moving time",
+      "activities": "Activities",
+      "earth": "{ratio} × around the Earth",
+      "everest": "{ratio} × Everest",
+      "days": "i.e. {days} days",
+      "sports": "{count, plural, one {# sport} other {# sports}}"
+    },
+    "week": {
+      "title": "This week",
+      "time": "Time",
+      "distance": "Distance",
+      "activities": "Activities",
+      "daysLabel": "Distance for each day of the week",
+      "compared": "{change} compared with last week ({previous})",
+      "noPrevious": "No activity last week.",
+      "streak": "{count, plural, =0 {No streak} one {# day in a row} other {# days in a row}}",
+      "bestStreak": "Best over a year: {count, plural, one {# day} other {# days}} in a row",
+      "dayDetail": "This week: {current} · Last week: {previous} · Average: {average}",
+      "legendCurrent": "This week",
+      "legendPrevious": "Last week",
+      "legendAverage": "{weeks}-week average",
+      "average": "Average"
+    },
+    "calendar": {
+      "title": "Year {year}",
+      "summary": "{activities, plural, =0 {No activity} one {# activity} other {# activities}} over {days, plural, one {# day} other {# days}} · {distance} · {time}",
+      "label": "Year calendar: {days, plural, =0 {no active days} one {# active day} other {# active days}}",
+      "hint": "Hover over a day to see its details.",
+      "day": "{count, plural, one {# activity} other {# activities}} · {distance} · {time}",
+      "rest": "Rest",
+      "less": "Less",
+      "more": "More",
+      "below": "Under {distance}",
+      "between": "From {from} to {to}",
+      "above": "{distance} and over",
+      "previousYear": "Previous year",
+      "nextYear": "Next year"
+    },
+    "sports": {
+      "title": "Your sports",
+      "others": "{count, plural, one {# other sport} other {# other sports}}",
+      "detail": "{count, plural, one {# activity} other {# activities}} · {time} · {distance}",
+      "empty": "No sports yet."
+    },
+    "recent": {
+      "title": "Latest activities",
+      "empty": "No activities yet.",
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "exploration": {
+      "title": "Exploration",
+      "map": "Map",
+      "tiles": "Tiles",
+      "subtiles": "Small tiles",
+      "maxSquare": "Max square",
+      "squareSize": "{size} × {size}",
+      "maxCluster": "Max cluster",
+      "tilesError": "Couldn't load your tiles right now.",
+      "countries": "Countries",
+      "countriesCount": "{count, plural, one {{formatted} country visited} other {{formatted} countries visited}}",
+      "countryTiles": "{visited} tiles",
+      "countriesPending": "Your tiles are being located.",
+      "countriesEmpty": "No countries visited yet.",
+      "countriesError": "Couldn't load your countries right now.",
+      "stations": "Stations and railways",
+      "stationCount": "{count, plural, one {station visited} other {stations visited}}",
+      "railway": "of railways unlocked",
+      "stationCluster": "max cluster ({railway})",
+      "lastStation": "Latest: {name}",
+      "stationsError": "Couldn't load your stations right now.",
+      "openTiles": "View tiles on the map",
+      "preview": "Preview of the most explored area",
+      "openStations": "View stations on the map"
+    },
+    "badges": {
+      "all": "All",
+      "favorites": {
+        "title": "Favorite badges",
+        "description": "The badges you're keeping a close eye on."
+      },
+      "closest": {
+        "title": "Almost unlocked",
+        "description": "The badges closest to their next step."
+      },
+      "empty": "No badges in progress."
+    },
+    "evolution": {
+      "tilesTitle": "Your tiles over time",
+      "stationsTitle": "Your stations over time",
+      "modesLabel": "Tracked value",
+      "tileModes": {
+        "tiles": "Tiles",
+        "maxClusterTiles": "Max cluster",
+        "maxSquareTiles": "Max square",
+        "subtiles": "Small tiles",
+        "maxClusterSubtiles": "Small max cluster",
+        "maxSquareSubtiles": "Small max square"
+      },
+      "stationModes": {
+        "stations": "Stations visited",
+        "maxCluster": "Biggest cluster",
+        "railway": "Railways unlocked"
+      },
+      "squareSize": "{size} × {size}",
+      "label": "Trend: {name}, {value} today",
+      "hint": "Drag across the chart to zoom.",
+      "reset": "Reset",
+      "empty": "Nothing to show yet.",
+      "error": "Couldn't load the trend right now."
+    },
+    "monthly": {
+      "title": "Monthly distance {year}",
+      "legend": "Chart series",
+      "total": "Total",
+      "families": {
+        "ride": "Cycling",
+        "run": "Running",
+        "hike": "Hiking and walking",
+        "swim": "Swimming",
+        "other": "Other sports"
+      },
+      "label": "Distance for each month by sport, compared with the two previous years",
+      "error": "Couldn't load monthly distances right now.",
+      "summary": "{distance} over the period",
+      "previousYear": "Previous year",
+      "nextYear": "Next year",
+      "rollingTitle": "Monthly distance over a year",
+      "yearsEarlier": "{count, plural, one {One year earlier} other {# years earlier}}"
+    }
+  },
+  "strava": {
+    "name": "Strava",
+    "connect": "Connect with Strava",
+    "unavailable": "Connecting to Strava isn't available right now.",
+    "statusError": "Couldn't retrieve the status of your Strava connection.",
+    "retry": "Try again",
+    "connectCard": {
+      "title": "Connect your Strava account",
+      "description": "Import your activities to start exploring the map.",
+      "imported": "We import the name, sport, date, distance, duration and elevation gain of your activities, private ones included if you allow it.",
+      "noTracks": "Your GPS tracks are not stored.",
+      "revocable": "You can revoke access at any time from the settings: your imported activities are then deleted."
+    },
+    "outcome": {
+      "connected": "Your Strava account is connected. Your activities are starting to import.",
+      "denied": "You declined access to Strava. You can try again whenever you like.",
+      "missing_scope": "Access to your activities is required: tick “View data about your activities” on the Strava screen.",
+      "already_linked": "This Strava account is already connected to another account.",
+      "unavailable": "Connecting to Strava isn't available right now.",
+      "error": "Connecting to Strava failed. Please try again in a moment."
+    },
+    "sync": {
+      "importing": "Importing your activities…",
+      "importingCount": "{count, plural, =0 {Preparing the import…} one {# activity imported} other {# activities imported}}",
+      "queued": "Sync pending…",
+      "rateLimited": "Strava limits the number of requests: the import will resume automatically at {time}.",
+      "retrying": "An error occurred, retrying at {time}.",
+      "failed": "Sync failed.",
+      "failedDescription": "Strava didn't respond correctly. Try again in a few minutes.",
+      "hint": "You can leave this page: the import continues in the background.",
+      "now": "Sync",
+      "requested": "Sync started.",
+      "lastSynced": "Last synced {date}",
+      "neverSynced": "Not synced yet",
+      "connectedAs": "Connected to Strava as {name}",
+      "connected": "Connected to Strava",
+      "privateMissing": "Your private activities aren't imported. To include them, revoke then reconnect Strava, ticking “View data about your private activities”.",
+      "tiles": {
+        "computing": "Computing your tiles…",
+        "computedCount": "{computed} of {total}",
+        "refining": "Refining tiles",
+        "refiningCount": "{count, plural, one {# activity to check} other {# activities to check}}",
+        "refiningHint": "Long outings and activities with a hidden start or end are refined using their full GPS track, at the pace Strava allows."
+      }
+    }
+  },
+  "distances": {
+    "title": "Achievements",
+    "tabs": {
+      "label": "Achievement categories",
+      "all": "All",
+      "challenges": "Challenges",
+      "distance": "Distance",
+      "time": "Time",
+      "elevation": "Elevation"
+    },
+    "error": "Couldn't load your achievements right now.",
+    "retry": "Try again",
+    "empty": "Connect Strava from the dashboard to move your badges forward.",
+    "completions": "{count, plural, =0 {Not completed yet} one {Completed # time} other {Completed # times}}",
+    "progressLabel": "{name}: {percent} of the current iteration",
+    "families": {
+      "all": "All sports",
+      "run": "Running",
+      "hike": "Hiking and walking",
+      "ride": "Cycling",
+      "swim": "Swimming"
+    },
+    "favorite": "favorite",
+    "favoritesSection": {
+      "title": "Favorites",
+      "empty": "Add your favorite badges to favorites from their details to find them here.",
+      "reorder": "Reorder",
+      "done": "Done",
+      "reorderHint": "Drag your favorites to choose their order.",
+      "reorderError": "Couldn't change the order of your favorites right now.",
+      "drag": {
+        "instructions": "To move a favorite, press Space or Enter, use the arrow keys, then press Space or Enter again to drop it, or Escape to cancel.",
+        "start": "{name} picked up, at position {rank}.",
+        "over": "{name} moved to position {rank}.",
+        "end": "{name} dropped at position {rank}.",
+        "cancel": "Move of {name} cancelled."
+      }
+    },
+    "dialog": {
+      "close": "Close",
+      "progressLabel": "Progress of the current iteration",
+      "firstIteration": "First iteration",
+      "iteration": "Iteration #{number}",
+      "covered": "{covered} of {target}",
+      "facts": {
+        "completions": "Completed",
+        "completionsValue": "{count, plural, =0 {Not yet} one {# time} other {# times}}",
+        "remaining": "Remaining",
+        "firstCompletedAt": "First time",
+        "lastCompletedAt": "Last time",
+        "never": "Not yet",
+        "estimatedNext": "Next time, at the current pace",
+        "estimateHint": "Estimate based on your pace over the last 90 days",
+        "noRecentActivity": "No activity in 90 days",
+        "unavailable": "Unavailable",
+        "tierReached": "Level reached",
+        "tierValue": "{level, plural, =0 {None} other {# of {total}}}",
+        "done": "Done"
+      },
+      "history": {
+        "title": "History",
+        "iteration": "#{number}",
+        "openOnMap": "Iteration #{number}: view {name} on the map",
+        "error": "Couldn't load the history right now.",
+        "loadMore": "{count, plural, one {Load more (# remaining)} other {Load more (# remaining)}}",
+        "loadMoreError": "Couldn't load more history right now."
+      },
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "favoriteError": "Couldn't change your favorites right now.",
+      "tier": "Level {number} of {total}",
+      "lastTier": "Last level reached",
+      "tiers": {
+        "title": "Levels",
+        "tier": "Level {number}",
+        "reached": "reached",
+        "locked": "not reached yet"
+      },
+      "addToProfile": "Show on profile",
+      "removeFromProfile": "Remove from profile",
+      "profileError": "Couldn't change your profile right now.",
+      "profileFull": "You've already pinned the maximum number of badges: remove one from your profile to pin another."
+    },
+    "showMore": "{count, plural, one {Show # more badge} other {Show # more badges}}",
+    "showLess": "Show less",
+    "search": {
+      "label": "Search for a badge",
+      "placeholder": "Search for a badge…",
+      "empty": "No matching badges."
+    },
+    "themes": {
+      "label": "Themes",
+      "all": "All"
+    },
+    "totals": {
+      "distance": "{amount} covered",
+      "time": "{amount} of movement",
+      "elevation": "{amount} of elevation gain",
+      "activities": "{amount} recorded",
+      "active_days": "{amount} with an activity",
+      "tiles": "{amount} discovered",
+      "subtiles": "{amount} discovered",
+      "stations": "{amount} visited"
+    },
+    "units": {
+      "activities": "{count, plural, one {# activity} other {# activities}}",
+      "active_days": "{count, plural, one {# day} other {# days}}",
+      "tiles": "{count, plural, one {# tile} other {# tiles}}",
+      "subtiles": "{count, plural, one {# small tile} other {# small tiles}}",
+      "stations": "{count, plural, one {# station} other {# stations}}"
+    },
+    "challengesTitle": "Challenges",
+    "level": "Lv. {level}",
+    "obtained": "{obtained}/{total}",
+    "obtainedLabel": "{obtained} of {total} {obtained, plural, one {badge earned} other {badges earned}}",
+    "viewOptions": {
+      "sortLabel": "Sort by",
+      "sorts": {
+        "default": "Default",
+        "name_asc": "Name (A–Z)",
+        "name_desc": "Name (Z–A)",
+        "progress_asc": "Progress ascending",
+        "progress_desc": "Progress descending"
+      },
+      "compactView": "Compact view",
+      "normalView": "Wide view",
+      "viewLabel": "Display"
+    },
+    "header": {
+      "label": "Your achievements summary",
+      "closest": "Closest",
+      "remaining": "{amount} to go",
+      "carousel": "Featured badges",
+      "previous": "Previous slide",
+      "next": "Next slide",
+      "slides": {
+        "closest": "Almost earned",
+        "recent": "New badges"
+      },
+      "metrics": {
+        "distance": "Distance",
+        "time": "Time",
+        "elevation": "Elevation",
+        "activities": "Activities",
+        "active_days": "Active days",
+        "tiles": "Tiles",
+        "subtiles": "Small tiles",
+        "stations": "Stations"
+      },
+      "random": "Random",
+      "reroll": "Roll the die again",
+      "roll": "Roll the die to draw a badge",
+      "rollHint": "Roll the die",
+      "closestNew": "Next new one",
+      "closestNone": "No badges in progress."
+    },
+    "onProfile": "shown on profile"
+  },
+  "map": {
+    "title": "Map",
+    "label": "Map of your activities",
+    "checking": "Looking for new tracks…",
+    "syncing": "Fetching tracks: {fetched} of {total}",
+    "empty": "Connect Strava from the dashboard to see your tracks here.",
+    "error": "Couldn't fetch your tracks right now.",
+    "rateLimited": "The Strava request quota has been reached. Try again in a few minutes.",
+    "retry": "Try again",
+    "invalidLink": "Some settings in this link are invalid: they were ignored.",
+    "stats": {
+      "label": "Map key figures",
+      "tracks": "Tracks",
+      "tiles": "Large tiles",
+      "subtiles": "Small tiles",
+      "showSubtiles": "Show small tiles on the map",
+      "hideSubtiles": "Hide small tiles on the map",
+      "visited": "Visited",
+      "maxCluster": "Biggest cluster",
+      "otherClusters": "Other clusters",
+      "maxSquare": "Max square",
+      "tools": "Tools",
+      "modules": "Modules",
+      "stations": "Stations",
+      "stationCount": "{count, plural, one {station visited} other {stations visited}}",
+      "railway": "Railways unlocked",
+      "dim": "Dim the map",
+      "discreetDots": "Stations seen from afar",
+      "trainSpeed": "Train speed",
+      "speedValue": "×{factor, number}",
+      "realSpeed": "real",
+      "editSpeed": "Enter a speed, from ×{min, number} to ×{max, number}",
+      "display": "Display",
+      "sound": "Train sound"
+    },
+    "settings": {
+      "open": "Settings",
+      "map": "Map",
+      "location": "My location"
+    },
+    "location": {
+      "find": "Find my location",
+      "unavailable": "Location unavailable"
+    },
+    "modules": {
+      "tiles": "Tiles",
+      "stations": "Stations",
+      "show": "{module, select, stations {Show stations} other {Show tiles}} on the map",
+      "hide": "{module, select, stations {Hide stations} other {Hide tiles}} on the map",
+      "data": "{module, select, stations {Station} other {Tile}} figures"
+    },
+    "sports": {
+      "run": "Running",
+      "trail_run": "Trail running",
+      "virtual_run": "Virtual run",
+      "walk": "Walking",
+      "hike": "Hiking",
+      "ride": "Cycling",
+      "gravel_ride": "Gravel",
+      "mountain_bike_ride": "Mountain biking",
+      "e_bike_ride": "E-bike",
+      "e_mountain_bike_ride": "E-mountain biking",
+      "virtual_ride": "Virtual ride",
+      "swim": "Swimming",
+      "alpine_ski": "Alpine skiing",
+      "backcountry_ski": "Backcountry skiing",
+      "nordic_ski": "Cross-country skiing",
+      "snowboard": "Snowboarding",
+      "snowshoe": "Snowshoeing",
+      "rowing": "Rowing",
+      "kayaking": "Kayaking",
+      "canoeing": "Canoeing",
+      "stand_up_paddling": "Stand-up paddleboarding",
+      "inline_skate": "Inline skating",
+      "wheelchair": "Wheelchair",
+      "handcycle": "Handcycle",
+      "workout": "Workout",
+      "other": "Other"
+    },
+    "tilePanel": {
+      "station": "Station",
+      "tile": "Tile",
+      "subtile": "Small tile",
+      "description": "What your activities have explored on this tile.",
+      "inMaxSquare": "Biggest square",
+      "inMaxCluster": "Biggest cluster",
+      "clustered": "Cluster",
+      "subtiles": "Small tiles explored",
+      "visits": "Passes",
+      "firstVisit": "First pass",
+      "lastVisit": "Last pass",
+      "activities": "Activities",
+      "noActivities": "No activity has crossed this tile.",
+      "loadMore": "Load more",
+      "error": "Couldn't load this tile's details.",
+      "activitiesError": "Couldn't load the activities.",
+      "retry": "Try again",
+      "viewActivity": "View activity",
+      "notVisited": "You haven't visited this tile yet."
+    },
+    "panel": {
+      "label": "Details",
+      "back": "Previous",
+      "forward": "Next",
+      "close": "Close panel",
+      "collapse": "Collapse panel",
+      "expand": "Expand panel",
+      "invalidLink": "This link doesn't point to any tile, activity or station.",
+      "kinds": {
+        "tile": "Tiles",
+        "station": "Station",
+        "activity": "Activity",
+        "train": "Train"
+      }
+    },
+    "activityPanel": {
+      "distance": "Distance",
+      "movingTime": "Moving time",
+      "elevation": "Elevation gain",
+      "tiles": "Tiles",
+      "subtiles": "Small tiles",
+      "error": "This activity couldn't be found or loaded.",
+      "gainsTitle": "Gains",
+      "crossed": "{count, plural, one {{formatted} crossed} other {{formatted} crossed}}",
+      "newTiles": "New",
+      "maxCluster": "Main cluster",
+      "otherClusters": "Other clusters",
+      "stations": "Stations",
+      "newStations": "New",
+      "gainsPending": "This activity's gains are being computed.",
+      "gainedOnly": "Gained tiles only",
+      "elapsedTime": "Elapsed time",
+      "averageSpeed": "Average speed",
+      "pace": "Average pace",
+      "pauses": "Pause time",
+      "maxSquare": "Biggest square",
+      "mapTitle": "On the map",
+      "showTiles": "Large tiles",
+      "showSubtiles": "Small tiles",
+      "showTrack": "Track",
+      "noTrack": "Track unavailable on this device",
+      "showStations": "Stations and railways gained",
+      "noStations": "No stations gained by this activity",
+      "nothingGained": "No tiles gained by this activity"
+    },
+    "activityFormat": {
+      "hours": "{hours} h {minutes}",
+      "minutes": "{minutes} min",
+      "viewOnStrava": "View on Strava",
+      "pace": "{minutes}:{seconds} /km"
+    },
+    "history": {
+      "open": "History",
+      "label": "Tile history",
+      "close": "Close history",
+      "mode": "What the history shows",
+      "modes": {
+        "gained": "Tiles gained",
+        "state": "Map state"
+      },
+      "since": "Since <date>{day}</date>",
+      "at": "As of <date>{day}</date>",
+      "ago": "{period} ago",
+      "slider": "Period",
+      "steps": {
+        "day": "{count, plural, =0 {today} one {# day} other {# days}}",
+        "week": "{count, plural, one {# week} other {# weeks}}",
+        "month": "{count, plural, one {# month} other {# months}}",
+        "year": "{count, plural, one {# year} other {# years}}"
+      },
+      "counts": {
+        "tiles": "Large tiles",
+        "subtiles": "Small tiles",
+        "stations": "Stations",
+        "railway": "Railways",
+        "stationCluster": "Station cluster"
+      },
+      "pending": "Updating history…",
+      "error": "Couldn't load the history.",
+      "editDay": "Change the date, currently {day}",
+      "today": "Today"
+    },
+    "sector": {
+      "open": "Sector",
+      "label": "Sector",
+      "close": "Close sector",
+      "change": "Change",
+      "recenter": "Recenter",
+      "veil": "Gray out around the sector",
+      "tiles": "Large tiles",
+      "subtiles": "Small tiles",
+      "computingTotal": "… (computing)",
+      "firstVisit": "First visit",
+      "lastVisit": "Last visit",
+      "never": "Never",
+      "computing": "Computing the sector's shape, which can take several minutes for a large country…",
+      "error": "Couldn't load the sector.",
+      "atSea": "No country at the center of the map: move it or search for a sector.",
+      "search": {
+        "title": "Search for a sector",
+        "description": "Choose a country to center the map on it.",
+        "placeholder": "Search for a country…",
+        "visited": "Countries visited",
+        "others": "Other countries",
+        "all": "Countries",
+        "empty": "No country found.",
+        "error": "Couldn't load the list of countries."
+      },
+      "stations": "Stations",
+      "railway": "Rail network"
+    },
+    "bands": {
+      "collapse": "Collapse the band",
+      "expand": "Expand the band"
+    },
+    "stationPanel": {
+      "unnamed": "Unnamed station",
+      "visited": "Visited",
+      "notVisited": "Not visited yet",
+      "inMaxCluster": "Biggest cluster",
+      "visitedDescription": "One of your activities crossed one of this station's small tiles, highlighted on the map.",
+      "notVisitedDescription": "Cross one of this station's small tiles, highlighted on the map, to unlock it.",
+      "firstVisit": "First visit",
+      "links": "Links unlocked",
+      "neighbors": "Neighboring stations",
+      "noNeighbors": "No neighboring station found on the rail network.",
+      "linkUnlocked": "{distance} unlocked",
+      "activities": "Activities on the station's tile",
+      "viewTile": "View the small tile",
+      "center": "Center the station on the map",
+      "error": "Couldn't load this station.",
+      "attribution": "Stations and railways © <link>OpenStreetMap contributors</link>",
+      "report": "Report a problem with this station"
+    },
+    "trainPanel": {
+      "title": "{kind} {number}",
+      "kinds": {
+        "ter": "TER",
+        "intercites": "Intercités",
+        "tgv": "TGV",
+        "freight": "Freight",
+        "local": "Shuttle"
+      },
+      "running": "Running",
+      "dwelling": "At the platform",
+      "onTime": "On time",
+      "late": "Late +{minutes} min",
+      "speed": "Speed",
+      "kmh": "{speed} km/h",
+      "speedFactor": "×{factor, number}",
+      "remaining": "Next stop in",
+      "vehicles": "Vehicles",
+      "passengers": "Passengers",
+      "cargo": "Cargo",
+      "goods": "Goods",
+      "load": "Tonnage",
+      "tonnes": "{tonnes, number} t",
+      "cargoes": {
+        "wheat": "Wheat",
+        "aggregates": "Aggregates",
+        "chemicals": "Chemicals",
+        "containers": "Containers",
+        "logs": "Timber logs",
+        "cars": "New cars",
+        "steel": "Steel",
+        "fuel": "Fuel"
+      },
+      "onLine": "Trains on the line",
+      "journey": "Journey ({count, plural, one {# stop} other {# stops}})",
+      "from": "Coming from",
+      "next": "Next stop",
+      "terminus": "Terminus",
+      "unnamed": "Unnamed station",
+      "follow": "Follow the train",
+      "following": "Following",
+      "gone": "This train has left the map.",
+      "disclaimer": "Fictional train: it runs on your unlocked links, and its figures are made up.",
+      "moreStops": "{count, plural, one {# more stop} other {# more stops}}",
+      "fewerStops": "Hide intermediate stops",
+      "passed": "Served",
+      "estimated": "Estimated time"
+    },
+    "stationReport": {
+      "prompt": "A problem with a train line? A missing station?",
+      "open": "Report",
+      "title": "Report something missing or wrong",
+      "description": "A station is missing, or a railway is absent or wrong? Tell the team, who will fix the data in upcoming updates.",
+      "stationTitle": "Report “{name}”",
+      "stationDescription": "Is something about this station wrong? Tell the team, who will fix the data in upcoming updates.",
+      "unnamed": "Unnamed station",
+      "legend": "Reason for the report",
+      "reasons": {
+        "missing_station": "A station is missing",
+        "railway": "Railway missing or wrong",
+        "wrong_count": "A station is counted by mistake",
+        "wrong_name": "Wrong name",
+        "wrong_location": "Wrong location",
+        "wrong_zone": "Incorrect validation zone",
+        "closed": "Station closed or nonexistent",
+        "duplicate": "Duplicate of another station",
+        "other": "Other"
+      },
+      "details": "Details (optional)",
+      "detailsRequired": "Explain the reason",
+      "detailsPlaceholder": "Station name, city, line… anything that helps the team find it.",
+      "stationPlaceholder": "What is wrong, and what would be right.",
+      "customPlaceholder": "Describe the problem.",
+      "submit": "Send",
+      "sent": "Report sent to the team",
+      "sentDescription": "You'll be notified once it has been reviewed.",
+      "close": "Close"
+    }
+  },
+  "community": {
+    "search": {
+      "label": "Search for a user",
+      "placeholder": "Search for a user…",
+      "empty": "No user found.",
+      "error": "The search failed. Try again.",
+      "followed": "Following",
+      "others": "Other users"
+    },
+    "follow": {
+      "follow": "Follow",
+      "followBack": "Follow back",
+      "following": "Following",
+      "unfollow": "Unfollow",
+      "followsYou": "Follows you",
+      "requested": "Request sent",
+      "cancelRequest": "Cancel request",
+      "confirm": {
+        "title": "Unfollow @{username}?",
+        "description": "Their profile will leave your card stack. If it's private, you'll need to request to follow again."
+      }
+    },
+    "counts": {
+      "followers": "{count, plural, =0 {followers} one {follower} other {followers}}",
+      "following": "{count, plural, =0 {following} one {following} other {following}}"
+    },
+    "profile": {
+      "notFound": "This user doesn't exist.",
+      "error": "The profile couldn't be loaded.",
+      "retry": "Try again"
+    },
+    "lists": {
+      "label": "Followers and following",
+      "followers": "Followers",
+      "following": "Following",
+      "emptyFollowers": "Nobody follows {name} yet.",
+      "emptyFollowing": "{name} doesn't follow anyone yet.",
+      "loadMore": "Show more",
+      "error": "The list couldn't be loaded."
+    }
+  },
+  "notifications": {
+    "label": "Notifications",
+    "unread": "{count, plural, one {# unread notification} other {# unread notifications}}",
+    "empty": "No notifications for now.",
+    "error": "Notifications couldn't be loaded.",
+    "follow": "<b>{name}</b> followed you.",
+    "toast": {
+      "follow": "{name} followed you.",
+      "follow_request": "{name} wants to follow you.",
+      "follow_accepted": "{name} accepted your follow request.",
+      "profile_like": "Someone liked your profile.",
+      "moderation": "The team moderated your profile.",
+      "strava_unlinked": "The team unlinked your Strava account.",
+      "role_changed": "Your team role has changed.",
+      "release_note": "A new version is available.",
+      "report_received": "A new report needs handling.",
+      "report_closed": "Your report has been reviewed.",
+      "report_sent": "Your report was sent."
+    },
+    "view": "View",
+    "follow_request": "<b>{name}</b> wants to follow you.",
+    "follow_accepted": "<b>{name}</b> accepted your follow request.",
+    "profile_like": "Someone liked your profile.",
+    "moderation": "The team reset {fields} on your profile.",
+    "strava_unlinked": "The team unlinked your Strava account.",
+    "role_changed": "{role, select, none {You're no longer part of the team.} other {You now have the {roleName} role on the team.}}",
+    "roles": {
+      "support": "Support",
+      "admin": "Admin",
+      "super-admin": "Super admin"
+    },
+    "reason": "Reason: {reason}",
+    "team": "Team",
+    "fields": {
+      "username": "the username",
+      "displayName": "the display name",
+      "bio": "the bio",
+      "city": "the city",
+      "avatar": "the picture"
+    },
+    "category": {
+      "all": "All",
+      "likes": "Likes",
+      "follows": "Follows"
+    },
+    "period": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "week": "This week",
+      "month": "This month",
+      "older": "Older"
+    },
+    "release_note": "What's new in version <b>{version}</b>: see what's changed.",
+    "release": "What's new",
+    "report_received": "New report on @{username} to handle.",
+    "report_closed": "{outcome, select, sanctioned {Your report on @{username} has been reviewed: a sanction was applied. Thank you.} other {Your report on @{username} has been reviewed: no sanction was applied.}}",
+    "report_sent": "Your report on @{username} was sent. You'll be notified once the team has reviewed it.",
+    "station_report_received": "{general, select, yes {New report on rail data to handle.} other {New report on the station “{station}” to handle.}}",
+    "station_report_sent": "{general, select, yes {Your report on rail data was sent.} other {Your report on the station “{station}” was sent.}} You'll be notified once the team has reviewed it.",
+    "station_report_closed": "{outcome, select, accepted {{general, select, yes {Your report on rail data} other {Your report on the station “{station}”}} was accepted: it will be taken into account in upcoming updates. Thank you!} done {{general, select, yes {The fix for your report on rail data} other {The fix for your report on the station “{station}”}} is live. Thank you!} other {{general, select, yes {Your report on rail data} other {Your report on the station “{station}”}} was closed without action: {dismissal}.}}",
+    "teamNote": "Team note: {reason}",
+    "stationDismissals": {
+      "already_fixed": "already present or already fixed",
+      "duplicate": "duplicate of another report",
+      "osm_correct": "the OpenStreetMap data is correct",
+      "out_of_scope": "outside the scope of the site",
+      "unverifiable": "impossible to verify",
+      "other": "other reason"
+    }
+  },
+  "footer": {
+    "label": "Footer",
+    "tagline": "Every outing draws your map. Tiles, stations, countries and badges to complete, one kilometer after another.",
+    "product": "Discover",
+    "features": "Features",
+    "steps": "How it works",
+    "faq": "FAQ",
+    "app": "App",
+    "account": "Account",
+    "legal": "Information",
+    "terms": "Terms of use",
+    "stravaLegal": "Strava API policy",
+    "madeBy": "Designed and built by {name}",
+    "rights": "All rights reserved.",
+    "compatible": "Works with Strava",
+    "stravaNotice": "Kilotrace is not affiliated with or endorsed by Strava. Strava is a trademark of Strava, Inc."
+  },
+  "maintenance": {
+    "titles": {
+      "scheduled": "Scheduled maintenance",
+      "ongoing": "Maintenance in progress",
+      "degraded": "Service disrupted",
+      "strava": "Strava sync disrupted"
+    },
+    "more": "Show more",
+    "less": "Show less",
+    "close": "Hide the banner"
+  },
+  "releaseNotes": {
+    "title": "What's new",
+    "description": "What changes on the site, version after version.",
+    "empty": "No release notes yet.",
+    "error": "Release notes couldn't be loaded.",
+    "retry": "Try again",
+    "version": "Version {version}",
+    "latest": "Latest version",
+    "new": "New",
+    "releasedOn": "Released on {date}",
+    "sections": {
+      "new": "What's new",
+      "improved": "Improvements",
+      "fixed": "Fixes",
+      "other": "Other changes",
+      "team": "Team",
+      "teamHint": "Visible to the team only"
+    },
+    "dialog": {
+      "previous": "Previous version",
+      "next": "Next version",
+      "position": "{index} of {count}",
+      "close": "Close",
+      "done": "Got it",
+      "history": "History"
+    },
+    "banner": {
+      "label": "What's new",
+      "fallback": "Version {version} is available.",
+      "more": "{count, plural, =0 {} one {and # other version} other {and # other versions}}",
+      "open": "See what's new",
+      "close": "Close"
+    },
+    "pdfFooter": "Kilotrace · Release notes"
+  }
+}

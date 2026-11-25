@@ -1,11 +1,11 @@
-import { DEFAULT_LOCALE, sharedMessages, TIME_ZONE } from "@kilotrace/ui/i18n/config";
+import { ADMIN_LOCALE, loadMessages, TIME_ZONE } from "@kilotrace/ui/i18n/config";
 import { getRequestConfig } from "next-intl/server";
 
-export { DEFAULT_LOCALE };
+export { ADMIN_LOCALE };
 
-/** The texts of the shared components; those of the back office stay on the server (lib/admin/messages.ts). */
+/** The texts of the shared components, in the single language of the back office; its own texts stay on the server (lib/admin/messages.ts). */
 export default getRequestConfig(async () => ({
-  locale: DEFAULT_LOCALE,
+  locale: ADMIN_LOCALE,
   timeZone: TIME_ZONE,
-  messages: sharedMessages,
+  messages: await loadMessages(ADMIN_LOCALE),
 }));

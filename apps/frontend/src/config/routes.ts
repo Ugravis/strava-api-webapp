@@ -15,7 +15,7 @@ export const routes = {
   profiles: "/profiles",
   settings: "/settings",
   /** The history of the release notes. */
-  releaseNotes: "/nouveautes",
+  releaseNotes: "/whats-new",
   /** The profile section of the settings. */
   settingsProfile: "/settings#profile",
   sessionExpired: "/session-expired",

@@ -1,8 +1,7 @@
 "use client";
 
+import { Link, useRouter } from "@/i18n/navigation";
 import { BellIcon, HeartIcon, ShieldIcon, MegaphoneIcon } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
 import { FollowButton, type FollowState } from "@/components/community/follow-button";

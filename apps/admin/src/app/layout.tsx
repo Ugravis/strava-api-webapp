@@ -1,7 +1,7 @@
 import { Providers } from "@kilotrace/ui/components/providers";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { DEFAULT_LOCALE } from "@/i18n/request";
+import { ADMIN_LOCALE } from "@/i18n/request";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { fontVariables } from "./fonts";
 import "./globals.css";
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang={DEFAULT_LOCALE}
+      lang={ADMIN_LOCALE}
       className={`${fontVariables} h-full antialiased`}
       suppressHydrationWarning
     >

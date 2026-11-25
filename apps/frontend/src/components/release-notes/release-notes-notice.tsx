@@ -1,7 +1,7 @@
 "use client";
 
 import type { UnseenReleaseNotesResponse } from "@kilotrace/shared";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { routes } from "@/config/routes";
 import { releaseNotesService } from "@/services/release-notes.service";

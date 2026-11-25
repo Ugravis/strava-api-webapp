@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlertIcon, InfoIcon, RefreshCwIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertAction, AlertDescription } from "@kilotrace/ui/components/ui/alert";

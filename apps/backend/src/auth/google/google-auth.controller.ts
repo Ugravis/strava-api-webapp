@@ -1,3 +1,4 @@
+import { writeLocaleCookie } from '../locale-cookie';
 import {
   Body,
   Controller,
@@ -114,8 +115,9 @@ export class GoogleAuthController {
         );
         return this.redirectToFrontend(response, '/register/google');
       }
-      const { session } = outcome.result;
+      const { user, session } = outcome.result;
       this.sessionCookie.write(response, session);
+      writeLocaleCookie(response, user.locale, this.config.secureCookies);
       return this.redirectToFrontend(response, '/dashboard');
     } catch (error) {
       if (error instanceof AccountSuspendedException) {
@@ -153,6 +155,7 @@ export class GoogleAuthController {
     );
     pendingSignupCookie.clear(response, this.config.secureCookies);
     this.sessionCookie.write(response, session);
+    writeLocaleCookie(response, user.locale, this.config.secureCookies);
     return toUserResponse(user);
   }
 

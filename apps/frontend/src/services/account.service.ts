@@ -1,3 +1,4 @@
+import type { Locale } from "@kilotrace/shared";
 import { apiRequest } from "@/lib/api/client";
 import type { CitySuggestion, FavoriteSport, User } from "@kilotrace/ui/lib/api/types";
 
@@ -36,6 +37,8 @@ export const accountService = {
     formData.append("file", file);
     return apiRequest<User>("/users/me/avatar", { method: "PUT", body: { formData } });
   },
+
+  setLocale: (locale: Locale) => apiRequest<User>("/users/me/locale", { method: "PUT", body: { json: { locale } } }),
 
   removeAvatar: () => apiRequest<User>("/users/me/avatar", { method: "DELETE" }),
 

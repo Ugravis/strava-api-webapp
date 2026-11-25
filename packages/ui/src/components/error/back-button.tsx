@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeftIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@kilotrace/ui/lib/navigation";
 import type { ReactNode } from "react";
 import { Button } from "@kilotrace/ui/components/ui/button";
 

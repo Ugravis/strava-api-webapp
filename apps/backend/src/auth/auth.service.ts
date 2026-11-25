@@ -1,3 +1,4 @@
+import type { RequestMetadata } from './request-metadata';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import {
   isCommonPassword,
@@ -80,7 +81,7 @@ export class AuthService {
   /** Creates the account of a sign-up whose code is entered, and signs it in. */
   async verifySignup(
     dto: VerifyCodeDto,
-    metadata: SessionMetadata,
+    metadata: RequestMetadata,
   ): Promise<AuthResult> {
     await this.system.assertSignupsEnabled();
     const challenge = await this.challenges.verify(
@@ -96,6 +97,7 @@ export class AuthService {
       username: challenge.username,
       passwordHash: challenge.passwordHash,
       termsAcceptedAt: new Date(),
+      locale: metadata.locale,
     });
     return {
       user,

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@kilotrace/ui/components/ui/button";

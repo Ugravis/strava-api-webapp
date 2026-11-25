@@ -32,7 +32,11 @@ const config: AuthConfig = {
   passwordResetTtlMinutes: 15,
 };
 
-const metadata = { userAgent: 'jest', ipAddress: '127.0.0.1' };
+const metadata = {
+  userAgent: 'jest',
+  ipAddress: '127.0.0.1',
+  locale: 'fr' as const,
+};
 const createdSession = {
   token: 'session-token',
   expiresAt: new Date('2030-01-01'),
@@ -57,6 +61,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     countryCode: null,
     favoriteSports: [],
     profileColor: null,
+    locale: 'fr',
     profilePrivate: true,
     roles: [],
     suspendedAt: null,

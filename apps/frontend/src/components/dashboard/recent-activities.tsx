@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRightIcon, HistoryIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@kilotrace/ui/components/ui/card";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";

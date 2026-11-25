@@ -8,7 +8,7 @@ import {
   type PageViewBeacon,
   type PageViewDevice,
 } from "@kilotrace/shared";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { useEffect } from "react";
 
 const ENDPOINT = "/api/page-views";

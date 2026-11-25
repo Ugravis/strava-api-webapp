@@ -1,5 +1,6 @@
+import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { cacheLife } from "next/cache";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { AppLogo } from "@kilotrace/ui/components/brand/app-logo";
 import { StravaIcon } from "@kilotrace/ui/components/strava/strava-icon";
@@ -102,6 +103,7 @@ export function SiteFooter({ authenticated = false }: { authenticated?: boolean 
           </Link>
           <p className="max-w-xs text-sm text-pretty text-muted-foreground">{t("tagline")}</p>
           <p className="text-sm text-muted-foreground">{t("madeBy", { name: AUTHOR })}</p>
+          <LocaleSwitcher signedIn={authenticated} />
         </div>
         {columns.map((column) => (
           <FooterColumn key={column.title} {...column} />

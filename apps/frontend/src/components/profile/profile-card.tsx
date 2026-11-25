@@ -9,7 +9,7 @@ import {
   TrainFrontIcon,
   XIcon,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { type CSSProperties, type ReactNode, useRef, useState } from "react";
 import type { FollowState } from "@/components/community/follow-button";

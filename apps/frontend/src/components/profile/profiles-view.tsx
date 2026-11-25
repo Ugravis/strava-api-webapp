@@ -1,7 +1,7 @@
 "use client";
 
 import { EyeIcon, EyeOffIcon, LayersIcon, PencilIcon, UndoIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";

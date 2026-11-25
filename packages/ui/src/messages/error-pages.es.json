@@ -1,0 +1,17 @@
+{
+  "home": "Volver al inicio",
+  "back": "Página anterior",
+  "notFound": {
+    "metaTitle": "Página no encontrada",
+    "eyebrow": "Error 404",
+    "title": "Fuera del mapa",
+    "description": "Esta página no existe o se ha movido. Aquí no hay ninguna cuadrícula por explorar: vuelve a terreno conocido."
+  },
+  "error": {
+    "eyebrow": "Error 500",
+    "title": "Salida de ruta",
+    "description": "Un error inesperado nos ha hecho perder el rastro. Inténtalo de nuevo: si el problema persiste, vuelve un poco más tarde.",
+    "retry": "Reintentar",
+    "reference": "Referencia: {digest}"
+  }
+}

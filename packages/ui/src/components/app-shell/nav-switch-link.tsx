@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRightIcon, ExternalLinkIcon } from "lucide-react";
-import Link from "next/link";
+import { AppLink as Link } from "@kilotrace/ui/lib/navigation";
 import type { ReactNode } from "react";
 import {
   SidebarMenuButton,

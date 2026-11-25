@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { type ReactNode, useState } from "react";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";

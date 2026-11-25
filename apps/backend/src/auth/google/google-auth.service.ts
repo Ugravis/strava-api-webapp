@@ -7,6 +7,7 @@ import type { User } from '../../users/user.entity';
 import { normalizeEmail, UsersService } from '../../users/users.service';
 import { AuthService, type AuthResult } from '../auth.service';
 import type { CompleteGoogleSignupDto } from '../dto/complete-google-signup.dto';
+import type { RequestMetadata } from '../request-metadata';
 import type { SessionMetadata } from '../sessions/sessions.service';
 import type { GoogleProfile } from './google-oauth.service';
 import { OAuthAccountsService } from './oauth-accounts.service';
@@ -102,7 +103,7 @@ export class GoogleAuthService {
   async completeSignup(
     pending: PendingGoogleSignup,
     dto: CompleteGoogleSignupDto,
-    metadata: SessionMetadata,
+    metadata: RequestMetadata,
   ): Promise<AuthResult> {
     await this.system.assertSignupsEnabled();
     const user = await this.users.create({
@@ -113,6 +114,7 @@ export class GoogleAuthService {
         pending.name?.trim().slice(0, DISPLAY_NAME_MAX_LENGTH) || null,
       externalAvatarUrl: pending.picture,
       termsAcceptedAt: new Date(),
+      locale: metadata.locale,
     });
     try {
       await this.oauthAccounts.link(user.id, PROVIDER, pending.subject);

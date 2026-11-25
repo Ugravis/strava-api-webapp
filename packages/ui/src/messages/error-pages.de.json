@@ -1,0 +1,17 @@
+{
+  "home": "Zurück zur Startseite",
+  "back": "Vorherige Seite",
+  "notFound": {
+    "metaTitle": "Seite nicht gefunden",
+    "eyebrow": "Fehler 404",
+    "title": "Von der Karte gefallen",
+    "description": "Diese Seite existiert nicht oder wurde verschoben. Hier gibt es keine Kacheln zu entdecken: Kehre zurück auf bekanntes Terrain."
+  },
+  "error": {
+    "eyebrow": "Fehler 500",
+    "title": "Von der Strecke abgekommen",
+    "description": "Ein unerwarteter Fehler hat uns den Track verlieren lassen. Versuch es noch einmal: Besteht das Problem weiter, schau etwas später wieder vorbei.",
+    "retry": "Erneut versuchen",
+    "reference": "Referenz: {digest}"
+  }
+}

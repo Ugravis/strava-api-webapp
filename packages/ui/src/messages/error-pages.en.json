@@ -1,0 +1,17 @@
+{
+  "home": "Back to home",
+  "back": "Previous page",
+  "notFound": {
+    "metaTitle": "Page not found",
+    "eyebrow": "Error 404",
+    "title": "Off the map",
+    "description": "This page doesn't exist or has moved. No tiles to explore here: head back to familiar ground."
+  },
+  "error": {
+    "eyebrow": "Error 500",
+    "title": "Off the track",
+    "description": "An unexpected error made us lose the trail. Try again: if the problem persists, come back a little later.",
+    "retry": "Try again",
+    "reference": "Reference: {digest}"
+  }
+}

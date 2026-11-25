@@ -15,7 +15,9 @@
       "randonnée",
       "exploration",
       "défis sportifs"
-    ]
+    ],
+    "ogTitle": "Chaque sortie dessine votre carte",
+    "ogSubtitle": "Tuiles, gares, pays et badges à compléter, une sortie à la fois."
   },
   "common": {
     "or": "ou",
@@ -23,7 +25,8 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "back": "Retour",
-    "unexpectedError": "Une erreur inattendue est survenue. Réessayez dans un instant."
+    "unexpectedError": "Une erreur inattendue est survenue. Réessayez dans un instant.",
+    "language": "Langue"
   },
   "landing": {
     "heroBadge": "Compatible avec Strava",

@@ -1,0 +1,17 @@
+{
+  "home": "Torna alla home",
+  "back": "Pagina precedente",
+  "notFound": {
+    "metaTitle": "Pagina non trovata",
+    "eyebrow": "Errore 404",
+    "title": "Fuori mappa",
+    "description": "Questa pagina non esiste o è stata spostata. Nessun riquadro da esplorare qui: torna su terreno conosciuto."
+  },
+  "error": {
+    "eyebrow": "Errore 500",
+    "title": "Fuori strada",
+    "description": "Un errore imprevisto ci ha fatto perdere la traccia. Riprova: se il problema persiste, torna più tardi.",
+    "retry": "Riprova",
+    "reference": "Riferimento: {digest}"
+  }
+}

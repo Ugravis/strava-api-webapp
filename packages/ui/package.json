@@ -6,6 +6,7 @@
   "description": "Components, kits, theme and texts shared by the Next.js apps, as sources compiled by each app.",
   "scripts": {
     "lint": "eslint",
+    "test": "node scripts/check-messages.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

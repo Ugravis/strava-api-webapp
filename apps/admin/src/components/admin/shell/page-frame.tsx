@@ -13,9 +13,9 @@ export function PageFrame({ children }: { children: ReactNode }) {
     return <div className="flex h-[calc(100svh-3.5rem)] flex-1 flex-col md:h-svh">{children}</div>;
   }
   return (
-    // As the padded pages of the site.
+    // As the padded pages of the site; as tall as the frame, for a page centred in it (the error pages).
     <div className="flex min-h-[calc(100svh-3.5rem)] flex-1 flex-col p-4 md:min-h-svh md:p-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2 sm:py-4">{children}</div>
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 py-2 sm:py-4">{children}</div>
     </div>
   );
 }

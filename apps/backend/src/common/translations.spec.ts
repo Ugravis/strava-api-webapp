@@ -57,6 +57,7 @@ describe('fillTranslations', () => {
       { name: 'Fondateur', description: null },
       { en: { name: 'Founder' } },
       FIELDS,
+      'A tag',
     );
 
     expect(result.filled).toBe(3);
@@ -66,7 +67,10 @@ describe('fillTranslations', () => {
       es: { name: 'es:Fondateur' },
       de: { name: 'de:Fondateur' },
     });
-    expect(translate).toHaveBeenCalledWith(['Fondateur'], 'it', 'fr');
+    expect(translate).toHaveBeenCalledWith(['Fondateur'], 'it', {
+      source: 'fr',
+      context: 'A tag',
+    });
   });
 
   it('is refused without machine translation', async () => {
@@ -76,6 +80,7 @@ describe('fillTranslations', () => {
         { name: 'Fondateur' },
         {},
         FIELDS,
+        'A tag',
       ),
     ).rejects.toThrow('not set up');
   });

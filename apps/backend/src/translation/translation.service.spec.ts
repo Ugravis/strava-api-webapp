@@ -42,7 +42,7 @@ describe('TranslationService', () => {
     const service = new TranslationService({ deeplApiKey: 'key' });
 
     await expect(
-      service.translate(['Bonjour'], 'de', 'fr'),
+      service.translate(['Bonjour'], 'de', { source: 'fr' }),
     ).resolves.toBeNull();
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.deepl.com/v2/translate',

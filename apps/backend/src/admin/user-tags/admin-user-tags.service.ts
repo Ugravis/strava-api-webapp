@@ -6,6 +6,7 @@ import {
 } from '@kilotrace/shared/admin';
 import {
   fillTranslations,
+  TRANSLATION_CONTEXTS,
   type UpdateTranslationDto,
   withTranslation,
 } from '../../common/translations';
@@ -144,6 +145,7 @@ export class AdminUserTagsService {
       userTag,
       userTag.translations,
       USER_TAG_TRANSLATED_FIELDS,
+      TRANSLATION_CONTEXTS.userTag,
     );
     if (filled > 0) await this.userTags.update(id, { translations });
     return { filled };

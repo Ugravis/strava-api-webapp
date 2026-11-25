@@ -24,6 +24,7 @@ import { In, Repository } from 'typeorm';
 import { ApiErrorCode, ApiErrors } from '../../common/api-error';
 import {
   fillTranslations,
+  TRANSLATION_CONTEXTS,
   type UpdateTranslationDto,
   withTranslation,
 } from '../../common/translations';
@@ -366,6 +367,7 @@ export class AdminReleaseNotesService {
       translatedSourceOf(note),
       await this.translationsOf(version),
       RELEASE_NOTE_TRANSLATED_FIELDS,
+      TRANSLATION_CONTEXTS.releaseNote,
     );
     if (filled > 0) await this.saveTranslations(version, translations, actor);
     return { filled };

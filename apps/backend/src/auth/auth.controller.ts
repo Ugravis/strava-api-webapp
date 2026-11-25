@@ -32,6 +32,7 @@ import { ResetPasswordDto } from './dto/token.dto';
 import { ChallengeDto, VerifyCodeDto } from './dto/verification.dto';
 import { AppSettingsService } from '../system/app-settings.service';
 import { GoogleOAuthService } from './google/google-oauth.service';
+import { TRANSLATION_CONTEXTS } from '../common/translations';
 import { TranslationService } from '../translation/translation.service';
 import { requestLocale } from '../common/request-locale';
 import { requestMetadata } from './request-metadata';
@@ -136,7 +137,9 @@ export class AuthController {
     // In the language of the page, the team writing in the one of the back office.
     const locale = requestLocale(request);
     const [translation] =
-      (await this.translation.translate([notice.reason], locale)) ?? [];
+      (await this.translation.translate([notice.reason], locale, {
+        context: TRANSLATION_CONTEXTS.teamNote,
+      })) ?? [];
     return translation && translation.detectedSource !== locale
       ? { ...notice, reason: translation.text, originalReason: notice.reason }
       : notice;

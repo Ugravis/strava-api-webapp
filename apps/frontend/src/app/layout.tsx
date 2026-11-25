@@ -1,37 +1,11 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { Barlow, Geist, Geist_Mono, Noto_Sans } from "next/font/google";
 import { Providers } from "@kilotrace/ui/components/providers";
 import { siteConfig } from "@kilotrace/ui/config/site";
 import { DEFAULT_LOCALE } from "@/i18n/request";
+import { fontVariables } from "./fonts";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-/** Only the wordmark uses it, so a single weight and style is loaded. */
-const barlow = Barlow({
-  variable: "--font-barlow",
-  subsets: ["latin"],
-  weight: "800",
-  style: "italic",
-});
-
-/** The font of the names on the map, for the bubble of the station shown drawn over it: loaded once used. */
-const notoSans = Noto_Sans({
-  variable: "--font-map",
-  subsets: ["latin"],
-  weight: "700",
-  preload: false,
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -57,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={DEFAULT_LOCALE}
-      className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} ${notoSans.variable} h-full antialiased`}
+      className={`${fontVariables} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

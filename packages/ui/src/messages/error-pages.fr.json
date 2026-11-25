@@ -1,0 +1,17 @@
+{
+  "home": "Retour à l'accueil",
+  "back": "Page précédente",
+  "notFound": {
+    "metaTitle": "Page introuvable",
+    "eyebrow": "Erreur 404",
+    "title": "Hors de la carte",
+    "description": "Cette page n'existe pas ou a été déplacée. Aucune tuile à explorer par ici : revenez en terrain connu."
+  },
+  "error": {
+    "eyebrow": "Erreur 500",
+    "title": "Sortie de route",
+    "description": "Une erreur inattendue nous a fait perdre le tracé. Réessayez : si le problème persiste, revenez un peu plus tard.",
+    "retry": "Réessayer",
+    "reference": "Référence : {digest}"
+  }
+}

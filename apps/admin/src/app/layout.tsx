@@ -1,15 +1,10 @@
 import { Providers } from "@kilotrace/ui/components/providers";
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { Barlow, Geist, Geist_Mono } from "next/font/google";
 import { DEFAULT_LOCALE } from "@/i18n/request";
 import { getAdminTranslations } from "@/lib/admin/messages";
+import { fontVariables } from "./fonts";
 import "./globals.css";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-/** Only the wordmark uses it, so a single weight and style is loaded. */
-const barlow = Barlow({ variable: "--font-barlow", subsets: ["latin"], weight: "800", style: "italic" });
 
 /**
  * Its fields in the size of its text, 14 px, also on a phone, where Safari
@@ -28,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={DEFAULT_LOCALE}
-      className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} h-full antialiased`}
+      className={`${fontVariables} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

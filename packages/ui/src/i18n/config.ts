@@ -1,9 +1,7 @@
+import errorPages from "@kilotrace/ui/messages/error-pages.fr.json";
 import messages from "@kilotrace/ui/messages/fr.json";
 
-/** Single locale for now: messages are already extracted to ease adding new ones. */
-export const DEFAULT_LOCALE = "fr";
+export { DEFAULT_LOCALE, TIME_ZONE } from "./locale";
 
-export const TIME_ZONE = "Europe/Paris";
-
-/** Texts of the shared components and of the public site, also read by the back office. */
-export const sharedMessages = messages;
+/** Texts of the shared components and of the public site, also read by the back office. The error pages have their own file, which the global error page loads alone. */
+export const sharedMessages = { ...messages, errorPages };

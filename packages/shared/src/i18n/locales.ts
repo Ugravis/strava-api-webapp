@@ -30,13 +30,3 @@ export function localeFromAcceptLanguage(header: string | null | undefined): Loc
     .sort((a, b) => b.weight - a.weight);
   return ranked.map((entry) => entry.language).find(isLocale) ?? null;
 }
-
-/**
- * The path of a page of the site in `locale`, prefixed unless it is the
- * default language, as the site routes them; for links built outside of it,
- * e.g. in emails.
- */
-export function localePath(locale: Locale, path: string): string {
-  if (locale === DEFAULT_LOCALE) return path;
-  return path === "/" ? `/${locale}` : `/${locale}${path}`;
-}

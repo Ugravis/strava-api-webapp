@@ -32,7 +32,7 @@ describe('email templates', () => {
     );
 
     expect(french.text).toContain(
-      'Se connecter: https://kilotrace.app/fr/login',
+      'Se connecter: https://kilotrace.app/fr/connexion',
     );
     expect(english.text).toContain('Sign in: https://kilotrace.app/login');
   });

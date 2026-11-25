@@ -10,4 +10,5 @@ export * from "./map/zooms";
 export * from "./settings";
 export * from "./stations/report";
 export * from "./i18n/locales";
+export * from "./i18n/pathnames";
 export * from "./i18n/translations";

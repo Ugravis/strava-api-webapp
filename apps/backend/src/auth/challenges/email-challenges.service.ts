@@ -290,7 +290,7 @@ export class EmailChallengesService {
         await this.mail.sendPasswordResetCode(user, code);
       }
     } else if (user) {
-      await this.mail.sendAccountExists(user);
+      await this.mail.sendAccountExists(user, user.passwordHash !== null);
     } else if (code && challenge.username) {
       await this.mail.sendSignupCode(
         {

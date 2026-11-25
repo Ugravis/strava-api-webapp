@@ -57,12 +57,14 @@ export class MailService {
     );
   }
 
-  sendAccountExists(recipient: Recipient): Promise<void> {
+  /** `hasPassword` false: an account opened with Google only, which signs in with it. */
+  sendAccountExists(recipient: Recipient, hasPassword: boolean): Promise<void> {
     return this.send(
       recipient,
       accountExistsTemplate(
         nameOf(recipient),
         new URL('/login', this.authSettings.frontendUrl).toString(),
+        hasPassword,
       ),
     );
   }

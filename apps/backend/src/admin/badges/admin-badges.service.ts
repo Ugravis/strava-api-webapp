@@ -27,6 +27,7 @@ import type {
 } from './admin-badges.dto';
 import {
   fillTranslations,
+  TRANSLATION_CONTEXTS,
   type UpdateTranslationDto,
   withTranslation,
 } from '../../common/translations';
@@ -257,6 +258,7 @@ export class AdminBadgesService {
       badge,
       badge.translations,
       BADGE_TRANSLATED_FIELDS,
+      TRANSLATION_CONTEXTS.badge,
     );
     if (filled > 0) await this.badges.update(id, { translations });
     return { filled };
@@ -282,6 +284,7 @@ export class AdminBadgesService {
       theme,
       theme.translations,
       BADGE_THEME_TRANSLATED_FIELDS,
+      TRANSLATION_CONTEXTS.badgeTheme,
     );
     if (filled > 0) await this.themes.update(id, { translations });
     return { filled };

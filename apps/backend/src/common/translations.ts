@@ -57,6 +57,22 @@ export function withTranslation<F extends string>(
 }
 
 /**
+ * What the content of the team is, told to DeepL with every text of it, in
+ * French as the texts are: it reads it best so (a context in English, or
+ * French words quoted, left names untranslated).
+ */
+const APP =
+  "Kilotrace, application de sport : les sorties de course, vélo et randonnée importées de Strava colorient les tuiles de la carte, comptent les gares traversées et cumulent les distances. Les membres s'abonnent les uns aux autres comme sur un réseau social.";
+
+export const TRANSLATION_CONTEXTS = {
+  badge: `Nom et description d'un badge de ${APP} La plupart des badges récompensent une distance cumulée égale au tour (la circonférence) d'une planète, d'une lune ou de la Terre, ou à une profondeur, une altitude, un nombre.`,
+  badgeTheme: `Nom d'une collection regroupant des badges de ${APP}`,
+  userTag: `Nom et description d'un insigne affiché sur le profil d'un membre de ${APP}`,
+  teamNote: `Message de l'équipe de modération de ${APP} à un membre, par exemple la raison de la réinitialisation de son profil.`,
+  releaseNote: `Note de mise à jour d'une nouvelle version de ${APP} En Markdown, mise en forme conservée.`,
+} as const;
+
+/**
  * Fills the fields missing in every language from their source through
  * DeepL, those typed by the team kept; refused when it cannot translate.
  */
@@ -65,6 +81,7 @@ export async function fillTranslations<F extends string>(
   source: Partial<Record<F, string | null>>,
   current: Translations<F>,
   fields: readonly F[],
+  context: string,
 ): Promise<{ translations: Translations<F>; filled: number }> {
   if (!translation.enabled) {
     throw ApiErrors.unavailable(
@@ -82,7 +99,7 @@ export async function fillTranslations<F extends string>(
     const texts = await translation.translate(
       missing.map((field) => source[field]!),
       locale,
-      SOURCE_LOCALE,
+      { source: SOURCE_LOCALE, context },
     );
     if (!texts) {
       throw ApiErrors.unavailable(

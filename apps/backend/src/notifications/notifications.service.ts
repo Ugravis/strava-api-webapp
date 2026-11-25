@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { Follow } from '../follows/follow.entity';
+import { TRANSLATION_CONTEXTS } from '../common/translations';
 import { TranslationService } from '../translation/translation.service';
 import { type PublicUser, toPublicUser } from '../users/dto/public-user';
 import { User } from '../users/user.entity';
@@ -220,7 +221,9 @@ export class NotificationsService {
     });
     if (!reader) return details;
     const [translation] =
-      (await this.translation.translate([details.reason], reader.locale)) ?? [];
+      (await this.translation.translate([details.reason], reader.locale, {
+        context: TRANSLATION_CONTEXTS.teamNote,
+      })) ?? [];
     if (!translation || translation.detectedSource === reader.locale) {
       return details;
     }

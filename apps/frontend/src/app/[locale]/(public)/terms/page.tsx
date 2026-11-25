@@ -1,11 +1,15 @@
+import { localeAlternates } from "@/lib/i18n/alternates";
+import { routes } from "@/config/routes";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { type LocaleProps, pageLocale } from "@/lib/i18n/page";
 import { GridBackdrop } from "@kilotrace/ui/components/layout/grid-backdrop";
 
 export async function generateMetadata({ params }: LocaleProps): Promise<Metadata> {
-  const t = await getTranslations({ locale: await pageLocale(params), namespace: "terms" });
-  return { title: t("title") };
+  const locale = await pageLocale(params);
+  const t = await getTranslations({ locale, namespace: "terms" });
+  // Indexed in every language: each one canonical, the others told.
+  return { title: t("title"), alternates: localeAlternates(locale, routes.terms) };
 }
 
 /** Placeholder until the actual terms of use are written. */

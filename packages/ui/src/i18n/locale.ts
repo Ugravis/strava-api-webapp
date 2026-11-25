@@ -14,6 +14,15 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   de: "Deutsch",
 };
 
+/** The flag shown before the name of each language in the language menus. */
+export const LOCALE_FLAGS: Record<Locale, string> = {
+  en: "🇬🇧",
+  fr: "🇫🇷",
+  it: "🇮🇹",
+  es: "🇪🇸",
+  de: "🇩🇪",
+};
+
 /** Region of each language, as Open Graph spells it. */
 export const OPEN_GRAPH_LOCALES: Record<Locale, string> = {
   en: "en_US",

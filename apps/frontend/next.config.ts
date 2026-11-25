@@ -40,8 +40,8 @@ const nextConfig: NextConfig = {
   /** The history of the release notes had a French address before the site spoke several languages. */
   async redirects() {
     return [
-      { source: "/nouveautes", destination: "/fr/whats-new", permanent: true },
-      { source: "/:locale(en|fr|it|es|de)/nouveautes", destination: "/:locale/whats-new", permanent: true },
+      // The French addresses from before the languages, unprefixed (the others moved by the proxy).
+      { source: "/nouveautes", destination: "/fr/nouveautes", permanent: true },
     ];
   },
   async headers() {

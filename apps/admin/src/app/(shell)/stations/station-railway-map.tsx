@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Skeleton } from "@kilotrace/ui/components/ui/skeleton";
 import { setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
+import { ADMIN_LOCALE } from "@kilotrace/ui/i18n/locale";
 import { BASE_STYLE_URL, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import { stationData } from "@kilotrace/ui/lib/map/station-data";
 import { addStationLayers, setHoveredStation, stationNear, type StationPick } from "@kilotrace/ui/lib/map/stations-layer";
@@ -140,7 +141,7 @@ export function StationRailwayMap({ id, onOpen }: { id: string; onOpen: (id: str
 
   // The base map in the colors of the theme, the layers added again once it is loaded.
   useEffect(() => {
-    mapRef.current?.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
+    mapRef.current?.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette, ADMIN_LOCALE) });
   }, [palette, railway]);
 
   if (failed)

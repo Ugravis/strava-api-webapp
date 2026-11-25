@@ -1,3 +1,4 @@
+import type { Locale } from "@kilotrace/shared";
 import type { ExpressionSpecification, LayerSpecification, Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 
 /**
@@ -563,11 +564,33 @@ function withZoomFades(layer: LayerSpecification): LayerSpecification {
 }
 
 /**
- * The base style in the colors of `palette`: its roads appear later and
- * without casings, its boundaries of subdivisions are thin solid lines, and
- * every layer fades in and out with the zoom.
+ * The name of a place in `locale`, as the OpenMapTiles data spells it
+ * (`name:fr`, `name:de`…, `name_en` too for English), else in Latin script,
+ * else in the local language.
  */
-export function recolorStyle(style: StyleSpecification, { base }: MapPalette): StyleSpecification {
+function localizedName(locale: Locale): ExpressionSpecification {
+  return [
+    "coalesce",
+    ["get", `name:${locale}`],
+    ...(locale === "en" ? [["get", "name_en"] as ExpressionSpecification] : []),
+    ["get", "name:latin"],
+    ["get", "name"],
+  ];
+}
+
+/** A label drawing the name of a place in `locale`; road numbers (`ref`) left as they are. */
+function localizeLabel(layer: LayerSpecification, locale: Locale): LayerSpecification {
+  if (layer.type !== "symbol" || !JSON.stringify(layer.layout?.["text-field"] ?? "").includes('"name')) return layer;
+  return { ...layer, layout: { ...layer.layout, "text-field": localizedName(locale) } } as LayerSpecification;
+}
+
+/**
+ * The base style in the colors of `palette` and the language `locale`: its
+ * roads appear later and without casings, its boundaries of subdivisions
+ * are thin solid lines, every layer fades in and out with the zoom, and the
+ * names of places are in the language of the page.
+ */
+export function recolorStyle(style: StyleSpecification, { base }: MapPalette, locale: Locale): StyleSpecification {
   return {
     ...style,
     layers: style.layers
@@ -576,7 +599,7 @@ export function recolorStyle(style: StyleSpecification, { base }: MapPalette): S
         const paint = basePaint(layer, base);
         const recolored = paint ? ({ ...layer, paint: { ...layer.paint, ...paint } } as LayerSpecification) : layer;
         // The roads fade in class by class.
-        return isRoad(recolored) ? adjustRoad(recolored) : withZoomFades(recolored);
+        return localizeLabel(isRoad(recolored) ? adjustRoad(recolored) : withZoomFades(recolored), locale);
       }),
   };
 }

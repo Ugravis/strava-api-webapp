@@ -34,6 +34,7 @@ describe('TranslationService', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       text: ['Bonjour'],
       target_lang: 'EN-US',
+      formality: 'prefer_less',
     });
   });
 

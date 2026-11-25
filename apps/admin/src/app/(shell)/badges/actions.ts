@@ -10,11 +10,13 @@ import {
   type UpdateBadgeRequest,
   type UpdateBadgeThemeRequest,
 } from "@kilotrace/shared/admin";
+import { isTargetLocale, type TargetLocale } from "@kilotrace/shared";
 import { TABLE_MAX_PAGE_SIZE, type TablePage, type TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import type { TableMove } from "@kilotrace/ui/components/admin/data-table";
 import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
+import { fillTranslations, saveTranslation } from "@/lib/admin/translations";
 
 /** A page of the table of the badges. */
 export async function fetchBadgesTable(query: TableQuery): Promise<TablePage<AdminBadge>> {
@@ -105,6 +107,28 @@ export async function createTheme(body: CreateBadgeThemeRequest): Promise<AdminA
 export async function saveTheme(id: string, name: string): Promise<ActionResult> {
   const body: UpdateBadgeThemeRequest = { name: name.trim() };
   return runAdminAction(`/badge-themes/${checkedSlug(id)}`, "PATCH", body);
+}
+
+/** A name or description of a badge in another language, typed by hand; null clears it. */
+export async function translateBadge(id: string, locale: TargetLocale, field: string, value: string | null): Promise<ActionResult> {
+  if (!isTargetLocale(locale)) throw new Error("Invalid locale");
+  return saveTranslation(`/badges/${checkedSlug(id)}`, locale, field, value);
+}
+
+/** The name and description of a badge machine-translated where a language lacks them. */
+export async function fillBadgeTranslations(id: string): Promise<ActionResult> {
+  return fillTranslations(`/badges/${checkedSlug(id)}`);
+}
+
+/** The name of a collection in another language, typed by hand; null clears it. */
+export async function translateTheme(id: string, locale: TargetLocale, field: string, value: string | null): Promise<ActionResult> {
+  if (!isTargetLocale(locale)) throw new Error("Invalid locale");
+  return saveTranslation(`/badge-themes/${checkedSlug(id)}`, locale, field, value);
+}
+
+/** The name of a collection machine-translated where a language lacks it. */
+export async function fillThemeTranslations(id: string): Promise<ActionResult> {
+  return fillTranslations(`/badge-themes/${checkedSlug(id)}`);
 }
 
 /** Deletes a collection, its badges kept without one; `reason` kept in the log. */

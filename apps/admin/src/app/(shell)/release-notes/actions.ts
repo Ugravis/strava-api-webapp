@@ -1,12 +1,13 @@
 "use server";
 
-import { RELEASE_VERSION_PATTERN, type ReleaseNoteDisplay } from "@kilotrace/shared";
+import { isTargetLocale, RELEASE_VERSION_PATTERN, type ReleaseNoteDisplay, type TargetLocale } from "@kilotrace/shared";
 import type { AdminReleaseNote, CreateReleaseNoteRequest, ReleaseNoteStatus, UpdateReleaseNoteRequest } from "@kilotrace/shared/admin";
 import type { TablePage, TableQuery } from "@kilotrace/shared/table";
 import type { ActionResult } from "@kilotrace/ui/components/admin/action-state";
 import { type AdminActionResult, runAdminAction } from "@/lib/admin/actions";
 import { getAdminTranslations } from "@/lib/admin/messages";
 import { fetchAdminRow, fetchAdminTable } from "@/lib/admin/table";
+import { fillTranslations, saveTranslation } from "@/lib/admin/translations";
 
 /** A page of the table of the releases. */
 export async function fetchReleaseNotesTable(query: TableQuery): Promise<TablePage<AdminReleaseNote>> {
@@ -99,6 +100,17 @@ export async function deleteReleaseNote(version: string, reason: string | undefi
 }
 
 /** The path of a version posted by the page, checked before it reaches a URL (a build may hold a `+`). */
+/** A text of the note in another language, typed by hand; null clears it. */
+export async function translateReleaseNote(version: string, locale: TargetLocale, field: string, value: string | null): Promise<ActionResult> {
+  if (!isTargetLocale(locale)) throw new Error("Invalid locale");
+  return saveTranslation(pathOf(version), locale, field, value);
+}
+
+/** The texts of the note machine-translated where a language lacks them; the section of the team stays French. */
+export async function fillReleaseNoteTranslations(version: string): Promise<ActionResult> {
+  return fillTranslations(pathOf(version));
+}
+
 function pathOf(version: string): string {
   if (typeof version !== "string" || !RELEASE_VERSION_PATTERN.test(version)) {
     throw new Error("Invalid version");

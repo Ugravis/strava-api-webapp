@@ -1,15 +1,28 @@
 import type { Request } from 'express';
-import { requestLocale } from './request-metadata';
+import { requestLocale } from './request-locale';
 
-function request(cookies: Record<string, string>, acceptLanguage?: string) {
+function request(
+  cookies: Record<string, string>,
+  acceptLanguage?: string,
+  header?: string,
+) {
+  const headers: Record<string, string | undefined> = {
+    'accept-language': acceptLanguage,
+    'x-locale': header,
+  };
   return {
     cookies,
-    get: (name: string) =>
-      name === 'accept-language' ? acceptLanguage : undefined,
+    get: (name: string) => headers[name.toLowerCase()],
   } as unknown as Request;
 }
 
 describe('requestLocale', () => {
+  it('takes the language told by the site first', () => {
+    expect(requestLocale(request({ NEXT_LOCALE: 'de' }, 'fr', 'es'))).toBe(
+      'es',
+    );
+  });
+
   it('prefers the language chosen on the site', () => {
     expect(requestLocale(request({ NEXT_LOCALE: 'de' }, 'fr-FR,fr'))).toBe(
       'de',

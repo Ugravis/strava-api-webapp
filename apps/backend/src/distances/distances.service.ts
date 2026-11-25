@@ -1,3 +1,5 @@
+import { translated } from '@kilotrace/shared';
+import { currentLocale } from '../common/request-locale';
 import { AppSettingsService } from '../system/app-settings.service';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,6 +40,7 @@ export type BadgeView = Omit<
   | 'backgroundColor'
   | 'backgroundImage'
   | 'active'
+  | 'translations'
 > &
   BadgeProgress & {
     /** Background of the card; null for the default one. */
@@ -144,7 +147,10 @@ export class DistancesService {
       ) as DistancesOverview['totals'],
       themes: themes
         .filter((theme) => usedThemes.has(theme.id))
-        .map(({ id, name }) => ({ id, name })),
+        .map(({ id, name, translations }) => ({
+          id,
+          name: translated(name, translations, 'name', currentLocale()),
+        })),
       badges: badges.map((badge) =>
         this.view(
           badge,
@@ -226,7 +232,8 @@ export class DistancesService {
     }
     const timelines = await this.timelines(userId);
     return shown.map(({ badge }) => {
-      const { id, name, description, icon, family, tiers } = badge!;
+      const { id, icon, family, tiers } = badge!;
+      const { name, description } = badgeTexts(badge!);
       const { completions, progress } = badgeProgress(
         badge!,
         timelines[badge!.metric][family],
@@ -369,8 +376,8 @@ export class DistancesService {
     favoritePosition: number | null,
     onProfile: boolean,
   ): BadgeView {
-    const { id, metric, family, tiers, name, description, icon, themeId } =
-      badge;
+    const { id, metric, family, tiers, icon, themeId } = badge;
+    const { name, description } = badgeTexts(badge);
     return {
       id,
       metric,
@@ -387,4 +394,18 @@ export class DistancesService {
       onProfile,
     };
   }
+}
+
+/** The name and description of a badge in the language of the request. */
+function badgeTexts(badge: Badge): Pick<Badge, 'name' | 'description'> {
+  const locale = currentLocale();
+  return {
+    name: translated(badge.name, badge.translations, 'name', locale),
+    description: translated(
+      badge.description,
+      badge.translations,
+      'description',
+      locale,
+    ),
+  };
 }

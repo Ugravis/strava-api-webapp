@@ -1,4 +1,15 @@
-import type { AdminUserTag } from '@kilotrace/shared/admin';
+import type { FillTranslationsResponse } from '@kilotrace/shared';
+import {
+  type AdminUserTag,
+  USER_TAG_RULES,
+  USER_TAG_TRANSLATED_FIELDS,
+} from '@kilotrace/shared/admin';
+import {
+  fillTranslations,
+  type UpdateTranslationDto,
+  withTranslation,
+} from '../../common/translations';
+import { TranslationService } from '../../translation/translation.service';
 import {
   mapTablePage,
   type TablePage,
@@ -43,6 +54,7 @@ export class AdminUserTagsService {
     @InjectRepository(UserTagAssignment)
     private readonly holders: Repository<UserTagAssignment>,
     private readonly dataSource: DataSource,
+    private readonly translation: TranslationService,
   ) {}
 
   async catalog(): Promise<AdminUserTag[]> {
@@ -80,6 +92,7 @@ export class AdminUserTagsService {
       id: userTag.id,
       name: userTag.name,
       description: userTag.description,
+      translations: userTag.translations,
       icon: userTag.icon,
       color: userTag.color,
       position: userTag.position,
@@ -109,6 +122,31 @@ export class AdminUserTagsService {
   async update(id: string, dto: UpdateUserTagDto): Promise<void> {
     await this.find(id);
     await this.userTags.update(id, fieldsOf(dto));
+  }
+
+  async translate(id: string, dto: UpdateTranslationDto): Promise<void> {
+    const userTag = await this.find(id);
+    await this.userTags.update(id, {
+      translations: withTranslation(
+        userTag.translations,
+        USER_TAG_TRANSLATED_FIELDS,
+        USER_TAG_RULES,
+        dto,
+      ),
+    });
+  }
+
+  /** The name and description machine-translated where no language has them. */
+  async fillTranslations(id: string): Promise<FillTranslationsResponse> {
+    const userTag = await this.find(id);
+    const { translations, filled } = await fillTranslations(
+      this.translation,
+      userTag,
+      userTag.translations,
+      USER_TAG_TRANSLATED_FIELDS,
+    );
+    if (filled > 0) await this.userTags.update(id, { translations });
+    return { filled };
   }
 
   /** Withdrawn from every profile; the ones awarded by the code stay. */

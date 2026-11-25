@@ -1,3 +1,5 @@
+import type { Translations } from '@kilotrace/shared';
+import type { BadgeTranslatedField } from '@kilotrace/shared/admin';
 import {
   Column,
   CreateDateColumn,
@@ -49,6 +51,10 @@ export class Badge {
   /** Display description, in French. */
   @Column({ type: 'varchar', length: 300 })
   description!: string;
+
+  /** Name and description in the other languages of the site; the fields above are the French source. */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  translations!: Translations<BadgeTranslatedField>;
 
   /** Theme of the badge, if any. */
   @Column({ name: 'theme_id', type: 'varchar', length: 32, nullable: true })

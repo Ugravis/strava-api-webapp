@@ -1,5 +1,12 @@
 import { highestAdminRole } from '@kilotrace/shared/admin';
 import {
+  type Locale,
+  RELEASE_NOTE_TRANSLATED_FIELDS,
+  type ReleaseNoteTranslatedField,
+  SOURCE_LOCALE,
+  type TargetLocale,
+  translated,
+  type Translations,
   compareVersions,
   defaultDisplayOf,
   hasReleaseNoteContent,
@@ -15,11 +22,13 @@ import {
   type OnApplicationBootstrap,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
+import { currentLocale } from '../common/request-locale';
 import { appVersion } from '../admin/dev/package-version';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { User } from '../users/user.entity';
 import { ReleaseNote } from './release-note.entity';
+import { ReleaseNoteTranslation } from './release-note-translation.entity';
 import { ReleaseNoteView } from './release-note-view.entity';
 
 /** Read once: it never changes while the process runs. */
@@ -60,8 +69,72 @@ export function contentOf(note: ReleaseNote): ReleaseNoteContent {
 }
 
 /** A note as `reader` gets it: the team part for the back-office team only. */
-function toPublic(note: ReleaseNote, reader: User): PublicReleaseNote {
-  const content = contentOf(note);
+export type ReleaseNoteTranslations = Translations<ReleaseNoteTranslatedField>;
+
+/** The column of each field translated, in a row of `release_note_translations`. */
+export const TRANSLATION_COLUMNS = {
+  title: 'title',
+  summary: 'summary',
+  new: 'sectionNew',
+  improved: 'sectionImproved',
+  fixed: 'sectionFixed',
+  other: 'sectionOther',
+} as const satisfies Record<
+  ReleaseNoteTranslatedField,
+  keyof ReleaseNoteTranslation
+>;
+
+/** The translations of each note, from the rows of its languages. */
+export function translationsOf(
+  rows: ReleaseNoteTranslation[],
+): Map<string, ReleaseNoteTranslations> {
+  const byVersion = new Map<string, ReleaseNoteTranslations>();
+  for (const row of rows) {
+    const fields = Object.fromEntries(
+      RELEASE_NOTE_TRANSLATED_FIELDS.flatMap((field) => {
+        const text = row[TRANSLATION_COLUMNS[field]];
+        return text ? [[field, text]] : [];
+      }),
+    );
+    byVersion.set(row.version, {
+      ...byVersion.get(row.version),
+      [row.locale as TargetLocale]: fields,
+    });
+  }
+  return byVersion;
+}
+
+/** The source content of a note in `locale`, field by field. */
+function localizedContent(
+  content: ReleaseNoteContent,
+  translations: ReleaseNoteTranslations | undefined,
+  locale: Locale,
+): ReleaseNoteContent {
+  const field = (source: string | null, name: ReleaseNoteTranslatedField) =>
+    translated(source, translations, name, locale);
+  return {
+    title: field(content.title, 'title'),
+    summary: field(content.summary, 'summary'),
+    sections: {
+      new: field(content.sections.new, 'new'),
+      improved: field(content.sections.improved, 'improved'),
+      fixed: field(content.sections.fixed, 'fixed'),
+      other: field(content.sections.other, 'other'),
+      team: content.sections.team,
+    },
+  };
+}
+
+function toPublic(
+  note: ReleaseNote,
+  reader: User,
+  translations: ReleaseNoteTranslations | undefined,
+): PublicReleaseNote {
+  const content = localizedContent(
+    contentOf(note),
+    translations,
+    currentLocale(),
+  );
   return {
     version: note.version,
     display: note.display,
@@ -99,6 +172,8 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
     private readonly notes: Repository<ReleaseNote>,
     @InjectRepository(ReleaseNoteView)
     private readonly views: Repository<ReleaseNoteView>,
+    @InjectRepository(ReleaseNoteTranslation)
+    private readonly translations: Repository<ReleaseNoteTranslation>,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -179,7 +254,24 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
       .where(PUBLISHED)
       .orderBy(VERSION_ORDER, 'DESC')
       .getMany();
-    return notes.map((note) => toPublic(note, reader));
+    const translations = await this.translationsFor(notes);
+    return notes.map((note) =>
+      toPublic(note, reader, translations.get(note.version)),
+    );
+  }
+
+  /** The translations of the notes a reader needs: their language, and English to fall back on. */
+  private async translationsFor(
+    notes: ReleaseNote[],
+  ): Promise<Map<string, ReleaseNoteTranslations>> {
+    const locale = currentLocale();
+    if (locale === SOURCE_LOCALE || notes.length === 0) return new Map();
+    return translationsOf(
+      await this.translations.findBy({
+        version: In(notes.map(({ version }) => version)),
+        locale: In([...new Set([locale, 'en'])]),
+      }),
+    );
   }
 
   /** The notes delivered to the user and not seen yet, the latest first. */
@@ -197,8 +289,11 @@ export class ReleaseNotesService implements OnApplicationBootstrap {
       .orderBy(VERSION_ORDER, 'DESC')
       .limit(UNSEEN_LIMIT)
       .getMany();
+    const translations = await this.translationsFor(notes);
     return {
-      notes: notes.map((note) => toPublic(note, user)),
+      notes: notes.map((note) =>
+        toPublic(note, user, translations.get(note.version)),
+      ),
       display: strongestDisplay(notes.map(({ display }) => display)),
     };
   }

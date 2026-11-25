@@ -1,3 +1,5 @@
+import { ReleaseNoteTranslation } from '../../release-notes/release-note-translation.entity';
+import { TranslationService } from '../../translation/translation.service';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import type { Repository } from 'typeorm';
 import type { ReleaseNote } from '../../release-notes/release-note.entity';
@@ -55,8 +57,10 @@ describe('AdminReleaseNotesService', () => {
     service = new AdminReleaseNotesService(
       notes as unknown as Repository<ReleaseNote>,
       {} as Repository<User>,
+      {} as Repository<ReleaseNoteTranslation>,
       releaseNotes as unknown as ReleaseNotesService,
       banners as unknown as ReleaseNoteBannersService,
+      {} as TranslationService,
     );
   });
 

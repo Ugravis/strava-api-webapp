@@ -129,6 +129,10 @@ export interface ReleaseNoteContent {
   sections: Record<ReleaseNoteSection, string | null>;
 }
 
+/** The fields of a note translated into the other languages; the section of the team stays French. */
+export const RELEASE_NOTE_TRANSLATED_FIELDS = ["title", "summary", "new", "improved", "fixed", "other"] as const;
+export type ReleaseNoteTranslatedField = (typeof RELEASE_NOTE_TRANSLATED_FIELDS)[number];
+
 /** A note published to the users. */
 export interface PublicReleaseNote extends ReleaseNoteContent {
   version: string;

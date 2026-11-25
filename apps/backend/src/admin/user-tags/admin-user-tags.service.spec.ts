@@ -1,3 +1,4 @@
+import { TranslationService } from '../../translation/translation.service';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import type { DataSource, Repository } from 'typeorm';
 import type { UserTag } from '../../users/user-tag.entity';
@@ -14,6 +15,7 @@ describe('AdminUserTagsService', () => {
       userTags as unknown as Repository<UserTag>,
       {} as Repository<UserTagAssignment>,
       {} as DataSource,
+      {} as TranslationService,
     );
   });
 

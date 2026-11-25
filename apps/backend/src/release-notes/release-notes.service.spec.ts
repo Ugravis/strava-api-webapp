@@ -1,3 +1,4 @@
+import { ReleaseNoteTranslation } from './release-note-translation.entity';
 import type { Repository } from 'typeorm';
 import type { NotificationsService } from '../notifications/notifications.service';
 import type { ReleaseNote } from './release-note.entity';
@@ -56,6 +57,7 @@ describe('ReleaseNotesService', () => {
     service = new ReleaseNotesService(
       notes as unknown as Repository<ReleaseNote>,
       {} as Repository<ReleaseNoteView>,
+      {} as Repository<ReleaseNoteTranslation>,
       notifications as unknown as NotificationsService,
     );
   });

@@ -22,3 +22,4 @@ export { type RowPanelControls, type RowPanelOptions, useRowPanel } from "./row-
 export { DetailSection, type DetailSectionPill } from "./section";
 export { type DetailTab, DetailTabs } from "./tabs";
 export { DetailTimeline, DetailTimelineItem } from "./timeline";
+export { type DetailTranslationField, DetailTranslations } from "./translations";

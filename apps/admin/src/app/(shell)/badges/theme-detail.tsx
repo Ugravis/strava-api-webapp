@@ -17,12 +17,13 @@ import {
   DetailLoader,
   DetailMedia,
   DetailSection,
+  DetailTranslations,
   DetailSkeleton,
   type RowPanelControls,
 } from "@kilotrace/ui/components/admin/detail";
 import { BadgeIcon } from "@kilotrace/ui/components/distances/badge-icon";
 import { cn } from "@kilotrace/ui/lib/utils";
-import { createTheme, loadTheme } from "./actions";
+import { createTheme, fillThemeTranslations, loadTheme, translateTheme } from "./actions";
 import { type BadgeRights, bumpCatalog, deleteThemeOf, LOCKS, THEME_ROW, useCatalogVersion } from "./badge-bits";
 import { themeColumns } from "./badge-columns";
 
@@ -82,6 +83,22 @@ function ThemeDetail({
           </DetailField>
         </DetailFields>
       </DetailSection>
+      <DetailTranslations
+        fields={[{ name: "name", label: "Nom", icon: <TypeIcon />, rule: BADGE_THEME_RULES.name }]}
+        source={theme}
+        translations={theme.translations}
+        locked={rights.edit ? null : LOCKS.edit}
+        onSave={async (locale, field, value) => {
+          const result = await translateTheme(theme.id, locale, field, value);
+          if (result.ok) bumpCatalog();
+          return result;
+        }}
+        onFill={async () => {
+          const result = await fillThemeTranslations(theme.id);
+          if (result.ok) bumpCatalog();
+          return result;
+        }}
+      />
       <DetailSection title="Badges">
         {badges.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun badge dans cette collection.</p>

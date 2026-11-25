@@ -62,6 +62,8 @@ export enum ApiErrorCode {
   ReleaseNotePublished = 'RELEASE_NOTE_PUBLISHED',
   /** A field breaking its shared rule: `field` tells which, `message` why. */
   InvalidField = 'INVALID_FIELD',
+  /** Machine translation asked while it is not set up (no DeepL key) or DeepL failed. */
+  TranslationUnavailable = 'TRANSLATION_UNAVAILABLE',
 }
 
 const body = (code: ApiErrorCode, message: string) => ({ code, message });
@@ -79,4 +81,6 @@ export const ApiErrors = {
     new NotFoundException(body(code, message)),
   tooManyRequests: (code: ApiErrorCode, message: string) =>
     new HttpException(body(code, message), HttpStatus.TOO_MANY_REQUESTS),
+  unavailable: (code: ApiErrorCode, message: string) =>
+    new HttpException(body(code, message), HttpStatus.SERVICE_UNAVAILABLE),
 };

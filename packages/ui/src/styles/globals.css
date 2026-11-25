@@ -265,6 +265,24 @@
   }
 }
 
+/* Tiles of a status code popping in, then the track drawn across them (error pages). */
+@theme {
+  --animate-tile-pop: tile-pop 0.5s cubic-bezier(0.3, 0.7, 0.4, 1.4) backwards;
+  --animate-track-draw: track-draw 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.7s backwards;
+
+  @keyframes tile-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+  }
+  @keyframes track-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+}
+
 /*
  * The header of an admin table follows the scroll of the page down to its last
  * row. A sticky header cannot: the box scrolls sideways, so it is the box the

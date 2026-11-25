@@ -97,6 +97,8 @@ function buildChallenge(
 }
 
 describe('AuthService', () => {
+  // Real scrypt hashes (128 MiB each): slow on a busy CI runner by design.
+  jest.setTimeout(20_000);
   const passwordHasher = new PasswordHasher();
   let users: jest.Mocked<
     Pick<

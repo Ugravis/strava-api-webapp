@@ -63,7 +63,7 @@ async function LoginMethods({ searchParams }: Pick<PageProps<"/login">, "searchP
       )}
       {email && (
         <LoginForm
-          labels={{ email: t("email"), password: t("password"), rememberMe: t("rememberMe"), submit: t("submit") }}
+          labels={{ identifier: t("identifier"), password: t("password"), rememberMe: t("rememberMe"), submit: t("submit") }}
         />
       )}
       {providers?.ok && !google && !email && <p className="text-center text-sm text-muted-foreground">{t("unavailable")}</p>}

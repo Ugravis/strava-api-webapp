@@ -28,6 +28,20 @@ export class UserTokensService {
     return token;
   }
 
+  /** The owner of a valid token, without consuming it. */
+  async ownerOf(
+    token: string,
+    purpose: UserTokenPurpose,
+  ): Promise<string | null> {
+    const found = await this.tokens.findOneBy({
+      tokenHash: hashToken(token),
+      purpose,
+      consumedAt: IsNull(),
+      expiresAt: MoreThan(new Date()),
+    });
+    return found?.userId ?? null;
+  }
+
   /**
    * Marks a valid token as consumed and returns its owner id.
    * The conditional update guarantees a token can only be consumed once.

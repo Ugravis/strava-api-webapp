@@ -1,6 +1,6 @@
 import { IsString, MaxLength, MinLength } from 'class-validator';
 import { Trim } from '../../common/transformers';
-import { CITY_MAX_LENGTH } from './validation.constants';
+import { CITY_MAX_LENGTH } from '@kilotrace/shared';
 
 export class SearchCitiesQueryDto {
   @Trim()

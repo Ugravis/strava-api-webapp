@@ -16,7 +16,7 @@ import {
   BIO_MAX_LENGTH,
   CITY_MAX_LENGTH,
   PROFILE_COLOR_PATTERN,
-} from './validation.constants';
+} from '@kilotrace/shared';
 
 export class UpdateProfileDto {
   @OptionalDisplayNameField()

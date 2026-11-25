@@ -1,12 +1,11 @@
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { NormalizeIdentifier } from '../../common/transformers';
-import { PASSWORD_MAX_LENGTH } from './validation.constants';
+import { CurrentPasswordField } from './user-fields';
 
 /** Accounts with a password confirm with it, OAuth-only accounts with their username. */
 export class DeleteAccountDto {
   @IsOptional()
-  @IsString()
-  @MaxLength(PASSWORD_MAX_LENGTH)
+  @CurrentPasswordField()
   password?: string;
 
   @IsOptional()

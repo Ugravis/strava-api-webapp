@@ -92,7 +92,7 @@ export class AdminAuthService {
   }
 
   async login(
-    email: string,
+    identifier: string,
     password: string,
     persistent: boolean,
     metadata: SessionMetadata,
@@ -101,7 +101,7 @@ export class AdminAuthService {
       throw refused();
     }
     const user = await this.auth
-      .verifyCredentials(email, password)
+      .verifyCredentials(identifier, password)
       .catch(() => null);
     return this.open(user, metadata, persistent);
   }

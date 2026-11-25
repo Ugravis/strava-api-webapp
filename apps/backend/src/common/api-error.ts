@@ -17,6 +17,13 @@ export enum ApiErrorCode {
   UsernameTaken = 'USERNAME_TAKEN',
   UsernameReserved = 'USERNAME_RESERVED',
   InvalidToken = 'INVALID_TOKEN',
+  /** A wrong or expired email code, whatever the reason, so that nothing is revealed. */
+  InvalidCode = 'INVALID_CODE',
+  /** A sign-in to a sign-up whose email code was not entered: the body carries a `challenge`. */
+  EmailNotVerified = 'EMAIL_NOT_VERIFIED',
+  PasswordTooCommon = 'PASSWORD_TOO_COMMON',
+  /** Too many failed sign-ins on one account or identifier. */
+  TooManyAttempts = 'TOO_MANY_ATTEMPTS',
   InvalidPassword = 'INVALID_PASSWORD',
   ConfirmationMismatch = 'CONFIRMATION_MISMATCH',
   InvalidImage = 'INVALID_IMAGE',

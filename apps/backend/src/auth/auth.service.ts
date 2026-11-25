@@ -1,7 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  isCommonPassword,
+  passwordContext,
+  type EmailNotVerifiedError,
+  type VerificationChallenge,
+} from '@kilotrace/shared';
 import { ApiErrorCode, ApiErrors } from '../common/api-error';
 import authConfig, { type AuthConfig } from '../config/auth.config';
-import { MailService } from '../mail/mail.service';
 import { StravaConnectionService } from '../strava/strava-connection.service';
 import { SystemSettingsService } from '../system/system-settings.service';
 import { MapPreviewService } from '../tiles/map-preview.service';
@@ -12,7 +17,11 @@ import type { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
+import type { VerifyCodeDto } from './dto/verification.dto';
 import { assertNotSuspended } from './account-suspension';
+import { EmailChallengePurpose } from './challenges/email-challenge.entity';
+import { EmailChallengesService } from './challenges/email-challenges.service';
+import { LoginAttempts } from './login-attempts';
 import { PasswordHasher } from './password-hasher.service';
 import {
   type CreatedSession,
@@ -39,7 +48,8 @@ export class AuthService {
     private readonly sessions: SessionsService,
     private readonly tokens: UserTokensService,
     private readonly passwordHasher: PasswordHasher,
-    private readonly mail: MailService,
+    private readonly challenges: EmailChallengesService,
+    private readonly attempts: LoginAttempts,
     private readonly avatars: AvatarsService,
     private readonly strava: StravaConnectionService,
     private readonly mapPreview: MapPreviewService,
@@ -47,21 +57,44 @@ export class AuthService {
     @Inject(authConfig.KEY) private readonly config: AuthConfig,
   ) {}
 
-  async register(
-    dto: RegisterDto,
+  /**
+   * Sends the code that creates the account once entered. An address already
+   * in use is answered alike, its owner being warned by email instead.
+   */
+  async register(dto: RegisterDto): Promise<VerificationChallenge> {
+    await this.system.assertSignupsEnabled();
+    this.assertPasswordStrength(dto.password, dto.email, dto.username);
+    await this.users.assertUsernameAvailable(dto.username);
+    // Hashed in both cases: the response time does not tell a taken address.
+    const passwordHash = await this.passwordHasher.hash(dto.password);
+    const owner = await this.users.findByEmail(dto.email);
+    return this.challenges.start({
+      purpose: EmailChallengePurpose.Signup,
+      email: dto.email,
+      ...(owner
+        ? { userId: owner.id }
+        : { username: dto.username, passwordHash }),
+    });
+  }
+
+  /** Creates the account of a sign-up whose code is entered, and signs it in. */
+  async verifySignup(
+    dto: VerifyCodeDto,
     metadata: SessionMetadata,
   ): Promise<AuthResult> {
     await this.system.assertSignupsEnabled();
-    if (await this.users.findByEmail(dto.email)) {
-      throw ApiErrors.conflict(
-        ApiErrorCode.EmailTaken,
-        'This email is already registered',
-      );
+    const challenge = await this.challenges.verify(
+      dto.challengeId,
+      dto.code,
+      EmailChallengePurpose.Signup,
+    );
+    if (!challenge?.username || !challenge.passwordHash) {
+      throw this.invalidCode();
     }
     const user = await this.users.create({
-      email: dto.email,
-      username: dto.username,
-      passwordHash: await this.passwordHasher.hash(dto.password),
+      email: challenge.email,
+      username: challenge.username,
+      passwordHash: challenge.passwordHash,
       termsAcceptedAt: new Date(),
     });
     return {
@@ -70,8 +103,13 @@ export class AuthService {
     };
   }
 
+  /** Sends another code for a sign-up or a password reset in progress. */
+  resendCode(challengeId: string): Promise<VerificationChallenge> {
+    return this.challenges.resend(challengeId);
+  }
+
   async login(dto: LoginDto, metadata: SessionMetadata): Promise<AuthResult> {
-    const user = await this.verifyCredentials(dto.email, dto.password);
+    const user = await this.verifyCredentials(dto.identifier, dto.password);
     assertNotSuspended(user);
     return {
       user,
@@ -83,15 +121,28 @@ export class AuthService {
     };
   }
 
-  /** The account of an email and password, else the error of wrong credentials. */
-  async verifyCredentials(email: string, password: string): Promise<User> {
-    const user = await this.users.findByEmail(email);
+  /**
+   * The account of an email or username and a password, else the error of
+   * wrong credentials. A sign-up whose code was never entered is resumed: a
+   * new code is sent and its challenge returned in the error.
+   */
+  async verifyCredentials(identifier: string, password: string): Promise<User> {
+    const user = await this.users.findByIdentifier(identifier);
+    const key = user?.id ?? identifier;
+    this.attempts.assertAllowed(key);
     if (!user?.passwordHash) {
-      await this.passwordHasher.verify(password, await this.getDummyHash());
+      await this.resumePendingSignup(identifier, password);
+      this.attempts.recordFailure(key);
       throw this.invalidCredentials();
     }
     if (!(await this.passwordHasher.verify(password, user.passwordHash))) {
+      this.attempts.recordFailure(key);
       throw this.invalidCredentials();
+    }
+    this.attempts.reset(key);
+    if (this.passwordHasher.needsRehash(user.passwordHash)) {
+      user.passwordHash = await this.passwordHasher.hash(password);
+      await this.users.setPasswordHash(user.id, user.passwordHash);
     }
     return user;
   }
@@ -112,24 +163,47 @@ export class AuthService {
     return this.sessions.revoke(sessionToken);
   }
 
-  /** Always resolves, whether the account exists or not, to prevent email enumeration. */
-  async requestPasswordReset(email: string): Promise<void> {
+  /** Answers alike whether the account exists or not, to prevent email enumeration. */
+  async requestPasswordReset(email: string): Promise<VerificationChallenge> {
     const user = await this.users.findByEmail(email);
     if (!user) {
-      return;
+      return this.challenges.unknownState();
+    }
+    return this.challenges.start({
+      purpose: EmailChallengePurpose.PasswordReset,
+      email: user.email,
+      userId: user.id,
+    });
+  }
+
+  /** Trades a valid reset code for the short-lived token that sets the new password. */
+  async verifyPasswordReset(dto: VerifyCodeDto): Promise<{ token: string }> {
+    const challenge = await this.challenges.verify(
+      dto.challengeId,
+      dto.code,
+      EmailChallengePurpose.PasswordReset,
+    );
+    if (!challenge?.userId) {
+      throw this.invalidCode();
     }
     const token = await this.tokens.issue(
-      user.id,
+      challenge.userId,
       UserTokenPurpose.PasswordReset,
       this.config.passwordResetTtlMinutes * MINUTE_MS,
     );
-    await this.mail.sendPasswordReset(
-      user,
-      this.frontendLink('/reset-password', token),
-    );
+    return { token };
   }
 
   async resetPassword(token: string, password: string): Promise<void> {
+    const ownerId = await this.tokens.ownerOf(
+      token,
+      UserTokenPurpose.PasswordReset,
+    );
+    const owner = ownerId ? await this.users.findById(ownerId) : null;
+    if (!owner) {
+      throw this.invalidToken();
+    }
+    this.assertPasswordStrength(password, owner.email, owner.username);
     const userId = await this.tokens.consume(
       token,
       UserTokenPurpose.PasswordReset,
@@ -163,6 +237,7 @@ export class AuthService {
         );
       }
     }
+    this.assertPasswordStrength(dto.newPassword, user.email, user.username);
     await this.users.setPasswordHash(
       user.id,
       await this.passwordHasher.hash(dto.newPassword),
@@ -203,10 +278,46 @@ export class AuthService {
     await this.users.delete(user.id);
   }
 
-  private frontendLink(path: string, token: string): string {
-    const url = new URL(path, this.config.frontendUrl);
-    url.searchParams.set('token', token);
-    return url.toString();
+  /**
+   * Resumes the sign-up of an identifier whose password matches, else spends
+   * a hash as a real check would, so that the response time reveals nothing.
+   */
+  private async resumePendingSignup(
+    identifier: string,
+    password: string,
+  ): Promise<void> {
+    const pending = await this.challenges.findPendingSignups(identifier);
+    if (pending.length === 0) {
+      await this.passwordHasher.verify(password, await this.getDummyHash());
+      return;
+    }
+    for (const signup of pending) {
+      if (
+        signup.passwordHash &&
+        (await this.passwordHasher.verify(password, signup.passwordHash))
+      ) {
+        const body: EmailNotVerifiedError & { message: string } = {
+          code: ApiErrorCode.EmailNotVerified,
+          message: 'The email of this account is not verified yet',
+          challenge: await this.challenges.resend(signup.id),
+        };
+        throw new ForbiddenException(body);
+      }
+    }
+  }
+
+  /** NIST SP 800-63B: refuses common passwords and those built on the account's own words. */
+  private assertPasswordStrength(
+    password: string,
+    email: string,
+    username: string,
+  ): void {
+    if (isCommonPassword(password, passwordContext(email, username))) {
+      throw ApiErrors.badRequest(
+        ApiErrorCode.PasswordTooCommon,
+        'This password is too common or too easy to guess',
+      );
+    }
   }
 
   private getDummyHash(): Promise<string> {
@@ -217,14 +328,21 @@ export class AuthService {
   private invalidCredentials() {
     return ApiErrors.unauthorized(
       ApiErrorCode.InvalidCredentials,
-      'Invalid email or password',
+      'Invalid identifier or password',
+    );
+  }
+
+  private invalidCode() {
+    return ApiErrors.badRequest(
+      ApiErrorCode.InvalidCode,
+      'The code is invalid or has expired',
     );
   }
 
   private invalidToken() {
     return ApiErrors.badRequest(
       ApiErrorCode.InvalidToken,
-      'The link is invalid or has expired',
+      'The reset request is invalid or has expired',
     );
   }
 }

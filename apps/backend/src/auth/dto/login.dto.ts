@@ -1,21 +1,16 @@
-import {
-  IsBoolean,
-  IsEmail,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
+import { EMAIL_MAX_LENGTH } from '@kilotrace/shared';
 import { NormalizeIdentifier } from '../../common/transformers';
-import { PASSWORD_MAX_LENGTH } from '../../users/dto/validation.constants';
+import { CurrentPasswordField } from '../../users/dto/user-fields';
 
 export class LoginDto {
+  /** Email or username: an `@` tells them apart. */
   @NormalizeIdentifier()
-  @IsEmail()
-  @MaxLength(320)
-  email!: string;
-
   @IsString()
-  @MaxLength(PASSWORD_MAX_LENGTH)
+  @Length(1, EMAIL_MAX_LENGTH)
+  identifier!: string;
+
+  @CurrentPasswordField()
   password!: string;
 
   /** "Stay signed in": persistent cookie and long-lived session. */

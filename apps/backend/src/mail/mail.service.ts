@@ -1,8 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createTransport, type Transporter } from 'nodemailer';
+import { VERIFICATION_CODE_TTL_MINUTES } from '@kilotrace/shared';
+import authConfig, { type AuthConfig } from '../config/auth.config';
 import mailConfig, { type MailConfig } from '../config/mail.config';
+import { accountExistsTemplate } from './templates/account-exists.template';
 import type { RenderedEmail } from './templates/layout';
-import { passwordResetTemplate } from './templates/password-reset.template';
+import { verificationCodeTemplate } from './templates/verification-code.template';
 
 interface Recipient {
   email: string;
@@ -15,7 +18,10 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly transporter: Transporter;
 
-  constructor(@Inject(mailConfig.KEY) private readonly config: MailConfig) {
+  constructor(
+    @Inject(mailConfig.KEY) private readonly config: MailConfig,
+    @Inject(authConfig.KEY) private readonly authSettings: AuthConfig,
+  ) {
     this.transporter = createTransport({
       host: config.host,
       port: config.port,
@@ -27,10 +33,39 @@ export class MailService {
     });
   }
 
-  sendPasswordReset(recipient: Recipient, url: string): Promise<void> {
+  sendSignupCode(recipient: Recipient, code: string): Promise<void> {
     return this.send(
       recipient,
-      passwordResetTemplate(recipient.displayName ?? recipient.username, url),
+      verificationCodeTemplate(
+        'signup',
+        nameOf(recipient),
+        code,
+        VERIFICATION_CODE_TTL_MINUTES,
+      ),
+    );
+  }
+
+  sendPasswordResetCode(recipient: Recipient, code: string): Promise<void> {
+    return this.send(
+      recipient,
+      verificationCodeTemplate(
+        'password_reset',
+        nameOf(recipient),
+        code,
+        VERIFICATION_CODE_TTL_MINUTES,
+      ),
+    );
+  }
+
+  /** `hasPassword` false: an account opened with Google only, which signs in with it. */
+  sendAccountExists(recipient: Recipient, hasPassword: boolean): Promise<void> {
+    return this.send(
+      recipient,
+      accountExistsTemplate(
+        nameOf(recipient),
+        this.authSettings.frontendUrl,
+        hasPassword,
+      ),
     );
   }
 
@@ -49,9 +84,14 @@ export class MailService {
       });
     } catch (error) {
       this.logger.error(
-        `Failed to send "${email.subject}" email`,
+        // The subject may hold a code: never logged.
+        'Failed to send an email',
         error instanceof Error ? error.stack : String(error),
       );
     }
   }
+}
+
+function nameOf(recipient: Recipient): string {
+  return recipient.displayName ?? recipient.username;
 }

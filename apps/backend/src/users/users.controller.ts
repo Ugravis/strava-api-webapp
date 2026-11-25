@@ -20,6 +20,7 @@ import { AVATAR_MAX_UPLOAD_BYTES, AvatarsService } from './avatars.service';
 import { type CitySuggestion, CitySearchService } from './city-search.service';
 import { SearchCitiesQueryDto } from './dto/search-cities.dto';
 import { UpdateLocaleDto } from './dto/update-locale.dto';
+import { UpdateTimeZoneDto } from './dto/update-time-zone.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsernameAvailabilityQueryDto } from './dto/username-availability.dto';
 import { toUserResponse, type UserResponse } from './dto/user-response';
@@ -67,6 +68,15 @@ export class UsersController {
     @Body() dto: UpdateLocaleDto,
   ): Promise<UserResponse> {
     return toUserResponse(await this.users.setLocale(user, dto.locale));
+  }
+
+  /** Told by the site when the browser's time zone is not the account's. */
+  @Put('me/time-zone')
+  async updateTimeZone(
+    @CurrentUser() user: User,
+    @Body() dto: UpdateTimeZoneDto,
+  ): Promise<UserResponse> {
+    return toUserResponse(await this.users.setTimeZone(user, dto.timeZone));
   }
 
   @Put('me/avatar')

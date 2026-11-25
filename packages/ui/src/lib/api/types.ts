@@ -17,6 +17,8 @@ export interface User {
   profileColor: string | null;
   /** Language of the site, of the emails and of the notifications. */
   locale: Locale;
+  /** IANA time zone of its dates, its browser's; null until a first visit. */
+  timeZone: string | null;
   profilePrivate: boolean;
   hasPassword: boolean;
   /** Highest back-office role, null outside the team. */

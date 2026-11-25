@@ -7,6 +7,7 @@ import { ReleaseNotesNotice } from "@/components/release-notes/release-notes-not
 import { PageViewTracker } from "@/components/site-activity/page-view-tracker";
 import { MaintenanceNotice } from "@/components/system/maintenance-notice";
 import { SidebarInset } from "@kilotrace/ui/components/ui/sidebar";
+import { AccountTimeZone } from "@/components/user/account-time-zone";
 import { UserProvider } from "@/components/user/user-provider";
 import { requireUser } from "@/lib/auth/session";
 import { AppHeader } from "./app-header";
@@ -23,6 +24,7 @@ export async function AppShell({ children, ...slots }: AppSidebarSlots & { child
 
   return (
     <UserProvider user={user}>
+      <AccountTimeZone timeZone={user.timeZone}>
       <TrackSyncProvider userId={user.id}>
         <NotificationsProvider>
           <FollowsSummaryProvider>
@@ -43,6 +45,7 @@ export async function AppShell({ children, ...slots }: AppSidebarSlots & { child
           </FollowsSummaryProvider>
         </NotificationsProvider>
       </TrackSyncProvider>
+      </AccountTimeZone>
     </UserProvider>
   );
 }

@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "title": "Kilotrace: Jede Aktivität zeichnet deine Karte",
-    "description": "Laufen, Radfahren, Wandern: Färbe die Kacheln, durch die du kommst, vergrößere dein größtes Quadrat, verbinde Bahnhöfe und schalte Abzeichen frei. Entdecke die Welt, eine Aktivität nach der anderen.",
+    "title": "Kilotrace: Jede Aktivität zeichnet Ihre Karte",
+    "description": "Laufen, Radfahren, Wandern: Färben Sie die Kacheln, durch die Sie kommen, vergrößern Sie Ihr größtes Quadrat, verbinden Sie Bahnhöfe und schalten Sie Abzeichen frei. Entdecken Sie die Welt, eine Aktivität nach der anderen.",
     "keywords": [
       "Strava",
       "Aktivitätenkarte",
@@ -16,7 +16,7 @@
       "Erkunden",
       "Sportchallenges"
     ],
-    "ogTitle": "Jede Aktivität zeichnet deine Karte",
+    "ogTitle": "Jede Aktivität zeichnet Ihre Karte",
     "ogSubtitle": "Kacheln, Bahnhöfe, Länder und Abzeichen zum Sammeln, eine Aktivität nach der anderen."
   },
   "common": {
@@ -25,21 +25,21 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "back": "Zurück",
-    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Versuch es gleich noch einmal.",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Versuchen Sie es gleich noch einmal.",
     "language": "Sprache",
     "machineTranslated": "Automatisch übersetzt"
   },
   "landing": {
     "heroBadge": "Kompatibel mit Strava",
-    "title": "Jede Aktivität zeichnet deine Karte",
-    "description": "Laufen, Radfahren, Wandern: Mit jeder Aktivität färbt sich die Welt ein Stück mehr. Vervollständige Kacheln, vergrößere dein größtes Quadrat, verbinde Bahnhöfe und schalte Abzeichen frei, Kilometer für Kilometer.",
+    "title": "Jede Aktivität zeichnet Ihre Karte",
+    "description": "Laufen, Radfahren, Wandern: Mit jeder Aktivität färbt sich die Welt ein Stück mehr. Vervollständigen Sie Kacheln, vergrößern Sie Ihr größtes Quadrat, verbinden Sie Bahnhöfe und schalten Sie Abzeichen frei, Kilometer für Kilometer.",
     "start": "Konto erstellen",
     "withGoogle": "Mit Google",
     "alreadyRegistered": "Schon registriert?",
     "login": "Anmelden",
     "hero": {
       "newTiles": "+12 Kacheln",
-      "newTilesLabel": "nach deiner heutigen Aktivität",
+      "newTilesLabel": "nach Ihrer heutigen Aktivität",
       "square": "Größtes Quadrat",
       "squareValue": "6 × 6",
       "badge": "Abzeichen freigeschaltet",
@@ -56,8 +56,8 @@
     },
     "features": {
       "eyebrow": "Funktionen",
-      "title": "Alles, was deine Aktivitäten schon erzählen",
-      "subtitle": "Deine Aktivitäten gibt es schon. Kilotrace macht daraus einen Spielplatz zum Entdecken.",
+      "title": "Alles, was Ihre Aktivitäten schon erzählen",
+      "subtitle": "Ihre Aktivitäten gibt es schon. Kilotrace macht daraus einen Spielplatz zum Entdecken.",
       "carouselLabel": "Funktionen von Kilotrace",
       "previous": "Vorherige Funktion",
       "next": "Nächste Funktion",
@@ -69,28 +69,28 @@
           "description": "Die Karte ist in Kacheln aufgeteilt. Jeder Track färbt die Kacheln ein, durch die er führt: von großen Kacheln mit etwa 1,7 km bis zu kleinen mit etwa 200 m für die ganz Gründlichen."
         },
         "square": {
-          "title": "Dein größtes Quadrat",
-          "description": "Vergrößere den größten quadratischen Block aus komplett besuchten Kacheln. Manchmal reicht eine Spalte mehr für den nächsten Schritt: Finde heraus, welche."
+          "title": "Ihr größtes Quadrat",
+          "description": "Vergrößern Sie den größten quadratischen Block aus komplett besuchten Kacheln. Manchmal reicht eine Spalte mehr für den nächsten Schritt: Finden Sie heraus, welche."
         },
         "countries": {
           "title": "Entdeckte Länder",
-          "description": "Verfolge, wie viel von jedem Land du abgedeckt hast, Überseegebiete inklusive, auf die Hundertstelprozent genau."
+          "description": "Verfolgen Sie, wie viel von jedem Land Sie abgedeckt haben, Überseegebiete inklusive, auf die Hundertstelprozent genau."
         },
         "stations": {
           "title": "Bahnhöfe und Schienennetz",
-          "description": "Besuche Bahnhöfe und schalte die Strecken frei, die sie verbinden. Auf der Karte fahren Züge: Tippe auf einen, um ihm zu folgen."
+          "description": "Besuchen Sie Bahnhöfe und schalten Sie die Strecken frei, die sie verbinden. Auf der Karte fahren Züge: Tippen Sie auf einen, um ihm zu folgen."
         },
         "badges": {
           "title": "Abzeichen und Erfolge",
-          "description": "Schalte nach Themen sortierte Abzeichen frei und hefte deine Favoriten an, um sie auf deinem Profil zu zeigen."
+          "description": "Schalten Sie nach Themen sortierte Abzeichen frei und heften Sie Ihre Favoriten an, um sie auf Ihrem Profil zu zeigen."
         },
         "history": {
-          "title": "Reise in die Vergangenheit",
-          "description": "Zieh die Zeitleiste, um deine Karte so zu sehen, wie sie vor einem Monat, einem Jahr oder bei deiner allerersten Aktivität war."
+          "title": "Reisen Sie in die Vergangenheit",
+          "description": "Ziehen Sie die Zeitleiste, um Ihre Karte so zu sehen, wie sie vor einem Monat, einem Jahr oder bei Ihrer allerersten Aktivität war."
         },
         "community": {
-          "title": "Zusammen mit Freunden",
-          "description": "Folge anderen Entdeckern und sieh dir ihre Profile an. Deins bleibt standardmäßig privat: Du entscheidest, wer dir folgt."
+          "title": "Gehen Sie gemeinsam mit Freunden voran",
+          "description": "Folgen Sie anderen Entdeckern und sehen Sie sich ihre Profile an. Ihres bleibt standardmäßig privat: Sie entscheiden, wer Ihnen folgt."
         }
       }
     },
@@ -99,25 +99,25 @@
       "title": "In drei Schritten startklar",
       "one": {
         "title": "Konto erstellen",
-        "description": "Mit deiner E-Mail-Adresse oder deinem Google-Konto, in unter einer Minute."
+        "description": "Mit Ihrer E-Mail-Adresse oder Ihrem Google-Konto, in unter einer Minute."
       },
       "two": {
         "title": "Aktivitäten verbinden",
-        "description": "Dein Verlauf wird importiert, danach kommt jede neue Aktivität automatisch dazu."
+        "description": "Ihr Verlauf wird importiert, danach kommt jede neue Aktivität automatisch dazu."
       },
       "three": {
-        "title": "Los, entdecken",
-        "description": "Deine Karte füllt sich, die Abzeichen regnen herein. Du musst nur noch den nächsten Weg wählen."
+        "title": "Gehen Sie auf Entdeckungstour",
+        "description": "Ihre Karte füllt sich, die Abzeichen regnen herein. Sie müssen nur noch den nächsten Weg wählen."
       }
     },
     "progress": {
       "eyebrow": "Dashboard",
-      "title": "Dein Fortschritt auf einen Blick",
-      "description": "Besuchte Kacheln, größtes Quadrat, Bahnhöfe, Länder: Deine wichtigsten Zahlen sind sofort da, mit einer Vorschau deiner Karte.",
+      "title": "Ihr Fortschritt auf einen Blick",
+      "description": "Besuchte Kacheln, größtes Quadrat, Bahnhöfe, Länder: Ihre wichtigsten Zahlen sind sofort da, mit einer Vorschau Ihrer Karte.",
       "points": {
         "tiles": "Kacheln und größtes Quadrat nach jeder Aktivität aktualisiert",
-        "countries": "Länder sortiert nach dem Anteil, den du entdeckt hast",
-        "streak": "Deine Serie aktiver Tage, um im Rhythmus zu bleiben"
+        "countries": "Länder sortiert nach dem Anteil, den Sie entdeckt haben",
+        "streak": "Ihre Serie aktiver Tage, um im Rhythmus zu bleiben"
       },
       "mock": {
         "tiles": "Besuchte Kacheln",
@@ -134,25 +134,25 @@
     "faq": {
       "eyebrow": "FAQ",
       "title": "Häufige Fragen",
-      "description": "Alles, was du vor deiner ersten Aktivität wissen musst.",
+      "description": "Alles, was Sie vor Ihrer ersten Aktivität wissen müssen.",
       "moreTitle": "Lust auf einen Versuch?",
-      "moreDescription": "Am einfachsten siehst du deine eigene Karte beim Füllen zu.",
+      "moreDescription": "Am einfachsten sehen Sie Ihrer eigenen Karte beim Füllen zu.",
       "items": {
         "what": {
           "question": "Was ist Kilotrace?",
-          "answer": "Kilotrace macht aus deinen sportlichen Aktivitäten eine Karte, die du vervollständigst. Jeder Track färbt die durchquerten Kacheln ein, bringt deine Länder voran und schaltet Bahnhöfe und Abzeichen frei. Ein guter Grund, abseits der ausgetretenen Pfade unterwegs zu sein."
+          "answer": "Kilotrace macht aus Ihren sportlichen Aktivitäten eine Karte, die Sie vervollständigen. Jeder Track färbt die durchquerten Kacheln ein, bringt Ihre Länder voran und schaltet Bahnhöfe und Abzeichen frei. Ein guter Grund, abseits der ausgetretenen Pfade unterwegs zu sein."
         },
         "tiles": {
           "question": "Was ist eine Kachel?",
-          "answer": "Die Karte ist in gleichmäßige Quadrate aufgeteilt. Große Kacheln sind in Frankreich etwa 1,7 km breit, kleine etwa 200 m. Eine Kachel gilt als besucht, sobald einer deiner Tracks sie durchquert."
+          "answer": "Die Karte ist in gleichmäßige Quadrate aufgeteilt. Große Kacheln sind in Frankreich etwa 1,7 km breit, kleine etwa 200 m. Eine Kachel gilt als besucht, sobald einer Ihrer Tracks sie durchquert."
         },
         "square": {
           "question": "Was ist das größte Quadrat?",
-          "answer": "Das ist der größte quadratische Block aus Kacheln, die alle besucht sind. Es belohnt systematisches Erkunden: Um es zu vergrößern, musst du die fehlenden Kacheln an seinen Rändern suchen."
+          "answer": "Das ist der größte quadratische Block aus Kacheln, die alle besucht sind. Es belohnt systematisches Erkunden: Um es zu vergrößern, müssen Sie die fehlenden Kacheln an seinen Rändern suchen."
         },
         "sources": {
           "question": "Wie werden meine Aktivitäten importiert?",
-          "answer": "Du verbindest das Konto eines kompatiblen Dienstes, zum Beispiel Strava. Dein Verlauf wird importiert, danach kommen neue Aktivitäten automatisch dazu. Du kannst den Zugriff jederzeit widerrufen: Die importierten Aktivitäten werden dann gelöscht."
+          "answer": "Sie verbinden das Konto eines kompatiblen Dienstes, zum Beispiel Strava. Ihr Verlauf wird importiert, danach kommen neue Aktivitäten automatisch dazu. Sie können den Zugriff jederzeit widerrufen: Die importierten Aktivitäten werden dann gelöscht."
         },
         "sports": {
           "question": "Welche Aktivitäten werden berücksichtigt?",
@@ -160,7 +160,7 @@
         },
         "privacy": {
           "question": "Ist mein Profil öffentlich?",
-          "answer": "Nein. Dein Profil ist standardmäßig privat: Wer dir folgen möchte, schickt dir eine Anfrage, die du annehmen kannst oder nicht."
+          "answer": "Nein. Ihr Profil ist standardmäßig privat: Wer Ihnen folgen möchte, schickt Ihnen eine Anfrage, die Sie annehmen können oder nicht."
         },
         "mobile": {
           "question": "Kann ich Kilotrace auf dem Handy nutzen?",
@@ -168,13 +168,13 @@
         },
         "account": {
           "question": "Wie erstelle ich ein Konto?",
-          "answer": "Mit deiner E-Mail-Adresse oder deinem Google-Konto, in unter einer Minute. Danach verbindest du deine Aktivitäten und siehst zu, wie sich deine Karte füllt."
+          "answer": "Mit Ihrer E-Mail-Adresse oder Ihrem Google-Konto, in unter einer Minute. Danach verbinden Sie Ihre Aktivitäten und sehen zu, wie sich Ihre Karte füllt."
         }
       }
     },
     "cta": {
-      "title": "Deine nächste Aktivität färbt die Karte",
-      "description": "Erstelle dein Konto, verbinde deine Aktivitäten und entdecke, wie viel du schon unterwegs warst."
+      "title": "Ihre nächste Aktivität färbt die Karte",
+      "description": "Erstellen Sie Ihr Konto, verbinden Sie Ihre Aktivitäten und entdecken Sie, wie viel Sie schon unterwegs waren."
     }
   },
   "navbar": {
@@ -217,15 +217,15 @@
   },
   "fields": {
     "email": "E-Mail",
-    "emailPlaceholder": "du@beispiel.de",
+    "emailPlaceholder": "name@beispiel.de",
     "identifier": "E-Mail oder Benutzername",
-    "identifierPlaceholder": "du@beispiel.de oder max_muster",
+    "identifierPlaceholder": "name@beispiel.de oder max_muster",
     "password": "Passwort",
     "newPassword": "Neues Passwort",
     "currentPassword": "Aktuelles Passwort",
     "confirmPassword": "Passwort bestätigen",
     "displayName": "Anzeigename",
-    "displayNameDescription": "Optional, für andere Nutzer sichtbar. Ohne Angabe wird dein Benutzername angezeigt.",
+    "displayNameDescription": "Optional, für andere Nutzer sichtbar. Ohne Angabe wird Ihr Benutzername angezeigt.",
     "username": "Benutzername",
     "usernamePlaceholder": "max_muster",
     "usernameDescription": "3 bis 20 Zeichen: Kleinbuchstaben, Ziffern und _.",
@@ -237,123 +237,123 @@
     "acceptTerms": "Ich akzeptiere die <link>Nutzungsbedingungen</link>.",
     "bio": "Bio",
     "bioDescription": "Höchstens 160 Zeichen.",
-    "bioPlaceholder": "Ein paar Worte über dich …",
+    "bioPlaceholder": "Ein paar Worte über Sie …",
     "city": "Stadt",
-    "cityDescription": "Wähle deine Stadt aus der Liste, sie wird nie aus deinen Aktivitäten abgeleitet.",
+    "cityDescription": "Wählen Sie Ihre Stadt aus der Liste, sie wird nie aus Ihren Aktivitäten abgeleitet.",
     "cityPlaceholder": "Stadt suchen …",
     "favoriteSports": "Lieblingssportarten",
     "profileColor": "Profilfarbe"
   },
   "validation": {
-    "emailInvalid": "Gib eine gültige E-Mail-Adresse ein.",
+    "emailInvalid": "Geben Sie eine gültige E-Mail-Adresse ein.",
     "required": "Dieses Feld ist erforderlich.",
     "passwordMin": "Das Passwort muss mindestens 8 Zeichen lang sein.",
     "passwordMax": "Das Passwort darf höchstens 128 Zeichen lang sein.",
     "passwordMismatch": "Die Passwörter stimmen nicht überein.",
     "displayNameMax": "Der Name darf höchstens 50 Zeichen lang sein.",
     "usernameLength": "Der Benutzername muss zwischen 3 und 20 Zeichen lang sein.",
-    "usernamePattern": "Verwende nur Kleinbuchstaben, Ziffern und _.",
+    "usernamePattern": "Verwenden Sie nur Kleinbuchstaben, Ziffern und _.",
     "usernameTaken": "Dieser Benutzername ist schon vergeben.",
-    "usernameReserved": "Dieser Benutzername ist reserviert, wähle einen anderen.",
-    "termsRequired": "Du musst die Nutzungsbedingungen akzeptieren, um fortzufahren.",
+    "usernameReserved": "Dieser Benutzername ist reserviert, wählen Sie einen anderen.",
+    "termsRequired": "Sie müssen die Nutzungsbedingungen akzeptieren, um fortzufahren.",
     "bioMax": "Die Bio darf höchstens 160 Zeichen lang sein.",
     "cityMax": "Die Stadt darf höchstens 60 Zeichen lang sein.",
-    "cityPick": "Wähle eine Stadt aus der Liste.",
-    "passwordCommon": "Dieses Passwort ist zu gebräuchlich oder zu leicht zu erraten: Wähle ein anderes.",
-    "identifierInvalid": "Gib deine E-Mail-Adresse oder deinen Benutzernamen ein."
+    "cityPick": "Wählen Sie eine Stadt aus der Liste.",
+    "passwordCommon": "Dieses Passwort ist zu gebräuchlich oder zu leicht zu erraten: Wählen Sie ein anderes.",
+    "identifierInvalid": "Geben Sie Ihre E-Mail-Adresse oder Ihren Benutzernamen ein."
   },
   "errors": {
     "INVALID_CREDENTIALS": "Benutzername oder Passwort falsch.",
-    "EMAIL_SIGN_IN_DISABLED": "Die Anmeldung per E-Mail ist noch nicht verfügbar: Nutze Google.",
-    "ACCOUNT_SUSPENDED": "Dein Konto ist gesperrt.",
+    "EMAIL_SIGN_IN_DISABLED": "Die Anmeldung per E-Mail ist noch nicht verfügbar: Nutzen Sie Google.",
+    "ACCOUNT_SUSPENDED": "Ihr Konto ist gesperrt.",
     "EMAIL_TAKEN": "Mit dieser E-Mail-Adresse existiert bereits ein Konto.",
     "USERNAME_TAKEN": "Dieser Benutzername ist schon vergeben.",
     "USERNAME_RESERVED": "Dieser Benutzername ist reserviert.",
-    "INVALID_TOKEN": "Diese Anfrage ist abgelaufen: Starte neu, um einen neuen Code zu erhalten.",
-    "INVALID_CODE": "Code falsch oder abgelaufen. Prüfe ihn oder fordere einen neuen an.",
-    "EMAIL_NOT_VERIFIED": "Bestätige zuerst deine E-Mail-Adresse mit dem erhaltenen Code.",
-    "PASSWORD_TOO_COMMON": "Dieses Passwort ist zu gebräuchlich oder zu leicht zu erraten: Wähle ein anderes.",
-    "TOO_MANY_ATTEMPTS": "Zu viele Anmeldeversuche. Versuch es in 15 Minuten noch einmal.",
+    "INVALID_TOKEN": "Diese Anfrage ist abgelaufen: Starten Sie neu, um einen neuen Code zu erhalten.",
+    "INVALID_CODE": "Code falsch oder abgelaufen. Prüfen Sie ihn oder fordern Sie einen neuen an.",
+    "EMAIL_NOT_VERIFIED": "Bestätigen Sie zuerst Ihre E-Mail-Adresse mit dem erhaltenen Code.",
+    "PASSWORD_TOO_COMMON": "Dieses Passwort ist zu gebräuchlich oder zu leicht zu erraten: Wählen Sie ein anderes.",
+    "TOO_MANY_ATTEMPTS": "Zu viele Anmeldeversuche. Versuchen Sie es in 15 Minuten noch einmal.",
     "INVALID_PASSWORD": "Das Passwort ist falsch.",
-    "CONFIRMATION_MISMATCH": "Die Bestätigung stimmt nicht mit deinem Benutzernamen überein.",
+    "CONFIRMATION_MISMATCH": "Die Bestätigung stimmt nicht mit Ihrem Benutzernamen überein.",
     "INVALID_IMAGE": "Diese Datei ist kein gültiges Bild.",
-    "OAUTH_SIGNUP_EXPIRED": "Die Registrierung mit Google ist abgelaufen. Starte noch einmal von vorn.",
-    "TOO_MANY_REQUESTS": "Zu viele Versuche. Warte eine Minute, bevor du es erneut versuchst.",
+    "OAUTH_SIGNUP_EXPIRED": "Die Registrierung mit Google ist abgelaufen. Starten Sie noch einmal von vorn.",
+    "TOO_MANY_REQUESTS": "Zu viele Versuche. Warten Sie eine Minute, bevor Sie es erneut versuchen.",
     "FILE_TOO_LARGE": "Das Bild darf höchstens 5 MB groß sein.",
-    "UNEXPECTED": "Ein unerwarteter Fehler ist aufgetreten. Versuch es gleich noch einmal.",
+    "UNEXPECTED": "Ein unerwarteter Fehler ist aufgetreten. Versuchen Sie es gleich noch einmal.",
     "PROVIDER_NOT_CONNECTED": "Dieses Konto ist nicht verbunden.",
-    "CANNOT_FOLLOW_SELF": "Du kannst dir nicht selbst folgen.",
-    "ALREADY_FOLLOWING": "Du folgst dieser Person bereits.",
-    "NOT_FOLLOWING": "Du folgst dieser Person nicht.",
+    "CANNOT_FOLLOW_SELF": "Sie können sich nicht selbst folgen.",
+    "ALREADY_FOLLOWING": "Sie folgen dieser Person bereits.",
+    "NOT_FOLLOWING": "Sie folgen dieser Person nicht.",
     "NOT_FOUND": "Nicht gefunden.",
     "PRIVATE_PROFILE": "Dieses Profil ist privat.",
     "NO_FOLLOW_REQUEST": "Diese Anfrage existiert nicht mehr.",
-    "PROFILE_BADGES_FULL": "Du hast bereits die maximale Anzahl an Abzeichen angeheftet.",
-    "CANNOT_LIKE_SELF": "Du kannst dein eigenes Profil nicht liken.",
+    "PROFILE_BADGES_FULL": "Sie haben bereits die maximale Anzahl an Abzeichen angeheftet.",
+    "CANNOT_LIKE_SELF": "Sie können Ihr eigenes Profil nicht liken.",
     "SIGNUPS_DISABLED": "Die Registrierung ist derzeit geschlossen.",
-    "CANNOT_REPORT_SELF": "Du kannst dich nicht selbst melden.",
-    "ALREADY_REPORTED": "Du hast für dieses Profil bereits eine laufende Meldung.",
-    "REPORT_DETAILS_REQUIRED": "Gib den Grund deiner Meldung an."
+    "CANNOT_REPORT_SELF": "Sie können sich nicht selbst melden.",
+    "ALREADY_REPORTED": "Sie haben für dieses Profil bereits eine laufende Meldung.",
+    "REPORT_DETAILS_REQUIRED": "Geben Sie den Grund Ihrer Meldung an."
   },
   "auth": {
     "continueWithGoogle": "Weiter mit Google",
     "login": {
       "title": "Anmeldung",
-      "description": "Schön, dich wiederzusehen!",
+      "description": "Schön, Sie wiederzusehen!",
       "submit": "Anmelden",
       "forgotPassword": "Passwort vergessen?",
       "noAccount": "Noch kein Konto?",
       "registerLink": "Registrieren",
-      "googleError": "Die Anmeldung mit Google ist fehlgeschlagen. Versuch es noch einmal.",
+      "googleError": "Die Anmeldung mit Google ist fehlgeschlagen. Versuchen Sie es noch einmal.",
       "googleDisabled": "Die Anmeldung mit Google ist derzeit nicht verfügbar.",
-      "unverified": "Deine E-Mail-Adresse ist noch nicht bestätigt: Gib den 6-stelligen Code ein, der an die Adresse deiner Registrierung gesendet wurde. Er läuft in {minutes} Minuten ab.",
-      "unverifiedTo": "Deine E-Mail-Adresse ist noch nicht bestätigt: Gib den 6-stelligen Code ein, der an {email} gesendet wurde. Er läuft in {minutes} Minuten ab."
+      "unverified": "Ihre E-Mail-Adresse ist noch nicht bestätigt: Geben Sie den 6-stelligen Code ein, der an die Adresse Ihrer Registrierung gesendet wurde. Er läuft in {minutes} Minuten ab.",
+      "unverifiedTo": "Ihre E-Mail-Adresse ist noch nicht bestätigt: Geben Sie den 6-stelligen Code ein, der an {email} gesendet wurde. Er läuft in {minutes} Minuten ab."
     },
     "suspended": {
-      "title": "Dein Konto ist gesperrt",
+      "title": "Ihr Konto ist gesperrt",
       "until": "Bis zum {date}.",
       "indefinite": "Auf unbestimmte Zeit.",
       "reason": "Grund: {reason}"
     },
     "register": {
       "title": "Registrierung",
-      "description": "Erstelle dein Konto in wenigen Sekunden.",
+      "description": "Erstellen Sie Ihr Konto in wenigen Sekunden.",
       "submit": "Konto erstellen",
       "hasAccount": "Schon ein Konto?",
       "loginLink": "Anmelden",
       "closedTitle": "Registrierung geschlossen",
-      "closed": "Die Registrierung ist derzeit geschlossen. Schau später wieder vorbei!",
-      "codeSent": "Gib den 6-stelligen Code ein, der an {email} gesendet wurde, um dein Konto zu erstellen. Er läuft in {minutes} Minuten ab.",
+      "closed": "Die Registrierung ist derzeit geschlossen. Schauen Sie später wieder vorbei!",
+      "codeSent": "Geben Sie den 6-stelligen Code ein, der an {email} gesendet wurde, um Ihr Konto zu erstellen. Er läuft in {minutes} Minuten ab.",
       "changeDetails": "Angaben ändern"
     },
     "googleSignup": {
-      "title": "Schließe deine Registrierung ab",
-      "description": "Wähle deinen Benutzernamen, um die Erstellung deines Kontos {email} abzuschließen.",
+      "title": "Schließen Sie Ihre Registrierung ab",
+      "description": "Wählen Sie Ihren Benutzernamen, um die Erstellung Ihres Kontos {email} abzuschließen.",
       "submit": "Registrierung abschließen",
       "expiredTitle": "Registrierung abgelaufen",
       "restart": "Zurück zur Anmeldung"
     },
     "forgotPassword": {
       "title": "Passwort vergessen",
-      "description": "Gib deine E-Mail-Adresse ein: Wir senden dir einen Code, um ein neues Passwort zu wählen.",
+      "description": "Geben Sie Ihre E-Mail-Adresse ein: Wir senden Ihnen einen Code, um ein neues Passwort zu wählen.",
       "submit": "Code senden",
       "codeSent": "Falls für {email} ein Konto existiert, wurde gerade ein 6-stelliger Code gesendet. Er läuft in {minutes} Minuten ab.",
       "changeEmail": "Adresse ändern",
-      "newPasswordDescription": "Code bestätigt: Wähle ein neues Passwort für dein Konto.",
+      "newPasswordDescription": "Code bestätigt: Wählen Sie ein neues Passwort für Ihr Konto.",
       "savePassword": "Passwort ändern",
-      "success": "Dein Passwort wurde geändert. Du kannst dich jetzt anmelden.",
+      "success": "Ihr Passwort wurde geändert. Sie können sich jetzt anmelden.",
       "backToLogin": "Zurück zur Anmeldung"
     },
     "verification": {
-      "title": "Schau in dein Postfach",
+      "title": "Schauen Sie in Ihr Postfach",
       "codeLabel": "6-stelliger Bestätigungscode",
       "verifying": "Wird geprüft …",
       "resend": "Code erneut senden",
       "resendIn": "Code erneut senden in {seconds} s",
-      "resendLater": "Du hast viele Codes angefordert: Versuch es später noch einmal.",
+      "resendLater": "Sie haben viele Codes angefordert: Versuchen Sie es später noch einmal.",
       "resent": "Ein neuer Code wurde gerade gesendet. Die vorherigen bleiben bis zu ihrem Ablauf gültig."
     },
-    "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich erneut an."
+    "sessionExpired": "Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an."
   },
   "profile": {
     "title": "Profile",
@@ -362,14 +362,14 @@
     "favoriteSports": "Lieblingssportarten",
     "locked": {
       "title": "Dieses Profil ist privat",
-      "description": "Folge {name}, um Abzeichen und Statistiken zu sehen.",
-      "requested": "Deine Folgeanfrage steht noch aus.",
-      "descriptionNoShowcase": "Folge {name}, um die Gefolgten zu sehen."
+      "description": "Folgen Sie {name}, um Abzeichen und Statistiken zu sehen.",
+      "requested": "Ihre Folgeanfrage steht noch aus.",
+      "descriptionNoShowcase": "Folgen Sie {name}, um die Gefolgten zu sehen."
     },
     "showcase": {
       "railway": "Gleise",
       "badges": "Angeheftete Abzeichen",
-      "noBadges": "Keine Abzeichen angeheftet. Wähle auf der Seite <link>Erfolge</link>, welche angezeigt werden.",
+      "noBadges": "Keine Abzeichen angeheftet. Wählen Sie auf der Seite <link>Erfolge</link>, welche angezeigt werden.",
       "stationsVisited": "Besuchte Bahnhöfe",
       "stationCluster": "Max. Cluster",
       "previousLevel": "Große Kacheln",
@@ -385,15 +385,15 @@
       "confirm": {
         "private": {
           "title": "Profil auf privat stellen?",
-          "description": "Nur deine Follower sehen deine angehefteten Abzeichen, Statistiken und Gefolgten. Neue Follower müssen bestätigt werden. Name, Bio und Tags bleiben sichtbar.",
+          "description": "Nur Ihre Follower sehen Ihre angehefteten Abzeichen, Statistiken und Gefolgten. Neue Follower müssen bestätigt werden. Name, Bio und Tags bleiben sichtbar.",
           "action": "Auf privat stellen",
-          "descriptionNoShowcase": "Nur deine Follower sehen deine Gefolgten. Neue Follower müssen bestätigt werden. Name, Bio und Tags bleiben sichtbar."
+          "descriptionNoShowcase": "Nur Ihre Follower sehen Ihre Gefolgten. Neue Follower müssen bestätigt werden. Name, Bio und Tags bleiben sichtbar."
         },
         "public": {
           "title": "Profil öffentlich machen?",
-          "description": "Alle sehen deine angehefteten Abzeichen, Statistiken und Gefolgten. Offene Folgeanfragen werden angenommen.",
+          "description": "Alle sehen Ihre angehefteten Abzeichen, Statistiken und Gefolgten. Offene Folgeanfragen werden angenommen.",
           "action": "Öffentlich machen",
-          "descriptionNoShowcase": "Alle sehen deine Gefolgten. Offene Folgeanfragen werden angenommen."
+          "descriptionNoShowcase": "Alle sehen Ihre Gefolgten. Offene Folgeanfragen werden angenommen."
         }
       },
       "lock": {
@@ -410,7 +410,7 @@
       "emptySent": "Keine offenen gesendeten Anfragen.",
       "accept": "Annehmen",
       "decline": "Ablehnen",
-      "asked": "<b>@{username}</b> möchte dir folgen",
+      "asked": "<b>@{username}</b> möchte Ihnen folgen",
       "error": "Die Anfragen konnten nicht geladen werden.",
       "loadMore": "Mehr anzeigen",
       "fold": "Einklappen",
@@ -424,16 +424,16 @@
     "share": {
       "open": "Profil teilen",
       "title": "Profil teilen",
-      "description": "Lade andere Mitglieder ein, das Profil von {name} zu entdecken.",
+      "description": "Laden Sie andere Mitglieder ein, das Profil von {name} zu entdecken.",
       "link": "Link",
       "qr": "QR-Code",
       "copy": "Link kopieren",
       "copyFailed": "Der Link konnte nicht kopiert werden.",
       "native": "Teilen …",
       "qrLabel": "QR-Code des Profils von {name}",
-      "qrHint": "Scanne ihn mit der Kamera deines Handys."
+      "qrHint": "Scannen Sie ihn mit der Kamera Ihres Handys."
     },
-    "ownHint": "So sehen andere Mitglieder dein Profil: Das ist das Einzige, was sie von dir sehen können.",
+    "ownHint": "So sehen andere Mitglieder Ihr Profil: Das ist das Einzige, was sie von Ihnen sehen können.",
     "color": {
       "label": "Profilfarbe",
       "custom": "Eigene Farbe",
@@ -452,7 +452,7 @@
     "image": {
       "open": "Karte als Bild speichern",
       "title": "Profilkarte",
-      "description": "Lade deine Karte als Bild herunter oder teile sie direkt.",
+      "description": "Laden Sie Ihre Karte als Bild herunter oder teilen Sie sie direkt.",
       "alt": "Profilkarte von @{username}",
       "failed": "Das Bild konnte nicht erstellt werden.",
       "download": "Herunterladen",
@@ -465,10 +465,10 @@
       "next": "Nächste Karte",
       "position": "Gefolgt {index} / {count}",
       "back": "Zurück zu meinem Profil",
-      "outside": "Dieses Profil gehört nicht zu deinen Gefolgten",
+      "outside": "Dieses Profil gehört nicht zu Ihren Gefolgten",
       "empty": {
-        "title": "Deine Gefolgten",
-        "description": "Die Profile, denen du folgst, erscheinen hier als Kartenstapel."
+        "title": "Ihre Gefolgten",
+        "description": "Die Profile, denen Sie folgen, erscheinen hier als Kartenstapel."
       },
       "backToDeck": "Zurück zum Kartenstapel"
     },
@@ -486,9 +486,9 @@
     "search": {
       "open": "Nutzer suchen",
       "title": "Suchen",
-      "following": "Deine Gefolgten",
-      "followers": "Deine Follower",
-      "noSuggestions": "Du folgst niemandem und niemand folgt dir bisher.",
+      "following": "Ihre Gefolgten",
+      "followers": "Ihre Follower",
+      "noSuggestions": "Sie folgen niemandem und niemand folgt Ihnen bisher.",
       "error": "Die Vorschläge konnten nicht geladen werden."
     },
     "close": "Zurück zum Kartenstapel",
@@ -505,7 +505,7 @@
     },
     "report": {
       "title": "@{username} melden",
-      "description": "Deine Meldung geht an das Team. Die gemeldete Person wird nicht benachrichtigt und erfährt nicht, wer sie gemeldet hat.",
+      "description": "Ihre Meldung geht an das Team. Die gemeldete Person wird nicht benachrichtigt und erfährt nicht, wer sie gemeldet hat.",
       "reasons": {
         "legend": "Grund der Meldung",
         "harassment": "Belästigung oder missbräuchliches Verhalten",
@@ -516,16 +516,16 @@
         "other": "Anderer Grund"
       },
       "details": "Details (optional)",
-      "detailsRequired": "Dein Grund",
-      "detailsPlaceholder": "Füge hinzu, was dem Team beim Verstehen hilft.",
-      "customPlaceholder": "Beschreibe den Grund deiner Meldung.",
+      "detailsRequired": "Ihr Grund",
+      "detailsPlaceholder": "Fügen Sie hinzu, was dem Team beim Verstehen hilft.",
+      "customPlaceholder": "Beschreiben Sie den Grund Ihrer Meldung.",
       "submit": "Meldung senden",
       "warning": "Missbräuchliche Meldungen können selbst sanktioniert werden."
     }
   },
   "settings": {
     "title": "Einstellungen",
-    "description": "Verwalte dein Profil, deine Verbindungen und dein Konto.",
+    "description": "Verwalten Sie Ihr Profil, Ihre Verbindungen und Ihr Konto.",
     "avatar": {
       "title": "Profilbild",
       "description": "JPG, PNG, WebP oder GIF, höchstens 5 MB. Das Bild wird quadratisch zugeschnitten.",
@@ -536,45 +536,45 @@
     },
     "profile": {
       "title": "Öffentliches Profil",
-      "description": "Diese Angaben erscheinen auf deinem Profil.",
+      "description": "Diese Angaben erscheinen auf Ihrem Profil.",
       "updated": "Profil aktualisiert."
     },
     "password": {
       "title": "Passwort",
-      "description": "Deine anderen Sitzungen werden abgemeldet.",
-      "descriptionNoPassword": "Dein Konto nutzt Google. Lege ein Passwort fest, um dich auch mit deiner E-Mail-Adresse anmelden zu können.",
+      "description": "Ihre anderen Sitzungen werden abgemeldet.",
+      "descriptionNoPassword": "Ihr Konto nutzt Google. Legen Sie ein Passwort fest, um sich auch mit Ihrer E-Mail-Adresse anmelden zu können.",
       "submit": "Passwort ändern",
       "submitNoPassword": "Passwort festlegen",
       "updated": "Passwort aktualisiert."
     },
     "danger": {
       "title": "Konto löschen",
-      "description": "Dein Konto und alle deine Daten werden dauerhaft gelöscht.",
+      "description": "Ihr Konto und alle Ihre Daten werden dauerhaft gelöscht.",
       "action": "Mein Konto löschen",
       "dialogTitle": "Konto dauerhaft löschen?",
-      "dialogDescription": "Diese Aktion ist unwiderruflich. Alle deine Daten gehen verloren.",
-      "confirmWithPassword": "Gib zur Bestätigung dein Passwort ein.",
-      "confirmWithUsername": "Gib zur Bestätigung deinen Benutzernamen „{username}“ ein.",
+      "dialogDescription": "Diese Aktion ist unwiderruflich. Alle Ihre Daten gehen verloren.",
+      "confirmWithPassword": "Geben Sie zur Bestätigung Ihr Passwort ein.",
+      "confirmWithUsername": "Geben Sie zur Bestätigung Ihren Benutzernamen „{username}“ ein.",
       "confirm": "Dauerhaft löschen",
-      "deleted": "Dein Konto wurde gelöscht."
+      "deleted": "Ihr Konto wurde gelöscht."
     },
     "connections": {
       "title": "Verbindungen",
-      "description": "Die Dienste, von denen deine Aktivitäten stammen.",
+      "description": "Die Dienste, von denen Ihre Aktivitäten stammen.",
       "connected": "Verbunden",
       "notConnected": "Nicht verbunden",
       "connectedAs": "{name} · verbunden seit {date}",
       "connectedSince": "Verbunden seit {date}",
-      "notConnectedDescription": "Importiere deine Aktivitäten aus Strava.",
+      "notConnectedDescription": "Importieren Sie Ihre Aktivitäten aus Strava.",
       "revoke": "Widerrufen",
       "revokeTitle": "Strava-Zugriff widerrufen?",
-      "revokeDescription": "Der Zugriff der Plattform auf dein Strava-Konto wird entfernt, ebenso alle aus Strava importierten Aktivitäten. Du kannst dich jederzeit wieder verbinden.",
+      "revokeDescription": "Der Zugriff der Plattform auf Ihr Strava-Konto wird entfernt, ebenso alle aus Strava importierten Aktivitäten. Sie können sich jederzeit wieder verbinden.",
       "revokeConfirm": "Widerrufen und löschen",
-      "revoked": "Der Strava-Zugriff wurde widerrufen und deine importierten Aktivitäten wurden gelöscht."
+      "revoked": "Der Strava-Zugriff wurde widerrufen und Ihre importierten Aktivitäten wurden gelöscht."
     },
     "privacy": {
       "title": "Datenschutz",
-      "description": "Wer dein Profil im Detail sehen kann."
+      "description": "Wer Ihr Profil im Detail sehen kann."
     }
   },
   "terms": {
@@ -588,7 +588,7 @@
       "evening": "Guten Abend {name}",
       "latest": "Letzte Aktivität: <strong>{name}</strong>, {when}.",
       "noActivity": "Noch keine Aktivität importiert.",
-      "welcome": "Verbinde dein Strava-Konto, um dein Dashboard zu füllen.",
+      "welcome": "Verbinden Sie Ihr Strava-Konto, um Ihr Dashboard zu füllen.",
       "map": "Karte",
       "achievements": "Erfolge",
       "distance": "Distanz",
@@ -620,7 +620,7 @@
       "title": "Jahr {year}",
       "summary": "{activities, plural, =0 {Keine Aktivität} one {# Aktivität} other {# Aktivitäten}} an {days, plural, one {# Tag} other {# Tagen}} · {distance} · {time}",
       "label": "Jahreskalender: {days, plural, =0 {kein aktiver Tag} one {# aktiver Tag} other {# aktive Tage}}",
-      "hint": "Fahre über einen Tag, um Details zu sehen.",
+      "hint": "Fahren Sie über einen Tag, um Details zu sehen.",
       "day": "{count, plural, one {# Aktivität} other {# Aktivitäten}} · {distance} · {time}",
       "rest": "Ruhetag",
       "less": "Weniger",
@@ -632,7 +632,7 @@
       "nextYear": "Nächstes Jahr"
     },
     "sports": {
-      "title": "Deine Sportarten",
+      "title": "Ihre Sportarten",
       "others": "{count, plural, one {# weitere Sportart} other {# weitere Sportarten}}",
       "detail": "{count, plural, one {# Aktivität} other {# Aktivitäten}} · {time} · {distance}",
       "empty": "Noch keine Sportart."
@@ -651,19 +651,19 @@
       "maxSquare": "Max. Quadrat",
       "squareSize": "{size} × {size}",
       "maxCluster": "Max. Cluster",
-      "tilesError": "Deine Kacheln können derzeit nicht geladen werden.",
+      "tilesError": "Ihre Kacheln können derzeit nicht geladen werden.",
       "countries": "Länder",
       "countriesCount": "{count, plural, one {{formatted} Land besucht} other {{formatted} Länder besucht}}",
       "countryTiles": "{visited} Kacheln",
-      "countriesPending": "Deine Kacheln werden gerade verortet.",
+      "countriesPending": "Ihre Kacheln werden gerade verortet.",
       "countriesEmpty": "Noch kein Land besucht.",
-      "countriesError": "Deine Länder können derzeit nicht geladen werden.",
+      "countriesError": "Ihre Länder können derzeit nicht geladen werden.",
       "stations": "Bahnhöfe und Gleise",
       "stationCount": "{count, plural, one {Bahnhof besucht} other {Bahnhöfe besucht}}",
       "railway": "Gleise freigeschaltet",
       "stationCluster": "Max. Cluster ({railway})",
       "lastStation": "Zuletzt: {name}",
-      "stationsError": "Deine Bahnhöfe können derzeit nicht geladen werden.",
+      "stationsError": "Ihre Bahnhöfe können derzeit nicht geladen werden.",
       "openTiles": "Kacheln auf der Karte ansehen",
       "preview": "Vorschau des am meisten erkundeten Gebiets",
       "openStations": "Bahnhöfe auf der Karte ansehen"
@@ -672,7 +672,7 @@
       "all": "Alle",
       "favorites": {
         "title": "Lieblingsabzeichen",
-        "description": "Die Abzeichen, die du genau im Blick hast."
+        "description": "Die Abzeichen, die Sie genau im Blick haben."
       },
       "closest": {
         "title": "Fast freigeschaltet",
@@ -681,8 +681,8 @@
       "empty": "Keine Abzeichen in Arbeit."
     },
     "evolution": {
-      "tilesTitle": "Entwicklung deiner Kacheln",
-      "stationsTitle": "Entwicklung deiner Bahnhöfe",
+      "tilesTitle": "Entwicklung Ihrer Kacheln",
+      "stationsTitle": "Entwicklung Ihrer Bahnhöfe",
       "modesLabel": "Verfolgter Wert",
       "tileModes": {
         "tiles": "Kacheln",
@@ -699,7 +699,7 @@
       },
       "squareSize": "{size} × {size}",
       "label": "Entwicklung: {name}, heute {value}",
-      "hint": "Zieh über das Diagramm, um zu zoomen.",
+      "hint": "Ziehen Sie über das Diagramm, um zu zoomen.",
       "reset": "Zurücksetzen",
       "empty": "Noch nichts anzuzeigen.",
       "error": "Die Entwicklung kann derzeit nicht geladen werden."
@@ -728,41 +728,41 @@
     "name": "Strava",
     "connect": "Mit Strava verbinden",
     "unavailable": "Die Verbindung zu Strava ist derzeit nicht verfügbar.",
-    "statusError": "Der Status deiner Strava-Verbindung konnte nicht abgerufen werden.",
+    "statusError": "Der Status Ihrer Strava-Verbindung konnte nicht abgerufen werden.",
     "retry": "Erneut versuchen",
     "connectCard": {
-      "title": "Verbinde dein Strava-Konto",
-      "description": "Importiere deine Aktivitäten, um die Karte zu erkunden.",
-      "imported": "Wir importieren Name, Sportart, Datum, Distanz, Dauer und Höhenmeter deiner Aktivitäten, auf Wunsch auch private.",
-      "noTracks": "Deine GPS-Tracks werden nicht gespeichert.",
-      "revocable": "Du kannst den Zugriff jederzeit in den Einstellungen widerrufen: Deine importierten Aktivitäten werden dann gelöscht."
+      "title": "Verbinden Sie Ihr Strava-Konto",
+      "description": "Importieren Sie Ihre Aktivitäten, um die Karte zu erkunden.",
+      "imported": "Wir importieren Name, Sportart, Datum, Distanz, Dauer und Höhenmeter Ihrer Aktivitäten, auf Wunsch auch private.",
+      "noTracks": "Ihre GPS-Tracks werden nicht gespeichert.",
+      "revocable": "Sie können den Zugriff jederzeit in den Einstellungen widerrufen: Ihre importierten Aktivitäten werden dann gelöscht."
     },
     "outcome": {
-      "connected": "Dein Strava-Konto ist verbunden. Der Import deiner Aktivitäten beginnt.",
-      "denied": "Du hast den Zugriff auf Strava abgelehnt. Du kannst es jederzeit erneut versuchen.",
-      "missing_scope": "Der Zugriff auf deine Aktivitäten ist nötig: Hake auf dem Strava-Bildschirm „Daten deiner Aktivitäten ansehen“ an.",
+      "connected": "Ihr Strava-Konto ist verbunden. Der Import Ihrer Aktivitäten beginnt.",
+      "denied": "Sie haben den Zugriff auf Strava abgelehnt. Sie können es jederzeit erneut versuchen.",
+      "missing_scope": "Der Zugriff auf Ihre Aktivitäten ist nötig: Haken Sie auf dem Strava-Bildschirm „Daten Ihrer Aktivitäten ansehen“ an.",
       "already_linked": "Dieses Strava-Konto ist bereits mit einem anderen Konto verbunden.",
       "unavailable": "Die Verbindung zu Strava ist derzeit nicht verfügbar.",
-      "error": "Die Verbindung zu Strava ist fehlgeschlagen. Versuch es gleich noch einmal."
+      "error": "Die Verbindung zu Strava ist fehlgeschlagen. Versuchen Sie es gleich noch einmal."
     },
     "sync": {
-      "importing": "Deine Aktivitäten werden importiert …",
+      "importing": "Ihre Aktivitäten werden importiert …",
       "importingCount": "{count, plural, =0 {Import wird vorbereitet …} one {# Aktivität importiert} other {# Aktivitäten importiert}}",
       "queued": "Synchronisierung wartet …",
       "rateLimited": "Strava begrenzt die Anzahl der Anfragen: Der Import wird um {time} automatisch fortgesetzt.",
       "retrying": "Es ist ein Fehler aufgetreten, neuer Versuch um {time}.",
       "failed": "Die Synchronisierung ist fehlgeschlagen.",
-      "failedDescription": "Strava hat nicht richtig geantwortet. Versuch es in ein paar Minuten noch einmal.",
-      "hint": "Du kannst diese Seite verlassen: Der Import läuft im Hintergrund weiter.",
+      "failedDescription": "Strava hat nicht richtig geantwortet. Versuchen Sie es in ein paar Minuten noch einmal.",
+      "hint": "Sie können diese Seite verlassen: Der Import läuft im Hintergrund weiter.",
       "now": "Synchronisieren",
       "requested": "Synchronisierung gestartet.",
       "lastSynced": "Zuletzt synchronisiert {date}",
       "neverSynced": "Noch nicht synchronisiert",
       "connectedAs": "Mit Strava verbunden als {name}",
       "connected": "Mit Strava verbunden",
-      "privateMissing": "Deine privaten Aktivitäten werden nicht importiert. Um sie einzubeziehen, widerrufe den Zugriff und verbinde Strava erneut mit dem Haken bei „Daten deiner privaten Aktivitäten ansehen“.",
+      "privateMissing": "Ihre privaten Aktivitäten werden nicht importiert. Um sie einzubeziehen, widerrufen Sie den Zugriff und verbinden Sie Strava erneut mit dem Haken bei „Daten Ihrer privaten Aktivitäten ansehen“.",
       "tiles": {
-        "computing": "Deine Kacheln werden berechnet …",
+        "computing": "Ihre Kacheln werden berechnet …",
         "computedCount": "{computed} von {total}",
         "refining": "Kacheln werden verfeinert",
         "refiningCount": "{count, plural, one {# Aktivität zu prüfen} other {# Aktivitäten zu prüfen}}",
@@ -780,9 +780,9 @@
       "time": "Zeit",
       "elevation": "Höhenmeter"
     },
-    "error": "Deine Erfolge können derzeit nicht geladen werden.",
+    "error": "Ihre Erfolge können derzeit nicht geladen werden.",
     "retry": "Erneut versuchen",
-    "empty": "Verbinde Strava über das Dashboard, um deine Abzeichen voranzubringen.",
+    "empty": "Verbinden Sie Strava über das Dashboard, um Ihre Abzeichen voranzubringen.",
     "completions": "{count, plural, =0 {Noch nicht erreicht} one {# Mal erreicht} other {# Mal erreicht}}",
     "progressLabel": "{name}: {percent} der laufenden Runde",
     "families": {
@@ -795,13 +795,13 @@
     "favorite": "Favorit",
     "favoritesSection": {
       "title": "Favoriten",
-      "empty": "Füge deine Lieblingsabzeichen über ihre Detailansicht zu den Favoriten hinzu, um sie hier wiederzufinden.",
+      "empty": "Fügen Sie Ihre Lieblingsabzeichen über ihre Detailansicht zu den Favoriten hinzu, um sie hier wiederzufinden.",
       "reorder": "Neu anordnen",
       "done": "Fertig",
-      "reorderHint": "Zieh deine Favoriten, um ihre Reihenfolge festzulegen.",
-      "reorderError": "Die Reihenfolge deiner Favoriten kann derzeit nicht geändert werden.",
+      "reorderHint": "Ziehen Sie Ihre Favoriten, um ihre Reihenfolge festzulegen.",
+      "reorderError": "Die Reihenfolge Ihrer Favoriten kann derzeit nicht geändert werden.",
       "drag": {
-        "instructions": "Um einen Favoriten zu verschieben, drücke Leertaste oder Eingabetaste, nutze die Pfeiltasten und drücke dann erneut Leertaste oder Eingabetaste zum Ablegen oder Esc zum Abbrechen.",
+        "instructions": "Um einen Favoriten zu verschieben, drücken Sie Leertaste oder Eingabetaste, nutzen Sie die Pfeiltasten und drücken Sie dann erneut Leertaste oder Eingabetaste zum Ablegen oder Esc zum Abbrechen.",
         "start": "{name} aufgenommen, an Position {rank}.",
         "over": "{name} auf Position {rank} verschoben.",
         "end": "{name} an Position {rank} abgelegt.",
@@ -822,7 +822,7 @@
         "lastCompletedAt": "Letztes Mal",
         "never": "Noch nicht",
         "estimatedNext": "Nächstes Mal, im aktuellen Tempo",
-        "estimateHint": "Schätzung nach deinem Tempo der letzten 90 Tage",
+        "estimateHint": "Schätzung nach Ihrem Tempo der letzten 90 Tage",
         "noRecentActivity": "Keine Aktivität seit 90 Tagen",
         "unavailable": "Nicht verfügbar",
         "tierReached": "Erreichte Stufe",
@@ -839,7 +839,7 @@
       },
       "addFavorite": "Zu Favoriten hinzufügen",
       "removeFavorite": "Aus Favoriten entfernen",
-      "favoriteError": "Deine Favoriten können derzeit nicht geändert werden.",
+      "favoriteError": "Ihre Favoriten können derzeit nicht geändert werden.",
       "tier": "Stufe {number} von {total}",
       "lastTier": "Letzte Stufe erreicht",
       "tiers": {
@@ -850,8 +850,8 @@
       },
       "addToProfile": "Auf dem Profil zeigen",
       "removeFromProfile": "Vom Profil entfernen",
-      "profileError": "Dein Profil kann derzeit nicht geändert werden.",
-      "profileFull": "Du hast bereits die maximale Anzahl an Abzeichen angeheftet: Entferne eines von deinem Profil, um ein anderes anzuheften."
+      "profileError": "Ihr Profil kann derzeit nicht geändert werden.",
+      "profileFull": "Sie haben bereits die maximale Anzahl an Abzeichen angeheftet: Entfernen Sie eines von Ihrem Profil, um ein anderes anzuheften."
     },
     "showMore": "{count, plural, one {# weiteres Abzeichen zeigen} other {# weitere Abzeichen zeigen}}",
     "showLess": "Weniger zeigen",
@@ -899,7 +899,7 @@
       "viewLabel": "Ansicht"
     },
     "header": {
-      "label": "Zusammenfassung deiner Erfolge",
+      "label": "Zusammenfassung Ihrer Erfolge",
       "closest": "Am nächsten dran",
       "remaining": "noch {amount}",
       "carousel": "Abzeichen im Fokus",
@@ -922,7 +922,7 @@
       "random": "Zufällig",
       "reroll": "Nochmal würfeln",
       "roll": "Würfeln, um ein Abzeichen zu ziehen",
-      "rollHint": "Würfle",
+      "rollHint": "Würfeln Sie",
       "closestNew": "Nächstes neues",
       "closestNone": "Keine Abzeichen in Arbeit."
     },
@@ -930,12 +930,12 @@
   },
   "map": {
     "title": "Karte",
-    "label": "Karte deiner Aktivitäten",
+    "label": "Karte Ihrer Aktivitäten",
     "checking": "Suche nach neuen Tracks …",
     "syncing": "Tracks werden abgerufen: {fetched} von {total}",
-    "empty": "Verbinde Strava über das Dashboard, um deine Tracks hier zu sehen.",
-    "error": "Deine Tracks können derzeit nicht abgerufen werden.",
-    "rateLimited": "Das Anfragelimit von Strava ist erreicht. Versuch es in ein paar Minuten noch einmal.",
+    "empty": "Verbinden Sie Strava über das Dashboard, um Ihre Tracks hier zu sehen.",
+    "error": "Ihre Tracks können derzeit nicht abgerufen werden.",
+    "rateLimited": "Das Anfragelimit von Strava ist erreicht. Versuchen Sie es in ein paar Minuten noch einmal.",
     "retry": "Erneut versuchen",
     "invalidLink": "Einige Einstellungen dieses Links sind ungültig: Sie wurden ignoriert.",
     "stats": {
@@ -1011,7 +1011,7 @@
       "station": "Bahnhof",
       "tile": "Kachel",
       "subtile": "Kleine Kachel",
-      "description": "Was deine Aktivitäten auf dieser Kachel erkundet haben.",
+      "description": "Was Ihre Aktivitäten auf dieser Kachel erkundet haben.",
       "inMaxSquare": "Größtes Quadrat",
       "inMaxCluster": "Größter Cluster",
       "clustered": "Cluster",
@@ -1026,7 +1026,7 @@
       "activitiesError": "Die Aktivitäten können nicht geladen werden.",
       "retry": "Erneut versuchen",
       "viewActivity": "Aktivität ansehen",
-      "notVisited": "Du hast diese Kachel noch nicht besucht."
+      "notVisited": "Sie haben diese Kachel noch nicht besucht."
     },
     "panel": {
       "label": "Details",
@@ -1125,10 +1125,10 @@
       "never": "Nie",
       "computing": "Die Form des Sektors wird berechnet, was bei einem großen Land mehrere Minuten dauern kann …",
       "error": "Der Sektor kann nicht geladen werden.",
-      "atSea": "Kein Land in der Kartenmitte: Verschiebe die Karte oder suche einen Sektor.",
+      "atSea": "Kein Land in der Kartenmitte: Verschieben Sie die Karte oder suchen Sie einen Sektor.",
       "search": {
         "title": "Sektor suchen",
-        "description": "Wähle ein Land, um die Karte darauf zu zentrieren.",
+        "description": "Wählen Sie ein Land, um die Karte darauf zu zentrieren.",
         "placeholder": "Land suchen …",
         "visited": "Besuchte Länder",
         "others": "Andere Länder",
@@ -1148,8 +1148,8 @@
       "visited": "Besucht",
       "notVisited": "Noch nicht besucht",
       "inMaxCluster": "Größter Cluster",
-      "visitedDescription": "Eine deiner Aktivitäten hat eine der kleinen Kacheln dieses Bahnhofs durchquert, auf der Karte hervorgehoben.",
-      "notVisitedDescription": "Durchquere eine der kleinen Kacheln dieses Bahnhofs, auf der Karte hervorgehoben, um ihn freizuschalten.",
+      "visitedDescription": "Eine Ihrer Aktivitäten hat eine der kleinen Kacheln dieses Bahnhofs durchquert, auf der Karte hervorgehoben.",
+      "notVisitedDescription": "Durchqueren Sie eine der kleinen Kacheln dieses Bahnhofs, auf der Karte hervorgehoben, um ihn freizuschalten.",
       "firstVisit": "Erster Besuch",
       "links": "Freigeschaltete Verbindungen",
       "neighbors": "Nachbarbahnhöfe",
@@ -1204,7 +1204,7 @@
       "follow": "Zug verfolgen",
       "following": "Wird verfolgt",
       "gone": "Dieser Zug hat die Karte verlassen.",
-      "disclaimer": "Fiktiver Zug: Er fährt auf deinen freigeschalteten Verbindungen, seine Zahlen sind erfunden.",
+      "disclaimer": "Fiktiver Zug: Er fährt auf Ihren freigeschalteten Verbindungen, seine Zahlen sind erfunden.",
       "moreStops": "{count, plural, one {# weiterer Halt} other {# weitere Halte}}",
       "fewerStops": "Zwischenhalte ausblenden",
       "passed": "Bedient",
@@ -1214,9 +1214,9 @@
       "prompt": "Ein Problem mit einer Zugstrecke? Ein fehlender Bahnhof?",
       "open": "Melden",
       "title": "Fehlendes oder Fehler melden",
-      "description": "Fehlt ein Bahnhof oder ist eine Bahnstrecke nicht vorhanden oder falsch? Sag es dem Team, das die Daten bei den nächsten Updates korrigiert.",
+      "description": "Fehlt ein Bahnhof oder ist eine Bahnstrecke nicht vorhanden oder falsch? Sagen Sie es dem Team, das die Daten bei den nächsten Updates korrigiert.",
       "stationTitle": "„{name}“ melden",
-      "stationDescription": "Stimmt eine Angabe zu diesem Bahnhof nicht? Sag es dem Team, das die Daten bei den nächsten Updates korrigiert.",
+      "stationDescription": "Stimmt eine Angabe zu diesem Bahnhof nicht? Sagen Sie es dem Team, das die Daten bei den nächsten Updates korrigiert.",
       "unnamed": "Bahnhof ohne Namen",
       "legend": "Grund der Meldung",
       "reasons": {
@@ -1231,13 +1231,13 @@
         "other": "Sonstiges"
       },
       "details": "Details (optional)",
-      "detailsRequired": "Nenne den Grund",
+      "detailsRequired": "Nennen Sie den Grund",
       "detailsPlaceholder": "Bahnhofsname, Stadt, Strecke … alles, was dem Team hilft, ihn zu finden.",
       "stationPlaceholder": "Was falsch ist und was richtig wäre.",
-      "customPlaceholder": "Beschreibe das Problem.",
+      "customPlaceholder": "Beschreiben Sie das Problem.",
       "submit": "Senden",
       "sent": "Meldung ans Team gesendet",
-      "sentDescription": "Du wirst benachrichtigt, sobald sie geprüft wurde.",
+      "sentDescription": "Sie werden benachrichtigt, sobald sie geprüft wurde.",
       "close": "Schließen"
     }
   },
@@ -1246,7 +1246,7 @@
       "label": "Nutzer suchen",
       "placeholder": "Nutzer suchen …",
       "empty": "Kein Nutzer gefunden.",
-      "error": "Die Suche ist fehlgeschlagen. Versuch es noch einmal.",
+      "error": "Die Suche ist fehlgeschlagen. Versuchen Sie es noch einmal.",
       "followed": "Gefolgt",
       "others": "Andere Nutzer"
     },
@@ -1255,12 +1255,12 @@
       "followBack": "Zurückfolgen",
       "following": "Gefolgt",
       "unfollow": "Entfolgen",
-      "followsYou": "Folgt dir",
+      "followsYou": "Folgt Ihnen",
       "requested": "Anfrage gesendet",
       "cancelRequest": "Anfrage zurückziehen",
       "confirm": {
         "title": "@{username} nicht mehr folgen?",
-        "description": "Das Profil verschwindet aus deinem Kartenstapel. Ist es privat, musst du erneut eine Folgeanfrage senden."
+        "description": "Das Profil verschwindet aus Ihrem Kartenstapel. Ist es privat, müssen Sie erneut eine Folgeanfrage senden."
       }
     },
     "counts": {
@@ -1287,27 +1287,27 @@
     "unread": "{count, plural, one {# ungelesene Benachrichtigung} other {# ungelesene Benachrichtigungen}}",
     "empty": "Noch keine Benachrichtigungen.",
     "error": "Die Benachrichtigungen konnten nicht geladen werden.",
-    "follow": "<b>{name}</b> folgt dir jetzt.",
+    "follow": "<b>{name}</b> folgt Ihnen jetzt.",
     "toast": {
-      "follow": "{name} folgt dir jetzt.",
-      "follow_request": "{name} möchte dir folgen.",
-      "follow_accepted": "{name} hat deine Folgeanfrage angenommen.",
-      "profile_like": "Jemand hat dein Profil geliked.",
-      "moderation": "Das Team hat dein Profil moderiert.",
-      "strava_unlinked": "Das Team hat dein Strava-Konto getrennt.",
-      "role_changed": "Deine Rolle im Team hat sich geändert.",
+      "follow": "{name} folgt Ihnen jetzt.",
+      "follow_request": "{name} möchte Ihnen folgen.",
+      "follow_accepted": "{name} hat Ihre Folgeanfrage angenommen.",
+      "profile_like": "Jemand hat Ihr Profil geliked.",
+      "moderation": "Das Team hat Ihr Profil moderiert.",
+      "strava_unlinked": "Das Team hat Ihr Strava-Konto getrennt.",
+      "role_changed": "Ihre Rolle im Team hat sich geändert.",
       "release_note": "Eine neue Version ist verfügbar.",
       "report_received": "Eine neue Meldung muss bearbeitet werden.",
-      "report_closed": "Deine Meldung wurde geprüft.",
-      "report_sent": "Deine Meldung wurde gesendet."
+      "report_closed": "Ihre Meldung wurde geprüft.",
+      "report_sent": "Ihre Meldung wurde gesendet."
     },
     "view": "Ansehen",
-    "follow_request": "<b>{name}</b> möchte dir folgen.",
-    "follow_accepted": "<b>{name}</b> hat deine Folgeanfrage angenommen.",
-    "profile_like": "Jemand hat dein Profil geliked.",
-    "moderation": "Das Team hat {fields} deines Profils zurückgesetzt.",
-    "strava_unlinked": "Das Team hat dein Strava-Konto getrennt.",
-    "role_changed": "{role, select, none {Du gehörst nicht mehr zum Team.} other {Du hast jetzt die Rolle {roleName} im Team.}}",
+    "follow_request": "<b>{name}</b> möchte Ihnen folgen.",
+    "follow_accepted": "<b>{name}</b> hat Ihre Folgeanfrage angenommen.",
+    "profile_like": "Jemand hat Ihr Profil geliked.",
+    "moderation": "Das Team hat {fields} Ihres Profils zurückgesetzt.",
+    "strava_unlinked": "Das Team hat Ihr Strava-Konto getrennt.",
+    "role_changed": "{role, select, none {Sie gehören nicht mehr zum Team.} other {Sie haben jetzt die Rolle {roleName} im Team.}}",
     "roles": {
       "support": "Support",
       "admin": "Admin",
@@ -1334,14 +1334,14 @@
       "month": "Diesen Monat",
       "older": "Älter"
     },
-    "release_note": "Neuigkeiten der Version <b>{version}</b>: Entdecke, was sich ändert.",
+    "release_note": "Neuigkeiten der Version <b>{version}</b>: Entdecken Sie, was sich ändert.",
     "release": "Neuigkeiten",
     "report_received": "Neue Meldung zu @{username} muss bearbeitet werden.",
-    "report_closed": "{outcome, select, sanctioned {Deine Meldung zu @{username} wurde geprüft: Es wurde eine Sanktion verhängt. Danke.} other {Deine Meldung zu @{username} wurde geprüft: Es wurde keine Sanktion verhängt.}}",
-    "report_sent": "Deine Meldung zu @{username} wurde gesendet. Du wirst benachrichtigt, sobald das Team sie geprüft hat.",
+    "report_closed": "{outcome, select, sanctioned {Ihre Meldung zu @{username} wurde geprüft: Es wurde eine Sanktion verhängt. Danke.} other {Ihre Meldung zu @{username} wurde geprüft: Es wurde keine Sanktion verhängt.}}",
+    "report_sent": "Ihre Meldung zu @{username} wurde gesendet. Sie werden benachrichtigt, sobald das Team sie geprüft hat.",
     "station_report_received": "{general, select, yes {Neue Meldung zu den Bahndaten muss bearbeitet werden.} other {Neue Meldung zum Bahnhof „{station}“ muss bearbeitet werden.}}",
-    "station_report_sent": "{general, select, yes {Deine Meldung zu den Bahndaten wurde gesendet.} other {Deine Meldung zum Bahnhof „{station}“ wurde gesendet.}} Du wirst benachrichtigt, sobald das Team sie geprüft hat.",
-    "station_report_closed": "{outcome, select, accepted {{general, select, yes {Deine Meldung zu den Bahndaten} other {Deine Meldung zum Bahnhof „{station}“}} wurde angenommen: Sie wird bei den nächsten Updates berücksichtigt. Danke!} done {{general, select, yes {Die Korrektur deiner Meldung zu den Bahndaten} other {Die Korrektur deiner Meldung zum Bahnhof „{station}“}} ist online. Danke!} other {{general, select, yes {Deine Meldung zu den Bahndaten} other {Deine Meldung zum Bahnhof „{station}“}} wurde ohne Folgen abgeschlossen: {dismissal}.}}",
+    "station_report_sent": "{general, select, yes {Ihre Meldung zu den Bahndaten wurde gesendet.} other {Ihre Meldung zum Bahnhof „{station}“ wurde gesendet.}} Sie werden benachrichtigt, sobald das Team sie geprüft hat.",
+    "station_report_closed": "{outcome, select, accepted {{general, select, yes {Ihre Meldung zu den Bahndaten} other {Ihre Meldung zum Bahnhof „{station}“}} wurde angenommen: Sie wird bei den nächsten Updates berücksichtigt. Danke!} done {{general, select, yes {Die Korrektur Ihrer Meldung zu den Bahndaten} other {Die Korrektur Ihrer Meldung zum Bahnhof „{station}“}} ist online. Danke!} other {{general, select, yes {Ihre Meldung zu den Bahndaten} other {Ihre Meldung zum Bahnhof „{station}“}} wurde ohne Folgen abgeschlossen: {dismissal}.}}",
     "teamNote": "Hinweis des Teams: {reason}",
     "stationDismissals": {
       "already_fixed": "bereits vorhanden oder schon korrigiert",
@@ -1354,7 +1354,7 @@
   },
   "footer": {
     "label": "Fußzeile",
-    "tagline": "Jede Aktivität zeichnet deine Karte. Kacheln, Bahnhöfe, Länder und Abzeichen zum Vervollständigen, Kilometer für Kilometer.",
+    "tagline": "Jede Aktivität zeichnet Ihre Karte. Kacheln, Bahnhöfe, Länder und Abzeichen zum Vervollständigen, Kilometer für Kilometer.",
     "product": "Entdecken",
     "features": "Funktionen",
     "steps": "So funktioniert's",

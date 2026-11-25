@@ -83,8 +83,8 @@ export class TranslationService {
           ...(source && { source_lang: source.toUpperCase() }),
           ...(context && { context }),
           ...(glossary && { glossary_id: glossary }),
-          // The site says « tu » (du, tu, tú): the informal form where the language has one.
-          formality: 'prefer_less',
+          // The site says « vous » (Sie, Lei, usted): the formal form where the language has one.
+          formality: 'prefer_more',
         },
       });
       const { translations } = (await response.json()) as DeepLResponse;

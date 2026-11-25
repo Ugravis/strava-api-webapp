@@ -13,7 +13,7 @@ describe('email templates', () => {
 
     expect(email.subject).toBe('123456 — Kilotrace-Bestätigungscode');
     expect(email.html).toContain('<html lang="de">');
-    expect(email.text).toContain('Hallo Jean,');
+    expect(email.text).toContain('Guten Tag Jean,');
     expect(email.text).toContain('Dieser Code läuft in 15 Minuten ab.');
   });
 

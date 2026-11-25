@@ -15,6 +15,9 @@
 - Configs/Locks/Data: NEVER read full lockfiles, logs, GeoJSON, GPX, or Docker files. Use `jq`, `yq`, `grep`, `head`, `tail`.
 - Tests: Run targeted files only (never full suite). Silence linters (`--quiet`).
 
+## Internationalisation
+- Every user-facing text, link, page address and translated content follows `docs/i18n.md` (catalogs fr + en required, `@/i18n/navigation`, `PATHNAMES`, `translations` columns, DeepL).
+
 ## Admin Tables
 - Every back-office list uses the data table kit (`@kilotrace/ui/components/admin/data-table` + `runTableQuery`). Read `docs/admin-tables.md` first (skill `admin-table`).
 

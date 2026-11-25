@@ -8,6 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useSplitPanel, useSplitPanelPageMode } from "@kilotrace/ui/components/split-panel";
 import { countryName } from "@kilotrace/ui/lib/countries/country-format";
 import { setCountriesVisible, setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
+import { ADMIN_LOCALE } from "@kilotrace/ui/i18n/locale";
 import { BASE_STYLE_URL, DEFAULT_VIEW, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import { centerStation, type MapInsets, type StationBounds, stationCut } from "@kilotrace/ui/lib/map/station-camera";
 import {
@@ -180,7 +181,7 @@ export function DatasetMap({ versions: serverVersions, rights }: { versions: Adm
 
   // The base map in the colors of the theme, the layers added again once it is loaded.
   useEffect(() => {
-    mapRef.current?.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
+    mapRef.current?.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette, ADMIN_LOCALE) });
   }, [palette]);
 
   useEffect(() => {

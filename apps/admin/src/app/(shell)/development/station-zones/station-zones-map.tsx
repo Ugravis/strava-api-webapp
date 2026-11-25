@@ -11,6 +11,7 @@ import { Slider } from "@kilotrace/ui/components/ui/slider";
 import { Switch } from "@kilotrace/ui/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@kilotrace/ui/components/ui/toggle-group";
 import { setVisitedCountries } from "@kilotrace/ui/lib/map/country-layer";
+import { ADMIN_LOCALE } from "@kilotrace/ui/i18n/locale";
 import { BASE_STYLE_URL, mapPalette, recolorStyle } from "@kilotrace/ui/lib/map/map-style";
 import { stationData } from "@kilotrace/ui/lib/map/station-data";
 import { addStationLayers, setHiddenGroups } from "@kilotrace/ui/lib/map/stations-layer";
@@ -216,7 +217,7 @@ export function StationZonesMap({ labels }: { labels: StationZonesLabels }) {
 
   // The base map in the colours of the theme, the layers added again once it is loaded.
   useEffect(() => {
-    mapRef.current?.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
+    mapRef.current?.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette, ADMIN_LOCALE) });
   }, [palette, countries, departments]);
 
   useEffect(() => {

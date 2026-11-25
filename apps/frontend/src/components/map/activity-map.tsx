@@ -3,7 +3,8 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MapLibreMap, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { useTheme } from "next-themes";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@kilotrace/ui/i18n/locale";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
@@ -165,6 +166,8 @@ export function ActivityMap({
   // Whether a past state is shown in place of today's tiles: only once it is loaded.
   const pastRef = useRef(false);
   const palette = mapPalette(resolvedTheme);
+  // Fixed for the life of the map: another language is another page.
+  const locale = useLocale() as Locale;
   const paletteRef = useRef(palette);
   const showStationsRef = useRef(showStations);
   const dimmedRef = useRef(dimmed);
@@ -238,7 +241,7 @@ export function ActivityMap({
     if (palette === paletteRef.current) return;
     paletteRef.current = palette;
     styleReadyRef.current = false;
-    if (mapRef.current) setBaseStyle(mapRef.current, palette);
+    if (mapRef.current) setBaseStyle(mapRef.current, palette, locale);
   }, [palette]);
 
   useEffect(() => {
@@ -256,7 +259,7 @@ export function ActivityMap({
       dragRotate: false,
       pitchWithRotate: false,
     });
-    setBaseStyle(map, paletteRef.current);
+    setBaseStyle(map, paletteRef.current, locale);
     map.touchZoomRotate.disableRotation();
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     // Below the zoom buttons, kept while the setting is off: a click turns it back on.
@@ -777,8 +780,8 @@ export function ActivityMap({
  * Loads the base style in the colors of `palette`, from scratch: the custom
  * layers, dropped, are added again with the new colors once it is loaded.
  */
-function setBaseStyle(map: MapLibreMap, palette: MapPalette): void {
-  map.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette) });
+function setBaseStyle(map: MapLibreMap, palette: MapPalette, locale: Locale): void {
+  map.setStyle(BASE_STYLE_URL, { diff: false, transformStyle: (_, next) => recolorStyle(next, palette, locale) });
 }
 
 /**

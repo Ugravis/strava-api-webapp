@@ -28,14 +28,16 @@ import { TranslationService } from './translation.service';
  * Fills every field left empty in every language of the content of the team
  * (badges, collections, user tags, release notes) through DeepL, those typed
  * by hand kept: what « Traduire les manquantes » does, for every row at once.
- * `pnpm --filter backend translations:fill`; in production,
- * `node dist/translation/fill-translations.js` in the backend container.
+ * `--all` translates every field again, those typed by hand included.
+ * `pnpm --filter backend translations:fill [--all]`; in production,
+ * `node dist/translation/fill-translations.js [--all]` in the backend container.
  */
 /** Between two rows: DeepL Free answers 429 to a burst of calls. */
 const PAUSE_MS = 400;
 const pause = () => new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
 
 async function main(): Promise<void> {
+  const all = process.argv.includes('--all');
   const translation = new TranslationService(translationConfig());
   if (!translation.enabled) throw new Error('DEEPL_API_KEY is not set');
   await dataSource.initialize();
@@ -49,6 +51,7 @@ async function main(): Promise<void> {
         stateOf(badge),
         BADGE_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.badge,
+        all,
       );
       if (filled) await manager.update(Badge, badge.id, columnsOf(state));
       counts.badges = (counts.badges ?? 0) + filled;
@@ -61,6 +64,7 @@ async function main(): Promise<void> {
         stateOf(theme),
         BADGE_THEME_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.badgeTheme,
+        all,
       );
       if (filled) await manager.update(BadgeTheme, theme.id, columnsOf(state));
       counts.collections = (counts.collections ?? 0) + filled;
@@ -73,6 +77,7 @@ async function main(): Promise<void> {
         stateOf(tag),
         USER_TAG_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.userTag,
+        all,
       );
       if (filled) await manager.update(UserTag, tag.id, columnsOf(state));
       counts.tags = (counts.tags ?? 0) + filled;
@@ -85,6 +90,7 @@ async function main(): Promise<void> {
         await loadReleaseNoteTranslations(manager, note.version),
         RELEASE_NOTE_TRANSLATED_FIELDS,
         TRANSLATION_CONTEXTS.releaseNote,
+        all,
       );
       if (filled) {
         await manager.transaction((tx) =>

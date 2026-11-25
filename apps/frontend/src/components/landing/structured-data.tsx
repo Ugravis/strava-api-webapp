@@ -1,10 +1,10 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { siteConfig } from "@kilotrace/ui/config/site";
 import { FAQ_KEYS } from "./faq";
 
 /** JSON-LD describing the site, the application and the FAQ, for rich results. */
 export async function StructuredData() {
-  const [tm, tf] = await Promise.all([getTranslations("metadata"), getTranslations("landing.faq")]);
+  const [tm, tf, locale] = await Promise.all([getTranslations("metadata"), getTranslations("landing.faq"), getLocale()]);
 
   const data = {
     "@context": "https://schema.org",
@@ -15,7 +15,7 @@ export async function StructuredData() {
         url: siteConfig.url,
         name: siteConfig.name,
         description: tm("description"),
-        inLanguage: "fr-FR",
+        inLanguage: locale,
       },
       {
         "@type": "WebApplication",
@@ -25,7 +25,7 @@ export async function StructuredData() {
         description: tm("description"),
         applicationCategory: "SportsApplication",
         operatingSystem: "Web",
-        inLanguage: "fr-FR",
+        inLanguage: locale,
       },
       {
         "@type": "FAQPage",

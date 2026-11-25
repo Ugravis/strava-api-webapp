@@ -37,6 +37,13 @@ const nextConfig: NextConfig = {
   // Self-contained server for the production image (docker/frontend.Dockerfile).
   output: "standalone",
   poweredByHeader: false,
+  /** The history of the release notes had a French address before the site spoke several languages. */
+  async redirects() {
+    return [
+      { source: "/nouveautes", destination: "/fr/whats-new", permanent: true },
+      { source: "/:locale(en|fr|it|es|de)/nouveautes", destination: "/:locale/whats-new", permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

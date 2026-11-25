@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useCallback } from "react";
 import { routes } from "@/config/routes";
 import { clearTrackStore } from "@/lib/tracks/track-store";

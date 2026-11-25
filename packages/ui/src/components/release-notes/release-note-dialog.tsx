@@ -2,7 +2,7 @@
 
 import type { PublicReleaseNote } from "@kilotrace/shared";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import Link from "next/link";
+import { AppLink as Link } from "@kilotrace/ui/lib/navigation";
 import { useTranslations } from "next-intl";
 import { type ReactNode, type RefObject, useRef, useState } from "react";
 import { Button } from "@kilotrace/ui/components/ui/button";

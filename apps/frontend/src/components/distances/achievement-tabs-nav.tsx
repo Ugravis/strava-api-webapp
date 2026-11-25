@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@kilotrace/ui/components/ui/sidebar";
 import {
   ACHIEVEMENT_TAB_ICONS,

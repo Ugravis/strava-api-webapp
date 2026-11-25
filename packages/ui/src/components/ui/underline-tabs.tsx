@@ -2,7 +2,7 @@
 
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { LucideIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@kilotrace/ui/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@kilotrace/ui/components/ui/tabs";
 import { cn } from "@kilotrace/ui/lib/utils";

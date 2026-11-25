@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";

@@ -1,6 +1,6 @@
 import "server-only";
 import { createTranslator, type NamespaceKeys, type NestedKeyOf } from "next-intl";
-import { DEFAULT_LOCALE } from "@/i18n/request";
+import { ADMIN_LOCALE } from "@/i18n/request";
 import adminMessages from "../../../messages/admin/fr.json";
 
 type AdminMessages = typeof adminMessages;
@@ -13,5 +13,5 @@ type AdminMessages = typeof adminMessages;
 export function getAdminTranslations<Namespace extends NamespaceKeys<AdminMessages, NestedKeyOf<AdminMessages>>>(
   namespace: Namespace,
 ) {
-  return createTranslator({ locale: DEFAULT_LOCALE, messages: adminMessages, namespace });
+  return createTranslator({ locale: ADMIN_LOCALE, messages: adminMessages, namespace });
 }

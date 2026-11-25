@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@kilotrace/ui/components/ui/sidebar";
 import type { QuickAccessProps } from "@/config/navigation";

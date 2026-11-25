@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink as Link } from "@kilotrace/ui/lib/navigation";
 import type { ReactNode } from "react";
 import { AppLogo, type AppVariant } from "@kilotrace/ui/components/brand/app-logo";
 import { GridBackdrop } from "@kilotrace/ui/components/layout/grid-backdrop";

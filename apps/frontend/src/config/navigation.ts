@@ -1,5 +1,5 @@
 import { HouseIcon, MapIcon, TrophyIcon, UsersIcon, type LucideIcon } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import type { ComponentType } from "react";
 import { useFollowsSummary } from "@/components/community/follows-summary-provider";
 import { AchievementTabsNav } from "@/components/distances/achievement-tabs-nav";

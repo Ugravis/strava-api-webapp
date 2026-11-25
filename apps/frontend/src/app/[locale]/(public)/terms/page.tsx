@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { type LocaleProps, pageLocale } from "@/lib/i18n/page";
 import { GridBackdrop } from "@kilotrace/ui/components/layout/grid-backdrop";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("terms");
+export async function generateMetadata({ params }: LocaleProps): Promise<Metadata> {
+  const t = await getTranslations({ locale: await pageLocale(params), namespace: "terms" });
   return { title: t("title") };
 }
 
 /** Placeholder until the actual terms of use are written. */
-export default function TermsPage() {
-  const t = useTranslations("terms");
+export default async function TermsPage({ params }: LocaleProps) {
+  await pageLocale(params);
+  const t = await getTranslations("terms");
 
   return (
     <div className="relative isolate flex flex-1 flex-col">

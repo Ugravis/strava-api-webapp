@@ -1,7 +1,7 @@
 "use client";
 
 import { TrashIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";

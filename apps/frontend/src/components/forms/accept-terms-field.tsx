@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { routes } from "@/config/routes";

@@ -11,7 +11,7 @@ import {
   SunDimIcon,
   Volume2Icon,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { type ReactNode, useId } from "react";
 import { Button } from "@kilotrace/ui/components/ui/button";

@@ -1,5 +1,5 @@
 import { HouseIcon } from "lucide-react";
-import Link from "next/link";
+import { AppLink as Link } from "@kilotrace/ui/lib/navigation";
 import { useTranslations } from "next-intl";
 import type { AppVariant } from "@kilotrace/ui/components/brand/app-logo";
 import { Button } from "@kilotrace/ui/components/ui/button";

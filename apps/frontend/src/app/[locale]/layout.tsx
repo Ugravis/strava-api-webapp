@@ -1,24 +1,36 @@
 import type { Metadata } from "next";
-import { NextIntlClientProvider } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { hasLocale, NextIntlClientProvider } from "next-intl";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Providers } from "@kilotrace/ui/components/providers";
 import { siteConfig } from "@kilotrace/ui/config/site";
-import { DEFAULT_LOCALE } from "@/i18n/request";
-import { fontVariables } from "./fonts";
-import "./globals.css";
+import { OPEN_GRAPH_LOCALES } from "@kilotrace/ui/i18n/locale";
+import { LocalizedNavigation } from "@/components/navigation-provider";
+import { routing } from "@/i18n/routing";
+import { localeAlternates } from "@/lib/i18n/alternates";
+import { fontVariables } from "../fonts";
+import "../globals.css";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+  const t = await getTranslations({ locale, namespace: "metadata" });
   return {
     metadataBase: new URL(siteConfig.url),
     title: { default: t("title"), template: `%s · ${siteConfig.name}` },
     description: t("description"),
     keywords: t.raw("keywords") as string[],
     applicationName: siteConfig.name,
+    alternates: localeAlternates(locale, "/"),
     openGraph: {
       type: "website",
       siteName: siteConfig.name,
-      locale: "fr_FR",
+      locale: OPEN_GRAPH_LOCALES[locale],
+      alternateLocale: routing.locales.filter((other) => other !== locale).map((other) => OPEN_GRAPH_LOCALES[other]),
       title: t("title"),
       description: t("description"),
     },
@@ -27,16 +39,18 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
+  setRequestLocale(locale);
+
   return (
-    <html
-      lang={DEFAULT_LOCALE}
-      className={`${fontVariables} h-full antialiased`}
-      suppressHydrationWarning
-    >
+    <html lang={locale} className={`${fontVariables} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>
-          <Providers>{children}</Providers>
+          <LocalizedNavigation>
+            <Providers>{children}</Providers>
+          </LocalizedNavigation>
         </NextIntlClientProvider>
       </body>
     </html>

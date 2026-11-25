@@ -2,8 +2,9 @@
 
 import { Collapsible } from "@base-ui/react/collapsible";
 import { ChevronDownIcon } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { AppLink as Link } from "@kilotrace/ui/lib/navigation";
+import { useAppPathname as usePathname } from "@kilotrace/ui/lib/navigation";
+import { useLocale } from "next-intl";
 import { type ReactNode, useState } from "react";
 import {
   SidebarGroup,
@@ -19,11 +20,10 @@ import {
 import { cn } from "@kilotrace/ui/lib/utils";
 
 
-const ONE_DECIMAL = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
-
 /** A count in a pill, short: whole under a thousand, else rounded to a tenth of k or M (1105 → « 1,1k »). */
-function shortCount(count: number): string {
+function shortCount(count: number, locale: string): string {
   if (count < 1_000) return String(Math.round(count));
+  const ONE_DECIMAL = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
   if (count < 999_950) return `${ONE_DECIMAL.format(count / 1_000)}k`;
   return `${ONE_DECIMAL.format(count / 1_000_000)}M`;
 }
@@ -48,6 +48,7 @@ export interface NavLink {
  */
 export function NavLinks({ title, items, separated }: { title?: string; items: readonly NavLink[]; separated?: boolean }) {
   const pathname = usePathname();
+  const locale = useLocale();
   const { setOpenMobile, state, isMobile } = useSidebar();
   const [open, setOpen] = useState(true);
   const iconOnly = state === "collapsed" && !isMobile;
@@ -76,13 +77,13 @@ export function NavLinks({ title, items, separated }: { title?: string; items: r
             {item.badge === undefined && !item.alert ? null : (
               <SidebarMenuBadge className="gap-1 px-0">
                 {!!item.alert && (
-                  <span className="rounded-full bg-destructive px-1.5 text-white" title={item.alert.toLocaleString("fr-FR")}>
-                    {shortCount(item.alert)}
+                  <span className="rounded-full bg-destructive px-1.5 text-white" title={item.alert.toLocaleString(locale)}>
+                    {shortCount(item.alert, locale)}
                   </span>
                 )}
                 {item.badge !== undefined && (
-                  <span className="rounded-full bg-sidebar-accent px-1.5" title={item.badge.toLocaleString("fr-FR")}>
-                    {shortCount(item.badge)}
+                  <span className="rounded-full bg-sidebar-accent px-1.5" title={item.badge.toLocaleString(locale)}>
+                    {shortCount(item.badge, locale)}
                   </span>
                 )}
               </SidebarMenuBadge>

@@ -1,4 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
+import { isLocale } from "@kilotrace/ui/i18n/locale";
+import { routing } from "@/i18n/routing";
 import {
   DEFAULT_AUTHENTICATED_ROUTE,
   PROTECTED_PREFIXES,
@@ -6,32 +9,42 @@ import {
   SESSION_COOKIE,
 } from "@/config/routes";
 
+const intl = createIntlMiddleware(routing);
+
 /**
- * Optimistic redirects based on the presence of the session cookie only.
+ * Optimistic redirects based on the presence of the session cookie only, on
+ * the path without its language prefix, then the language of the request:
+ * its prefix, otherwise the cookie of its last choice, otherwise the browser.
  * The session itself is validated by the backend when the page renders.
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (isUnder(pathname, "/api/admin")) {
-    return backOfficeNotFound(request);
+  if (isUnder(pathname, "/api")) {
+    return isUnder(pathname, "/api/admin") ? backOfficeNotFound(request) : NextResponse.next();
   }
 
+  const { prefix, path } = splitLocale(pathname);
   const hasSession = request.cookies.has(SESSION_COOKIE);
-  const isProtected = PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  const isProtected = PROTECTED_PREFIXES.some((protectedPath) => path === protectedPath || path.startsWith(`${protectedPath}/`));
   if (isProtected && !hasSession) {
-    const url = new URL(routes.login, request.url);
-    url.searchParams.set("next", `${pathname}${search}`);
+    const url = new URL(`${prefix}${routes.login}`, request.url);
+    url.searchParams.set("next", `${path}${search}`);
     return NextResponse.redirect(url);
   }
 
-  if (pathname === routes.home && hasSession) {
-    return NextResponse.redirect(new URL(DEFAULT_AUTHENTICATED_ROUTE, request.url));
+  if (path === routes.home && hasSession) {
+    return NextResponse.redirect(new URL(`${prefix}${DEFAULT_AUTHENTICATED_ROUTE}`, request.url));
   }
 
-  return NextResponse.next();
+  return intl(request);
+}
+
+/** The language prefix of a path, empty for English, and the path without it. */
+function splitLocale(pathname: string): { prefix: string; path: string } {
+  const segment = pathname.split("/")[1];
+  if (!isLocale(segment) || segment === routing.defaultLocale) return { prefix: "", path: pathname };
+  return { prefix: `/${segment}`, path: pathname.slice(segment.length + 1) || "/" };
 }
 
 /** Case, encoding and repeated slashes are ignored, as the backend router does. */
@@ -59,14 +72,7 @@ function backOfficeNotFound(request: NextRequest) {
   );
 }
 
+/** Every page, and the API for the back office lock; files, route handlers and Next.js internals are left out. */
 export const config = {
-  matcher: [
-    "/",
-    "/dashboard/:path*",
-    "/achievements/:path*",
-    "/map/:path*",
-    "/profile/:path*",
-    "/settings/:path*",
-    "/api/:path*",
-  ],
+  matcher: ["/api/:path*", "/((?!api|_next|_vercel|session-expired|.*\\..*).*)"],
 };

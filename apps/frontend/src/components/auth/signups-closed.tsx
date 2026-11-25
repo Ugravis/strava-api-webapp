@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { routes } from "@/config/routes";
 import { AuthCard } from "@kilotrace/ui/components/auth/auth-card";

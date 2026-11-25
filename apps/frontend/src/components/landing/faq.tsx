@@ -1,5 +1,5 @@
 import { PlusIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@kilotrace/ui/components/ui/button";
 import { routes } from "@/config/routes";

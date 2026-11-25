@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRightIcon, CompassIcon, TrainFrontIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState } from "react";

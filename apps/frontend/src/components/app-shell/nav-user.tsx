@@ -1,7 +1,7 @@
 "use client";
 
 import { EllipsisIcon, LogOutIcon, SettingsIcon, MegaphoneIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@kilotrace/ui/components/user/user-avatar";
 import {
@@ -17,6 +17,7 @@ import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/co
 import { routes } from "@/config/routes";
 import type { User } from "@kilotrace/ui/lib/api/types";
 import { publicNameOf } from "@kilotrace/ui/lib/user";
+import { LocaleSubmenu } from "@/components/i18n/locale-submenu";
 import { SoundSubmenu } from "./sound-submenu";
 import { ThemeMenuItem } from "@kilotrace/ui/components/app-shell/theme-menu-item";
 import { useLogout } from "./use-logout";
@@ -80,6 +81,7 @@ export function NavUser({ user }: { user: User }) {
             </DropdownMenuItem>
             <ThemeMenuItem />
             <SoundSubmenu />
+            <LocaleSubmenu />
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

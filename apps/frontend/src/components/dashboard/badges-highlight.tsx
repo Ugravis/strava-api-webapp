@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRightIcon, TrophyIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { BadgeCard } from "@/components/distances/badge-card";

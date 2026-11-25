@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import Link from "next/link";
+import { AppLink as Link } from "@kilotrace/ui/lib/navigation";
 import { useTranslations } from "next-intl";
 import { AppLogoMark, type AppVariant, AppWordmark } from "@kilotrace/ui/components/brand/app-logo";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@kilotrace/ui/components/ui/sidebar";

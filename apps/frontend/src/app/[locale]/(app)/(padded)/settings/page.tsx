@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { type LocaleProps, pageLocale } from "@/lib/i18n/page";
 import { Suspense } from "react";
 import { PageHeader } from "@kilotrace/ui/components/layout/page-header";
 import { AvatarSettings } from "@/components/settings/avatar-settings";
@@ -11,12 +12,13 @@ import { ProfileSettings } from "@/components/settings/profile-settings";
 import { StravaConnectFeedback } from "@/components/strava/strava-connect-feedback";
 import { profileShowcaseEnabled } from "@/lib/system/status";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("settings");
+export async function generateMetadata({ params }: LocaleProps): Promise<Metadata> {
+  const t = await getTranslations({ locale: await pageLocale(params), namespace: "settings" });
   return { title: t("title") };
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ params }: LocaleProps) {
+  await pageLocale(params);
   const [t, showcase] = await Promise.all([getTranslations("settings"), profileShowcaseEnabled()]);
 
   return (

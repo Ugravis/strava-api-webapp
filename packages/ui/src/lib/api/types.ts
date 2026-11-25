@@ -1,4 +1,4 @@
-import type { StationReportDismissal } from "@kilotrace/shared";
+import type { Locale, StationReportDismissal } from "@kilotrace/shared";
 import type { AdminRole } from "@kilotrace/shared/admin";
 
 export interface User {
@@ -15,6 +15,8 @@ export interface User {
   favoriteSports: FavoriteSport[];
   /** Hue of the profile, `#rrggbb`; null for the default one. */
   profileColor: string | null;
+  /** Language of the site, of the emails and of the notifications. */
+  locale: Locale;
   profilePrivate: boolean;
   hasPassword: boolean;
   /** Highest back-office role, null outside the team. */
